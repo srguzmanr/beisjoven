@@ -1,0 +1,551 @@
+/* ==================== EN VIVO - ESTILOS ==================== */
+/* Sistema de streaming para Beisjoven */
+
+/* ==================== PÁGINA PRINCIPAL ==================== */
+
+.envivo-page {
+    padding: 2rem 0;
+}
+
+.envivo-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.envivo-header h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color, #c41e3a);
+    margin-bottom: 0.5rem;
+}
+
+.envivo-header p {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+/* ==================== LAYOUT ==================== */
+
+.envivo-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 2rem;
+}
+
+.envivo-main {
+    min-width: 0; /* Fix para overflow en grid */
+}
+
+.envivo-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* ==================== REPRODUCTOR PRINCIPAL ==================== */
+
+.envivo-player {
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    margin-bottom: 2rem;
+}
+
+.envivo-player-wrapper {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* Aspect ratio 16:9 */
+    background: #111;
+}
+
+.envivo-iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.envivo-player-info {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    color: #fff;
+}
+
+.envivo-player-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.envivo-player-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.envivo-player-description {
+    color: #aaa;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.envivo-player-meta {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+    color: #888;
+}
+
+/* ==================== BADGES ==================== */
+
+.envivo-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #c41e3a;
+    color: #fff;
+    padding: 0.3rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    animation: pulse-live 2s infinite;
+}
+
+@keyframes pulse-live {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.envivo-upcoming-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #2563eb;
+    color: #fff;
+    padding: 0.3rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.envivo-platform-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.3rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.envivo-category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    padding: 0.3rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.envivo-duration {
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* ==================== PLACEHOLDER SIN STREAM ==================== */
+
+.envivo-no-stream .envivo-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    min-height: 400px;
+}
+
+.envivo-placeholder-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.envivo-placeholder h3 {
+    color: #fff;
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.envivo-placeholder p {
+    color: #888;
+    font-size: 1rem;
+}
+
+/* ==================== ERROR ==================== */
+
+.envivo-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    text-align: center;
+    background: #1a1a1a;
+    min-height: 300px;
+}
+
+.envivo-error-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.envivo-error p {
+    color: #fff;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.envivo-error small {
+    color: #888;
+}
+
+/* ==================== SECCIONES ==================== */
+
+.envivo-section {
+    margin-bottom: 2rem;
+}
+
+.envivo-section-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--primary-color, #c41e3a);
+}
+
+/* ==================== GALERÍA DE REPLAYS ==================== */
+
+.envivo-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+/* ==================== TARJETA DE STREAM ==================== */
+
+.envivo-card {
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.envivo-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.envivo-card:focus {
+    outline: 3px solid var(--primary-color, #c41e3a);
+    outline-offset: 2px;
+}
+
+.envivo-card-thumbnail {
+    position: relative;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+}
+
+.envivo-card-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.envivo-card:hover .envivo-card-thumbnail img {
+    transform: scale(1.05);
+}
+
+.envivo-card-overlay {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.envivo-card-platform {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.envivo-card-content {
+    padding: 1rem;
+}
+
+.envivo-card-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.envivo-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.envivo-card-views {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+/* Tarjeta pequeña */
+.envivo-card-small {
+    display: flex;
+    gap: 1rem;
+}
+
+.envivo-card-small .envivo-card-thumbnail {
+    width: 140px;
+    flex-shrink: 0;
+}
+
+.envivo-card-small .envivo-card-content {
+    flex: 1;
+    padding: 0.5rem 0;
+}
+
+.envivo-card-small .envivo-card-title {
+    font-size: 0.9rem;
+}
+
+/* ==================== PRÓXIMOS EVENTOS ==================== */
+
+.envivo-upcoming {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.25rem;
+}
+
+.envivo-upcoming .envivo-section-title {
+    margin-top: 0;
+}
+
+.envivo-upcoming-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.envivo-upcoming-item {
+    display: flex;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.envivo-upcoming-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 50px;
+    padding: 0.5rem;
+    background: var(--primary-color, #c41e3a);
+    color: #fff;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.envivo-upcoming-day {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.envivo-upcoming-month {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.envivo-upcoming-info {
+    flex: 1;
+}
+
+.envivo-upcoming-info h4 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+}
+
+.envivo-upcoming-info span {
+    display: inline-block;
+    margin-right: 0.75rem;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* ==================== INFO BOX ==================== */
+
+.envivo-info-box {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.25rem;
+    text-align: center;
+}
+
+.envivo-info-box p {
+    color: #555;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.envivo-info-box .btn {
+    display: inline-block;
+    padding: 0.6rem 1.25rem;
+    background: var(--primary-color, #c41e3a);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: background 0.2s ease;
+}
+
+.envivo-info-box .btn:hover {
+    background: #a01830;
+}
+
+/* ==================== EMPTY STATE ==================== */
+
+.envivo-empty {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.envivo-empty span {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.envivo-empty p {
+    color: #666;
+    font-size: 1rem;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 1024px) {
+    .envivo-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .envivo-sidebar {
+        order: -1;
+    }
+    
+    .envivo-upcoming-list {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+    
+    .envivo-upcoming-item {
+        min-width: 250px;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .envivo-header h1 {
+        font-size: 2rem;
+    }
+    
+    .envivo-gallery {
+        grid-template-columns: 1fr;
+    }
+    
+    .envivo-player-title {
+        font-size: 1.25rem;
+    }
+    
+    .envivo-player-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .envivo-page {
+        padding: 1rem 0;
+    }
+    
+    .envivo-player-info {
+        padding: 1rem;
+    }
+    
+    .envivo-player-header {
+        gap: 0.5rem;
+    }
+    
+    .envivo-card-small {
+        flex-direction: column;
+    }
+    
+    .envivo-card-small .envivo-card-thumbnail {
+        width: 100%;
+    }
+}
