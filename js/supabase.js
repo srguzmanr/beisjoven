@@ -79,7 +79,7 @@ const SupabaseAPI = {
                 autor:autores(*)
             `)
             .eq('publicado', true)
-            .order('fecha', { ascending: false })
+            .order('fecha', { ascending: false }) .order('created_at', { ascending: false })
             .limit(limite);
         
         if (error) {
@@ -122,6 +122,7 @@ const SupabaseAPI = {
             .eq('categoria_id', categoria.id)
             .eq('publicado', true)
             .order('fecha', { ascending: false })
+            .order('created_at', { ascending: false })
             .limit(limite);
         
         if (error) {
