@@ -94,9 +94,9 @@ const Pages = {
         const popular = mostRead.map(adaptArticle);
         const vids = videos.map(adaptVideo);
         
-        // A) Última actualización basada en el artículo más reciente
-        const lastArticleDate = articulos?.[0]?.fecha
-            ? new Date(articulos[0].fecha)
+        // A) Última actualización basada en el artículo más reciente (usando created_at para timestamp real)
+        const lastArticleDate = articulos?.[0]?.created_at
+            ? new Date(articulos[0].created_at)
             : new Date();
         const lastUpdated = lastArticleDate.toLocaleString('es-MX', {
             day: 'numeric',
