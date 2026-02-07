@@ -1,4 +1,8 @@
 // Páginas del Panel de Administración - Conectado a Supabase
+// UPDATED: Feb 7, 2026 - Added Media Library picker + Rich Text Editor
+
+// Global variable for rich text editor instance
+let contentEditor = null;
 
 // C) Sanitización básica para prevenir XSS
 function sanitizeHtmlBasic(html) {
@@ -11,6 +15,14 @@ function sanitizeHtmlBasic(html) {
     // 3) Elimina javascript: en href
     clean = clean.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"');
     return clean;
+}
+
+// ==================== MEDIA LIBRARY PICKER ====================
+function openMediaPicker() {
+    MediaLibrary.open(function(imageUrl) {
+        document.getElementById('image').value = imageUrl;
+        AdminPages.previewImage();
+    });
 }
 
 const AdminPages = {
@@ -122,7 +134,7 @@ const AdminPages = {
                                 <h2 style="font-family: Oswald, sans-serif; font-size: 1.8rem; margin: 0 0 5px 0;">¡Hola, ${user.name}!</h2>
                                 <p style="margin: 0; opacity: 0.9;">Bienvenido al panel de administración de Beisjoven</p>
                             </div>
-                            <a href="#" onclick="Router.navigate('/admin/nuevo'); return false;" style="background: white; color: #c41e3a; padding: 12px 24px; border-radius: 25px; font-weight: 600; text-decoration: none; white-space: nowrap;">+ Nueva Noticia</a>
+                            <a href="#" onclick="Router.navigate('/admin/nuevo'); return false;" style="background: white; color: #c41e3a; padding: 12px 24px; border-radius: 25px; font-weight: 600; text-decoration: none; white-space: nowrap;">+ Nuevo Artículo</a>
                         </div>
                         
                         <div class="stats-grid">
@@ -280,6 +292,7 @@ const AdminPages = {
     },
 
     // ==================== CREAR/EDITAR ARTÍCULO ====================
+    // UPDATED: Now uses Media Library picker + Rich Text Editor
     editor: async function({ params }) {
         if (!Auth.isLoggedIn()) {
             Router.navigate('/login');
@@ -289,12 +302,15 @@ const AdminPages = {
         const isEdit = params && params.id;
         const main = document.getElementById('main-content');
         
+        // Reset editor reference
+        contentEditor = null;
+        
         // Mostrar loading
         main.innerHTML = `
             <div class="admin-layout">
                 ${AdminComponents.sidebar()}
                 <div class="admin-main">
-                    ${AdminComponents.header(isEdit ? 'Editar Artículo' : 'Nueva Noticia')}
+                    ${AdminComponents.header(isEdit ? 'Editar Artículo' : 'Nuevo Artículo')}
                     <div class="admin-content"><p>Cargando...</p></div>
                 </div>
             </div>
@@ -323,7 +339,7 @@ const AdminPages = {
                 ${AdminComponents.sidebar()}
                 
                 <div class="admin-main">
-                    ${AdminComponents.header(isEdit ? 'Editar Artículo' : 'Nueva Noticia')}
+                    ${AdminComponents.header(isEdit ? 'Editar Artículo' : 'Nuevo Artículo')}
                     
                     <div class="admin-content">
                         <form id="article-form" class="article-form">
@@ -340,9 +356,8 @@ const AdminPages = {
                                     </div>
                                     
                                     <div class="form-group">
-                                        <label for="content">Contenido *</label>
-                                        <textarea id="content" rows="15" placeholder="Escribe el contenido del artículo aquí..." required>${article?.contenido || ''}</textarea>
-                                        <small>Puedes usar HTML básico: &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a&gt;</small>
+                                        <label>Contenido *</label>
+                                        <div id="content-editor-container"></div>
                                     </div>
                                 </div>
                                 
@@ -371,8 +386,13 @@ const AdminPages = {
                                     </div>
                                     
                                     <div class="form-group">
-                                        <label for="image">URL de Imagen</label>
-                                        <input type="url" id="image" value="${article?.imagen_url || ''}" placeholder="https://..." onchange="AdminPages.previewImage()">
+                                        <label>Imagen del Artículo</label>
+                                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                            <input type="url" id="image" value="${article?.imagen_url || ''}" placeholder="URL de la imagen..." style="flex: 1;" readonly>
+                                            <button type="button" class="btn-media-picker" onclick="openMediaPicker()">
+                                                📷 Seleccionar
+                                            </button>
+                                        </div>
                                         <div id="image-preview" class="image-preview">
                                             ${article?.imagen_url ? `<img src="${article.imagen_url}" alt="Preview">` : '<span>Sin imagen</span>'}
                                         </div>
@@ -399,13 +419,33 @@ const AdminPages = {
             </div>
         `;
 
+        // Initialize Rich Text Editor
+        if (typeof RichTextEditor !== 'undefined') {
+            contentEditor = RichTextEditor.create(
+                'content-editor-container',
+                'content',
+                article?.contenido || ''
+            );
+        } else {
+            // Fallback to plain textarea if RichTextEditor not loaded
+            document.getElementById('content-editor-container').innerHTML = `
+                <textarea id="content" rows="15" placeholder="Escribe el contenido del artículo aquí..." required>${article?.contenido || ''}</textarea>
+                <small>Puedes usar HTML básico: &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a&gt;</small>
+            `;
+        }
+        
+        // Initialize Media Library
+        if (typeof MediaLibrary !== 'undefined') {
+            MediaLibrary.init();
+        }
+
         // Manejar submit
         document.getElementById('article-form').addEventListener('submit', function(e) {
             e.preventDefault();
             AdminPages.saveArticle(isEdit ? parseInt(params.id) : null);
         });
 
-        document.title = (isEdit ? 'Editar' : 'Nueva Noticia') + ' - Beisjoven Admin';
+        document.title = (isEdit ? 'Editar' : 'Nuevo Artículo') + ' - Beisjoven Admin';
     },
 
     // ==================== FUNCIONES AUXILIARES ====================
@@ -421,14 +461,30 @@ const AdminPages = {
         }
     },
 
+    // UPDATED: Gets content from Rich Text Editor if available
     saveArticle: async function(editId) {
         const titulo = document.getElementById('title').value.trim();
         const extracto = document.getElementById('excerpt').value.trim();
-        const contenidoRaw = document.getElementById('content').value.trim();
+        
+        // Get content from Rich Text Editor or fallback to textarea
+        let contenidoRaw;
+        if (contentEditor) {
+            contenidoRaw = contentEditor.getValue();
+        } else {
+            const contentTextarea = document.getElementById('content');
+            contenidoRaw = contentTextarea ? contentTextarea.value.trim() : '';
+        }
+        
         const categoria_id = parseInt(document.getElementById('category').value);
         const autor_id = parseInt(document.getElementById('author').value);
         const imagen_url = document.getElementById('image').value.trim() || 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=800';
         const destacado = document.getElementById('featured').checked;
+        
+        // Validate content
+        if (!contenidoRaw || contenidoRaw === '<br>' || contenidoRaw === '<p><br></p>') {
+            alert('❌ El contenido del artículo es requerido');
+            return;
+        }
         
         // C) Sanitizar contenido para prevenir XSS
         const contenido = sanitizeHtmlBasic(contenidoRaw);
@@ -982,7 +1038,7 @@ const AdminComponents = {
                         📝 Artículos
                     </a>
                     <a href="/admin/nuevo" class="${currentPath === '/admin/nuevo' ? 'active' : ''}">
-                        ➕ Nueva Noticia
+                        ➕ Nuevo Artículo
                     </a>
                     <a href="/admin/videos" class="${currentPath.includes('/videos') ? 'active' : ''}">
                         📹 Videos
