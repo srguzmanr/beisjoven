@@ -1,22 +1,10 @@
 /**
  * BEISJOVEN - Media Library Modal
  * ================================
- * 
- * Inline image picker for the article editor.
- * 
- * INSTALLATION:
- * 1. Add this file to js/media-library.js
- * 2. Add to index.html: <script src="js/media-library.js"></script>
- * 3. Call MediaLibrary.init() when admin panel loads
- * 4. See integration code at bottom of file
+ * FIXED: Uses existing SupabaseStorage API instead of hardcoded credentials
  */
 
 const MediaLibrary = {
-    // Supabase config
-    supabaseUrl: 'https://yulkbjpotfmwqkzzfegg.supabase.co',
-    supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bGtianBvdGZtd3FrenpmZWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTk0MDUsImV4cCI6MjA1MzMzNTQwNX0.QKe_P8T0p6LFwGJL9bNziHaej1SvGtHNeaC_G6wXPmo',
-    bucketName: 'imagenes',
-    
     isOpen: false,
     onSelectCallback: null,
     allImages: [],
@@ -210,14 +198,6 @@ const MediaLibrary = {
                     cursor: pointer;
                 }
                 .ml-cancel:hover { background: #d1d5db; }
-                .ml-uploading {
-                    position: absolute;
-                    inset: 0;
-                    background: rgba(255,255,255,0.9);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
                 @media (max-width: 600px) {
                     .ml-toolbar { flex-wrap: wrap; }
                     .ml-search { width: 100%; }
@@ -265,7 +245,7 @@ const MediaLibrary = {
     },
     
     /**
-     * Load images from Supabase
+     * Load images using existing SupabaseStorage API
      */
     async loadImages() {
         const loading = document.getElementById('ml-loading');
@@ -277,23 +257,12 @@ const MediaLibrary = {
         empty.style.display = 'none';
         
         try {
-            const res = await fetch(
-                `${this.supabaseUrl}/storage/v1/object/list/${this.bucketName}`,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${this.supabaseKey}`,
-                        'apikey': this.supabaseKey
-                    }
-                }
-            );
-            
-            if (!res.ok) throw new Error('Failed to load');
-            
-            const files = await res.json();
-            
-            this.allImages = files
-                .filter(f => f.name && !f.name.startsWith('.') && /\.(jpg|jpeg|png|gif|webp)$/i.test(f.name))
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            // Use existing SupabaseStorage.listarImagenes() from your codebase
+            if (typeof SupabaseStorage !== 'undefined' && SupabaseStorage.listarImagenes) {
+                this.allImages = await SupabaseStorage.listarImagenes();
+            } else {
+                throw new Error('SupabaseStorage not available');
+            }
             
             loading.style.display = 'none';
             this.renderImages(this.allImages);
@@ -313,7 +282,7 @@ const MediaLibrary = {
         const empty = document.getElementById('ml-empty');
         const count = document.getElementById('ml-count');
         
-        if (images.length === 0) {
+        if (!images || images.length === 0) {
             grid.innerHTML = '';
             empty.style.display = 'flex';
             count.textContent = '0 imágenes';
@@ -324,11 +293,13 @@ const MediaLibrary = {
         count.textContent = `${images.length} imagen${images.length !== 1 ? 'es' : ''}`;
         
         grid.innerHTML = images.map(img => {
-            const url = `${this.supabaseUrl}/storage/v1/object/public/${this.bucketName}/${img.name}`;
+            // Handle both formats: {url, nombre} or raw URL string
+            const url = img.url || img;
+            const name = img.nombre || url.split('/').pop();
             return `
-                <div class="ml-item" onclick="MediaLibrary.select('${url}')" title="${img.name}">
-                    <img src="${url}" alt="${img.name}" loading="lazy">
-                    <div class="ml-item-name">${img.name}</div>
+                <div class="ml-item" onclick="MediaLibrary.select('${url}')" title="${name}">
+                    <img src="${url}" alt="${name}" loading="lazy">
+                    <div class="ml-item-name">${name}</div>
                 </div>
             `;
         }).join('');
@@ -338,9 +309,14 @@ const MediaLibrary = {
      * Filter images by search term
      */
     filter(term) {
-        const filtered = term 
-            ? this.allImages.filter(img => img.name.toLowerCase().includes(term.toLowerCase()))
-            : this.allImages;
+        if (!term) {
+            this.renderImages(this.allImages);
+            return;
+        }
+        const filtered = this.allImages.filter(img => {
+            const name = img.nombre || img.url || img;
+            return name.toLowerCase().includes(term.toLowerCase());
+        });
         this.renderImages(filtered);
     },
     
@@ -355,7 +331,7 @@ const MediaLibrary = {
     },
     
     /**
-     * Upload a new image
+     * Upload a new image using existing SupabaseStorage
      */
     async upload(event) {
         const file = event.target.files[0];
@@ -364,82 +340,32 @@ const MediaLibrary = {
         // Reset input
         event.target.value = '';
         
+        // Validate
+        if (file.size > 5 * 1024 * 1024) {
+            alert('❌ Imagen muy grande (máx 5MB)');
+            return;
+        }
+        
         // Show uploading state
         const grid = document.getElementById('ml-grid');
-        const originalHTML = grid.innerHTML;
-        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;"><div class="ml-spinner"></div><p style="margin-top:12px;">Subiendo ${file.name}...</p></div>`;
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;"><div class="ml-spinner"></div><p style="margin-top:12px;">Subiendo...</p></div>`;
         
         try {
-            // Generate unique filename
-            const ext = file.name.split('.').pop();
-            const timestamp = Date.now();
-            const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/_{2,}/g, '_');
-            const fileName = `${timestamp}-${safeName}`;
-            
-            const res = await fetch(
-                `${this.supabaseUrl}/storage/v1/object/${this.bucketName}/${fileName}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${this.supabaseKey}`,
-                        'apikey': this.supabaseKey,
-                        'Content-Type': file.type
-                    },
-                    body: file
+            if (typeof SupabaseStorage !== 'undefined' && SupabaseStorage.subirImagen) {
+                const result = await SupabaseStorage.subirImagen(file);
+                if (result.success) {
+                    // Reload images
+                    await this.loadImages();
+                } else {
+                    throw new Error(result.error || 'Upload failed');
                 }
-            );
-            
-            if (!res.ok) throw new Error('Upload failed');
-            
-            // Reload images
-            await this.loadImages();
-            
+            } else {
+                throw new Error('SupabaseStorage not available');
+            }
         } catch (err) {
             console.error('Upload error:', err);
-            alert('Error subiendo imagen. Intenta de nuevo.');
-            grid.innerHTML = originalHTML;
+            alert('❌ Error subiendo imagen');
+            await this.loadImages();
         }
     }
 };
-
-/* ============================================
-   INTEGRATION CODE
-   ============================================
-   
-   In your admin.js, find where you render the article form
-   and replace the image URL input with this:
-   
-   BEFORE (plain input):
-   -----------------------------------------
-   <label>URL de Imagen</label>
-   <input type="text" id="articulo-imagen" placeholder="https://...">
-   
-   
-   AFTER (with picker button):
-   -----------------------------------------
-   <label>Imagen del Artículo</label>
-   <div style="display:flex;gap:8px;">
-       <input type="text" id="articulo-imagen" placeholder="URL de la imagen..." style="flex:1" readonly>
-       <button type="button" onclick="MediaLibrary.open(url => document.getElementById('articulo-imagen').value = url)" 
-               style="padding:10px 16px;background:#1e3a5f;color:white;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">
-           📷 Seleccionar
-       </button>
-   </div>
-   <img id="articulo-imagen-preview" src="" style="max-width:200px;margin-top:8px;border-radius:8px;display:none;">
-   
-   
-   Then add this to show preview when image is selected:
-   -----------------------------------------
-   MediaLibrary.open(url => {
-       document.getElementById('articulo-imagen').value = url;
-       const preview = document.getElementById('articulo-imagen-preview');
-       preview.src = url;
-       preview.style.display = 'block';
-   });
-   
-   
-   Initialize when admin panel loads:
-   -----------------------------------------
-   MediaLibrary.init();
-   
-*/
