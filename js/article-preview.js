@@ -277,7 +277,7 @@ const ArticlePreview = {
 
         try {
             // Fetch article from Supabase
-            const { data: article, error } = await window.supabase
+            const { data: article, error } = await supabaseClient
                 .from('articulos')
                 .select('*, categoria:categorias(nombre), autor:autores(nombre)')
                 .eq('id', articleId)
