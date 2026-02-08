@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Softbol Mexicano - Cobertura de la selección femenil, ligas nacionales y torneos internacionales de softbol en México.">
+    <meta name="keywords" content="softbol, softbol mexicano, selección femenil, softball Mexico, ligas de softbol">
+    <meta name="author" content="Beisjoven">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://beisjoven.com/categoria/softbol">
+    <meta property="og:title" content="Softbol - Softbol Mexicano | Beisjoven">
+    <meta property="og:description" content="Cobertura seria del softbol mexicano. Selección femenil, ligas nacionales, torneos internacionales y desarrollo del deporte.">
+    <meta property="og:image" content="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-image.jpg">
+    <meta property="og:site_name" content="Beisjoven">
+    <meta property="og:locale" content="es_MX">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Softbol - Softbol Mexicano | Beisjoven">
+    <meta name="twitter:description" content="Cobertura seria del softbol mexicano. Selección femenil, ligas nacionales, torneos internacionales y desarrollo del deporte.">
+    <meta name="twitter:image" content="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-image.jpg">
+    
+    <title>Softbol - Softbol Mexicano | Beisjoven</title>
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    
+    <!-- GitHub Pages SPA redirect handler -->
+    <script>
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Styles (ABSOLUTE PATHS) -->
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/envivo.css">
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar" id="public-header">
+        <div class="container">
+            <span id="current-date"></span>
+            <div>
+                <a href="#" onclick="Router.navigate('/login'); return false;">Admin</a>
+                <a href="/newsletter">Suscríbete</a>
+                <a href="/contacto">Contacto</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header id="main-header">
+        <div class="header-main">
+            <div class="container">
+                <a href="/" class="logo">
+                    <div class="logo-icon">⚾</div>
+                    <h1>BEIS<span>JOVEN</span></h1>
+                </a>
+                <form class="search-box" onsubmit="handleSearch(event)">
+                    <input type="text" id="header-search" placeholder="Buscar noticias..." aria-label="Buscar noticias">
+                    <button type="submit" aria-label="Buscar">Buscar</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav>
+            <div class="container">
+                <ul>
+                    <li><a href="/">Inicio</a></li>
+                    <li><a href="/categoria/mlb">MLB</a></li>
+                    <li><a href="/categoria/mexico">México</a></li>
+                    <li><a href="/categoria/seleccion">Selección</a></li>
+                    <li><a href="/categoria/softbol" class="active">Softbol</a></li>
+                    <li><a href="/categoria/jovenes">Jóvenes</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content (dinámico) -->
+    <main id="main-content">
+        <!-- El contenido se carga dinámicamente via JavaScript -->
+        <div class="loader">
+            <div class="loader-spinner"></div>
+            <p>Cargando...</p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer id="main-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <h3>BEISJOVEN</h3>
+                    <p>Tu fuente #1 de noticias de beisbol y softbol en México. Cobertura completa de la Liga Mexicana, MLB, selecciones nacionales y más.</p>
+                    <div class="social-links">
+                        <a href="https://facebook.com/beisjoven" target="_blank" rel="noopener" aria-label="Facebook">📘</a>
+                        <a href="https://instagram.com/beisjoven" target="_blank" rel="noopener" aria-label="Instagram">📷</a>
+                        <a href="https://twitter.com/beisjoven" target="_blank" rel="noopener" aria-label="Twitter">🐦</a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <h4>Secciones</h4>
+                    <ul>
+                        <li><a href="/categoria/mlb">MLB</a></li>
+                        <li><a href="/categoria/mexico">México</a></li>
+                        <li><a href="/categoria/seleccion">Selección</a></li>
+                        <li><a href="/categoria/softbol">Softbol</a></li>
+                        <li><a href="/categoria/jovenes">Jóvenes</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Más</h4>
+                    <ul>
+                        <li><a href="/videos">Videos</a></li>
+                        <li><a href="/newsletter">Newsletter</a></li>
+                        <li><a href="/contacto">Contacto</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© <script>document.write(new Date().getFullYear())</script> Beisjoven. Todos los derechos reservados. | Hecho con ⚾ en México</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Scripts (ABSOLUTE PATHS) -->
+    <script src="/js/supabase.js"></script>
+    <script src="/data/database.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/components.js"></script>
+    <script src="/js/pages.js"></script>
+    <script src="/js/envivo.js"></script>
+    <script src="/js/router.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/media-library.js"></script>
+    <script src="/js/rich-text-editor.js"></script>
+    <script src="/js/admin.js"></script>
+    <script>
+        // Inicialización de la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mostrar fecha actual
+            const dateElement = document.getElementById('current-date');
+            if (dateElement) {
+                const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+                const today = new Date().toLocaleDateString('es-MX', options);
+                dateElement.textContent = '📅 ' + today.charAt(0).toUpperCase() + today.slice(1);
+            }
+            
+            // Registrar rutas públicas
+            Router.register('/', Pages.home);
+            Router.register('/categoria/:slug', Pages.category);
+            Router.register('/articulo/:slug', Pages.article);
+            Router.register('/video/:slug', Pages.video);
+            Router.register('/videos', Pages.videos);
+            Router.register('/buscar', Pages.search);
+            Router.register('/posiciones', Pages.standings);
+            Router.register('/autor/:slug', Pages.author);
+            Router.register('/envivo', EnVivoPages.main);
+            Router.register('/newsletter', Pages.newsletter);
+            Router.register('/suscribete', Pages.newsletter);
+            Router.register('/contacto', Pages.contacto);
+            
+            // Registrar rutas del admin
+            Router.register('/login', AdminPages.login);
+            Router.register('/admin', AdminPages.dashboard);
+            Router.register('/admin/articulos', AdminPages.articles);
+            Router.register('/admin/nuevo', AdminPages.editor);
+            Router.register('/admin/editar/:id', AdminPages.editor);
+            Router.register('/admin/medios', AdminPages.medios);
+            Router.register('/admin/videos', AdminPages.videosList);
+            Router.register('/admin/videos/nuevo', AdminPages.videoEditor);
+            Router.register('/admin/videos/editar/:id', AdminPages.videoEditor);
+            
+            // Iniciar router
+            Router.init();
+            
+            // Función para mostrar/ocultar header y footer
+            function updateLayout() {
+                const path = window.location.pathname;
+                const isAdmin = path.startsWith('/admin') || path === '/login';
+                
+                const publicHeader = document.getElementById('public-header');
+                const mainHeader = document.getElementById('main-header');
+                const mainFooter = document.getElementById('main-footer');
+                
+                if (isAdmin) {
+                    if (publicHeader) publicHeader.style.display = 'none';
+                    if (mainHeader) mainHeader.style.display = 'none';
+                    if (mainFooter) mainFooter.style.display = 'none';
+                } else {
+                    if (publicHeader) publicHeader.style.display = 'block';
+                    if (mainHeader) mainHeader.style.display = 'block';
+                    if (mainFooter) mainFooter.style.display = 'block';
+                }
+            }
+            
+            // Ejecutar al cargar y en cada navegación
+            updateLayout();
+            
+            // Sobrescribir navigate para actualizar layout
+            const originalNavigate = Router.navigate.bind(Router);
+            Router.navigate = function(path) {
+                originalNavigate(path);
+                setTimeout(updateLayout, 10);
+            };
+        });
+        
+        // Función de búsqueda desde el header
+        function handleSearch(event) {
+            event.preventDefault();
+            const input = document.getElementById('header-search');
+            if (input && input.value.trim()) {
+                Router.navigate('/buscar?q=' + encodeURIComponent(input.value.trim()));
+                input.value = '';
+            }
+        }
+    </script>
+</body>
+</html>
