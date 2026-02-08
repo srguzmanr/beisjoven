@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Beisjoven - La revista digital de beisbol y softbol en México. Noticias, análisis, videos y cobertura de LMB, MLB y selecciones nacionales.">
-    <meta name="keywords" content="beisbol, softbol, México, LMB, MLB, Liga Mexicana, noticias deportivas">
+    
+    <!-- SEO -->
+    <title>Beisjoven - La Revista Digital de Béisbol y Softbol Mexicano</title>
+    <meta name="description" content="Cobertura editorial del béisbol y softbol mexicano. MLB, LMB, LMP, Selección México, Softbol y más.">
+    <meta name="keywords" content="beisbol, softbol, México, LMB, MLB, LMP, Liga Mexicana, noticias deportivas, selección mexicana, béisbol mexicano">
     <meta name="author" content="Beisjoven">
+    <link rel="canonical" href="https://beisjoven.com/">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -22,13 +26,32 @@
     <meta name="twitter:description" content="Cobertura editorial del béisbol y softbol mexicano. MLB, LMB, LMP, Selección México, Softbol y más.">
     <meta name="twitter:image" content="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-image.jpg">
     
-    <title>Beisjoven - Revista de Beisbol y Softbol</title>
-    
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "NewsMediaOrganization",
+        "name": "Beisjoven",
+        "url": "https://beisjoven.com",
+        "description": "La revista digital de referencia para el béisbol y softbol mexicano.",
+        "logo": "https://beisjoven.com/favicon-32x32.png",
+        "sameAs": [
+            "https://facebook.com/beisjoven",
+            "https://instagram.com/beisjoven",
+            "https://twitter.com/beisjoven"
+        ],
+        "publisher": {
+            "@type": "Organization",
+            "name": "Beisjoven"
+        }
+    }
+    </script>
     
     <!-- GitHub Pages SPA redirect handler -->
     <script>
@@ -49,7 +72,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     
-    <!-- Styles (ABSOLUTE PATHS) -->
+    <!-- Styles -->
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/envivo.css">
@@ -99,7 +122,6 @@
 
     <!-- Main Content (dinámico) -->
     <main id="main-content">
-        <!-- El contenido se carga dinámicamente via JavaScript -->
         <div class="loader">
             <div class="loader-spinner"></div>
             <p>Cargando...</p>
@@ -147,7 +169,7 @@
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- Scripts (ABSOLUTE PATHS) -->
+    <!-- Scripts -->
     <script src="/js/supabase.js"></script>
     <script src="/data/database.js"></script>
     <script src="/js/api.js"></script>
@@ -195,8 +217,11 @@
             Router.register('/admin/videos/nuevo', AdminPages.videoEditor);
             Router.register('/admin/videos/editar/:id', AdminPages.videoEditor);
             
-            // Iniciar router
-Auth.init().then(() => Router.init());            
+            // Iniciar auth y luego router
+            Auth.init().then(() => {
+                Router.init();
+            });
+            
             // Función para mostrar/ocultar header y footer
             function updateLayout() {
                 const path = window.location.pathname;
