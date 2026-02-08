@@ -1,143 +1,8 @@
 // Páginas del Panel de Administración - Conectado a Supabase
-// UPDATED: Feb 7, 2026 - Added Media Library picker + Rich Text Editor + AUTOSAVE
+// UPDATED: Feb 8, 2026 - Added Article Preview modal, Media Library picker, Rich Text Editor
 
 // Global variable for rich text editor instance
 let contentEditor = null;
-
-// ==================== AUTOSAVE SYSTEM ====================
-let autosaveInterval = null;
-const AUTOSAVE_DELAY = 30000; // 30 seconds
-const DRAFT_KEY_PREFIX = 'beisjoven_draft_';
-
-// Get draft key based on article ID or 'new'
-function getDraftKey(editId) {
-    return DRAFT_KEY_PREFIX + (editId || 'new');
-}
-
-// Save current form to localStorage
-function saveDraft(editId) {
-    try {
-        const titleEl = document.getElementById('title');
-        const excerptEl = document.getElementById('excerpt');
-        const categoryEl = document.getElementById('category');
-        const authorEl = document.getElementById('author');
-        const imageEl = document.getElementById('image');
-        const featuredEl = document.getElementById('featured');
-        
-        // Get content from Rich Text Editor or textarea
-        let contenido = '';
-        if (contentEditor) {
-            contenido = contentEditor.getValue();
-        } else {
-            const contentTextarea = document.getElementById('content');
-            contenido = contentTextarea ? contentTextarea.value : '';
-        }
-        
-        const draft = {
-            titulo: titleEl ? titleEl.value : '',
-            extracto: excerptEl ? excerptEl.value : '',
-            contenido: contenido,
-            categoria_id: categoryEl ? categoryEl.value : '',
-            autor_id: authorEl ? authorEl.value : '',
-            imagen_url: imageEl ? imageEl.value : '',
-            destacado: featuredEl ? featuredEl.checked : false,
-            savedAt: new Date().toISOString()
-        };
-        
-        // Only save if there's content
-        if (draft.titulo || draft.extracto || draft.contenido) {
-            localStorage.setItem(getDraftKey(editId), JSON.stringify(draft));
-            updateDraftIndicator(true);
-            console.log('📝 Borrador guardado:', new Date().toLocaleTimeString());
-        }
-    } catch (e) {
-        console.error('Error saving draft:', e);
-    }
-}
-
-// Load draft from localStorage
-function loadDraft(editId) {
-    try {
-        const draftStr = localStorage.getItem(getDraftKey(editId));
-        if (draftStr) {
-            return JSON.parse(draftStr);
-        }
-    } catch (e) {
-        console.error('Error loading draft:', e);
-    }
-    return null;
-}
-
-// Clear draft from localStorage
-function clearDraft(editId) {
-    try {
-        localStorage.removeItem(getDraftKey(editId));
-        console.log('🗑️ Borrador eliminado');
-    } catch (e) {
-        console.error('Error clearing draft:', e);
-    }
-}
-
-// Start autosave interval
-function startAutosave(editId) {
-    stopAutosave(); // Clear any existing interval
-    autosaveInterval = setInterval(() => {
-        saveDraft(editId);
-    }, AUTOSAVE_DELAY);
-    console.log('⏰ Autosave iniciado (cada 30s)');
-}
-
-// Stop autosave interval
-function stopAutosave() {
-    if (autosaveInterval) {
-        clearInterval(autosaveInterval);
-        autosaveInterval = null;
-    }
-}
-
-// Update draft indicator in UI
-function updateDraftIndicator(saved) {
-    const indicator = document.getElementById('draft-indicator');
-    if (indicator) {
-        if (saved) {
-            indicator.textContent = '✓ Borrador guardado';
-            indicator.style.color = '#10b981';
-            indicator.style.opacity = '1';
-            // Fade out after 3 seconds
-            setTimeout(() => {
-                if (indicator) indicator.style.opacity = '0.6';
-            }, 3000);
-        } else {
-            indicator.textContent = '';
-        }
-    }
-}
-
-// Apply draft to form
-function applyDraftToForm(draft) {
-    if (!draft) return;
-    
-    const titleEl = document.getElementById('title');
-    const excerptEl = document.getElementById('excerpt');
-    const categoryEl = document.getElementById('category');
-    const authorEl = document.getElementById('author');
-    const imageEl = document.getElementById('image');
-    const featuredEl = document.getElementById('featured');
-    
-    if (titleEl && draft.titulo) titleEl.value = draft.titulo;
-    if (excerptEl && draft.extracto) excerptEl.value = draft.extracto;
-    if (categoryEl && draft.categoria_id) categoryEl.value = draft.categoria_id;
-    if (authorEl && draft.autor_id) authorEl.value = draft.autor_id;
-    if (imageEl && draft.imagen_url) imageEl.value = draft.imagen_url;
-    if (featuredEl) featuredEl.checked = draft.destacado || false;
-    
-    // Update image preview
-    if (draft.imagen_url) {
-        AdminPages.previewImage();
-    }
-    
-    return draft.contenido; // Return content to be set in editor
-}
 
 // C) Sanitización básica para prevenir XSS
 function sanitizeHtmlBasic(html) {
@@ -164,9 +29,6 @@ const AdminPages = {
 
     // ==================== LOGIN ====================
     login: function() {
-        // Stop autosave when leaving editor
-        stopAutosave();
-        
         // Si ya está logueado, ir al dashboard
         if (Auth.isLoggedIn()) {
             Router.navigate('/admin');
@@ -202,8 +64,6 @@ const AdminPages = {
                     </form>
                     
                     <div class="login-help">
-                        <a href="#" id="forgot-password" style="color: #6b7280; text-decoration: none; font-size: 0.9rem;">¿Olvidaste tu contraseña?</a>
-                        <br><br>
                         <a href="/" target="_blank" style="color: #6b7280; text-decoration: none;">← Ir al sitio</a>
                     </div>
                 </div>
@@ -211,59 +71,28 @@ const AdminPages = {
         `;
 
         // Manejar submit del formulario
-        document.getElementById('login-form').addEventListener('submit', async function(e) {
+        document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorDiv = document.getElementById('login-error');
-            const submitBtn = e.target.querySelector('button[type="submit"]');
             
-            // Disable button while loading
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Iniciando sesión...';
-            errorDiv.style.display = 'none';
-            
-            const result = await Auth.login(email, password);
+            const result = Auth.login(email, password);
             
             if (result.success) {
                 Router.navigate('/admin');
             } else {
                 errorDiv.textContent = result.error;
                 errorDiv.style.display = 'block';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Iniciar Sesión';
             }
         });
-
-        // Manejar "Olvidé mi contraseña"
-        const forgotLink = document.getElementById('forgot-password');
-        if (forgotLink) {
-            forgotLink.addEventListener('click', async function(e) {
-                e.preventDefault();
-                const email = document.getElementById('email').value.trim();
-                if (!email) {
-                    alert('Escribe tu email primero');
-                    document.getElementById('email').focus();
-                    return;
-                }
-                const result = await Auth.resetPassword(email);
-                if (result.success) {
-                    alert('✅ Se envió un enlace para restablecer tu contraseña a ' + email);
-                } else {
-                    alert('❌ ' + result.error);
-                }
-            });
-        }
 
         document.title = 'Login - Beisjoven Admin';
     },
 
     // ==================== DASHBOARD ====================
     dashboard: async function() {
-        // Stop autosave when leaving editor
-        stopAutosave();
-        
         if (!Auth.isLoggedIn()) {
             Router.navigate('/login');
             return;
@@ -349,7 +178,7 @@ const AdminPages = {
                                             ${articulos.slice(0, 5).map(article => `
                                                 <tr>
                                                     <td>
-                                                        <a href="/articulo/${article.slug}" target="_blank">
+                                                        <a href="#" onclick="event.preventDefault(); ArticlePreview.open(${article.id})" class="preview-link">
                                                             ${article.titulo.substring(0, 50)}${article.titulo.length > 50 ? '...' : ''}
                                                         </a>
                                                     </td>
@@ -380,9 +209,6 @@ const AdminPages = {
 
     // ==================== LISTA DE ARTÍCULOS ====================
     articles: async function() {
-        // Stop autosave when leaving editor
-        stopAutosave();
-        
         if (!Auth.isLoggedIn()) {
             Router.navigate('/login');
             return;
@@ -433,7 +259,7 @@ const AdminPages = {
                                         ${articulos.map(article => `
                                             <tr>
                                                 <td>
-                                                    <a href="/articulo/${article.slug}" target="_blank">
+                                                    <a href="#" onclick="event.preventDefault(); ArticlePreview.open(${article.id})" class="preview-link">
                                                         ${article.titulo.substring(0, 60)}${article.titulo.length > 60 ? '...' : ''}
                                                     </a>
                                                 </td>
@@ -466,7 +292,7 @@ const AdminPages = {
     },
 
     // ==================== CREAR/EDITAR ARTÍCULO ====================
-    // UPDATED: Now uses Media Library picker + Rich Text Editor + AUTOSAVE
+    // UPDATED: Now uses Media Library picker + Rich Text Editor
     editor: async function({ params }) {
         if (!Auth.isLoggedIn()) {
             Router.navigate('/login');
@@ -474,12 +300,10 @@ const AdminPages = {
         }
 
         const isEdit = params && params.id;
-        const editId = isEdit ? parseInt(params.id) : null;
         const main = document.getElementById('main-content');
         
-        // Reset editor reference and stop any previous autosave
+        // Reset editor reference
         contentEditor = null;
-        stopAutosave();
         
         // Mostrar loading
         main.innerHTML = `
@@ -509,22 +333,6 @@ const AdminPages = {
             
             if (data) article = data;
         }
-        
-        // Check for existing draft (only for new articles)
-        let draft = null;
-        let draftContent = null;
-        if (!isEdit) {
-            draft = loadDraft(null);
-            if (draft && draft.titulo) {
-                const useDraft = confirm(`📝 Se encontró un borrador guardado (${new Date(draft.savedAt).toLocaleString()}).\n\n¿Deseas restaurarlo?`);
-                if (useDraft) {
-                    draftContent = draft.contenido;
-                } else {
-                    clearDraft(null);
-                    draft = null;
-                }
-            }
-        }
 
         main.innerHTML = `
             <div class="admin-layout">
@@ -534,9 +342,6 @@ const AdminPages = {
                     ${AdminComponents.header(isEdit ? 'Editar Artículo' : 'Nuevo Artículo')}
                     
                     <div class="admin-content">
-                        <!-- Draft indicator -->
-                        <div id="draft-indicator" style="text-align: right; font-size: 0.85rem; margin-bottom: 10px; min-height: 20px; color: #10b981;"></div>
-                        
                         <form id="article-form" class="article-form">
                             <div class="form-grid">
                                 <div class="form-main">
@@ -606,10 +411,6 @@ const AdminPages = {
                                         </button>
                                         <a href="/admin/articulos" class="btn btn-secondary btn-block">Cancelar</a>
                                     </div>
-                                    
-                                    <p style="font-size: 0.75rem; color: #9ca3af; text-align: center; margin-top: 10px;">
-                                        💾 Auto-guardado cada 30 segundos
-                                    </p>
                                 </div>
                             </div>
                         </form>
@@ -617,24 +418,18 @@ const AdminPages = {
                 </div>
             </div>
         `;
-        
-        // Apply draft to form fields (if restoring)
-        if (draft && !isEdit) {
-            applyDraftToForm(draft);
-        }
 
         // Initialize Rich Text Editor
-        const initialContent = draftContent || article?.contenido || '';
         if (typeof RichTextEditor !== 'undefined') {
             contentEditor = RichTextEditor.create(
                 'content-editor-container',
                 'content',
-                initialContent
+                article?.contenido || ''
             );
         } else {
             // Fallback to plain textarea if RichTextEditor not loaded
             document.getElementById('content-editor-container').innerHTML = `
-                <textarea id="content" rows="15" placeholder="Escribe el contenido del artículo aquí..." required>${initialContent}</textarea>
+                <textarea id="content" rows="15" placeholder="Escribe el contenido del artículo aquí..." required>${article?.contenido || ''}</textarea>
                 <small>Puedes usar HTML básico: &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a&gt;</small>
             `;
         }
@@ -643,14 +438,11 @@ const AdminPages = {
         if (typeof MediaLibrary !== 'undefined') {
             MediaLibrary.init();
         }
-        
-        // Start autosave
-        startAutosave(editId);
 
         // Manejar submit
         document.getElementById('article-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            AdminPages.saveArticle(editId);
+            AdminPages.saveArticle(isEdit ? parseInt(params.id) : null);
         });
 
         document.title = (isEdit ? 'Editar' : 'Nuevo Artículo') + ' - Beisjoven Admin';
@@ -669,7 +461,7 @@ const AdminPages = {
         }
     },
 
-    // UPDATED: Gets content from Rich Text Editor if available + clears draft on success
+    // UPDATED: Gets content from Rich Text Editor if available
     saveArticle: async function(editId) {
         const titulo = document.getElementById('title').value.trim();
         const extracto = document.getElementById('excerpt').value.trim();
@@ -721,9 +513,6 @@ const AdminPages = {
             // Editar existente
             result = await SupabaseAdmin.actualizarArticulo(editId, articulo);
             if (result.success) {
-                // Clear draft and stop autosave on success
-                clearDraft(editId);
-                stopAutosave();
                 alert('✅ Artículo actualizado correctamente');
             } else {
                 alert('❌ Error: ' + result.error);
@@ -733,9 +522,6 @@ const AdminPages = {
             // Crear nuevo
             result = await SupabaseAdmin.crearArticulo(articulo);
             if (result.success) {
-                // Clear draft and stop autosave on success
-                clearDraft(null);
-                stopAutosave();
                 alert('✅ Artículo publicado correctamente');
             } else {
                 alert('❌ Error: ' + result.error);
@@ -759,17 +545,13 @@ const AdminPages = {
         }
     },
 
-    logout: async function() {
-        stopAutosave();
-        await Auth.logout();
+    logout: function() {
+        Auth.logout();
         Router.navigate('/login');
     },
 
     // ==================== BIBLIOTECA DE MEDIOS ====================
     medios: async function() {
-        // Stop autosave when leaving editor
-        stopAutosave();
-        
         if (!Auth.isLoggedIn()) {
             Router.navigate('/login');
             return;
@@ -936,9 +718,6 @@ const AdminPages = {
     // ==================== GESTIÓN DE VIDEOS ====================
     
     videosList: async function() {
-        // Stop autosave when leaving editor
-        stopAutosave();
-        
         if (!Auth.isLoggedIn()) {
             Router.navigate('/login');
             return;
@@ -1025,9 +804,6 @@ const AdminPages = {
 
     // Editor de video (crear/editar)
     videoEditor: async function({ params }) {
-        // Stop autosave when leaving editor
-        stopAutosave();
-        
         if (!Auth.isLoggedIn()) {
             Router.navigate('/login');
             return;
