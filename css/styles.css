@@ -63,8 +63,8 @@ nav ul li a.nav-live { background: var(--primary); animation: pulse-nav 2s infin
 
 /* ==================== TICKER ==================== */
 .ticker { background: var(--primary); color: var(--white); padding: 10px 0; overflow: hidden; }
-.ticker-content { display: flex; align-items: center; overflow: hidden; }
-.ticker-label { background: var(--accent); color: var(--dark); padding: 5px 15px; font-weight: 700; font-family: 'Oswald', sans-serif; text-transform: uppercase; margin-right: 20px; flex-shrink: 0; border-radius: 4px; z-index: 2; position: relative; }
+.ticker-content { display: flex; align-items: center; overflow: hidden; position: relative; }
+.ticker-label { background: var(--accent); color: var(--dark); padding: 5px 15px; font-weight: 700; font-family: 'Oswald', sans-serif; text-transform: uppercase; margin-right: 20px; flex-shrink: 0; border-radius: 4px; z-index: 2; position: relative; white-space: nowrap; font-size: 0.85rem; }
 .ticker-text { animation: ticker 25s linear infinite; white-space: nowrap; }
 @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
@@ -96,6 +96,9 @@ nav ul li a.nav-live { background: var(--primary); animation: pulse-nav 2s infin
 .section-title h2 { font-family: 'Oswald', sans-serif; font-size: 1.8rem; color: var(--dark); text-transform: uppercase; letter-spacing: 1px; }
 .section-title .ver-mas { margin-left: auto; color: var(--primary); font-weight: 600; font-size: 0.9rem; transition: var(--transition); }
 .section-title .ver-mas:hover { color: var(--primary-dark); }
+
+/* ==================== CATEGORY PILLS (Consistent) ==================== */
+.category { display: inline-block; padding: 4px 12px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 4px; line-height: 1.4; transition: var(--transition); cursor: pointer; }
 
 /* ==================== NEWS SECTIONS ==================== */
 .news-section { padding: 50px 0; }
@@ -237,16 +240,25 @@ footer { background: var(--dark); color: var(--white); padding: 60px 0 30px; }
 .article-content { background: var(--white); padding: 40px; border-radius: var(--radius); box-shadow: var(--shadow); }
 .article-content p { margin-bottom: 20px; font-size: 1.1rem; line-height: 1.8; }
 .article-content h3 { font-family: 'Oswald', sans-serif; font-size: 1.5rem; margin: 30px 0 15px; color: var(--dark); }
+.article-content blockquote { border-left: 4px solid var(--primary); margin: 25px 0; padding: 15px 20px; background: var(--light); border-radius: 0 var(--radius) var(--radius) 0; font-style: italic; color: var(--secondary); font-size: 1.05rem; line-height: 1.7; }
+.article-content ul, .article-content ol { margin-bottom: 20px; padding-left: 25px; font-size: 1.05rem; line-height: 1.8; }
+.article-content li { margin-bottom: 8px; }
+.article-content img { border-radius: var(--radius); margin: 20px 0; }
+.article-content figure { margin: 25px 0; }
+.article-content figcaption { font-size: 0.85rem; color: var(--gray); text-align: center; margin-top: 8px; font-style: italic; }
+.article-content strong { color: var(--dark); }
+.article-content a { color: var(--primary); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; transition: var(--transition); }
+.article-content a:hover { color: var(--primary-dark); }
 .article-tags { margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--light); }
 .tag { display: inline-block; background: var(--light); color: var(--secondary); padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; margin: 5px 5px 5px 0; transition: var(--transition); }
 .tag:hover { background: var(--secondary); color: var(--white); }
-.share-buttons { margin-top: 20px; display: flex; align-items: center; gap: 10px; }
-.share-buttons span { font-weight: 600; color: var(--gray); }
-.share-btn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--white); font-weight: 700; transition: var(--transition); }
+.share-buttons { margin-top: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.share-buttons span { font-weight: 600; color: var(--gray); font-size: 0.9rem; }
+.share-btn { min-width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--white); font-weight: 700; transition: var(--transition); font-size: 1.1rem; cursor: pointer; }
 .share-btn.twitter { background: #1da1f2; }
 .share-btn.facebook { background: #1877f2; }
 .share-btn.whatsapp { background: #25d366; }
-.share-btn:hover { transform: scale(1.1); }
+.share-btn:hover { transform: scale(1.15); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 .related-articles { margin-top: 50px; }
 
 /* ==================== AUTHOR BOX ==================== */
@@ -338,8 +350,11 @@ footer { background: var(--dark); color: var(--white); padding: 60px 0 30px; }
 @media (max-width: 768px) {
     .header-main .container { flex-direction: column; gap: 15px; }
     .search-box { width: 100%; }
-    nav ul { flex-wrap: wrap; justify-content: center; }
-    nav ul li a { padding: 10px 15px; font-size: 0.95rem; }
+    nav { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    nav .container { justify-content: flex-start; }
+    nav ul { flex-wrap: nowrap; justify-content: flex-start; min-width: max-content; }
+    nav ul li a { padding: 10px 15px; font-size: 0.9rem; white-space: nowrap; }
+    .ticker-label { padding: 4px 10px; font-size: 0.75rem; margin-right: 12px; }
     .hero-main { height: 350px; }
     .hero-sidebar { flex-direction: column; }
     .news-grid { grid-template-columns: 1fr; }
@@ -351,6 +366,8 @@ footer { background: var(--dark); color: var(--white); padding: 60px 0 30px; }
     .article-header h1 { font-size: 1.8rem; }
     .article-content { padding: 25px; }
     .article-meta { flex-direction: column; align-items: flex-start; }
+    .share-buttons { gap: 10px; }
+    .share-btn { min-width: 44px; height: 44px; }
     .author-header { flex-direction: column; text-align: center; }
     .videos-full-grid, .videos-grid-4 { grid-template-columns: 1fr; }
     .logo h1 { font-size: 2rem; }
