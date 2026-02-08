@@ -1,65 +1,83 @@
 // Sistema de autenticación para Beisjoven
-// En producción, esto se conectaría a un backend real con JWT/sessions
+// Conectado a Supabase Auth — sesiones encriptadas, tokens, password reset
 
 const Auth = {
-    // IMPORTANTE: Cambiar estas credenciales antes de compartir el admin con otros.
-    // Para mayor seguridad, migrar a Supabase Auth en el futuro.
-    users: [
-        {
-            id: 1,
-            email: 'admin@beisjoven.com',
-            password: 'Beisbol2026!Mx',
-            name: 'Administrador',
-            role: 'admin',
-            avatar: '👨‍💼'
-        }
-    ],
-
-    // Usuario actual (null si no hay sesión)
     currentUser: null,
+    _ready: false,
+    _readyPromise: null,
 
-    // Inicializar - revisar si hay sesión guardada
+    // Inicializar — carga sesión existente de Supabase
     init: function() {
-        const saved = localStorage.getItem('beisjoven_session');
-        if (saved) {
-            try {
-                this.currentUser = JSON.parse(saved);
-            } catch (e) {
-                this.currentUser = null;
-            }
-        }
+        this._readyPromise = this._loadSession();
+        return this._readyPromise;
     },
 
-    // Intentar login
-    login: function(email, password) {
-        const user = this.users.find(u => 
-            u.email.toLowerCase() === email.toLowerCase() && 
-            u.password === password
-        );
-
-        if (user) {
-            // Crear sesión (sin incluir password)
-            this.currentUser = {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                role: user.role,
-                avatar: user.avatar
-            };
-            
-            // Guardar en localStorage
-            localStorage.setItem('beisjoven_session', JSON.stringify(this.currentUser));
-            
-            return { success: true, user: this.currentUser };
+    _loadSession: async function() {
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session?.user) {
+                this.currentUser = this._mapUser(session.user);
+            }
+        } catch (e) {
+            console.error('Error cargando sesión:', e);
+            this.currentUser = null;
         }
 
-        return { success: false, error: 'Email o contraseña incorrectos' };
+        // Escuchar cambios de auth (logout en otra pestaña, token refresh, etc.)
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (session?.user) {
+                this.currentUser = this._mapUser(session.user);
+            } else {
+                this.currentUser = null;
+            }
+        });
+
+        this._ready = true;
+    },
+
+    // Mapear usuario de Supabase al formato que usa el admin panel
+    _mapUser: function(supaUser) {
+        const meta = supaUser.user_metadata || {};
+        return {
+            id: supaUser.id,
+            email: supaUser.email,
+            name: meta.name || supaUser.email.split('@')[0],
+            role: meta.role || 'admin',
+            avatar: meta.avatar || '👨‍💼'
+        };
+    },
+
+    // Login con Supabase Auth
+    login: async function(email, password) {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: email.trim().toLowerCase(),
+            password: password
+        });
+
+        if (error) {
+            return { success: false, error: this._translateError(error.message) };
+        }
+
+        this.currentUser = this._mapUser(data.user);
+        return { success: true, user: this.currentUser };
     },
 
     // Cerrar sesión
-    logout: function() {
+    logout: async function() {
+        await supabaseClient.auth.signOut();
         this.currentUser = null;
-        localStorage.removeItem('beisjoven_session');
+    },
+
+    // Solicitar reset de contraseña
+    resetPassword: async function(email) {
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + '/login'
+        });
+
+        if (error) {
+            return { success: false, error: this._translateError(error.message) };
+        }
+        return { success: true };
     },
 
     // Verificar si está logueado
@@ -67,7 +85,7 @@ const Auth = {
         return this.currentUser !== null;
     },
 
-    // Verificar si es admin
+    // Verificar rol admin
     isAdmin: function() {
         return this.currentUser && this.currentUser.role === 'admin';
     },
@@ -80,11 +98,30 @@ const Auth = {
     // Obtener usuario actual
     getUser: function() {
         return this.currentUser;
+    },
+
+    // Esperar a que Auth esté listo (para usar antes de Router.init)
+    whenReady: function() {
+        return this._readyPromise || Promise.resolve();
+    },
+
+    // Traducir errores comunes de Supabase al español
+    _translateError: function(msg) {
+        const translations = {
+            'Invalid login credentials': 'Email o contraseña incorrectos',
+            'Email not confirmed': 'Confirma tu email antes de iniciar sesión',
+            'User not found': 'No existe una cuenta con ese email',
+            'Too many requests': 'Demasiados intentos. Espera un momento.',
+            'Password should be at least 6 characters': 'La contraseña debe tener al menos 6 caracteres',
+            'For security purposes, you can only request this after': 'Por seguridad, espera un momento antes de intentar de nuevo'
+        };
+
+        for (const [eng, esp] of Object.entries(translations)) {
+            if (msg.includes(eng)) return esp;
+        }
+        return msg;
     }
 };
-
-// Inicializar al cargar
-Auth.init();
 
 // Exportar
 if (typeof window !== 'undefined') {

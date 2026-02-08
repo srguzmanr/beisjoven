@@ -202,6 +202,8 @@ const AdminPages = {
                     </form>
                     
                     <div class="login-help">
+                        <a href="#" id="forgot-password" style="color: #6b7280; text-decoration: none; font-size: 0.9rem;">¿Olvidaste tu contraseña?</a>
+                        <br><br>
                         <a href="/" target="_blank" style="color: #6b7280; text-decoration: none;">← Ir al sitio</a>
                     </div>
                 </div>
@@ -209,22 +211,50 @@ const AdminPages = {
         `;
 
         // Manejar submit del formulario
-        document.getElementById('login-form').addEventListener('submit', function(e) {
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorDiv = document.getElementById('login-error');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
             
-            const result = Auth.login(email, password);
+            // Disable button while loading
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Iniciando sesión...';
+            errorDiv.style.display = 'none';
+            
+            const result = await Auth.login(email, password);
             
             if (result.success) {
                 Router.navigate('/admin');
             } else {
                 errorDiv.textContent = result.error;
                 errorDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Iniciar Sesión';
             }
         });
+
+        // Manejar "Olvidé mi contraseña"
+        const forgotLink = document.getElementById('forgot-password');
+        if (forgotLink) {
+            forgotLink.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const email = document.getElementById('email').value.trim();
+                if (!email) {
+                    alert('Escribe tu email primero');
+                    document.getElementById('email').focus();
+                    return;
+                }
+                const result = await Auth.resetPassword(email);
+                if (result.success) {
+                    alert('✅ Se envió un enlace para restablecer tu contraseña a ' + email);
+                } else {
+                    alert('❌ ' + result.error);
+                }
+            });
+        }
 
         document.title = 'Login - Beisjoven Admin';
     },
@@ -729,9 +759,9 @@ const AdminPages = {
         }
     },
 
-    logout: function() {
+    logout: async function() {
         stopAutosave();
-        Auth.logout();
+        await Auth.logout();
         Router.navigate('/login');
     },
 
