@@ -79,31 +79,33 @@ const Components = {
         `;
     },
     
-    // ==================== TARJETA DE VIDEO ====================
-    videoCard: function(video, size = 'normal') {
-        const isSmall = size === 'small';
-        const duration = video.duration || '';
-        const views = video.formattedViews || '';
-        const timeAgo = video.timeAgo || '';
+    // ==================== TARJETA DE VIDEO — YouTube Style ====================
+    videoCard: function(video) {
+        // Auto-generate thumbnail from YouTube ID with fallback chain
+        const youtubeId = video.youtubeId || '';
+        const thumb = video.thumbnail || `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+        const fallback = `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`;
+        const dateStr = video.timeAgo || (video.date ? new Date(video.date).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
+        
         return `
-            <article class="video-card ${isSmall ? 'video-small' : 'video-featured'}">
-                <a href="/video/${video.slug}" class="video-thumbnail">
-                    <img src="${video.thumbnail}" alt="${video.title}">
-                    <div class="play-button ${isSmall ? 'small' : ''}" role="button" aria-label="Reproducir video">
-                        <svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+            <article class="vid-card">
+                <a href="/video/${video.slug}" class="vid-card-thumb">
+                    <img src="${thumb}" alt="${video.title}" loading="lazy"
+                         onerror="this.onerror=null;this.src='${fallback}'">
+                    <div class="vid-card-play">
+                        <svg viewBox="0 0 68 48" width="68" height="48">
+                            <path d="M66.5 7.7c-.8-2.9-2.5-5.4-5.4-6.2C55.8.1 34 0 34 0S12.2.1 6.9 1.5C4 2.3 2.3 4.8 1.5 7.7.1 13 0 24 0 24s.1 11 1.5 16.3c.8 2.9 2.5 5.4 5.4 6.2C12.2 47.9 34 48 34 48s21.8-.1 27.1-1.5c2.9-.8 4.6-3.3 5.4-6.2C67.9 35 68 24 68 24s-.1-11-1.5-16.3z" fill="rgba(0,0,0,.75)"/>
+                            <path d="M45 24L27 14v20" fill="#fff"/>
+                        </svg>
                     </div>
-                    ${duration ? `<span class="video-duration">${duration}</span>` : ''}
-                    ${video.isLive ? '<span class="video-live">🔴 EN VIVO</span>' : ''}
+                    ${video.duration ? `<span class="vid-card-duration">${video.duration}</span>` : ''}
                 </a>
-                <div class="video-info">
-                    ${!isSmall && video.category ? `<span class="category">${video.category.name}</span>` : ''}
-                    <${isSmall ? 'h4' : 'h3'}><a href="/video/${video.slug}">${video.title}</a></${isSmall ? 'h4' : 'h3'}>
-                    ${views || timeAgo ? `
-                        <div class="video-meta">
-                            ${views ? `<span>👁 ${views} vistas</span>` : ''}
-                            ${timeAgo ? `<span>📅 ${timeAgo}</span>` : ''}
-                        </div>
-                    ` : ''}
+                <div class="vid-card-info">
+                    <h3 class="vid-card-title"><a href="/video/${video.slug}">${video.title}</a></h3>
+                    <div class="vid-card-meta">
+                        ${video.category ? `<a href="/categoria/${video.category.slug}" class="vid-card-cat">${video.category.name}</a>` : ''}
+                        ${dateStr ? `<span class="vid-card-date">${dateStr}</span>` : ''}
+                    </div>
                 </div>
             </article>
         `;
