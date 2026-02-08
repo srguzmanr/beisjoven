@@ -551,13 +551,13 @@ const Pages = {
             <section class="videos-page">
                 <div class="container">
                     <header class="page-header">
-                        <h1>📹 Videos</h1>
-                        <p>Los mejores videos de beisbol y softbol mexicano</p>
+                        <h1>▶️ Videos</h1>
+                        <p>Los mejores videos de béisbol y softbol mexicano</p>
                     </header>
                     
                     ${videos.length > 0 
-                        ? `<div class="videos-full-grid">
-                            ${videos.map(v => Components.videoCard(v, 'featured')).join('')}
+                        ? `<div class="vid-grid-page">
+                            ${videos.map(v => Components.videoCard(v)).join('')}
                            </div>`
                         : Components.emptyState('No hay videos disponibles', '📹')
                     }
