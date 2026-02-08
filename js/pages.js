@@ -48,6 +48,14 @@ function updateMetaTags(options = {}) {
         document.head.appendChild(canonical);
     }
     canonical.setAttribute('href', meta.url);
+    
+    // GA4 SPA page view tracking
+    if (typeof gtag === 'function') {
+        gtag('event', 'page_view', {
+            page_title: meta.title,
+            page_location: meta.url
+        });
+    }
 }
 
 const Pages = {
