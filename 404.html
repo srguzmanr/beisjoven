@@ -196,8 +196,7 @@
             Router.register('/admin/videos/editar/:id', AdminPages.videoEditor);
             
             // Iniciar router
-            Router.init();
-            
+Auth.init().then(() => Router.init());            
             // Función para mostrar/ocultar header y footer
             function updateLayout() {
                 const path = window.location.pathname;
