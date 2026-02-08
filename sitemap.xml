@@ -3,6 +3,7 @@
   <!-- Main Pages -->
   <url>
     <loc>https://beisjoven.com/</loc>
+    <lastmod>2026-02-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
@@ -46,6 +47,116 @@
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
-  
-  <!-- Articles - run generate-sitemap.html to update these -->
+
+  <!-- Articles (14) -->
+  <url>
+    <loc>https://beisjoven.com/articulo/charros-hace-historia-campeones-de-la-serie-del-caribe-2026-en-final-de-locura</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/final-historica-tomateros-vs-charros-por-la-corona-del-caribe</loc>
+    <lastmod>2026-02-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/mexico-revela-su-roster-para-el-clasico-mundial-de-beisbol-2026</loc>
+    <lastmod>2026-02-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/tomateros-aplasta-a-leones-y-avanza-a-la-final-de-la-serie-del-caribe-2026</loc>
+    <lastmod>2026-02-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/mexicanos-mlb-temporada-2026</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/lmb-temporada-2026-preview</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/softbol-femenil-mexico-seleccion-mundial</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/mexico-clasico-mundial-beisbol-2026</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/prospectos-lmb-grandes-ligas-2026</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/spring-training-2026-mexicanos</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/liga-nacional-softbol-mexico</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/serie-del-caribe-2026-mexico</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/por-que-beisjoven-revista-digital-beisbol</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/articulo/estadios-lmb-templos-beisbol-mexicano</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Videos (2) -->
+  <url>
+    <loc>https://beisjoven.com/video/puerto-rico-vs-mexico-red-semifinal-serie-del-caribe-2026</loc>
+    <lastmod>2026-02-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/video/serie-del-caribe-2026-mexico-rojo-vs-puerto-rico</loc>
+    <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <!-- Authors (2) -->
+  <url>
+    <loc>https://beisjoven.com/autor/redaccion</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://beisjoven.com/autor/redaccion-beisjoven</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
 </urlset>
