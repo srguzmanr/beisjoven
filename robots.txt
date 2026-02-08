@@ -1,0 +1,11 @@
+# Beisjoven - robots.txt
+User-agent: *
+Allow: /
+
+# Block admin routes from indexing
+Disallow: /admin
+Disallow: /admin/
+Disallow: /login
+
+# Sitemap
+Sitemap: https://beisjoven.com/sitemap.xml
