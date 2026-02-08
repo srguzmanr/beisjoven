@@ -1,5 +1,55 @@
 // Páginas/Vistas de Beisjoven
 
+// Helper: Update meta tags dynamically for better social sharing
+function updateMetaTags(options = {}) {
+    const defaults = {
+        title: 'Beisjoven - La Revista Digital de Béisbol y Softbol Mexicano',
+        description: 'Cobertura editorial del béisbol y softbol mexicano. MLB, LMB, LMP, Selección México, Softbol y más.',
+        image: 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-image.jpg',
+        url: window.location.href,
+        type: 'website'
+    };
+    const meta = { ...defaults, ...options };
+    
+    // Update document title
+    document.title = meta.title;
+    
+    // Helper to set a meta tag
+    function setMeta(attr, attrValue, content) {
+        let el = document.querySelector(`meta[${attr}="${attrValue}"]`);
+        if (!el) {
+            el = document.createElement('meta');
+            el.setAttribute(attr, attrValue);
+            document.head.appendChild(el);
+        }
+        el.setAttribute('content', content);
+    }
+    
+    // Standard meta
+    setMeta('name', 'description', meta.description);
+    
+    // Open Graph
+    setMeta('property', 'og:title', meta.title);
+    setMeta('property', 'og:description', meta.description);
+    setMeta('property', 'og:image', meta.image);
+    setMeta('property', 'og:url', meta.url);
+    setMeta('property', 'og:type', meta.type);
+    
+    // Twitter
+    setMeta('name', 'twitter:title', meta.title);
+    setMeta('name', 'twitter:description', meta.description);
+    setMeta('name', 'twitter:image', meta.image);
+    
+    // Canonical
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+        canonical = document.createElement('link');
+        canonical.setAttribute('rel', 'canonical');
+        document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', meta.url);
+}
+
 const Pages = {
     
     // ==================== PÁGINA DE INICIO ====================
@@ -94,9 +144,9 @@ const Pages = {
         const popular = mostRead.map(adaptArticle);
         const vids = videos.map(adaptVideo);
         
-        // A) Última actualización basada en el artículo más reciente (usando created_at para timestamp real)
-        const lastArticleDate = articulos?.[0]?.created_at
-            ? new Date(articulos[0].created_at)
+        // A) Última actualización basada en el artículo más reciente
+        const lastArticleDate = articulos?.[0]?.fecha
+            ? new Date(articulos[0].fecha)
             : new Date();
         const lastUpdated = lastArticleDate.toLocaleString('es-MX', {
             day: 'numeric',
@@ -192,6 +242,7 @@ const Pages = {
         `;
         
         document.title = 'Beisjoven - Revista de Beisbol y Softbol de México';
+        updateMetaTags();
     },
     
     // ==================== PÁGINA DE CATEGORÍA ====================
@@ -286,6 +337,11 @@ const Pages = {
         `;
         
         document.title = `${categoria.nombre} - Beisjoven`;
+        updateMetaTags({
+            title: `${categoria.nombre} - Beisjoven`,
+            description: `Noticias y artículos de ${categoria.nombre} en Beisjoven.`,
+            url: `https://beisjoven.com/categoria/${categoria.slug}`
+        });
     },
     
     // ==================== PÁGINA DE ARTÍCULO ====================
@@ -435,6 +491,13 @@ const Pages = {
         `;
         
         document.title = `${article.title} - Beisjoven`;
+        updateMetaTags({
+            title: `${article.title} - Beisjoven`,
+            description: article.excerpt,
+            image: article.image,
+            url: `https://beisjoven.com/articulo/${article.slug}`,
+            type: 'article'
+        });
     },
     
     // ==================== PÁGINA DE VIDEOS ====================
