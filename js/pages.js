@@ -236,15 +236,15 @@ const Pages = {
             </section>
             
             <!-- Videos -->
-            <section class="news-section videos-section">
+            <section class="news-section videos-section-dark">
                 <div class="container">
                     ${Components.sectionTitle('Videos Destacados', '▶️', { url: '/videos', text: 'Ver canal' })}
-                    <div class="videos-grid">
-                        ${vids[0] ? Components.videoCard(vids[0], 'featured') : '<p class="empty-message">Próximamente videos</p>'}
-                        <div class="videos-sidebar">
-                            ${vids.slice(1).map(v => Components.videoCard(v, 'small')).join('')}
-                        </div>
-                    </div>
+                    ${vids.length > 0 
+                        ? `<div class="vid-grid-home">
+                            ${vids.slice(0, 6).map(v => Components.videoCard(v)).join('')}
+                           </div>`
+                        : '<p class="empty-message" style="color:#aaa">Próximamente videos</p>'
+                    }
                 </div>
             </section>
         `;
