@@ -239,11 +239,8 @@ const Pages = {
             <section class="news-section videos-section">
                 <div class="container">
                     ${Components.sectionTitle('Videos Destacados', '▶️', { url: '/videos', text: 'Ver canal' })}
-                    <div class="videos-grid">
-                        ${vids[0] ? Components.videoCard(vids[0], 'featured') : '<p class="empty-message">Próximamente videos</p>'}
-                        <div class="videos-sidebar">
-                            ${vids.slice(1).map(v => Components.videoCard(v, 'small')).join('')}
-                        </div>
+                    <div class="vid-grid-home">
+                        ${vids.map(v => Components.videoCard(v, 'featured')).join('')}
                     </div>
                 </div>
             </section>
@@ -556,7 +553,7 @@ const Pages = {
                     </header>
                     
                     ${videos.length > 0 
-                        ? `<div class="videos-full-grid">
+                        ? `<div class="vid-grid-page">
                             ${videos.map(v => Components.videoCard(v, 'featured')).join('')}
                            </div>`
                         : Components.emptyState('No hay videos disponibles', '📹')
