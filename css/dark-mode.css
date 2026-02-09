@@ -362,4 +362,16 @@
     img:hover {
         filter: brightness(1);
     }
+
+    /* Don't dim hero/overlay images — they need full brightness for text readability */
+    .hero-main img,
+    .hero-sidebar-item img,
+    .vid-card-thumb img {
+        filter: none;
+    }
+
+    /* Ticker text visibility */
+    .ticker-text {
+        color: #fff;
+    }
 }
