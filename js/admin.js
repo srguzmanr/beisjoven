@@ -758,6 +758,7 @@ const AdminPages = {
                                             <th>Thumbnail</th>
                                             <th>Título</th>
                                             <th>Categoría</th>
+                                            <th>Destacado</th>
                                             <th>Fecha</th>
                                             <th>Acciones</th>
                                         </tr>
@@ -776,6 +777,12 @@ const AdminPages = {
                                                     </a>
                                                 </td>
                                                 <td><span class="badge">${video.categoria?.nombre || 'N/A'}</span></td>
+                                                <td style="text-align: center;">
+                                                    <input type="checkbox" ${video.destacado ? 'checked' : ''} 
+                                                           onchange="AdminPages.toggleVideoFeatured(${video.id}, this.checked)"
+                                                           title="Marcar como destacado"
+                                                           style="width: 18px; height: 18px; cursor: pointer;">
+                                                </td>
                                                 <td>${new Date(video.fecha).toLocaleDateString('es-MX')}</td>
                                                 <td class="actions-cell">
                                                     <a href="/admin/videos/editar/${video.id}" class="btn-small">Editar</a>
@@ -922,6 +929,20 @@ const AdminPages = {
             preview.innerHTML = `<img src="https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg" alt="Preview" onerror="this.parentElement.innerHTML='<span>ID inválido</span>'">`;
         } else {
             preview.innerHTML = '<span>Ingresa un ID de YouTube</span>';
+        }
+    },
+
+    // Toggle video destacado desde la lista
+    toggleVideoFeatured: async function(videoId, isChecked) {
+        const { error } = await supabaseClient
+            .from('videos')
+            .update({ destacado: isChecked })
+            .eq('id', videoId);
+        
+        if (error) {
+            alert('❌ Error al actualizar: ' + error.message);
+            // Revert checkbox
+            event.target.checked = !isChecked;
         }
     },
 

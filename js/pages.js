@@ -81,7 +81,7 @@ const Pages = {
         ] = await Promise.all([
             SupabaseAPI.getArticulos(20),
             SupabaseAPI.getArticulosDestacados(3),
-            SupabaseAPI.getVideosDestacados(5)
+            SupabaseAPI.getVideosDestacados(6)
         ]);
         
         // Filtrar artículos por categoría (usando los datos ya cargados)
@@ -153,8 +153,8 @@ const Pages = {
         const vids = videos.map(adaptVideo);
         
         // A) Última actualización basada en el artículo más reciente
-        const lastArticleDate = articulos?.[0]?.created_at
-            ? new Date(articulos[0].created_at)
+        const lastArticleDate = articulos?.[0]?.fecha
+            ? new Date(articulos[0].fecha)
             : new Date();
         const lastUpdated = lastArticleDate.toLocaleString('es-MX', {
             day: 'numeric',
@@ -236,15 +236,15 @@ const Pages = {
             </section>
             
             <!-- Videos -->
-            <section class="news-section videos-section-dark">
+            <section class="news-section videos-section">
                 <div class="container">
                     ${Components.sectionTitle('Videos Destacados', '▶️', { url: '/videos', text: 'Ver canal' })}
-                    ${vids.length > 0 
-                        ? `<div class="vid-grid-home">
-                            ${vids.slice(0, 6).map(v => Components.videoCard(v)).join('')}
-                           </div>`
-                        : '<p class="empty-message" style="color:#aaa">Próximamente videos</p>'
-                    }
+                    <div class="videos-grid">
+                        ${vids[0] ? Components.videoCard(vids[0], 'featured') : '<p class="empty-message">Próximamente videos</p>'}
+                        <div class="videos-sidebar">
+                            ${vids.slice(1).map(v => Components.videoCard(v, 'small')).join('')}
+                        </div>
+                    </div>
                 </div>
             </section>
         `;
@@ -551,13 +551,13 @@ const Pages = {
             <section class="videos-page">
                 <div class="container">
                     <header class="page-header">
-                        <h1>▶️ Videos</h1>
-                        <p>Los mejores videos de béisbol y softbol mexicano</p>
+                        <h1>📹 Videos</h1>
+                        <p>Los mejores videos de beisbol y softbol mexicano</p>
                     </header>
                     
                     ${videos.length > 0 
-                        ? `<div class="vid-grid-page">
-                            ${videos.map(v => Components.videoCard(v)).join('')}
+                        ? `<div class="videos-full-grid">
+                            ${videos.map(v => Components.videoCard(v, 'featured')).join('')}
                            </div>`
                         : Components.emptyState('No hay videos disponibles', '📹')
                     }
