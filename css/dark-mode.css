@@ -1,0 +1,365 @@
+/* ============================================================
+   BEISJOVEN — Dark Mode (auto via prefers-color-scheme)
+   Add this CSS AFTER styles.css and videos-redesign.css
+   ============================================================ */
+
+@media (prefers-color-scheme: dark) {
+
+    /* ---------- Override CSS Variables ---------- */
+    :root {
+        --light: #1e1e2e;
+        --dark: #e8e8ec;
+        --white: #252538;
+        --gray: #a0a0b0;
+        --shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    body {
+        background-color: #16162a;
+        color: #ddd;
+    }
+
+    /* ---------- Header ---------- */
+    header {
+        background: #1e1e2e;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .header-main {
+        border-bottom-color: var(--primary);
+    }
+
+    .logo h1 {
+        color: var(--primary);
+    }
+
+    .search-box {
+        background: #2a2a42;
+    }
+
+    .search-box input {
+        color: #ddd;
+    }
+
+    .search-box input::placeholder {
+        color: #888;
+    }
+
+    /* ---------- Breadcrumb ---------- */
+    .breadcrumb {
+        background: #1e1e2e;
+        border-bottom-color: #333;
+    }
+
+    .breadcrumb .current {
+        color: #e8e8ec;
+    }
+
+    /* ---------- Hero Section ---------- */
+    .hero {
+        background: #1a1a2e;
+    }
+
+    /* ---------- Section Titles ---------- */
+    .section-title h2 {
+        color: #e8e8ec;
+    }
+
+    .section-title {
+        border-bottom-color: var(--primary);
+    }
+
+    /* ---------- News Cards ---------- */
+    .news-card {
+        background: #252538;
+    }
+
+    .news-card h3,
+    .news-card h3 a {
+        color: #e8e8ec;
+    }
+
+    .news-card h3 a:hover {
+        color: var(--primary);
+    }
+
+    .news-card .category {
+        background: #2a2a42;
+        color: #ccc;
+    }
+
+    .news-card .category:hover {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .news-card .meta {
+        color: #999;
+    }
+
+    /* ---------- Featured Cards ---------- */
+    .featured-card {
+        background: #252538;
+    }
+
+    .featured-card h3 a {
+        color: #e8e8ec;
+    }
+
+    .featured-card p {
+        color: #999;
+    }
+
+    /* ---------- Sidebar Widgets ---------- */
+    .sidebar-widget {
+        background: #252538;
+    }
+
+    .widget-title {
+        color: #e8e8ec;
+    }
+
+    .standings-table th {
+        background: #2a2a42;
+        color: #ccc;
+    }
+
+    .standings-table a {
+        color: #ddd;
+    }
+
+    .standings-table tr:not(:last-child) {
+        border-bottom-color: #333;
+    }
+
+    /* ---------- Article Page ---------- */
+    .article-content {
+        background: #252538;
+        color: #ddd;
+    }
+
+    .article-content h3 {
+        color: #e8e8ec;
+    }
+
+    .article-content strong {
+        color: #e8e8ec;
+    }
+
+    .article-content blockquote {
+        background: #2a2a42;
+        border-left-color: var(--primary);
+        color: #bbb;
+    }
+
+    .article-header .meta {
+        color: #999;
+    }
+
+    /* ---------- Author ---------- */
+    .author-avatar {
+        background: #2a2a42;
+    }
+
+    .author-name {
+        color: #e8e8ec;
+    }
+
+    /* ---------- Video Cards (redesign) ---------- */
+    .vid-card {
+        background: #252538;
+    }
+
+    .vid-card-title a {
+        color: #e8e8ec;
+    }
+
+    .vid-card-title a:hover {
+        color: #ff6b6b;
+    }
+
+    .vid-card-meta {
+        color: #999;
+    }
+
+    .vid-card-date {
+        color: #888;
+    }
+
+    .vid-card-cat {
+        background: #2a3a2e;
+        color: #6fcf6f;
+    }
+
+    /* ---------- Video Page ---------- */
+    .video-page {
+        color: #ddd;
+    }
+
+    /* ---------- Videos Section (homepage dark) ---------- */
+    .videos-section {
+        background: #1a1a2e;
+    }
+
+    .videos-section .section-title h2,
+    .videos-section .section-title .ver-mas {
+        color: #fff;
+    }
+
+    /* ---------- Search Form ---------- */
+    .search-form {
+        background: #252538;
+    }
+
+    .search-form input {
+        color: #ddd;
+    }
+
+    .search-form input::placeholder {
+        color: #888;
+    }
+
+    /* ---------- Contact Page ---------- */
+    .contacto-info h1 {
+        color: #e8e8ec;
+    }
+
+    .contacto-info > p,
+    .contacto-item p {
+        color: #999;
+    }
+
+    .contacto-item strong {
+        color: #ddd;
+    }
+
+    .contacto-form-box {
+        background: #252538;
+    }
+
+    .contacto-form-box h2 {
+        color: #e8e8ec;
+    }
+
+    .contacto-form-box input,
+    .contacto-form-box select,
+    .contacto-form-box textarea {
+        background: #2a2a42;
+        border-color: #3a3a52;
+        color: #ddd;
+    }
+
+    .contacto-form-box input:focus,
+    .contacto-form-box select:focus,
+    .contacto-form-box textarea:focus {
+        border-color: var(--primary);
+    }
+
+    .contacto-form-box input::placeholder,
+    .contacto-form-box textarea::placeholder {
+        color: #777;
+    }
+
+    /* ---------- Newsletter Page ---------- */
+    .newsletter-box {
+        background: #252538;
+    }
+
+    .newsletter-box h1 {
+        color: #e8e8ec;
+    }
+
+    .newsletter-box > p {
+        color: #999;
+    }
+
+    .newsletter-form input {
+        background: #2a2a42;
+        border-color: #3a3a52;
+        color: #ddd;
+    }
+
+    .newsletter-form input:focus {
+        border-color: var(--primary);
+    }
+
+    .newsletter-form input::placeholder {
+        color: #777;
+    }
+
+    /* ---------- Category / Page Headers ---------- */
+    .category-header h1,
+    .page-header h1 {
+        color: #e8e8ec;
+    }
+
+    .category-header p,
+    .page-header p {
+        color: #999;
+    }
+
+    /* ---------- Empty State ---------- */
+    .empty-state {
+        background: #252538;
+    }
+
+    .empty-state p {
+        color: #999;
+    }
+
+    /* ---------- Última Publicación Bar ---------- */
+    .last-publication {
+        color: #bbb;
+    }
+
+    /* ---------- Alt background sections ---------- */
+    .news-section.alt-bg {
+        background: #1a1a2e;
+    }
+
+    /* ---------- Pagination ---------- */
+    .pagination a,
+    .pagination span {
+        background: #252538;
+        color: #ddd;
+    }
+
+    /* ---------- Scrollbar ---------- */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #16162a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #3a3a52;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* ---------- Selection ---------- */
+    ::selection {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    /* ---------- Links (general) ---------- */
+    a {
+        color: inherit;
+    }
+
+    /* ---------- Images (slight brightness reduction) ---------- */
+    img {
+        filter: brightness(0.92);
+    }
+
+    img:hover {
+        filter: brightness(1);
+    }
+}
