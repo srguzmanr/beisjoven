@@ -2,15 +2,13 @@
 // En producción, esto sería PostgreSQL, MongoDB o SQLite
 
 const DB = {
-    // Categorías disponibles
+    // Categorías disponibles (standardized)
     categories: [
-        { id: 1, slug: 'lmb', name: 'Liga Mexicana de Beisbol', icon: '⚾' },
+        { id: 1, slug: 'liga-mexicana', name: 'Liga Mexicana', icon: '⚾' },
         { id: 2, slug: 'mlb', name: 'MLB', icon: '🏆' },
-        { id: 3, slug: 'softbol', name: 'Softbol', icon: '🥎' },
-        { id: 4, slug: 'seleccion', name: 'Selección México', icon: '🇲🇽' },
-        { id: 5, slug: 'ligas-menores', name: 'Ligas Menores', icon: '⭐' },
-        { id: 6, slug: 'internacional', name: 'Internacional', icon: '🌎' },
-        { id: 7, slug: 'opinion', name: 'Opinión', icon: '💬' }
+        { id: 3, slug: 'seleccion', name: 'Selección', icon: '🇲🇽' },
+        { id: 4, slug: 'softbol', name: 'Softbol', icon: '🥎' },
+        { id: 5, slug: 'juvenil', name: 'Juvenil', icon: '⭐' }
     ],
 
     // Equipos LMB
