@@ -235,7 +235,7 @@ footer { background: var(--dark); color: var(--white); padding: 60px 0 30px; }
 .article-meta { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
 .meta-info { display: flex; gap: 20px; color: var(--gray); font-size: 0.9rem; }
 .article-image { margin-bottom: 30px; border-radius: var(--radius); overflow: hidden; }
-.article-image img { width: 100%; height: auto; max-height: 500px; object-fit: cover; }
+.article-image img { width: 100%; height: auto; max-height: 650px; object-fit: cover; object-position: center 25%; }
 .article-body { display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
 .article-content { background: var(--white); padding: 40px; border-radius: var(--radius); box-shadow: var(--shadow); }
 .article-content p { margin-bottom: 20px; font-size: 1.1rem; line-height: 1.8; }
