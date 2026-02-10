@@ -4,38 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
-    <meta name="description" content="Mexicanos en Grandes Ligas - Cobertura de jugadores mexicanos en MLB, análisis, estadísticas y noticias.">
-    <meta name="keywords" content="MLB, mexicanos en grandes ligas, beisbol, Major League Baseball, jugadores mexicanos">
+    <meta name="description" content="Béisbol Mexicano - Cobertura de la LMB, LMP y ligas profesionales de México. Noticias, resultados y análisis.">
+    <meta name="keywords" content="LMB, LMP, Liga Mexicana de Beisbol, Liga Mexicana del Pacífico, beisbol mexicano">
     <meta name="author" content="Beisjoven">
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://beisjoven.com/categoria/mlb">
-    <meta property="og:title" content="MLB - Mexicanos en Grandes Ligas | Beisjoven">
-    <meta property="og:description" content="Cobertura completa de los mexicanos en Major League Baseball. Noticias, análisis y estadísticas de tus jugadores favoritos.">
+    <meta property="og:url" content="https://beisjoven.com/categoria/liga-mexicana">
+    <meta property="og:title" content="Liga Mexicana - Béisbol Profesional Mexicano | Beisjoven">
+    <meta property="og:description" content="Cobertura completa de la LMB, LMP y el béisbol profesional mexicano. Noticias, resultados, estadísticas y análisis.">
     <meta property="og:image" content="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-image.jpg">
     <meta property="og:site_name" content="Beisjoven">
     <meta property="og:locale" content="es_MX">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="MLB - Mexicanos en Grandes Ligas | Beisjoven">
-    <meta name="twitter:description" content="Cobertura completa de los mexicanos en Major League Baseball. Noticias, análisis y estadísticas de tus jugadores favoritos.">
+    <meta name="twitter:title" content="Liga Mexicana - Béisbol Profesional Mexicano | Beisjoven">
+    <meta name="twitter:description" content="Cobertura completa de la LMB, LMP y el béisbol profesional mexicano. Noticias, resultados, estadísticas y análisis.">
     <meta name="twitter:image" content="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-image.jpg">
-    
-    <title>MLB - Mexicanos en Grandes Ligas | Beisjoven</title>
-    
+
+    <title>Liga Mexicana - Béisbol Profesional Mexicano | Beisjoven</title>
+
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    
+
     <!-- GitHub Pages SPA redirect handler -->
     <script>
       (function(l) {
         if (l.search[1] === '/' ) {
-          var decoded = l.search.slice(1).split('&').map(function(s) { 
+          var decoded = l.search.slice(1).split('&').map(function(s) {
             return s.replace(/~and~/g, '&')
           }).join('?');
           window.history.replaceState(null, null,
@@ -44,12 +44,12 @@
         }
       }(window.location))
     </script>
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    
+
     <!-- Styles (ABSOLUTE PATHS) -->
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/admin.css">
@@ -88,8 +88,8 @@
             <div class="container">
                 <ul>
                     <li><a href="/">Inicio</a></li>
-                    <li><a href="/categoria/mlb" class="active">MLB</a></li>
-                    <li><a href="/categoria/liga-mexicana">Liga Mexicana</a></li>
+                    <li><a href="/categoria/mlb">MLB</a></li>
+                    <li><a href="/categoria/liga-mexicana" class="active">Liga Mexicana</a></li>
                     <li><a href="/categoria/seleccion">Selección</a></li>
                     <li><a href="/categoria/softbol">Softbol</a></li>
                     <li><a href="/categoria/juvenil">Juvenil</a></li>
@@ -147,7 +147,7 @@
 
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
+
     <!-- Scripts (ABSOLUTE PATHS) -->
     <script src="/js/supabase.js"></script>
     <script src="/data/database.js"></script>
@@ -170,7 +170,7 @@
                 const today = new Date().toLocaleDateString('es-MX', options);
                 dateElement.textContent = '📅 ' + today.charAt(0).toUpperCase() + today.slice(1);
             }
-            
+
             // Registrar rutas públicas
             Router.register('/', Pages.home);
             Router.register('/categoria/:slug', Pages.category);
@@ -184,7 +184,7 @@
             Router.register('/newsletter', Pages.newsletter);
             Router.register('/suscribete', Pages.newsletter);
             Router.register('/contacto', Pages.contacto);
-            
+
             // Registrar rutas del admin
             Router.register('/login', AdminPages.login);
             Router.register('/admin', AdminPages.dashboard);
@@ -195,19 +195,19 @@
             Router.register('/admin/videos', AdminPages.videosList);
             Router.register('/admin/videos/nuevo', AdminPages.videoEditor);
             Router.register('/admin/videos/editar/:id', AdminPages.videoEditor);
-            
+
             // Iniciar router
             Router.init();
-            
+
             // Función para mostrar/ocultar header y footer
             function updateLayout() {
                 const path = window.location.pathname;
                 const isAdmin = path.startsWith('/admin') || path === '/login';
-                
+
                 const publicHeader = document.getElementById('public-header');
                 const mainHeader = document.getElementById('main-header');
                 const mainFooter = document.getElementById('main-footer');
-                
+
                 if (isAdmin) {
                     if (publicHeader) publicHeader.style.display = 'none';
                     if (mainHeader) mainHeader.style.display = 'none';
@@ -218,10 +218,10 @@
                     if (mainFooter) mainFooter.style.display = 'block';
                 }
             }
-            
+
             // Ejecutar al cargar y en cada navegación
             updateLayout();
-            
+
             // Sobrescribir navigate para actualizar layout
             const originalNavigate = Router.navigate.bind(Router);
             Router.navigate = function(path) {
@@ -229,7 +229,7 @@
                 setTimeout(updateLayout, 10);
             };
         });
-        
+
         // Función de búsqueda desde el header
         function handleSearch(event) {
             event.preventDefault();

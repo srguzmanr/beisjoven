@@ -85,10 +85,11 @@ const Pages = {
         ]);
         
         // Filtrar artículos por categoría (usando los datos ya cargados)
-        const lmbArticles = articulos.filter(a => a.categoria?.slug === 'lmb').slice(0, 4);
+        const ligaMexArticles = articulos.filter(a => a.categoria?.slug === 'liga-mexicana').slice(0, 4);
         const mlbArticles = articulos.filter(a => a.categoria?.slug === 'mlb').slice(0, 4);
+        const seleccionArticles = articulos.filter(a => a.categoria?.slug === 'seleccion').slice(0, 4);
         const softbolArticles = articulos.filter(a => a.categoria?.slug === 'softbol').slice(0, 4);
-        const internationalArticles = articulos.filter(a => a.categoria?.slug === 'internacional').slice(0, 2);
+        const juvenilArticles = articulos.filter(a => a.categoria?.slug === 'juvenil').slice(0, 2);
         
         // Si no hay destacados, usar los primeros artículos
         const featuredArticles = articulosDestacados.length > 0 ? articulosDestacados : articulos.slice(0, 3);
@@ -144,10 +145,11 @@ const Pages = {
         
         // Adaptar todos los artículos
         const featured = featuredArticles.map(adaptArticle);
-        const lmb = lmbArticles.map(adaptArticle);
+        const ligaMex = ligaMexArticles.map(adaptArticle);
         const mlb = mlbArticles.map(adaptArticle);
+        const seleccion = seleccionArticles.map(adaptArticle);
         const softbol = softbolArticles.map(adaptArticle);
-        const international = internationalArticles.map(adaptArticle);
+        const juvenil = juvenilArticles.map(adaptArticle);
         const latest = latestNews.map(adaptArticle);
         const popular = mostRead.map(adaptArticle);
         const vids = videos.map(adaptVideo);
@@ -190,41 +192,51 @@ const Pages = {
             <!-- Liga Mexicana -->
             <section class="news-section">
                 <div class="container">
-                    ${Components.sectionTitle('Liga Mexicana de Beisbol', '⚾', { url: '/categoria/lmb', text: 'Ver más' })}
+                    ${Components.sectionTitle('Liga Mexicana', '⚾', { url: '/categoria/liga-mexicana', text: 'Ver más' })}
                     <div class="news-grid">
-                        ${lmb.length > 0 ? lmb.map(a => Components.articleCard(a)).join('') : '<p class="empty-message">Próximamente más noticias de la LMB</p>'}
+                        ${ligaMex.length > 0 ? ligaMex.map(a => Components.articleCard(a)).join('') : '<p class="empty-message">Próximamente más noticias de la Liga Mexicana</p>'}
                     </div>
                 </div>
             </section>
-            
+
             <!-- MLB -->
             <section class="news-section alt-bg">
                 <div class="container">
-                    ${Components.sectionTitle('MLB - Mexicanos en Grandes Ligas', '🏆', { url: '/categoria/mlb', text: 'Ver más' })}
+                    ${Components.sectionTitle('MLB', '🏆', { url: '/categoria/mlb', text: 'Ver más' })}
                     <div class="featured-grid">
                         ${mlb.length > 0 ? mlb.slice(0, 2).map(a => Components.articleCardHorizontal(a)).join('') : '<p class="empty-message">Próximamente más noticias de MLB</p>'}
                     </div>
                 </div>
             </section>
-            
-            <!-- Softbol -->
+
+            <!-- Selección -->
             <section class="news-section">
                 <div class="container">
-                    ${Components.sectionTitle('Softbol México', '🥎', { url: '/categoria/softbol', text: 'Ver más' })}
+                    ${Components.sectionTitle('Selección', '🇲🇽', { url: '/categoria/seleccion', text: 'Ver más' })}
                     <div class="news-grid">
-                        ${softbol.length > 0 ? softbol.map(a => Components.articleCard(a)).join('') : '<p class="empty-message">Próximamente más noticias de Softbol</p>'}
+                        ${seleccion.length > 0 ? seleccion.map(a => Components.articleCard(a)).join('') : '<p class="empty-message">Próximamente más noticias de la Selección</p>'}
                     </div>
                 </div>
             </section>
-            
-            <!-- Internacional + Sidebar -->
+
+            <!-- Softbol -->
             <section class="news-section alt-bg">
+                <div class="container">
+                    ${Components.sectionTitle('Softbol', '🥎', { url: '/categoria/softbol', text: 'Ver más' })}
+                    <div class="featured-grid">
+                        ${softbol.length > 0 ? softbol.slice(0, 2).map(a => Components.articleCardHorizontal(a)).join('') : '<p class="empty-message">Próximamente más noticias de Softbol</p>'}
+                    </div>
+                </div>
+            </section>
+
+            <!-- Juvenil + Sidebar -->
+            <section class="news-section">
                 <div class="container">
                     <div class="two-column">
                         <div>
-                            ${Components.sectionTitle('Noticias Internacionales', '🌎')}
+                            ${Components.sectionTitle('Juvenil', '⭐', { url: '/categoria/juvenil', text: 'Ver más' })}
                             <div class="featured-grid single-column">
-                                ${international.length > 0 ? international.map(a => Components.articleCardHorizontal(a)).join('') : '<p class="empty-message">Próximamente noticias internacionales</p>'}
+                                ${juvenil.length > 0 ? juvenil.map(a => Components.articleCardHorizontal(a)).join('') : '<p class="empty-message">Próximamente más noticias juveniles</p>'}
                             </div>
                         </div>
                         <aside>

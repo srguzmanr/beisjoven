@@ -221,11 +221,7 @@ nav ul li a.nav-live { background: var(--primary); animation: pulse-nav 2s infin
 .most-read-list a:hover { color: var(--primary); }
 
 /* ==================== VIDEOS SECTION ==================== */
-.videos-section { background: linear-gradient(135deg, var(--dark) 0%, #2d2d44 100%); }
-.videos-section .section-title h2 { color: var(--white); }
-.videos-section .section-title { border-bottom-color: var(--accent); }
-.videos-section .section-title .ver-mas { color: var(--accent); }
-.videos-section .section-title .ver-mas:hover { color: var(--white); }
+.videos-section { background: var(--surface-bg, #f8f9fa); }
 
 .videos-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; }
 .videos-full-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
