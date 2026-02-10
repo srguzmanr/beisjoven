@@ -36,9 +36,16 @@ const MediaLibrary = {
                             <div class="ml-spinner"></div>
                             <p>Cargando...</p>
                         </div>
-                        <div id="ml-grid" class="ml-grid"></div>
-                        <div id="ml-empty" class="ml-empty" style="display:none">
-                            <p>📁 No hay imágenes</p>
+                        <div class="ml-content">
+                            <div class="ml-grid-wrap">
+                                <div id="ml-grid" class="ml-grid"></div>
+                                <div id="ml-empty" class="ml-empty" style="display:none">
+                                    <p>📁 No hay imágenes</p>
+                                </div>
+                            </div>
+                            <div id="ml-preview" class="ml-preview">
+                                <p class="ml-preview-hint">Pasa el cursor sobre una imagen para previsualizarla</p>
+                            </div>
                         </div>
                     </div>
                     
@@ -64,7 +71,7 @@ const MediaLibrary = {
                     background: var(--surface-card, white);
                     border-radius: 12px;
                     width: 100%;
-                    max-width: 800px;
+                    max-width: 960px;
                     max-height: 80vh;
                     display: flex;
                     flex-direction: column;
@@ -122,9 +129,49 @@ const MediaLibrary = {
                 .ml-upload-btn:hover { background: #2d4a6f; }
                 .ml-body {
                     flex: 1;
-                    overflow-y: auto;
+                    overflow: hidden;
                     padding: 16px;
                     min-height: 250px;
+                }
+                .ml-content {
+                    display: flex;
+                    gap: 16px;
+                    height: 100%;
+                }
+                .ml-grid-wrap {
+                    flex: 1;
+                    overflow-y: auto;
+                    min-width: 0;
+                }
+                .ml-preview {
+                    width: 220px;
+                    flex-shrink: 0;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    border-left: 1px solid var(--border-subtle, #e5e7eb);
+                    padding: 12px;
+                    text-align: center;
+                }
+                .ml-preview img {
+                    max-width: 100%;
+                    max-height: 260px;
+                    object-fit: contain;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                }
+                .ml-preview-name {
+                    margin-top: 10px;
+                    font-size: 12px;
+                    color: var(--text-secondary, #6b7280);
+                    word-break: break-all;
+                    line-height: 1.3;
+                }
+                .ml-preview-hint {
+                    font-size: 13px;
+                    color: var(--text-muted, #999);
+                    padding: 20px 0;
                 }
                 .ml-grid {
                     display: grid;
@@ -204,6 +251,8 @@ const MediaLibrary = {
                     .ml-toolbar { flex-wrap: wrap; }
                     .ml-search { width: 100%; }
                     .ml-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+                    .ml-preview { display: none !important; }
+                    .ml-content { display: block; }
                 }
             </style>
         `;
@@ -219,6 +268,20 @@ const MediaLibrary = {
         document.getElementById('media-library-modal').addEventListener('click', (e) => {
             if (e.target.classList.contains('ml-overlay')) this.close();
         });
+
+        // Preview on hover (event delegation on grid)
+        const grid = document.getElementById('ml-grid');
+        grid.addEventListener('mouseenter', (e) => {
+            const item = e.target.closest('.ml-item');
+            if (!item) return;
+            const img = item.querySelector('img');
+            const nameEl = item.querySelector('.ml-item-name');
+            if (img) this.showPreview(img.src, nameEl ? nameEl.textContent : '');
+        }, true);
+        grid.addEventListener('mouseleave', (e) => {
+            const item = e.target.closest('.ml-item');
+            if (item) this.hidePreview();
+        }, true);
     },
     
     /**
@@ -237,6 +300,27 @@ const MediaLibrary = {
         await this.loadImages();
     },
     
+    /**
+     * Show image preview in the side panel
+     */
+    showPreview(url, name) {
+        const panel = document.getElementById('ml-preview');
+        if (!panel) return;
+        panel.innerHTML = `
+            <img src="${url}" alt="${name}">
+            <p class="ml-preview-name">${name}</p>
+        `;
+    },
+
+    /**
+     * Reset preview panel to hint text
+     */
+    hidePreview() {
+        const panel = document.getElementById('ml-preview');
+        if (!panel) return;
+        panel.innerHTML = '<p class="ml-preview-hint">Pasa el cursor sobre una imagen para previsualizarla</p>';
+    },
+
     /**
      * Close the modal
      */
