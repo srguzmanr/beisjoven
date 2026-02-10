@@ -47,7 +47,7 @@ const ArticlePreview = {
                     padding: 20px;
                 }
                 .ap-container {
-                    background: white;
+                    background: var(--surface-card, white);
                     border-radius: 12px;
                     width: 100%;
                     max-width: 720px;
@@ -61,12 +61,12 @@ const ArticlePreview = {
                     justify-content: space-between;
                     align-items: center;
                     padding: 16px 20px;
-                    border-bottom: 1px solid #e5e7eb;
+                    border-bottom: 1px solid var(--border-subtle, #e5e7eb);
                     flex-shrink: 0;
                 }
                 .ap-header h3 {
                     margin: 0;
-                    color: #1e3a5f;
+                    color: var(--primary, #1e3a5f);
                     font-family: 'Oswald', sans-serif;
                     font-size: 1.2rem;
                 }
@@ -75,10 +75,10 @@ const ArticlePreview = {
                     border: none;
                     font-size: 28px;
                     cursor: pointer;
-                    color: #6b7280;
+                    color: var(--text-secondary, #6b7280);
                     line-height: 1;
                 }
-                .ap-close:hover { color: #1f2937; }
+                .ap-close:hover { color: var(--text-primary, #1f2937); }
                 .ap-body {
                     flex: 1;
                     overflow-y: auto;
@@ -90,13 +90,13 @@ const ArticlePreview = {
                     align-items: center;
                     justify-content: center;
                     padding: 60px;
-                    color: #6b7280;
+                    color: var(--text-secondary, #6b7280);
                 }
                 .ap-spinner {
                     width: 36px;
                     height: 36px;
-                    border: 3px solid #e5e7eb;
-                    border-top-color: #1e3a5f;
+                    border: 3px solid var(--border-color, #e5e7eb);
+                    border-top-color: var(--primary, #1e3a5f);
                     border-radius: 50%;
                     animation: ap-spin 0.8s linear infinite;
                 }
@@ -126,46 +126,46 @@ const ArticlePreview = {
                     font-family: 'Oswald', sans-serif;
                     font-size: 1.8rem;
                     line-height: 1.2;
-                    color: #1a1a2e;
+                    color: var(--text-primary, #1a1a2e);
                     margin: 0 0 12px 0;
                 }
                 .ap-meta {
                     display: flex;
                     gap: 16px;
-                    color: #6b7280;
+                    color: var(--text-secondary, #6b7280);
                     font-size: 0.85rem;
                     margin-bottom: 16px;
                     flex-wrap: wrap;
                 }
                 .ap-excerpt {
                     font-size: 1.05rem;
-                    color: #4b5563;
+                    color: var(--text-secondary, #4b5563);
                     line-height: 1.6;
                     margin-bottom: 20px;
                     padding-bottom: 16px;
-                    border-bottom: 1px solid #e5e7eb;
+                    border-bottom: 1px solid var(--border-subtle, #e5e7eb);
                     font-style: italic;
                 }
                 .ap-content {
                     font-size: 1rem;
                     line-height: 1.8;
-                    color: #1a1a2e;
+                    color: var(--text-primary, #1a1a2e);
                 }
                 .ap-content p { margin-bottom: 16px; }
                 .ap-content h3 {
                     font-family: 'Oswald', sans-serif;
                     font-size: 1.3rem;
                     margin: 24px 0 12px;
-                    color: #1a1a2e;
+                    color: var(--text-primary, #1a1a2e);
                 }
                 .ap-content blockquote {
                     border-left: 4px solid #c41e3a;
                     margin: 20px 0;
                     padding: 12px 16px;
-                    background: #f8f9fa;
+                    background: var(--form-bg, #f8f9fa);
                     border-radius: 0 8px 8px 0;
                     font-style: italic;
-                    color: #1e3a5f;
+                    color: var(--primary, #1e3a5f);
                 }
                 .ap-content img {
                     max-width: 100%;
@@ -189,8 +189,8 @@ const ArticlePreview = {
                     display: flex;
                     gap: 10px;
                     padding: 14px 20px;
-                    border-top: 1px solid #e5e7eb;
-                    background: #f9fafb;
+                    border-top: 1px solid var(--border-subtle, #e5e7eb);
+                    background: var(--surface-elevated, #f9fafb);
                     border-radius: 0 0 12px 12px;
                     flex-shrink: 0;
                 }
@@ -216,11 +216,11 @@ const ArticlePreview = {
                 }
                 .ap-btn-secondary:hover { background: #2d4a6f; }
                 .ap-btn-cancel {
-                    background: #e5e7eb;
-                    color: #374151;
+                    background: var(--form-bg, #e5e7eb);
+                    color: var(--text-primary, #374151);
                     margin-left: auto;
                 }
-                .ap-btn-cancel:hover { background: #d1d5db; }
+                .ap-btn-cancel:hover { background: var(--border-color, #d1d5db); }
 
                 .ap-error {
                     text-align: center;

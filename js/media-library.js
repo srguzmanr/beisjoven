@@ -61,7 +61,7 @@ const MediaLibrary = {
                     padding: 20px;
                 }
                 .ml-container {
-                    background: white;
+                    background: var(--surface-card, white);
                     border-radius: 12px;
                     width: 100%;
                     max-width: 800px;
@@ -75,38 +75,40 @@ const MediaLibrary = {
                     justify-content: space-between;
                     align-items: center;
                     padding: 16px 20px;
-                    border-bottom: 1px solid #e5e7eb;
+                    border-bottom: 1px solid var(--border-subtle, #e5e7eb);
                 }
                 .ml-header h3 {
                     margin: 0;
-                    color: #1e3a5f;
+                    color: var(--primary, #1e3a5f);
                 }
                 .ml-close {
                     background: none;
                     border: none;
                     font-size: 28px;
                     cursor: pointer;
-                    color: #6b7280;
+                    color: var(--text-secondary, #6b7280);
                     line-height: 1;
                 }
-                .ml-close:hover { color: #1f2937; }
+                .ml-close:hover { color: var(--text-primary, #1f2937); }
                 .ml-toolbar {
                     display: flex;
                     gap: 10px;
                     padding: 12px 20px;
-                    background: #f9fafb;
-                    border-bottom: 1px solid #e5e7eb;
+                    background: var(--surface-elevated, #f9fafb);
+                    border-bottom: 1px solid var(--border-subtle, #e5e7eb);
                 }
                 .ml-search {
                     flex: 1;
                     padding: 10px 14px;
-                    border: 1px solid #d1d5db;
+                    border: 1px solid var(--form-border, #d1d5db);
                     border-radius: 8px;
                     font-size: 14px;
+                    background: var(--form-bg, #fff);
+                    color: var(--form-text, inherit);
                 }
                 .ml-search:focus {
                     outline: none;
-                    border-color: #1e3a5f;
+                    border-color: var(--primary, #1e3a5f);
                 }
                 .ml-upload-btn {
                     padding: 10px 16px;
@@ -139,7 +141,7 @@ const MediaLibrary = {
                     position: relative;
                 }
                 .ml-item:hover {
-                    border-color: #1e3a5f;
+                    border-color: var(--primary, #1e3a5f);
                     transform: scale(1.03);
                 }
                 .ml-item img {
@@ -169,13 +171,13 @@ const MediaLibrary = {
                     align-items: center;
                     justify-content: center;
                     padding: 40px;
-                    color: #6b7280;
+                    color: var(--text-secondary, #6b7280);
                 }
                 .ml-spinner {
                     width: 36px;
                     height: 36px;
-                    border: 3px solid #e5e7eb;
-                    border-top-color: #1e3a5f;
+                    border: 3px solid var(--border-color, #e5e7eb);
+                    border-top-color: var(--primary, #1e3a5f);
                     border-radius: 50%;
                     animation: ml-spin 0.8s linear infinite;
                 }
@@ -185,19 +187,19 @@ const MediaLibrary = {
                     justify-content: space-between;
                     align-items: center;
                     padding: 12px 20px;
-                    border-top: 1px solid #e5e7eb;
-                    background: #f9fafb;
+                    border-top: 1px solid var(--border-subtle, #e5e7eb);
+                    background: var(--surface-elevated, #f9fafb);
                 }
-                #ml-count { color: #6b7280; font-size: 14px; }
+                #ml-count { color: var(--text-secondary, #6b7280); font-size: 14px; }
                 .ml-cancel {
                     padding: 10px 20px;
-                    background: #e5e7eb;
-                    color: #374151;
+                    background: var(--form-bg, #e5e7eb);
+                    color: var(--text-primary, #374151);
                     border: none;
                     border-radius: 8px;
                     cursor: pointer;
                 }
-                .ml-cancel:hover { background: #d1d5db; }
+                .ml-cancel:hover { background: var(--border-color, #d1d5db); }
                 @media (max-width: 600px) {
                     .ml-toolbar { flex-wrap: wrap; }
                     .ml-search { width: 100%; }
