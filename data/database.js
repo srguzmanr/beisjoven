@@ -297,6 +297,103 @@ const DB = {
             views: 8900,
             publishedAt: '2025-01-11T10:00:00Z',
             tags: ['Opinión', 'Clásico Mundial', 'Análisis']
+        },
+        {
+            id: 11,
+            slug: 'ligas-pequenas-beisbol-mexico-sedes-torneos-2026',
+            title: 'Ligas Pequeñas de Béisbol en México: Sedes y Calendario de Torneos 2026',
+            excerpt: 'Con más de 200 ligas en seis regiones, las Ligas Pequeñas de Béisbol de México definen sus sedes y calendario rumbo a Williamsport 2026.',
+            content: `
+                <p>Las Ligas Pequeñas de Béisbol de México (LPB México), con más de seis décadas de historia formando a las futuras estrellas del diamante, ya trabajan a todo vapor en la organización de su temporada de torneos 2026. Con más de 200 ligas distribuidas en seis regiones, 25 distritos y miles de niños y jóvenes participantes, el circuito de ligas pequeñas sigue siendo el semillero más importante del béisbol mexicano.</p>
+
+                <h3>El Congreso Nacional que Dio el Banderazo</h3>
+
+                <p>En diciembre de 2025, la ciudad de Boca del Río, Veracruz, fue sede del Congreso de la Región 6 de Béisbol de Ligas Pequeñas "Rumbo a Williamsport". En este encuentro se dieron cita las ligas de los estados del centro, sur y sureste del país para definir sedes, categorías y calendarios de los torneos regionales y nacionales de 2026.</p>
+
+                <p>"Somos la región más grande de las seis, con casi 16 estados y más de 35 ligas. Veracruz fue sede y recibió la asignación de varios torneos", señaló Jorge Gamboa, directivo de Mérida, Yucatán, durante el congreso.</p>
+
+                <p>Paralelamente, el 5 de diciembre se celebró el Congreso Nacional de Ligas Pequeñas de México, donde se designaron oficialmente las sedes para los torneos regionales y nacionales de la temporada 2026.</p>
+
+                <h3>Las Seis Regiones de LPB México</h3>
+
+                <p>La organización de Ligas Pequeñas en México se divide en seis regiones, cada una con directores regionales y distritales que coordinan los torneos locales:</p>
+
+                <ul>
+                    <li><strong>Región 1 (Nuevo León):</strong> La más concentrada, con 58 ligas y 8 distritos en un solo estado. Monterrey es históricamente una de las principales sedes de torneos nacionales.</li>
+                    <li><strong>Región 2 (Noroeste):</strong> Incluye Sonora, Baja California, Baja California Sur, Sinaloa y Chihuahua. Hermosillo, Mexicali y Los Mochis son sedes frecuentes de torneos regionales.</li>
+                    <li><strong>Región 3 (Noreste):</strong> Comprende Tamaulipas, Coahuila y estados aledaños. Reynosa, Matamoros y Nuevo Laredo han albergado torneos nacionales en años recientes.</li>
+                    <li><strong>Región 4 (Centro-Norte):</strong> Abarca estados del centro y norte como Durango, Aguascalientes y San Luis Potosí.</li>
+                    <li><strong>Región 5 (Centro-Occidente):</strong> Incluye Jalisco, Michoacán, Guanajuato y estados aledaños.</li>
+                    <li><strong>Región 6 (Centro-Sur y Sureste):</strong> La más extensa, con casi 16 estados que incluyen Veracruz, Yucatán, Tabasco, Oaxaca, Puebla y más.</li>
+                </ul>
+
+                <h3>Categorías: Desde los 3 Hasta los 18 Años</h3>
+
+                <p>Uno de los grandes atractivos de las Ligas Pequeñas es la amplitud de categorías que permiten que niños desde los 3 años comiencen su camino en el béisbol organizado:</p>
+
+                <ul>
+                    <li><strong>Biberones:</strong> 3-4 años (iniciación al béisbol)</li>
+                    <li><strong>Pre-Moyote:</strong> 5-6 años</li>
+                    <li><strong>Moyote:</strong> 7-8 años</li>
+                    <li><strong>Pequeña (9-10):</strong> 9-10 años</li>
+                    <li><strong>Pequeña (11-12):</strong> 11-12 años — la categoría "reina", con boleto directo a la Serie Mundial de Williamsport</li>
+                    <li><strong>Intermedia:</strong> 11-13 años (modalidad 50/70)</li>
+                    <li><strong>Junior:</strong> 13-14 años</li>
+                    <li><strong>Senior:</strong> 15-16 años</li>
+                    <li><strong>Big League:</strong> 17-18 años</li>
+                </ul>
+
+                <h3>Sedes Clave para los Torneos Nacionales 2026</h3>
+
+                <p>Siguiendo la tradición de años anteriores, diversas ciudades del país se preparan para recibir los torneos nacionales por categoría. Aunque las sedes definitivas se confirman tras los congresos regionales, estas son las ciudades que históricamente han sido pilares de los torneos y que se perfilan para 2026:</p>
+
+                <ul>
+                    <li><strong>Monterrey, Nuevo León:</strong> Sede habitual de torneos nacionales en categorías Biberones, Moyote y Senior. La Región 1 tiene seis campeonatos mundiales en su historia, incluyendo tres en Williamsport.</li>
+                    <li><strong>Hermosillo, Sonora:</strong> Capital del softbol de Ligas Pequeñas y sede recurrente de torneos regionales de béisbol.</li>
+                    <li><strong>Matamoros, Tamaulipas:</strong> Sede tradicional del torneo nacional de la categoría 11-12 años, la que otorga el boleto a Williamsport.</li>
+                    <li><strong>Reynosa y Nuevo Laredo, Tamaulipas:</strong> Sedes de torneos nacionales en categorías Pre-Moyote e Intermedia.</li>
+                    <li><strong>Boca del Río, Veracruz:</strong> Con el impulso del congreso regional, se perfila como sede de múltiples torneos de la Región 6.</li>
+                    <li><strong>Mexicali, Baja California:</strong> Sede frecuente de regionales en la categoría 9-10 años.</li>
+                </ul>
+
+                <h3>El Camino a Williamsport 2026</h3>
+
+                <p>El objetivo máximo de las Ligas Pequeñas en México es clasificar a la Serie Mundial de Pequeñas Ligas (Little League World Series), que se celebrará del 19 al 30 de agosto de 2026 en South Williamsport, Pensilvania. El camino para llegar ahí sigue una ruta eliminatoria:</p>
+
+                <ul>
+                    <li><strong>Torneos Distritales:</strong> Los equipos All-Star de cada liga compiten a nivel distrito (mayo-junio).</li>
+                    <li><strong>Torneos Seccionales:</strong> Los ganadores distritales avanzan a la fase seccional (junio).</li>
+                    <li><strong>Torneos Regionales:</strong> Los mejores equipos de cada región se enfrentan por el pase al nacional (junio-julio).</li>
+                    <li><strong>Torneo Nacional:</strong> El campeón nacional de la categoría 11-12 años obtiene el boleto directo a Williamsport (julio).</li>
+                    <li><strong>Serie Mundial en Williamsport:</strong> 19-30 de agosto de 2026, en los estadios Howard J. Lamade y Little League Volunteer Stadium.</li>
+                </ul>
+
+                <h3>Calendario General de Series Mundiales 2026</h3>
+
+                <p>Little League International ya confirmó las fechas de sus siete Series Mundiales para 2026:</p>
+
+                <ul>
+                    <li><strong>Senior League Baseball:</strong> 1-8 de agosto — Easley, Carolina del Sur</li>
+                    <li><strong>Intermediate (50/70) Baseball:</strong> 2-9 de agosto — Livermore, California</li>
+                    <li><strong>Junior League Baseball:</strong> 9-16 de agosto — Taylor, Michigan</li>
+                    <li><strong>Little League Baseball (11-12):</strong> 19-30 de agosto — Williamsport, Pensilvania</li>
+                </ul>
+
+                <p>México cuenta con un historial brillante en Williamsport: la Liga Industrial de Monterrey ganó títulos mundiales en 1957 y 1958, y la Liga Pequeña Linda Vista de Monterrey lo hizo en 1997. A esto se suma la participación de la Liga de Mexicali, campeona en la categoría de 13 años en 1988.</p>
+
+                <h3>Más que Competencia: Formación Integral</h3>
+
+                <p>Las Ligas Pequeñas de Béisbol de México no solo buscan formar grandes peloteros. Su misión fundamental es contribuir al desarrollo integral de niños y adolescentes a través de la práctica organizada del béisbol, inculcando valores como el trabajo en equipo, la disciplina y el respeto.</p>
+
+                <p>Con más de 200 ligas activas en todo el país, la temporada 2026 promete ser una de las más competitivas. Los ojos del béisbol infantil mexicano ya están puestos en Williamsport.</p>
+            `,
+            categoryId: 5,
+            authorId: 1,
+            image: 'https://images.unsplash.com/photo-1631224407929-730b1a60f83e?w=800&h=600&fit=crop',
+            featured: true,
+            views: 3250,
+            publishedAt: '2026-02-10T09:00:00Z',
+            tags: ['Ligas Pequeñas', 'Williamsport', 'Torneos 2026', 'Béisbol Infantil']
         }
     ],
 
