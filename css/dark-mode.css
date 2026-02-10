@@ -1,25 +1,25 @@
 /* ============================================================
    BEISJOVEN — Dark Mode (auto via prefers-color-scheme)
    Add this CSS AFTER styles.css
-   Updated: February 10, 2026 — COMPLETE OVERHAUL
+   Updated: February 10, 2026 — Reviewed & optimized
    ============================================================ */
 
 @media (prefers-color-scheme: dark) {
 
     /* ========== BASE ========== */
     body {
-        background-color: #16162a;
-        color: #ddd;
+        background-color: var(--surface-bg);
+        color: var(--form-text);
     }
 
     a { color: inherit; }
 
     h1, h2, h3, h4, h5, h6 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     hr {
-        border-color: #333;
+        border-color: var(--border-color);
     }
 
     /* ========== TOP BAR ========== */
@@ -29,8 +29,8 @@
 
     /* ========== HEADER ========== */
     header {
-        background: #1e1e2e;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        background: var(--surface-elevated);
+        box-shadow: var(--shadow);
     }
 
     .header-main {
@@ -46,15 +46,15 @@
     }
 
     .search-box {
-        background: #2a2a42;
+        background: var(--form-bg);
     }
 
     .search-box input {
-        color: #ddd;
+        color: var(--form-text);
     }
 
     .search-box input::placeholder {
-        color: #888;
+        color: var(--form-placeholder);
     }
 
     /* ========== NAVIGATION ========== */
@@ -80,12 +80,12 @@
 
     /* ========== BREADCRUMB ========== */
     .breadcrumb {
-        background: #1e1e2e;
-        border-bottom-color: #333;
+        background: var(--surface-elevated);
+        border-bottom-color: var(--border-color);
     }
 
     .breadcrumb a {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     .breadcrumb a:hover {
@@ -97,7 +97,7 @@
     }
 
     .breadcrumb .current {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     /* ========== HERO SECTION ========== */
@@ -123,11 +123,11 @@
 
     /* ========== SECTION TITLES ========== */
     .section-title h2 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .section-title .ver-mas {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     .section-title .ver-mas:hover {
@@ -136,7 +136,7 @@
 
     /* ========== CATEGORY PILLS (global) ========== */
     .category {
-        background: #2a2a42;
+        background: var(--form-bg);
         color: #ccc;
     }
 
@@ -156,13 +156,13 @@
 
     /* ========== NEWS CARDS ========== */
     .news-card {
-        background: #252538;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     .news-card h3,
     .news-card h3 a {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .news-card h3 a:hover {
@@ -170,7 +170,7 @@
     }
 
     .news-card .category {
-        background: #2a2a42;
+        background: var(--form-bg);
         color: #ccc;
     }
 
@@ -180,7 +180,7 @@
     }
 
     .news-card .meta {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     .news-card-content {
@@ -189,8 +189,8 @@
 
     /* ========== FEATURED CARDS ========== */
     .featured-card {
-        background: #252538;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     .featured-card .category {
@@ -199,7 +199,7 @@
     }
 
     .featured-card h3 a {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .featured-card h3 a:hover {
@@ -207,17 +207,17 @@
     }
 
     .featured-card p {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     /* ========== SIDEBAR WIDGETS ========== */
     .sidebar-widget {
-        background: #252538;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     .widget-title {
-        color: #e8e8ec;
+        color: var(--text-primary);
         border-bottom-color: var(--primary);
     }
 
@@ -227,7 +227,7 @@
 
     /* --- Lo Más Leído / Most Read --- */
     .most-read-list li {
-        border-bottom-color: #333;
+        border-bottom-color: var(--border-color);
     }
 
     .most-read-list li:last-child {
@@ -250,18 +250,18 @@
     /* --- Sidebar newsletter input --- */
     .sidebar-widget input[type="email"],
     .sidebar-widget input[type="text"] {
-        background: #2a2a42;
-        border-color: #3a3a52;
-        color: #ddd;
+        background: var(--form-bg);
+        border-color: var(--form-border);
+        color: var(--form-text);
     }
 
     .sidebar-widget input::placeholder {
-        color: #777;
+        color: var(--form-placeholder);
     }
 
     /* --- Standings Table --- */
     .standings-table th {
-        background: #2a2a42;
+        background: var(--form-bg);
         color: #ccc;
     }
 
@@ -278,7 +278,7 @@
     }
 
     .standings-table tr:not(:last-child) {
-        border-bottom-color: #333;
+        border-bottom-color: var(--border-color);
     }
 
     .standings-table .playoff-spot {
@@ -286,28 +286,28 @@
     }
 
     .standings-note {
-        color: #888;
+        color: var(--text-muted);
     }
 
     .standings-full {
-        background: #252538;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     /* ========== ARTICLE PAGE ========== */
     .article-header h1 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .article-header .meta,
     .meta-info {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     .article-content {
-        background: #252538;
+        background: var(--surface-card);
         color: #ddd;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        box-shadow: var(--shadow);
     }
 
     .article-content p {
@@ -316,21 +316,21 @@
 
     .article-content h3,
     .article-content h4 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .article-content strong {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .article-content blockquote {
-        background: #2a2a42;
+        background: var(--form-bg);
         border-left-color: var(--primary);
         color: #bbb;
     }
 
     .article-content a {
-        color: #ff8a8a;
+        color: var(--error-text);
     }
 
     .article-content a:hover {
@@ -343,16 +343,16 @@
     }
 
     .article-content figcaption {
-        color: #888;
+        color: var(--text-muted);
     }
 
     /* --- Article Tags --- */
     .article-tags {
-        border-top-color: #333;
+        border-top-color: var(--border-color);
     }
 
     .tag {
-        background: #2a2a42;
+        background: var(--form-bg);
         color: #ccc;
     }
 
@@ -363,18 +363,18 @@
 
     /* --- Share Buttons --- */
     .share-buttons span {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     /* Social share buttons keep their brand colors — no override needed */
 
     /* ========== AUTHOR ========== */
     .author-avatar {
-        background: #2a2a42;
+        background: var(--form-bg);
     }
 
     .author-name {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .author-name:hover {
@@ -382,12 +382,12 @@
     }
 
     .author-role {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     .author-header {
-        background: #252538;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     .author-bio {
@@ -395,16 +395,16 @@
     }
 
     .author-articles h2 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     /* ========== VIDEO CARDS (vid-card redesign) ========== */
     .vid-card {
-        background: #252538;
+        background: var(--surface-card);
     }
 
     .vid-card-title a {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .vid-card-title a:hover {
@@ -412,16 +412,16 @@
     }
 
     .vid-card-meta {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     .vid-card-date {
-        color: #888;
+        color: var(--text-muted);
     }
 
     .vid-card-cat {
         background: #2a3a2e;
-        color: #6fcf6f;
+        color: var(--success-text);
     }
 
     .vid-card-cat:hover {
@@ -448,20 +448,20 @@
     }
 
     .video-details {
-        background: #252538;
+        background: var(--surface-card);
         color: #ddd;
     }
 
     .video-details h1 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .video-details .video-meta {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     .video-info h1 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .video-description {
@@ -470,54 +470,54 @@
 
     /* ========== SEARCH PAGE ========== */
     .search-form {
-        background: #252538;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     .search-form input {
-        color: #ddd;
+        color: var(--form-text);
     }
 
     .search-form input::placeholder {
-        color: #888;
+        color: var(--form-placeholder);
     }
 
     .search-results-count {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     .search-prompt {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     /* ========== CATEGORY / PAGE HEADERS ========== */
     .category-header h1,
     .page-header h1 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .category-header p,
     .page-header p {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     /* ========== VIDEOS PAGE HEADER ========== */
     .videos-page .page-header {
-        border-bottom-color: #333;
+        border-bottom-color: var(--border-color);
     }
 
     .videos-page .page-header p {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     /* ========== CONTACT PAGE ========== */
     .contacto-info h1 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .contacto-info > p,
     .contacto-item p {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     .contacto-item strong {
@@ -529,20 +529,20 @@
     }
 
     .contacto-form-box {
-        background: #252538;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     .contacto-form-box h2 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .contacto-form-box input,
     .contacto-form-box select,
     .contacto-form-box textarea {
-        background: #2a2a42;
-        border-color: #3a3a52;
-        color: #ddd;
+        background: var(--form-bg);
+        border-color: var(--form-border);
+        color: var(--form-text);
     }
 
     .contacto-form-box input:focus,
@@ -553,27 +553,27 @@
 
     .contacto-form-box input::placeholder,
     .contacto-form-box textarea::placeholder {
-        color: #777;
+        color: var(--form-placeholder);
     }
 
     /* ========== NEWSLETTER PAGE ========== */
     .newsletter-box {
-        background: #252538;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     .newsletter-box h1 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .newsletter-box > p {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     .newsletter-form input {
-        background: #2a2a42;
-        border-color: #3a3a52;
-        color: #ddd;
+        background: var(--form-bg);
+        border-color: var(--form-border);
+        color: var(--form-text);
     }
 
     .newsletter-form input:focus {
@@ -581,21 +581,21 @@
     }
 
     .newsletter-form input::placeholder {
-        color: #777;
+        color: var(--form-placeholder);
     }
 
     .newsletter-privacy {
-        color: #888;
+        color: var(--text-muted);
     }
 
     .newsletter-message .success {
-        background: #1a3a2a;
-        color: #6fcf6f;
+        background: var(--success-bg);
+        color: var(--success-text);
     }
 
     .newsletter-message .error {
-        background: #3a1a1a;
-        color: #ff8a8a;
+        background: var(--error-bg);
+        color: var(--error-text);
     }
 
     /* ========== FOOTER ========== */
@@ -617,36 +617,36 @@
 
     .footer-bottom {
         border-top-color: rgba(255, 255, 255, 0.08);
-        color: #777;
+        color: var(--text-muted);
     }
 
     /* ========== ERROR PAGE ========== */
     .error-page h2 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .error-page p {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     /* ========== EMPTY STATE ========== */
     .empty-state {
-        background: #252538;
+        background: var(--surface-card);
     }
 
     .empty-state p {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     /* ========== LOADER ========== */
     .loader-spinner {
-        border-color: #333;
+        border-color: var(--border-color);
         border-top-color: var(--primary);
     }
 
     /* ========== PAGINATION ========== */
     .pagination .page-link {
-        background: #252538;
+        background: var(--surface-card);
         color: #ddd;
     }
 
@@ -663,15 +663,17 @@
     }
 
     /* ========== IMAGES ========== */
+    /* Hero images: no filter, keep vivid */
     .hero-main img,
     .hero-sidebar-item img,
     .vid-card-thumb img {
         filter: none;
     }
 
+    /* Subtle dim on card images to reduce glare, brighten on hover */
     .news-card img,
     .featured-card img {
-        filter: brightness(0.92);
+        filter: brightness(0.9);
     }
 
     .news-card:hover img,
@@ -685,16 +687,22 @@
     }
 
     ::-webkit-scrollbar-track {
-        background: #16162a;
+        background: var(--surface-bg);
     }
 
     ::-webkit-scrollbar-thumb {
-        background: #3a3a52;
+        background: var(--form-border);
         border-radius: 4px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
         background: #555;
+    }
+
+    /* Firefox scrollbar */
+    * {
+        scrollbar-color: var(--form-border) var(--surface-bg);
+        scrollbar-width: thin;
     }
 
     /* ========== SELECTION ========== */

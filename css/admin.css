@@ -66,8 +66,8 @@
 }
 
 .error-message {
-    background: #fee;
-    color: #c00;
+    background: var(--error-light-bg);
+    color: var(--error-light-text);
     padding: 12px;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -128,7 +128,7 @@
     flex: 1;
     margin-left: 260px;
     min-height: 100vh;
-    background: #f5f5f5;
+    background: var(--surface-bg);
 }
 
 .sidebar-header {
@@ -437,8 +437,8 @@
 }
 
 .btn-danger {
-    background: #fee;
-    color: #c00;
+    background: var(--error-light-bg);
+    color: var(--error-light-text);
 }
 
 .btn-danger:hover {
@@ -1100,7 +1100,7 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
 .upload-zone:hover,
 .upload-zone.dragover {
     border-color: var(--primary);
-    background: #fff5f5;
+    background: rgba(196, 30, 58, 0.04);
 }
 
 .upload-content {
@@ -1244,7 +1244,7 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
 /* ============================================================
    ADMIN PANEL — Dark Mode
    Auto via prefers-color-scheme
-   Updated: February 10, 2026
+   Updated: February 10, 2026 — Reviewed & optimized
    ============================================================ */
 
 @media (prefers-color-scheme: dark) {
@@ -1255,7 +1255,7 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
     }
 
     .login-container {
-        background: #1e1e2e;
+        background: var(--surface-elevated);
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     }
 
@@ -1264,17 +1264,17 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
     }
 
     .login-header p {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     .login-form label {
-        color: #ddd;
+        color: var(--form-text);
     }
 
     .login-form input {
-        background: #2a2a42;
-        border-color: #3a3a52;
-        color: #ddd;
+        background: var(--form-bg);
+        border-color: var(--form-border);
+        color: var(--form-text);
     }
 
     .login-form input:focus {
@@ -1282,98 +1282,95 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
     }
 
     .login-form input::placeholder {
-        color: #777;
+        color: var(--form-placeholder);
     }
 
     .error-message {
-        background: #3a1a1a;
-        color: #ff8a8a;
+        background: var(--error-bg);
+        color: var(--error-text);
     }
 
     .login-help {
-        border-top-color: #333;
+        border-top-color: var(--border-color);
     }
 
     .login-help p {
-        color: #888;
+        color: var(--text-muted);
     }
 
     .login-help code {
-        background: #2a2a42;
+        background: var(--form-bg);
         color: #bbb;
     }
 
     /* ========== ADMIN LAYOUT ========== */
     .admin-sidebar {
         background: #111120;
-        border-right: 1px solid #2a2a42;
+        border-right: 1px solid var(--form-bg);
     }
 
     .admin-main {
-        background: #16162a;
+        background: var(--surface-bg);
     }
 
     /* ========== ADMIN HEADER ========== */
     .admin-header {
-        background: #1e1e2e;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        background: var(--surface-elevated);
+        box-shadow: var(--shadow);
     }
 
     .admin-header h1 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .current-date {
-        color: #999;
+        color: var(--text-secondary);
     }
-
-    /* ========== WELCOME BANNER ========== */
-    /* Gradient banner keeps its brand colors — no change needed */
 
     /* ========== STATS GRID ========== */
     .stat-card {
-        background: #252538;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     .stat-number {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .stat-label {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     /* ========== ADMIN SECTIONS ========== */
     .admin-section {
-        background: #252538;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     .admin-section h3 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     /* ========== CONTENT HEADER ========== */
     .content-header h2 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     /* ========== ARTICLES TABLE ========== */
     .articles-table {
-        background: #252538;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     .articles-table th {
-        background: #2a2a42;
+        background: var(--form-bg);
         color: #ccc;
-        border-bottom-color: #333;
+        border-bottom-color: var(--border-color);
     }
 
     .articles-table td {
-        color: #ddd;
-        border-bottom-color: #333;
+        color: var(--form-text);
+        border-bottom-color: var(--border-color);
     }
 
     .articles-table tr:hover {
@@ -1381,7 +1378,7 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
     }
 
     .articles-table a {
-        color: #ddd;
+        color: var(--form-text);
     }
 
     .articles-table a:hover {
@@ -1389,23 +1386,23 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
     }
 
     .badge {
-        background: #2a2a42;
+        background: var(--form-bg);
         color: #ccc;
     }
 
     .btn-small {
-        background: #2a2a42;
-        color: #ddd;
+        background: var(--form-bg);
+        color: var(--form-text);
     }
 
     .btn-small:hover {
-        background: #3a3a52;
+        background: var(--form-border);
         color: #fff;
     }
 
     .btn-danger {
-        background: #3a1a1a;
-        color: #ff8a8a;
+        background: var(--error-bg);
+        color: var(--error-text);
     }
 
     .btn-danger:hover {
@@ -1415,20 +1412,20 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
 
     /* ========== EMPTY STATE ========== */
     .empty-state-small {
-        color: #999;
+        color: var(--text-secondary);
     }
 
     /* ========== ARTICLE FORM ========== */
     .form-main label {
-        color: #ddd;
+        color: var(--form-text);
     }
 
     .form-main input,
     .form-main textarea,
     .form-main select {
-        background: #2a2a42;
-        border-color: #3a3a52;
-        color: #ddd;
+        background: var(--form-bg);
+        border-color: var(--form-border);
+        color: var(--form-text);
     }
 
     .form-main input:focus,
@@ -1439,32 +1436,32 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
 
     .form-main input::placeholder,
     .form-main textarea::placeholder {
-        color: #777;
+        color: var(--form-placeholder);
     }
 
     .form-main small {
-        color: #888;
+        color: var(--text-muted);
     }
 
     /* --- Form Sidebar Cards --- */
     .form-sidebar .form-card {
-        background: #252538;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     .form-card h4 {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .form-card label {
-        color: #ddd;
+        color: var(--form-text);
     }
 
     .form-card input,
     .form-card select {
-        background: #2a2a42;
-        border-color: #3a3a52;
-        color: #ddd;
+        background: var(--form-bg);
+        border-color: var(--form-border);
+        color: var(--form-text);
     }
 
     .form-card input:focus,
@@ -1473,32 +1470,32 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
     }
 
     .form-card small {
-        color: #888;
+        color: var(--text-muted);
     }
 
     .image-preview {
-        background: #2a2a42;
+        background: var(--form-bg);
     }
 
     .image-preview span {
-        color: #888;
+        color: var(--text-muted);
     }
 
     /* --- Form Action Buttons --- */
     .btn-secondary {
-        background: #2a2a42;
-        color: #ddd;
+        background: var(--form-bg);
+        color: var(--form-text);
     }
 
     .btn-secondary:hover {
-        background: #3a3a52;
+        background: var(--form-border);
         color: #fff;
     }
 
     /* ========== MEDIA LIBRARY ========== */
     .upload-zone {
-        background: #252538;
-        border-color: #3a3a52;
+        background: var(--surface-card);
+        border-color: var(--form-border);
     }
 
     .upload-zone:hover,
@@ -1508,33 +1505,33 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
     }
 
     .upload-zone p {
-        color: #ddd;
+        color: var(--form-text);
     }
 
     .upload-zone small {
-        color: #888;
+        color: var(--text-muted);
     }
 
     .progress-bar {
-        background: #2a2a42;
+        background: var(--form-bg);
     }
 
     .media-item {
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        box-shadow: var(--shadow);
     }
 
     .empty-media {
-        color: #888;
+        color: var(--text-muted);
     }
 
-    /* ========== RICH TEXT EDITOR (Quill / TinyMCE) ========== */
+    /* ========== RICH TEXT EDITOR (Quill) ========== */
     .ql-toolbar {
-        background: #2a2a42 !important;
-        border-color: #3a3a52 !important;
+        background: var(--form-bg) !important;
+        border-color: var(--form-border) !important;
     }
 
     .ql-toolbar button {
-        color: #ddd !important;
+        color: var(--form-text) !important;
     }
 
     .ql-toolbar button:hover,
@@ -1543,7 +1540,7 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
     }
 
     .ql-toolbar .ql-stroke {
-        stroke: #ddd !important;
+        stroke: var(--form-text) !important;
     }
 
     .ql-toolbar button:hover .ql-stroke,
@@ -1552,7 +1549,7 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
     }
 
     .ql-toolbar .ql-fill {
-        fill: #ddd !important;
+        fill: var(--form-text) !important;
     }
 
     .ql-toolbar button:hover .ql-fill,
@@ -1561,253 +1558,216 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
     }
 
     .ql-toolbar .ql-picker-label {
-        color: #ddd !important;
+        color: var(--form-text) !important;
     }
 
     .ql-toolbar .ql-picker-options {
-        background: #2a2a42 !important;
-        border-color: #3a3a52 !important;
+        background: var(--form-bg) !important;
+        border-color: var(--form-border) !important;
     }
 
     .ql-toolbar .ql-picker-item {
-        color: #ddd !important;
+        color: var(--form-text) !important;
     }
 
     .ql-container {
-        border-color: #3a3a52 !important;
+        border-color: var(--form-border) !important;
     }
 
     .ql-editor {
-        background: #1e1e2e !important;
-        color: #ddd !important;
+        background: var(--surface-elevated) !important;
+        color: var(--form-text) !important;
     }
 
     .ql-editor.ql-blank::before {
-        color: #777 !important;
+        color: var(--form-placeholder) !important;
     }
 
-    /* --- Custom editor toolbar (non-Quill) --- */
+    /* --- Custom editor toolbar --- */
     .editor-toolbar,
-    .toolbar,
-    [class*="toolbar"],
-    [class*="Toolbar"] {
-        background: #2a2a42 !important;
-        border-color: #3a3a52 !important;
+    .admin-layout [role="toolbar"] {
+        background: var(--form-bg) !important;
+        border-color: var(--form-border) !important;
     }
 
-    .editor-toolbar button,
-    .toolbar button,
-    [class*="toolbar"] button,
-    [class*="Toolbar"] button {
-        background: #2a2a42 !important;
-        color: #ddd !important;
-        border-color: #3a3a52 !important;
+    .editor-toolbar button {
+        background: var(--form-bg) !important;
+        color: var(--form-text) !important;
+        border-color: var(--form-border) !important;
     }
 
-    .editor-toolbar button:hover,
-    .toolbar button:hover,
-    [class*="toolbar"] button:hover,
-    [class*="Toolbar"] button:hover {
-        background: #3a3a52 !important;
+    .editor-toolbar button:hover {
+        background: var(--form-border) !important;
         color: #fff !important;
     }
 
     /* --- Editor content area --- */
     .editor-content,
-    [class*="editor-body"],
-    [contenteditable="true"],
-    .article-form textarea,
-    .form-main textarea {
-        background: #1e1e2e !important;
-        color: #ddd !important;
-        border-color: #3a3a52 !important;
+    [contenteditable="true"] {
+        background: var(--surface-elevated) !important;
+        color: var(--form-text) !important;
+        border-color: var(--form-border) !important;
+        caret-color: #fff !important;
     }
 
     [contenteditable="true"]:empty::before,
     [contenteditable="true"][data-placeholder]::before {
-        color: #777 !important;
+        color: var(--form-placeholder) !important;
     }
 
-    /* ========== ALL MODALS (Vista Previa, Biblioteca de Medios, etc.) ========== */
+    /* ========== MODALS (Vista Previa, Biblioteca de Medios, etc.) ========== */
 
     /* --- Backdrop --- */
     .modal-backdrop,
-    .overlay-backdrop,
-    [class*="backdrop"] {
+    .overlay-backdrop {
         background: rgba(0, 0, 0, 0.7) !important;
     }
 
-    /* --- Modal containers (catch custom + Bootstrap) --- */
+    /* --- Modal containers --- */
     .modal-content,
     .modal-body,
-    .modal-dialog .modal-content,
     .media-modal,
     .media-modal .modal-content,
     .preview-modal,
-    .preview-modal .modal-content,
-    [class*="modal-content"],
-    [class*="modal-body"],
-    [class*="preview"] > div[style],
-    [class*="modal"] > div[style] {
-        background: #1e1e2e !important;
-        border-color: #333 !important;
-        color: #ddd !important;
+    .preview-modal .modal-content {
+        background: var(--surface-elevated) !important;
+        border-color: var(--border-color) !important;
+        color: var(--form-text) !important;
     }
 
     /* --- Modal headers --- */
-    .modal-header,
-    [class*="modal-header"] {
-        background: #1e1e2e !important;
-        border-bottom-color: #333 !important;
-        color: #e8e8ec !important;
+    .modal-header {
+        background: var(--surface-elevated) !important;
+        border-bottom-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
     }
 
-    .modal-header h5,
-    .modal-header h4,
-    .modal-header h3,
     .modal-header h2,
-    .modal-title,
-    [class*="modal-header"] h5,
-    [class*="modal-header"] h4,
-    [class*="modal-header"] h3 {
-        color: #e8e8ec !important;
+    .modal-header h3,
+    .modal-header h4,
+    .modal-header h5,
+    .modal-title {
+        color: var(--text-primary) !important;
     }
 
     /* --- Modal footers --- */
-    .modal-footer,
-    [class*="modal-footer"] {
-        background: #1e1e2e !important;
-        border-top-color: #333 !important;
+    .modal-footer {
+        background: var(--surface-elevated) !important;
+        border-top-color: var(--border-color) !important;
     }
 
     /* --- Vista Previa (article preview modal) --- */
     .preview-modal h1,
     .preview-modal h2,
     .preview-modal h3 {
-        color: #e8e8ec !important;
+        color: var(--text-primary) !important;
     }
 
     .preview-modal p,
     .preview-modal .meta,
     .preview-modal .article-meta {
-        color: #999 !important;
+        color: var(--text-secondary) !important;
     }
 
-    /* --- Biblioteca de Medios (media library modal) --- */
-    .media-modal input,
-    .media-modal input[type="text"],
-    .media-modal input[type="search"],
-    [class*="modal"] input[type="text"],
-    [class*="modal"] input[type="search"] {
-        background: #2a2a42 !important;
-        border-color: #3a3a52 !important;
-        color: #ddd !important;
+    /* --- Modal inputs --- */
+    .modal-content input[type="text"],
+    .modal-content input[type="search"],
+    .modal-content input[type="email"],
+    .modal-content textarea,
+    .modal-content select,
+    .media-modal input {
+        background: var(--form-bg) !important;
+        border-color: var(--form-border) !important;
+        color: var(--form-text) !important;
     }
 
-    .media-modal input::placeholder,
-    [class*="modal"] input::placeholder {
-        color: #777 !important;
+    .modal-content input::placeholder,
+    .modal-content textarea::placeholder,
+    .media-modal input::placeholder {
+        color: var(--form-placeholder) !important;
+    }
+
+    /* --- Modal headings & text --- */
+    .modal-content h1,
+    .modal-content h2,
+    .modal-content h3,
+    .modal-content h4,
+    .modal-content h5 {
+        color: var(--text-primary) !important;
+    }
+
+    .modal-content p {
+        color: var(--form-text) !important;
     }
 
     .media-modal .media-count,
-    [class*="modal"] small,
-    [class*="modal"] .text-muted {
-        color: #888 !important;
+    .modal-content small,
+    .modal-content .text-muted {
+        color: var(--text-muted) !important;
     }
 
     /* --- Close button in modals --- */
     .modal .btn-close,
-    .modal [aria-label="Close"],
     .modal .close,
-    [class*="modal"] .close,
-    [class*="modal"] button.close {
-        color: #ddd !important;
-        opacity: 0.8;
-    }
-
-    .modal .btn-close:hover,
-    .modal .close:hover,
-    [class*="modal"] .close:hover {
-        color: #fff !important;
-        opacity: 1;
+    .btn-close,
+    button.close,
+    [aria-label="Close"],
+    [aria-label="Cerrar"] {
+        filter: invert(1) !important;
     }
 
     /* --- Buttons inside modals --- */
-    .modal .btn-outline-secondary,
-    .modal .btn-light,
-    [class*="modal"] .btn-outline-secondary,
-    [class*="modal"] .btn-light,
-    [class*="modal"] button:not(.btn-primary):not(.btn-danger):not([class*="share"]) {
-        background: #2a2a42 !important;
-        border-color: #3a3a52 !important;
-        color: #ddd !important;
+    .modal-content .btn,
+    .modal-footer .btn {
+        border-color: var(--form-border);
     }
 
-    .modal .btn-outline-secondary:hover,
-    .modal .btn-light:hover,
-    [class*="modal"] .btn-outline-secondary:hover,
-    [class*="modal"] .btn-light:hover {
-        background: #3a3a52 !important;
+    .modal-footer .btn:not(.btn-primary):not(.btn-danger):not(.btn-success) {
+        background: var(--form-bg) !important;
+        color: var(--form-text) !important;
+        border-color: var(--form-border) !important;
+    }
+
+    .modal-footer .btn:not(.btn-primary):not(.btn-danger):not(.btn-success):hover {
+        background: var(--form-border) !important;
         color: #fff !important;
     }
 
-    /* --- Cancelar / secondary action buttons (outside modals too) --- */
+    /* --- Cancelar / secondary action buttons --- */
     .btn-cancel,
-    .btn-secondary,
-    button[onclick*="cancel"],
     .form-actions .btn:not(.btn-primary):not(.btn-danger) {
-        background: #2a2a42 !important;
-        border-color: #3a3a52 !important;
-        color: #ddd !important;
+        background: var(--form-bg) !important;
+        border-color: var(--form-border) !important;
+        color: var(--form-text) !important;
     }
 
     .btn-cancel:hover,
-    button[onclick*="cancel"]:hover,
     .form-actions .btn:not(.btn-primary):not(.btn-danger):hover {
-        background: #3a3a52 !important;
+        background: var(--form-border) !important;
         color: #fff !important;
     }
 
-    /* ========== CATCH-ALL: any overlay/panel inside admin ========== */
-    .admin-layout .modal,
-    .admin-layout [class*="preview"],
-    .admin-layout [class*="Preview"],
-    .admin-layout [class*="modal"],
-    .admin-layout [class*="Modal"],
-    .admin-layout [class*="dialog"],
-    .admin-layout [class*="popup"],
-    .admin-layout [class*="overlay-content"] {
-        color: #ddd;
-    }
-
-    .admin-layout .modal > div,
-    .admin-layout [class*="preview"] > div,
-    .admin-layout [class*="modal"] > div {
-        background: #1e1e2e !important;
-        color: #ddd !important;
-    }
-
-    /* Force dark on any white-bg container inside modals */
+    /* ========== INLINE STYLE OVERRIDES (admin panels with JS-set backgrounds) ========== */
     .admin-layout [style*="background: white"],
     .admin-layout [style*="background:#fff"],
     .admin-layout [style*="background: #fff"],
     .admin-layout [style*="background-color: white"],
     .admin-layout [style*="background-color:#fff"],
     .admin-layout [style*="background-color: #fff"] {
-        background: #1e1e2e !important;
-        color: #ddd !important;
+        background: var(--surface-elevated) !important;
+        color: var(--form-text) !important;
     }
 
     /* ========== AUTOSAVE INDICATOR ========== */
     .autosave-indicator {
-        color: #888;
+        color: var(--text-muted);
     }
 
     .autosave-indicator.saved {
-        color: #6fcf6f;
+        color: var(--success-text);
     }
 
-    /* ========== SCROLLBAR (admin-specific) ========== */
+    /* ========== SCROLLBAR (admin sidebar) ========== */
     .admin-sidebar::-webkit-scrollbar {
         width: 6px;
     }
@@ -1817,195 +1777,20 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
     }
 
     .admin-sidebar::-webkit-scrollbar-thumb {
-        background: #2a2a42;
+        background: var(--form-bg);
         border-radius: 3px;
     }
 
-    /* ========== NUCLEAR: Force dark on ANY remaining white elements ========== */
-    
-    /* --- Any div/section with white or near-white background --- */
-    .admin-layout div[style*="background: white"],
-    .admin-layout div[style*="background:#fff"],
-    .admin-layout div[style*="background: #fff"],
-    .admin-layout div[style*="background-color: white"],
-    .admin-layout div[style*="background-color:#fff"],
-    .admin-layout div[style*="background-color: #fff"],
-    .admin-layout div[style*="background: rgb(255"],
-    .admin-layout div[style*="background-color: rgb(255"],
-    body > div[style*="background: white"],
-    body > div[style*="background:#fff"],
-    body > div[style*="background: #fff"],
-    body > div[style*="background-color: white"],
-    body > div[style*="background-color:#fff"],
-    body > div[style*="background-color: #fff"],
-    body > div[style*="background: rgb(255"],
-    body > div[style*="background-color: rgb(255"] {
-        background: #1e1e2e !important;
-        color: #ddd !important;
-    }
-
-    /* --- Any element appended to body that's a modal/overlay --- */
-    body > .modal,
-    body > .overlay,
-    body > [class*="modal"],
-    body > [class*="overlay"],
-    body > [class*="preview"],
-    body > [class*="dialog"],
-    body > [class*="popup"] {
-        color: #ddd;
-    }
-
-    body > .modal > div,
-    body > .overlay > div,
-    body > [class*="modal"] > div,
-    body > [class*="overlay"] > div,
-    body > [class*="preview"] > div,
-    body > [class*="dialog"] > div,
-    body > [class*="popup"] > div {
-        background: #1e1e2e !important;
-        color: #ddd !important;
-        border-color: #333 !important;
-    }
-
-    /* --- Catch nested white containers in modals --- */
-    body > div > div > div[style*="background"],
-    .modal div[style*="background"],
-    [class*="modal"] div[style*="background"] {
-        background: #1e1e2e !important;
-        color: #ddd !important;
-    }
-
-    /* --- TOOLBAR: target the custom editor toolbar specifically --- */
-    /* The toolbar has B, I, U, H2, H3, ¶, •, 1., link buttons */
-    div[class*="editor"] > div:first-child,
-    div[class*="content"] > div:first-child[style],
-    .admin-layout [role="toolbar"],
-    .admin-layout [class*="toolbar"],
-    .admin-layout [class*="Toolbar"] {
-        background: #2a2a42 !important;
-        border-color: #3a3a52 !important;
-    }
-
-    /* --- EDITOR AREA: the contenteditable writing area --- */
-    .admin-layout [contenteditable],
-    .admin-layout [contenteditable="true"],
-    .admin-layout [role="textbox"],
-    .admin-layout [class*="editor-area"],
-    .admin-layout [class*="editor-content"],
-    .admin-layout [class*="content-editable"],
-    .admin-layout [class*="write-area"],
-    .admin-layout [class*="article-content"] > div[contenteditable] {
-        background: #1e1e2e !important;
-        color: #ddd !important;
-        border-color: #3a3a52 !important;
-        caret-color: #fff !important;
-    }
-
-    /* Placeholder text in contenteditable */
-    .admin-layout [contenteditable]:empty::before,
-    .admin-layout [contenteditable][data-placeholder]:empty::before,
-    .admin-layout [contenteditable="true"]:empty::before {
-        color: #777 !important;
-    }
-
-    /* --- MEDIA GRID in modal: ensure gallery background is dark --- */
-    .media-gallery,
-    [class*="media-grid"],
-    [class*="media-gallery"],
-    [class*="image-grid"] {
+    /* ========== MEDIA GRID (in modal) ========== */
+    .media-gallery {
         background: transparent !important;
     }
 
-    /* --- Image count text (e.g., "12 imagenes") --- */
-    [class*="modal"] small,
-    [class*="modal"] .count,
-    [class*="modal"] [class*="count"],
-    [class*="modal"] span[class*="info"],
-    [class*="modal"] p[class*="info"] {
-        color: #888 !important;
-    }
-
-    /* --- MEGA FALLBACK: Bootstrap .modal-content override --- */
-    .modal-content {
-        background-color: #1e1e2e !important;
-        border-color: #333 !important;
-        color: #ddd !important;
-    }
-
-    .modal-header {
-        background-color: #1e1e2e !important;
-        border-bottom-color: #333 !important;
-    }
-
-    .modal-body {
-        background-color: #1e1e2e !important;
-    }
-
-    .modal-footer {
-        background-color: #1e1e2e !important;
-        border-top-color: #333 !important;
-    }
-
-    /* --- Title text in any modal --- */
-    .modal-content h1,
-    .modal-content h2,
-    .modal-content h3,
-    .modal-content h4,
-    .modal-content h5 {
-        color: #e8e8ec !important;
-    }
-
-    .modal-content p {
-        color: #ddd !important;
-    }
-
-    /* --- Inputs inside any modal --- */
-    .modal-content input[type="text"],
-    .modal-content input[type="search"],
-    .modal-content input[type="email"],
-    .modal-content textarea,
-    .modal-content select {
-        background: #2a2a42 !important;
-        border-color: #3a3a52 !important;
-        color: #ddd !important;
-    }
-
-    .modal-content input::placeholder,
-    .modal-content textarea::placeholder {
-        color: #777 !important;
-    }
-
-    /* --- Buttons in any modal --- */
-    .modal-content .btn,
-    .modal-footer .btn {
-        border-color: #3a3a52;
-    }
-
-    .modal-footer .btn:not(.btn-primary):not(.btn-danger):not(.btn-success) {
-        background: #2a2a42 !important;
-        color: #ddd !important;
-        border-color: #3a3a52 !important;
-    }
-
-    .modal-footer .btn:not(.btn-primary):not(.btn-danger):not(.btn-success):hover {
-        background: #3a3a52 !important;
-        color: #fff !important;
-    }
-
-    /* --- Close × button in modals --- */
-    .btn-close,
-    [class*="close-btn"],
-    button.close,
-    [aria-label="Close"],
-    [aria-label="Cerrar"] {
-        filter: invert(1) !important;
-    }
-
-    /* ========== MOBILE COMPONENTS (dark mode) ========== */
+    /* ========== MOBILE COMPONENTS ========== */
 
     /* Hamburger button */
     .hamburger-btn span {
-        background: #ddd;
+        background: var(--form-text);
     }
 
     /* Sidebar overlay */
@@ -2021,45 +1806,42 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
 
     /* Article cards (mobile) */
     .article-card-mobile {
-        background: #252538;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
-    .article-card-title {
-        color: #e8e8ec;
-    }
-
+    .article-card-title,
     .article-card-title a {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
     .article-card-date {
-        color: #888;
+        color: var(--text-muted);
     }
 
     .article-card-actions .btn-small {
-        background: #2a2a42;
-        color: #ddd;
+        background: var(--form-bg);
+        color: var(--form-text);
     }
 
     .article-card-actions .btn-small:hover {
-        background: #3a3a52;
+        background: var(--form-border);
     }
 
     /* Mobile meta fields */
     .mobile-meta-fields {
-        background: #252538;
+        background: var(--surface-card);
     }
 
     .mobile-meta-fields label {
-        color: #ddd;
+        color: var(--form-text);
     }
 
     .mobile-meta-fields select,
     .mobile-meta-fields input {
-        background: #2a2a42;
-        border-color: #3a3a52;
-        color: #ddd;
+        background: var(--form-bg);
+        border-color: var(--form-border);
+        color: var(--form-text);
     }
 
     .mobile-meta-fields select:focus,
@@ -2069,14 +1851,14 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
 
     /* Sticky publish bar */
     .mobile-publish-bar {
-        background: #1e1e2e;
+        background: var(--surface-elevated);
         box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
     }
 
     .mobile-publish-bar .btn-secondary {
-        background: #2a2a42 !important;
-        color: #ddd !important;
-        border-color: #3a3a52 !important;
+        background: var(--form-bg) !important;
+        color: var(--form-text) !important;
+        border-color: var(--form-border) !important;
     }
 
     /* Login spinner */
@@ -2087,28 +1869,28 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
 
     /* Video thumb mobile */
     .video-thumb-mobile {
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        box-shadow: var(--shadow);
     }
 
     .video-card-info .article-card-title {
-        color: #e8e8ec;
+        color: var(--text-primary);
     }
 
-    /* Form card inside sidebar on mobile */
+    /* Form card (shared mobile/desktop) */
     .form-card {
-        background: #252538;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        background: var(--surface-card);
+        box-shadow: var(--shadow);
     }
 
     .form-card label {
-        color: #ddd;
+        color: var(--form-text);
     }
 
     .form-card input,
     .form-card select {
-        background: #2a2a42;
-        border-color: #3a3a52;
-        color: #ddd;
+        background: var(--form-bg);
+        border-color: var(--form-border);
+        color: var(--form-text);
     }
 
 } /* end @media prefers-color-scheme: dark */
