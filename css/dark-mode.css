@@ -1,20 +1,48 @@
 /* ============================================================
    BEISJOVEN — Dark Mode (auto via prefers-color-scheme)
-   Add this CSS AFTER styles.css and videos-redesign.css
+   Add this CSS AFTER styles.css
+   Updated: February 10, 2026 — COMPLETE OVERHAUL
    ============================================================ */
 
 @media (prefers-color-scheme: dark) {
 
-    /* ---------- Base ---------- */
+    /* ========== BASE ========== */
     body {
         background-color: #16162a;
         color: #ddd;
     }
 
-    /* ---------- Header ---------- */
+    a { color: inherit; }
+
+    h1, h2, h3, h4, h5, h6 {
+        color: #e8e8ec;
+    }
+
+    hr {
+        border-color: #333;
+    }
+
+    /* ========== TOP BAR ========== */
+    .top-bar {
+        background: #111120;
+    }
+
+    /* ========== HEADER ========== */
     header {
         background: #1e1e2e;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .header-main {
+        border-bottom-color: var(--primary);
+    }
+
+    .logo h1 {
+        color: var(--primary);
+    }
+
+    .logo h1 span {
+        color: #bbb;
     }
 
     .search-box {
@@ -29,41 +57,107 @@
         color: #888;
     }
 
-    /* ---------- Breadcrumb ---------- */
+    /* ========== NAVIGATION ========== */
+    nav {
+        background: #1a1a35;
+    }
+
+    nav ul li a {
+        color: #ddd;
+    }
+
+    nav ul li a:hover,
+    nav ul li a.active {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    /* ========== TICKER ========== */
+    .ticker-text,
+    .ticker-content {
+        color: #fff;
+    }
+
+    /* ========== BREADCRUMB ========== */
     .breadcrumb {
         background: #1e1e2e;
         border-bottom-color: #333;
-    }
-
-    .breadcrumb .current {
-        color: #e8e8ec;
     }
 
     .breadcrumb a {
         color: #999;
     }
 
-    /* ---------- Hero Section ---------- */
+    .breadcrumb a:hover {
+        color: var(--primary);
+    }
+
+    .breadcrumb .separator {
+        color: #666;
+    }
+
+    .breadcrumb .current {
+        color: #e8e8ec;
+    }
+
+    /* ========== HERO SECTION ========== */
     .hero {
         background: #1a1a2e;
     }
 
+    .hero-main h2 a {
+        color: #fff;
+    }
+
     .hero-main h2 a:hover {
-        color: #ff8a8a;
+        color: var(--accent);
+    }
+
+    .hero-sidebar-item h3 a {
+        color: #fff;
     }
 
     .hero-sidebar-item h3 a:hover {
-        color: #ff8a8a;
+        color: var(--accent);
     }
 
-    /* ---------- Section Titles ---------- */
+    /* ========== SECTION TITLES ========== */
     .section-title h2 {
         color: #e8e8ec;
     }
 
-    /* ---------- News Cards ---------- */
+    .section-title .ver-mas {
+        color: #999;
+    }
+
+    .section-title .ver-mas:hover {
+        color: var(--primary);
+    }
+
+    /* ========== CATEGORY PILLS (global) ========== */
+    .category {
+        background: #2a2a42;
+        color: #ccc;
+    }
+
+    .category:hover {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    /* ========== NEWS SECTIONS ========== */
+    .news-section {
+        color: #ddd;
+    }
+
+    .news-section.alt-bg {
+        background: #1a1a2e;
+    }
+
+    /* ========== NEWS CARDS ========== */
     .news-card {
         background: #252538;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     .news-card h3,
@@ -90,12 +184,18 @@
     }
 
     .news-card-content {
-        color: #ddd;
+        color: #bbb;
     }
 
-    /* ---------- Featured Cards ---------- */
+    /* ========== FEATURED CARDS ========== */
     .featured-card {
         background: #252538;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .featured-card .category {
+        background: #1a1a35;
+        color: #bbb;
     }
 
     .featured-card h3 a {
@@ -110,27 +210,63 @@
         color: #999;
     }
 
-    /* ---------- News Sections ---------- */
-    .news-section {
-        color: #ddd;
-    }
-
-    .news-section.alt-bg {
-        background: #1a1a2e;
-    }
-
-    /* ---------- Sidebar Widgets ---------- */
+    /* ========== SIDEBAR WIDGETS ========== */
     .sidebar-widget {
         background: #252538;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     .widget-title {
         color: #e8e8ec;
+        border-bottom-color: var(--primary);
     }
 
+    .widget-link {
+        color: var(--primary);
+    }
+
+    /* --- Lo Más Leído / Most Read --- */
+    .most-read-list li {
+        border-bottom-color: #333;
+    }
+
+    .most-read-list li:last-child {
+        border-bottom-color: transparent;
+    }
+
+    .most-read-list .number {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .most-read-list a {
+        color: #ddd;
+    }
+
+    .most-read-list a:hover {
+        color: var(--primary);
+    }
+
+    /* --- Sidebar newsletter input --- */
+    .sidebar-widget input[type="email"],
+    .sidebar-widget input[type="text"] {
+        background: #2a2a42;
+        border-color: #3a3a52;
+        color: #ddd;
+    }
+
+    .sidebar-widget input::placeholder {
+        color: #777;
+    }
+
+    /* --- Standings Table --- */
     .standings-table th {
         background: #2a2a42;
         color: #ccc;
+    }
+
+    .standings-table td {
+        color: #ddd;
     }
 
     .standings-table a {
@@ -145,13 +281,41 @@
         border-bottom-color: #333;
     }
 
-    /* ---------- Article Page ---------- */
+    .standings-table .playoff-spot {
+        background: rgba(196, 30, 58, 0.12);
+    }
+
+    .standings-note {
+        color: #888;
+    }
+
+    .standings-full {
+        background: #252538;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* ========== ARTICLE PAGE ========== */
+    .article-header h1 {
+        color: #e8e8ec;
+    }
+
+    .article-header .meta,
+    .meta-info {
+        color: #999;
+    }
+
     .article-content {
         background: #252538;
         color: #ddd;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
-    .article-content h3 {
+    .article-content p {
+        color: #ddd;
+    }
+
+    .article-content h3,
+    .article-content h4 {
         color: #e8e8ec;
     }
 
@@ -165,10 +329,6 @@
         color: #bbb;
     }
 
-    .article-header .meta {
-        color: #999;
-    }
-
     .article-content a {
         color: #ff8a8a;
     }
@@ -177,7 +337,38 @@
         color: var(--primary);
     }
 
-    /* ---------- Author ---------- */
+    .article-content ul li,
+    .article-content ol li {
+        color: #ddd;
+    }
+
+    .article-content figcaption {
+        color: #888;
+    }
+
+    /* --- Article Tags --- */
+    .article-tags {
+        border-top-color: #333;
+    }
+
+    .tag {
+        background: #2a2a42;
+        color: #ccc;
+    }
+
+    .tag:hover {
+        background: var(--secondary);
+        color: #fff;
+    }
+
+    /* --- Share Buttons --- */
+    .share-buttons span {
+        color: #999;
+    }
+
+    /* Social share buttons keep their brand colors — no override needed */
+
+    /* ========== AUTHOR ========== */
     .author-avatar {
         background: #2a2a42;
     }
@@ -186,11 +377,28 @@
         color: #e8e8ec;
     }
 
+    .author-name:hover {
+        color: var(--primary);
+    }
+
     .author-role {
         color: #999;
     }
 
-    /* ---------- Video Cards (redesign) ---------- */
+    .author-header {
+        background: #252538;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .author-bio {
+        color: #bbb;
+    }
+
+    .author-articles h2 {
+        color: #e8e8ec;
+    }
+
+    /* ========== VIDEO CARDS (vid-card redesign) ========== */
     .vid-card {
         background: #252538;
     }
@@ -216,7 +424,11 @@
         color: #6fcf6f;
     }
 
-    /* ---------- Videos Section (homepage) ---------- */
+    .vid-card-cat:hover {
+        background: #3a4a3e;
+    }
+
+    /* ========== VIDEOS SECTION (homepage dark bg) ========== */
     .videos-section {
         background: #1a1a2e;
     }
@@ -226,9 +438,26 @@
         color: #fff;
     }
 
-    /* ---------- Video Page ---------- */
+    .videos-section-dark .vid-card {
+        background: #16213e;
+    }
+
+    /* ========== VIDEO DETAIL PAGE ========== */
     .video-page {
         color: #ddd;
+    }
+
+    .video-details {
+        background: #252538;
+        color: #ddd;
+    }
+
+    .video-details h1 {
+        color: #e8e8ec;
+    }
+
+    .video-details .video-meta {
+        color: #999;
     }
 
     .video-info h1 {
@@ -239,7 +468,7 @@
         color: #bbb;
     }
 
-    /* ---------- Search ---------- */
+    /* ========== SEARCH PAGE ========== */
     .search-form {
         background: #252538;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
@@ -253,7 +482,15 @@
         color: #888;
     }
 
-    /* ---------- Category / Page Headers ---------- */
+    .search-results-count {
+        color: #999;
+    }
+
+    .search-prompt {
+        color: #999;
+    }
+
+    /* ========== CATEGORY / PAGE HEADERS ========== */
     .category-header h1,
     .page-header h1 {
         color: #e8e8ec;
@@ -264,7 +501,16 @@
         color: #999;
     }
 
-    /* ---------- Contact Page ---------- */
+    /* ========== VIDEOS PAGE HEADER ========== */
+    .videos-page .page-header {
+        border-bottom-color: #333;
+    }
+
+    .videos-page .page-header p {
+        color: #999;
+    }
+
+    /* ========== CONTACT PAGE ========== */
     .contacto-info h1 {
         color: #e8e8ec;
     }
@@ -276,6 +522,10 @@
 
     .contacto-item strong {
         color: #ddd;
+    }
+
+    .contacto-item a {
+        color: var(--primary);
     }
 
     .contacto-form-box {
@@ -306,7 +556,7 @@
         color: #777;
     }
 
-    /* ---------- Newsletter Page ---------- */
+    /* ========== NEWSLETTER PAGE ========== */
     .newsletter-box {
         background: #252538;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
@@ -334,7 +584,52 @@
         color: #777;
     }
 
-    /* ---------- Empty State ---------- */
+    .newsletter-privacy {
+        color: #888;
+    }
+
+    .newsletter-message .success {
+        background: #1a3a2a;
+        color: #6fcf6f;
+    }
+
+    .newsletter-message .error {
+        background: #3a1a1a;
+        color: #ff8a8a;
+    }
+
+    /* ========== FOOTER ========== */
+    footer {
+        background: #111120;
+    }
+
+    .footer-brand p {
+        color: #888;
+    }
+
+    .footer-links ul li a {
+        color: #888;
+    }
+
+    .footer-links ul li a:hover {
+        color: var(--primary);
+    }
+
+    .footer-bottom {
+        border-top-color: rgba(255, 255, 255, 0.08);
+        color: #777;
+    }
+
+    /* ========== ERROR PAGE ========== */
+    .error-page h2 {
+        color: #e8e8ec;
+    }
+
+    .error-page p {
+        color: #999;
+    }
+
+    /* ========== EMPTY STATE ========== */
     .empty-state {
         background: #252538;
     }
@@ -343,34 +638,37 @@
         color: #999;
     }
 
-    /* ---------- Pagination ---------- */
-    .pagination a,
-    .pagination span {
-        background: #252538;
-        color: #ddd;
-        border-color: #3a3a52;
+    /* ========== LOADER ========== */
+    .loader-spinner {
+        border-color: #333;
+        border-top-color: var(--primary);
     }
 
-    /* ---------- Última Publicación ---------- */
+    /* ========== PAGINATION ========== */
+    .pagination .page-link {
+        background: #252538;
+        color: #ddd;
+    }
+
+    .pagination .page-link:hover,
+    .pagination .page-link.active {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    /* ========== ÚLTIMA PUBLICACIÓN ========== */
     .last-publication,
     .last-pub {
         color: #bbb;
     }
 
-    /* ---------- Videos Page Header ---------- */
-    .videos-page .page-header {
-        border-bottom-color: #333;
-    }
-
-    /* ---------- Images ---------- */
-    /* Don't dim hero/video images — they need contrast for overlaid text */
+    /* ========== IMAGES ========== */
     .hero-main img,
     .hero-sidebar-item img,
     .vid-card-thumb img {
         filter: none;
     }
 
-    /* Slight dim on article/news card images only */
     .news-card img,
     .featured-card img {
         filter: brightness(0.92);
@@ -381,13 +679,7 @@
         filter: brightness(1);
     }
 
-    /* ---------- Ticker ---------- */
-    .ticker-text,
-    .ticker-content {
-        color: #fff;
-    }
-
-    /* ---------- Scrollbar ---------- */
+    /* ========== SCROLLBAR ========== */
     ::-webkit-scrollbar {
         width: 8px;
     }
@@ -405,9 +697,10 @@
         background: #555;
     }
 
-    /* ---------- Selection ---------- */
+    /* ========== SELECTION ========== */
     ::selection {
         background: var(--primary);
         color: #fff;
     }
-}
+
+} /* end @media prefers-color-scheme: dark */
