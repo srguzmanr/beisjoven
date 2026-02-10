@@ -71,14 +71,13 @@ const AdminPages = {
         `;
 
         // Manejar submit del formulario
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('login-error');
-            
-            const result = Auth.login(email, password);
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('login-error');
+    
+    const result = await Auth.login(email, password);
             
             if (result.success) {
                 Router.navigate('/admin');
