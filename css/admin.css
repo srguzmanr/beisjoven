@@ -1036,10 +1036,9 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
         gap: 8px;
     }
 
-    /* Make media overlay always visible on mobile (no hover) */
+    /* Hide overlay on mobile — tap triggers JS action dialog instead */
     .media-item .media-overlay {
-        opacity: 1;
-        background: rgba(0,0,0,0.4);
+        display: none;
     }
 
     /* Touch-friendly buttons everywhere */
