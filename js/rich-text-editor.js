@@ -45,6 +45,8 @@ const RichTextEditor = {
                     <button type="button" class="rte-btn rte-btn-link" data-cmd="createLink" title="Insertar enlace">🔗</button>
                     <button type="button" class="rte-btn" data-cmd="unlink" title="Quitar enlace">⛓️‍💥</button>
                     <span class="rte-separator"></span>
+                    <button type="button" class="rte-btn rte-btn-image" data-cmd="insertImage" title="Insertar imagen desde biblioteca">🖼️</button>
+                    <span class="rte-separator"></span>
                     <button type="button" class="rte-btn" data-cmd="removeFormat" title="Limpiar formato">✕</button>
                 </div>
                 <div class="rte-editor" contenteditable="true" data-placeholder="Escribe el contenido del artículo..."></div>
@@ -71,7 +73,48 @@ const RichTextEditor = {
             const cmd = btn.dataset.cmd;
             const value = btn.dataset.value || null;
             
-            if (cmd === 'createLink') {
+            if (cmd === 'insertImage') {
+                // Save current selection before opening modal
+                const sel = window.getSelection();
+                const savedRange = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
+
+                if (typeof MediaLibrary !== 'undefined') {
+                    MediaLibrary.open((url) => {
+                        editor.focus();
+                        // Restore cursor position
+                        if (savedRange) {
+                            sel.removeAllRanges();
+                            sel.addRange(savedRange);
+                        }
+                        // Insert image at cursor
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = 'Imagen del artículo';
+                        img.style.cssText = 'max-width:100%;border-radius:8px;margin:12px 0;display:block;';
+
+                        if (savedRange) {
+                            savedRange.collapse(false);
+                            savedRange.insertNode(img);
+                            // Move cursor after image
+                            savedRange.setStartAfter(img);
+                            savedRange.collapse(true);
+                            sel.removeAllRanges();
+                            sel.addRange(savedRange);
+                        } else {
+                            editor.appendChild(img);
+                        }
+                        hiddenInput.value = editor.innerHTML;
+                    });
+                } else {
+                    // Fallback: prompt for URL
+                    const url = prompt('URL de la imagen:');
+                    if (url) {
+                        document.execCommand('insertHTML', false, `<img src="${url}" alt="Imagen" style="max-width:100%;border-radius:8px;margin:12px 0;display:block;">`);
+                    }
+                }
+                hiddenInput.value = editor.innerHTML;
+                return;
+            } else if (cmd === 'createLink') {
                 const url = prompt('URL del enlace:', 'https://');
                 if (url) {
                     document.execCommand(cmd, false, url);
@@ -239,6 +282,17 @@ const RichTextEditor = {
                 padding: 0.5em 0 0.5em 1em;
                 color: #4b5563;
                 font-style: italic;
+            }
+            .rte-editor img {
+                max-width: 100%;
+                border-radius: 8px;
+                margin: 12px 0;
+                display: block;
+                cursor: default;
+            }
+            .rte-editor img:hover {
+                outline: 2px solid #1e3a5f;
+                outline-offset: 2px;
             }
             .rte-hidden-input {
                 display: none;
