@@ -107,7 +107,13 @@ const SupabaseAPI = {
         }
         return data;
     },
-    
+    async incrementVistas(articleId) {
+        try {
+            await supabaseClient.rpc('increment_vistas', { article_id: articleId });
+        } catch (e) {
+            console.error('Error incrementando vistas:', e);
+        }
+    },
     async getArticulosByCategoria(categoriaSlug, limite = 10) {
         // Primero obtener la categoría
         const categoria = await this.getCategoriaBySlug(categoriaSlug);
