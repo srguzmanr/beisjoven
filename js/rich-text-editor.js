@@ -1,21 +1,25 @@
 /**
  * BEISJOVEN - Rich Text Editor
  * =============================
- * 
+ *
  * Simple formatting toolbar for article content.
  * Uses contenteditable + stores HTML in a hidden textarea.
  * Supports paste from: rich text (desktop), Markdown (Claude/iOS), plain text.
+ *
+ * v2.1 — Fixed mobile paste (iOS Safari) using Selection/Range API
+ *         instead of deprecated document.execCommand('insertHTML').
+ *         Added detection of "visual markdown" patterns from Claude chat.
  */
 
 const RichTextEditor = {
-    
+
     create(containerId, inputName = 'content', initialContent = '') {
         const container = document.getElementById(containerId);
         if (!container) {
             console.error('RichTextEditor: Container not found:', containerId);
             return null;
         }
-        
+
         // Create editor HTML
         container.innerHTML = `
             <div class="rte-wrapper">
@@ -42,26 +46,26 @@ const RichTextEditor = {
                 <input type="hidden" name="${inputName}" class="rte-hidden-input">
             </div>
         `;
-        
+
         const editor = container.querySelector('.rte-editor');
         const hiddenInput = container.querySelector('.rte-hidden-input');
         const toolbar = container.querySelector('.rte-toolbar');
-        
+
         // Set initial content
         editor.innerHTML = initialContent;
         hiddenInput.value = initialContent;
-        
+
         // Toolbar button clicks
         toolbar.addEventListener('click', (e) => {
             const btn = e.target.closest('.rte-btn');
             if (!btn) return;
-            
+
             e.preventDefault();
             editor.focus();
-            
+
             const cmd = btn.dataset.cmd;
             const value = btn.dataset.value || null;
-            
+
             if (cmd === 'insertImage') {
                 const sel = window.getSelection();
                 const savedRange = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
@@ -73,6 +77,7 @@ const RichTextEditor = {
                             sel.removeAllRanges();
                             sel.addRange(savedRange);
                         }
+
                         const img = document.createElement('img');
                         img.src = url;
                         img.alt = 'Imagen del artículo';
@@ -88,12 +93,14 @@ const RichTextEditor = {
                         } else {
                             editor.appendChild(img);
                         }
+
                         hiddenInput.value = editor.innerHTML;
                     });
                 } else {
                     const url = prompt('URL de la imagen:');
                     if (url) {
-                        document.execCommand('insertHTML', false, `<img src="${url}" alt="Imagen" style="max-width:100%;border-radius:8px;margin:12px 0;display:block;">`);
+                        document.execCommand('insertHTML', false,
+                            `<img src="${url}" alt="Imagen" style="max-width:100%;border-radius:8px;margin:12px 0;display:block;">`);
                     }
                 }
                 hiddenInput.value = editor.innerHTML;
@@ -108,44 +115,54 @@ const RichTextEditor = {
             } else {
                 document.execCommand(cmd, false, value);
             }
-            
+
             hiddenInput.value = editor.innerHTML;
         });
-        
+
         // Update hidden input on content change
         editor.addEventListener('input', () => {
             hiddenInput.value = editor.innerHTML;
         });
-        
-        // Handle paste - HTML (desktop/Android), Markdown (Claude/iOS), plain text
+
+        // ====================================================
+        // PASTE HANDLER — v2.1 (mobile-compatible)
+        // ====================================================
+        // Uses Selection/Range API for HTML insertion instead of
+        // deprecated document.execCommand('insertHTML'), which
+        // fails silently on iOS Safari contenteditable.
+        // ====================================================
         editor.addEventListener('paste', (e) => {
+            e.preventDefault();
+
             const html = e.clipboardData.getData('text/html');
             const plain = e.clipboardData.getData('text/plain');
-            e.preventDefault();
-            
+
+            let insertContent = '';
+
             if (html && html.trim().length > 0) {
-                // Rich paste: sanitize HTML (desktop, Android)
-                document.execCommand('insertHTML', false, RichTextEditor._sanitizeHTML(html));
+                // Priority 1: Rich HTML paste (desktop browsers, some Android)
+                insertContent = RichTextEditor._sanitizeHTML(html);
             } else if (plain) {
-                // Check if text contains Markdown patterns
                 if (RichTextEditor._hasMarkdown(plain)) {
-                    // Convert Markdown to HTML
-                    const converted = RichTextEditor._markdownToHTML(plain);
-                    document.execCommand('insertHTML', false, converted);
+                    // Priority 2: Markdown syntax detected (Claude artifacts, code blocks)
+                    insertContent = RichTextEditor._markdownToHTML(plain);
+                } else if (RichTextEditor._hasVisualFormatting(plain)) {
+                    // Priority 3: "Visual markdown" — rendered text from Claude chat on iOS
+                    // Has • bullets, — dashes, quoted text, but no # or ** markers
+                    insertContent = RichTextEditor._visualTextToHTML(plain);
                 } else {
-                    // Plain text: convert line breaks to paragraphs
-                    const paragraphs = plain.split(/\n\n+/);
-                    const htmlOut = paragraphs
-                        .map(p => p.trim())
-                        .filter(p => p.length > 0)
-                        .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-                        .join('');
-                    document.execCommand('insertHTML', false, htmlOut || plain);
+                    // Priority 4: Plain text — convert line breaks to paragraphs
+                    insertContent = RichTextEditor._plainTextToHTML(plain);
                 }
             }
+
+            if (insertContent) {
+                RichTextEditor._insertHTMLAtCursor(insertContent, editor);
+            }
+
             hiddenInput.value = editor.innerHTML;
         });
-        
+
         // Keyboard shortcuts
         editor.addEventListener('keydown', (e) => {
             if (e.ctrlKey || e.metaKey) {
@@ -166,10 +183,10 @@ const RichTextEditor = {
                 hiddenInput.value = editor.innerHTML;
             }
         });
-        
+
         // Add styles
         this.addStyles();
-        
+
         return {
             getValue: () => editor.innerHTML,
             setValue: (html) => {
@@ -181,52 +198,166 @@ const RichTextEditor = {
             element: editor
         };
     },
-    
-    // ==================== PASTE HELPERS ====================
-    
+
+    // ==================== PASTE: HTML INSERTION ====================
+
     /**
-     * Sanitize HTML from rich paste (Google Docs, desktop browsers)
+     * Insert HTML at the current cursor position using Selection/Range API.
+     * This is the mobile-safe replacement for document.execCommand('insertHTML').
+     * Works on iOS Safari, Chrome Android, and all desktop browsers.
+     */
+    _insertHTMLAtCursor(html, editorElement) {
+        const sel = window.getSelection();
+        if (!sel || !sel.rangeCount) {
+            // No selection/cursor — append to end of editor
+            editorElement.innerHTML += html;
+            return;
+        }
+
+        const range = sel.getRangeAt(0);
+
+        // Make sure cursor is inside the editor
+        if (!editorElement.contains(range.commonAncestorContainer)) {
+            editorElement.innerHTML += html;
+            return;
+        }
+
+        // Delete any selected text first
+        range.deleteContents();
+
+        // Parse the HTML string into DOM nodes
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+
+        // Create a document fragment with all the parsed nodes
+        const frag = document.createDocumentFragment();
+        let lastNode = null;
+        while (temp.firstChild) {
+            lastNode = frag.appendChild(temp.firstChild);
+        }
+
+        // Insert the fragment at the cursor
+        range.insertNode(frag);
+
+        // Move cursor to end of inserted content
+        if (lastNode) {
+            const newRange = document.createRange();
+            newRange.setStartAfter(lastNode);
+            newRange.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(newRange);
+        }
+    },
+
+    // ==================== PASTE: HTML SANITIZER ====================
+
+    /**
+     * Sanitize HTML from rich paste (Google Docs, desktop browsers, Claude chat)
      */
     _sanitizeHTML(html) {
         const temp = document.createElement('div');
         temp.innerHTML = html;
+
+        // Remove all inline styles, classes, and IDs
         temp.querySelectorAll('*').forEach(el => {
             el.removeAttribute('style');
             el.removeAttribute('class');
             el.removeAttribute('id');
+            el.removeAttribute('data-sourcepos');
+            el.removeAttribute('dir');
         });
-        const allowed = ['P','BR','STRONG','B','EM','I','U','H1','H2','H3','H4','UL','OL','LI','A','IMG','BLOCKQUOTE','DIV'];
+
+        // Whitelist of allowed tags
+        const allowed = [
+            'P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U',
+            'H1', 'H2', 'H3', 'H4',
+            'UL', 'OL', 'LI',
+            'A', 'IMG', 'BLOCKQUOTE',
+            'DIV', 'SPAN', 'CODE', 'PRE'
+        ];
+
         temp.querySelectorAll('*').forEach(el => {
             if (!allowed.includes(el.tagName)) {
                 el.replaceWith(...el.childNodes);
             }
         });
+
+        // Convert <div> to <p> (common in clipboard HTML)
         temp.querySelectorAll('div').forEach(el => {
             const p = document.createElement('p');
             p.innerHTML = el.innerHTML;
             el.replaceWith(p);
         });
+
+        // Convert <span> to bare text (spans are just wrappers)
+        temp.querySelectorAll('span').forEach(el => {
+            el.replaceWith(...el.childNodes);
+        });
+
+        // Remove empty paragraphs (but keep ones with images)
         temp.querySelectorAll('p').forEach(el => {
             if (!el.textContent.trim() && !el.querySelector('img')) {
                 el.remove();
             }
         });
+
         return temp.innerHTML;
     },
-    
+
+    // ==================== PASTE: MARKDOWN DETECTION ====================
+
     /**
-     * Detect if text contains Markdown patterns
+     * Detect if text contains Markdown syntax patterns
+     * (from Claude artifacts, .md files, or raw markdown sources)
      */
     _hasMarkdown(text) {
-        return /(?:^|\n)\s{0,3}#{1,4}\s/.test(text) ||       // # Headers
-               /\*\*[^*]+\*\*/.test(text) ||                  // **bold**
-               /(?<!\*)\*[^*\n]+\*(?!\*)/.test(text) ||       // *italic*
-               /^>\s/m.test(text) ||                           // > blockquote
-               /^\s*[-*+]\s/m.test(text) ||                    // - list items
-               /^\s*\d+\.\s/m.test(text) ||                    // 1. ordered list
-               /^---\s*$/m.test(text);                         // --- horizontal rule
+        return /(?:^|\n)\s{0,3}#{1,4}\s/.test(text)    ||  // # Headers
+               /\*\*[^*]+\*\*/.test(text)               ||  // **bold**
+               /(?<!\*)\*[^*\n]+\*(?!\*)/.test(text)     ||  // *italic*
+               /^>\s/m.test(text)                        ||  // > blockquote
+               /^\s*[-*+]\s/m.test(text)                 ||  // - list items
+               /^\s*\d+\.\s/m.test(text)                 ||  // 1. ordered list
+               /^---\s*$/m.test(text);                       // --- horizontal rule
     },
-    
+
+    /**
+     * Detect "visual formatting" — rendered text from Claude chat on iOS.
+     * This text has no markdown syntax but has visual structure like:
+     * - Bullet character (•) at start of lines
+     * - Em dash (—) separating items
+     * - Short ALL-CAPS or title-case lines that look like headings
+     * - Quoted text with " marks
+     */
+    _hasVisualFormatting(text) {
+        const lines = text.split('\n').filter(l => l.trim());
+        if (lines.length < 3) return false;
+
+        let score = 0;
+
+        // • bullet characters
+        if (/^\s*[•·▪▸►‣]\s/m.test(text)) score += 2;
+
+        // Short lines that look like section headers (under 60 chars, no period at end)
+        const shortHeaderLines = lines.filter(l => {
+            const t = l.trim();
+            return t.length > 3 && t.length < 60 && !t.endsWith('.') && !t.startsWith('•') && !t.startsWith('-');
+        });
+        if (shortHeaderLines.length >= 2) score += 1;
+
+        // Em dashes used as separators
+        if (/\s—\s/.test(text)) score += 1;
+
+        // Quoted text with " "
+        if (/[""][^""]+[""]/.test(text) || /"[^"]+"\s*[-—]/.test(text)) score += 1;
+
+        // Multiple line breaks between sections
+        if (/\n\s*\n/.test(text)) score += 1;
+
+        return score >= 3;
+    },
+
+    // ==================== PASTE: MARKDOWN → HTML ====================
+
     /**
      * Convert Markdown to HTML
      */
@@ -237,7 +368,7 @@ const RichTextEditor = {
         let listType = '';
         let inBlockquote = false;
         let blockquoteLines = [];
-        
+
         const closeList = () => {
             if (inList) {
                 html += `</${listType}>`;
@@ -245,7 +376,7 @@ const RichTextEditor = {
                 listType = '';
             }
         };
-        
+
         const closeBlockquote = () => {
             if (inBlockquote) {
                 const content = blockquoteLines.join('<br>');
@@ -254,7 +385,7 @@ const RichTextEditor = {
                 blockquoteLines = [];
             }
         };
-        
+
         const inlineFormat = (text) => {
             // Bold: **text**
             text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -264,25 +395,25 @@ const RichTextEditor = {
             text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
             return text;
         };
-        
+
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             const trimmed = line.trim();
-            
+
             // Skip horizontal rules (---)
             if (/^---+\s*$/.test(trimmed)) {
                 closeList();
                 closeBlockquote();
                 continue;
             }
-            
+
             // Empty line
             if (trimmed === '') {
                 closeList();
                 closeBlockquote();
                 continue;
             }
-            
+
             // Headers: # ## ### ####
             const headerMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
             if (headerMatch) {
@@ -293,7 +424,7 @@ const RichTextEditor = {
                 html += `<${tag}>${inlineFormat(headerMatch[2])}</${tag}>`;
                 continue;
             }
-            
+
             // Blockquote: > text
             const bqMatch = trimmed.match(/^>\s*(.*)$/);
             if (bqMatch) {
@@ -304,7 +435,7 @@ const RichTextEditor = {
             } else if (inBlockquote) {
                 closeBlockquote();
             }
-            
+
             // Unordered list: - item, * item, + item
             const ulMatch = trimmed.match(/^[-*+]\s+(.+)$/);
             if (ulMatch) {
@@ -318,7 +449,7 @@ const RichTextEditor = {
                 html += `<li>${inlineFormat(ulMatch[1])}</li>`;
                 continue;
             }
-            
+
             // Ordered list: 1. item
             const olMatch = trimmed.match(/^\d+\.\s+(.+)$/);
             if (olMatch) {
@@ -332,24 +463,107 @@ const RichTextEditor = {
                 html += `<li>${inlineFormat(olMatch[1])}</li>`;
                 continue;
             }
-            
+
             // Regular paragraph
             closeList();
             closeBlockquote();
             html += `<p>${inlineFormat(trimmed)}</p>`;
         }
-        
+
         closeList();
         closeBlockquote();
-        
         return html;
     },
-    
+
+    // ==================== PASTE: VISUAL TEXT → HTML ====================
+
+    /**
+     * Convert "visually formatted" plain text to HTML.
+     * This handles text copied from Claude's rendered chat output on iOS,
+     * where there's no markdown syntax but the structure is visible:
+     * - • bullets, — separators, "quoted" text, short header-like lines
+     */
+    _visualTextToHTML(text) {
+        let html = '';
+        const lines = text.split('\n');
+        let inList = false;
+
+        const closeList = () => {
+            if (inList) {
+                html += '</ul>';
+                inList = false;
+            }
+        };
+
+        for (let i = 0; i < lines.length; i++) {
+            const trimmed = lines[i].trim();
+
+            // Skip empty lines
+            if (!trimmed) {
+                closeList();
+                continue;
+            }
+
+            // Bullet lines: • item, · item, ▪ item, etc.
+            const bulletMatch = trimmed.match(/^[•·▪▸►‣]\s*(.+)$/);
+            if (bulletMatch) {
+                if (!inList) {
+                    html += '<ul>';
+                    inList = true;
+                }
+                html += `<li>${bulletMatch[1]}</li>`;
+                continue;
+            }
+
+            // Detect header-like lines: short, no period, followed by longer content
+            const isShortLine = trimmed.length < 60 && !trimmed.endsWith('.');
+            const nextLine = (i + 1 < lines.length) ? lines[i + 1].trim() : '';
+            const nextIsContent = nextLine.length > 60 || nextLine.startsWith('•') || nextLine.match(/^[A-ZÁÉÍÓÚÑ]/);
+            const prevLine = (i > 0) ? lines[i - 1].trim() : '';
+            const afterBlank = prevLine === '';
+
+            if (isShortLine && (afterBlank || i === 0) && nextIsContent && !bulletMatch) {
+                closeList();
+                html += `<h3>${trimmed}</h3>`;
+                continue;
+            }
+
+            // Quoted text: "something" — attribution
+            const quoteMatch = trimmed.match(/^[""](.+)[""]\s*[-—]\s*(.+)$/);
+            if (quoteMatch) {
+                closeList();
+                html += `<blockquote>"${quoteMatch[1]}" — ${quoteMatch[2]}</blockquote>`;
+                continue;
+            }
+
+            // Regular paragraph
+            closeList();
+            html += `<p>${trimmed}</p>`;
+        }
+
+        closeList();
+        return html;
+    },
+
+    // ==================== PASTE: PLAIN TEXT → HTML ====================
+
+    /**
+     * Convert plain text (no formatting at all) to HTML paragraphs
+     */
+    _plainTextToHTML(text) {
+        const paragraphs = text.split(/\n\n+/);
+        return paragraphs
+            .map(p => p.trim())
+            .filter(p => p.length > 0)
+            .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+            .join('');
+    },
+
     // ==================== STYLES ====================
-    
+
     addStyles() {
         if (document.getElementById('rte-styles')) return;
-        
+
         const styles = document.createElement('style');
         styles.id = 'rte-styles';
         styles.textContent = `
@@ -439,16 +653,12 @@ const RichTextEditor = {
                 margin: 0.5em 0;
                 color: #1e3a5f;
             }
-            .rte-editor p {
-                margin: 0.75em 0;
-            }
+            .rte-editor p { margin: 0.75em 0; }
             .rte-editor ul, .rte-editor ol {
                 margin: 0.75em 0;
                 padding-left: 1.5em;
             }
-            .rte-editor li {
-                margin: 0.25em 0;
-            }
+            .rte-editor li { margin: 0.25em 0; }
             .rte-editor a {
                 color: #2563eb;
                 text-decoration: underline;
@@ -471,10 +681,8 @@ const RichTextEditor = {
                 outline: 2px solid #1e3a5f;
                 outline-offset: 2px;
             }
-            .rte-hidden-input {
-                display: none;
-            }
-            
+            .rte-hidden-input { display: none; }
+
             /* Mobile */
             @media (max-width: 600px) {
                 .rte-toolbar {
@@ -485,9 +693,7 @@ const RichTextEditor = {
                     -webkit-overflow-scrolling: touch;
                     scrollbar-width: none;
                 }
-                .rte-toolbar::-webkit-scrollbar {
-                    display: none;
-                }
+                .rte-toolbar::-webkit-scrollbar { display: none; }
                 .rte-btn {
                     width: 34px;
                     height: 34px;
