@@ -137,23 +137,47 @@ const RichTextEditor = {
         // Handle paste - sanitize HTML to keep formatting
         editor.addEventListener('paste', (e) => {
             const html = e.clipboardData.getData('text/html');
-            if (html) {
-                e.preventDefault();
-                // Sanitize: keep only safe tags
+            const plain = e.clipboardData.getData('text/plain');
+            e.preventDefault();
+            
+            if (html && html.trim().length > 0) {
+                // Rich paste: sanitize HTML
                 const temp = document.createElement('div');
                 temp.innerHTML = html;
-                // Remove all style attributes and classes
                 temp.querySelectorAll('*').forEach(el => {
                     el.removeAttribute('style');
                     el.removeAttribute('class');
                     el.removeAttribute('id');
-                    // Convert Google Docs bold spans to <strong>
-                    if (el.tagName === 'SPAN' && el.style?.fontWeight >= 700) {
-                        const strong = document.createElement('strong');
-                        strong.innerHTML = el.innerHTML;
-                        el.replaceWith(strong);
+                });
+                const allowed = ['P','BR','STRONG','B','EM','I','U','H1','H2','H3','H4','UL','OL','LI','A','IMG','BLOCKQUOTE','DIV'];
+                temp.querySelectorAll('*').forEach(el => {
+                    if (!allowed.includes(el.tagName)) {
+                        el.replaceWith(...el.childNodes);
                     }
                 });
+                temp.querySelectorAll('div').forEach(el => {
+                    const p = document.createElement('p');
+                    p.innerHTML = el.innerHTML;
+                    el.replaceWith(p);
+                });
+                temp.querySelectorAll('p').forEach(el => {
+                    if (!el.textContent.trim() && !el.querySelector('img')) {
+                        el.remove();
+                    }
+                });
+                document.execCommand('insertHTML', false, temp.innerHTML);
+            } else if (plain) {
+                // Plain text fallback: convert line breaks to paragraphs
+                const paragraphs = plain.split(/\n\n+/);
+                const html_out = paragraphs
+                    .map(p => p.trim())
+                    .filter(p => p.length > 0)
+                    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+                    .join('');
+                document.execCommand('insertHTML', false, html_out || plain);
+            }
+            hiddenInput.value = editor.innerHTML;
+        });
                 // Strip unwanted tags, keep content
                 const allowed = ['P','BR','STRONG','B','EM','I','U','H1','H2','H3','H4','UL','OL','LI','A','IMG','BLOCKQUOTE','DIV'];
                 temp.querySelectorAll('*').forEach(el => {
