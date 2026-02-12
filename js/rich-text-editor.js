@@ -4,22 +4,11 @@
  * 
  * Simple formatting toolbar for article content.
  * Uses contenteditable + stores HTML in a hidden textarea.
- * 
- * INSTALLATION:
- * 1. Add this file to js/rich-text-editor.js
- * 2. Add to index.html: <script src="js/rich-text-editor.js"></script>
- * 3. Replace your textarea with RichTextEditor.create()
+ * Supports paste from: rich text (desktop), Markdown (Claude/iOS), plain text.
  */
 
 const RichTextEditor = {
     
-    /**
-     * Create a rich text editor
-     * @param {string} containerId - ID of container element
-     * @param {string} inputName - Name for the hidden input (for form submission)
-     * @param {string} initialContent - Initial HTML content
-     * @returns {Object} - Editor instance with getValue() and setValue() methods
-     */
     create(containerId, inputName = 'content', initialContent = '') {
         const container = document.getElementById(containerId);
         if (!container) {
@@ -74,19 +63,16 @@ const RichTextEditor = {
             const value = btn.dataset.value || null;
             
             if (cmd === 'insertImage') {
-                // Save current selection before opening modal
                 const sel = window.getSelection();
                 const savedRange = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
 
                 if (typeof MediaLibrary !== 'undefined') {
                     MediaLibrary.open((url) => {
                         editor.focus();
-                        // Restore cursor position
                         if (savedRange) {
                             sel.removeAllRanges();
                             sel.addRange(savedRange);
                         }
-                        // Insert image at cursor
                         const img = document.createElement('img');
                         img.src = url;
                         img.alt = 'Imagen del artículo';
@@ -95,7 +81,6 @@ const RichTextEditor = {
                         if (savedRange) {
                             savedRange.collapse(false);
                             savedRange.insertNode(img);
-                            // Move cursor after image
                             savedRange.setStartAfter(img);
                             savedRange.collapse(true);
                             sel.removeAllRanges();
@@ -106,7 +91,6 @@ const RichTextEditor = {
                         hiddenInput.value = editor.innerHTML;
                     });
                 } else {
-                    // Fallback: prompt for URL
                     const url = prompt('URL de la imagen:');
                     if (url) {
                         document.execCommand('insertHTML', false, `<img src="${url}" alt="Imagen" style="max-width:100%;border-radius:8px;margin:12px 0;display:block;">`);
@@ -125,7 +109,6 @@ const RichTextEditor = {
                 document.execCommand(cmd, false, value);
             }
             
-            // Update hidden input
             hiddenInput.value = editor.innerHTML;
         });
         
@@ -134,47 +117,31 @@ const RichTextEditor = {
             hiddenInput.value = editor.innerHTML;
         });
         
-        // Handle paste - sanitize HTML, with mobile plain-text fallback
+        // Handle paste - HTML (desktop/Android), Markdown (Claude/iOS), plain text
         editor.addEventListener('paste', (e) => {
             const html = e.clipboardData.getData('text/html');
             const plain = e.clipboardData.getData('text/plain');
             e.preventDefault();
             
             if (html && html.trim().length > 0) {
-                // Rich paste: sanitize HTML
-                const temp = document.createElement('div');
-                temp.innerHTML = html;
-                temp.querySelectorAll('*').forEach(el => {
-                    el.removeAttribute('style');
-                    el.removeAttribute('class');
-                    el.removeAttribute('id');
-                });
-                const allowed = ['P','BR','STRONG','B','EM','I','U','H1','H2','H3','H4','UL','OL','LI','A','IMG','BLOCKQUOTE','DIV'];
-                temp.querySelectorAll('*').forEach(el => {
-                    if (!allowed.includes(el.tagName)) {
-                        el.replaceWith(...el.childNodes);
-                    }
-                });
-                temp.querySelectorAll('div').forEach(el => {
-                    const p = document.createElement('p');
-                    p.innerHTML = el.innerHTML;
-                    el.replaceWith(p);
-                });
-                temp.querySelectorAll('p').forEach(el => {
-                    if (!el.textContent.trim() && !el.querySelector('img')) {
-                        el.remove();
-                    }
-                });
-                document.execCommand('insertHTML', false, temp.innerHTML);
+                // Rich paste: sanitize HTML (desktop, Android)
+                document.execCommand('insertHTML', false, RichTextEditor._sanitizeHTML(html));
             } else if (plain) {
-                // Plain text fallback (mobile): convert line breaks to paragraphs
-                const paragraphs = plain.split(/\n\n+/);
-                const htmlOut = paragraphs
-                    .map(p => p.trim())
-                    .filter(p => p.length > 0)
-                    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-                    .join('');
-                document.execCommand('insertHTML', false, htmlOut || plain);
+                // Check if text contains Markdown patterns
+                if (RichTextEditor._hasMarkdown(plain)) {
+                    // Convert Markdown to HTML
+                    const converted = RichTextEditor._markdownToHTML(plain);
+                    document.execCommand('insertHTML', false, converted);
+                } else {
+                    // Plain text: convert line breaks to paragraphs
+                    const paragraphs = plain.split(/\n\n+/);
+                    const htmlOut = paragraphs
+                        .map(p => p.trim())
+                        .filter(p => p.length > 0)
+                        .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+                        .join('');
+                    document.execCommand('insertHTML', false, htmlOut || plain);
+                }
             }
             hiddenInput.value = editor.innerHTML;
         });
@@ -200,10 +167,9 @@ const RichTextEditor = {
             }
         });
         
-        // Add styles if not already added
+        // Add styles
         this.addStyles();
         
-        // Return editor instance
         return {
             getValue: () => editor.innerHTML,
             setValue: (html) => {
@@ -216,9 +182,171 @@ const RichTextEditor = {
         };
     },
     
+    // ==================== PASTE HELPERS ====================
+    
     /**
-     * Add CSS styles
+     * Sanitize HTML from rich paste (Google Docs, desktop browsers)
      */
+    _sanitizeHTML(html) {
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        temp.querySelectorAll('*').forEach(el => {
+            el.removeAttribute('style');
+            el.removeAttribute('class');
+            el.removeAttribute('id');
+        });
+        const allowed = ['P','BR','STRONG','B','EM','I','U','H1','H2','H3','H4','UL','OL','LI','A','IMG','BLOCKQUOTE','DIV'];
+        temp.querySelectorAll('*').forEach(el => {
+            if (!allowed.includes(el.tagName)) {
+                el.replaceWith(...el.childNodes);
+            }
+        });
+        temp.querySelectorAll('div').forEach(el => {
+            const p = document.createElement('p');
+            p.innerHTML = el.innerHTML;
+            el.replaceWith(p);
+        });
+        temp.querySelectorAll('p').forEach(el => {
+            if (!el.textContent.trim() && !el.querySelector('img')) {
+                el.remove();
+            }
+        });
+        return temp.innerHTML;
+    },
+    
+    /**
+     * Detect if text contains Markdown patterns
+     */
+    _hasMarkdown(text) {
+        return /(?:^|\n)\s{0,3}#{1,4}\s/.test(text) ||       // # Headers
+               /\*\*[^*]+\*\*/.test(text) ||                  // **bold**
+               /(?<!\*)\*[^*\n]+\*(?!\*)/.test(text) ||       // *italic*
+               /^>\s/m.test(text) ||                           // > blockquote
+               /^\s*[-*+]\s/m.test(text) ||                    // - list items
+               /^\s*\d+\.\s/m.test(text) ||                    // 1. ordered list
+               /^---\s*$/m.test(text);                         // --- horizontal rule
+    },
+    
+    /**
+     * Convert Markdown to HTML
+     */
+    _markdownToHTML(md) {
+        let html = '';
+        const lines = md.split('\n');
+        let inList = false;
+        let listType = '';
+        let inBlockquote = false;
+        let blockquoteLines = [];
+        
+        const closeList = () => {
+            if (inList) {
+                html += `</${listType}>`;
+                inList = false;
+                listType = '';
+            }
+        };
+        
+        const closeBlockquote = () => {
+            if (inBlockquote) {
+                const content = blockquoteLines.join('<br>');
+                html += `<blockquote>${content}</blockquote>`;
+                inBlockquote = false;
+                blockquoteLines = [];
+            }
+        };
+        
+        const inlineFormat = (text) => {
+            // Bold: **text**
+            text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            // Italic: *text* (but not inside bold)
+            text = text.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>');
+            // Links: [text](url)
+            text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+            return text;
+        };
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+            
+            // Skip horizontal rules (---)
+            if (/^---+\s*$/.test(trimmed)) {
+                closeList();
+                closeBlockquote();
+                continue;
+            }
+            
+            // Empty line
+            if (trimmed === '') {
+                closeList();
+                closeBlockquote();
+                continue;
+            }
+            
+            // Headers: # ## ### ####
+            const headerMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+            if (headerMatch) {
+                closeList();
+                closeBlockquote();
+                const level = headerMatch[1].length;
+                const tag = `h${level}`;
+                html += `<${tag}>${inlineFormat(headerMatch[2])}</${tag}>`;
+                continue;
+            }
+            
+            // Blockquote: > text
+            const bqMatch = trimmed.match(/^>\s*(.*)$/);
+            if (bqMatch) {
+                closeList();
+                inBlockquote = true;
+                blockquoteLines.push(inlineFormat(bqMatch[1]));
+                continue;
+            } else if (inBlockquote) {
+                closeBlockquote();
+            }
+            
+            // Unordered list: - item, * item, + item
+            const ulMatch = trimmed.match(/^[-*+]\s+(.+)$/);
+            if (ulMatch) {
+                closeBlockquote();
+                if (!inList || listType !== 'ul') {
+                    closeList();
+                    html += '<ul>';
+                    inList = true;
+                    listType = 'ul';
+                }
+                html += `<li>${inlineFormat(ulMatch[1])}</li>`;
+                continue;
+            }
+            
+            // Ordered list: 1. item
+            const olMatch = trimmed.match(/^\d+\.\s+(.+)$/);
+            if (olMatch) {
+                closeBlockquote();
+                if (!inList || listType !== 'ol') {
+                    closeList();
+                    html += '<ol>';
+                    inList = true;
+                    listType = 'ol';
+                }
+                html += `<li>${inlineFormat(olMatch[1])}</li>`;
+                continue;
+            }
+            
+            // Regular paragraph
+            closeList();
+            closeBlockquote();
+            html += `<p>${inlineFormat(trimmed)}</p>`;
+        }
+        
+        closeList();
+        closeBlockquote();
+        
+        return html;
+    },
+    
+    // ==================== STYLES ====================
+    
     addStyles() {
         if (document.getElementById('rte-styles')) return;
         
@@ -382,47 +510,3 @@ const RichTextEditor = {
         document.head.appendChild(styles);
     }
 };
-
-/* ============================================
-   INTEGRATION CODE
-   ============================================
-   
-   In your admin.js article form, replace the textarea:
-   
-   BEFORE:
-   -----------------------------------------
-   <label>Contenido</label>
-   <textarea id="articulo-contenido" rows="10"></textarea>
-   
-   
-   AFTER:
-   -----------------------------------------
-   <label>Contenido</label>
-   <div id="articulo-contenido-editor"></div>
-   
-   
-   Then in your JavaScript, create the editor:
-   -----------------------------------------
-   // Create editor when showing the article form
-   let contentEditor = null;
-   
-   function showArticleForm(article = null) {
-       // ... your existing form setup code ...
-       
-       // Initialize rich text editor
-       const initialContent = article ? article.contenido : '';
-       contentEditor = RichTextEditor.create('articulo-contenido-editor', 'contenido', initialContent);
-   }
-   
-   // When saving the article, get the content:
-   function saveArticle() {
-       const contenido = contentEditor.getValue();
-       // ... save to Supabase ...
-   }
-   
-   // When editing an existing article:
-   function editArticle(article) {
-       contentEditor.setValue(article.contenido);
-   }
-   
-*/
