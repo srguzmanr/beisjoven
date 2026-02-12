@@ -315,7 +315,7 @@ const RichTextEditor = {
                /\*\*[^*]+\*\*/.test(text)               ||  // **bold**
                /(?<!\*)\*[^*\n]+\*(?!\*)/.test(text)     ||  // *italic*
                /^>\s/m.test(text)                        ||  // > blockquote
-               /^\s*[-*+]\s/m.test(text)                 ||  // - list items
+               /^\s*[-*+•·]\s/m.test(text)                ||  // - list items (incl. • · from chat)
                /^\s*\d+\.\s/m.test(text)                 ||  // 1. ordered list
                /^---\s*$/m.test(text);                       // --- horizontal rule
     },
@@ -334,26 +334,27 @@ const RichTextEditor = {
 
         let score = 0;
 
-        // • bullet characters
+        // • bullet characters or similar
         if (/^\s*[•·▪▸►‣]\s/m.test(text)) score += 2;
 
-        // Short lines that look like section headers (under 60 chars, no period at end)
+        // Short lines that look like section headers (under 80 chars, no period at end)
         const shortHeaderLines = lines.filter(l => {
             const t = l.trim();
-            return t.length > 3 && t.length < 60 && !t.endsWith('.') && !t.startsWith('•') && !t.startsWith('-');
+            return t.length > 3 && t.length < 80 && !t.endsWith('.') && !t.endsWith(':') && !t.startsWith('•') && !t.startsWith('·') && !t.startsWith('-');
         });
         if (shortHeaderLines.length >= 2) score += 1;
 
         // Em dashes used as separators
         if (/\s—\s/.test(text)) score += 1;
 
-        // Quoted text with " "
+        // Quoted text with " " or regular quotes with attribution
         if (/[""][^""]+[""]/.test(text) || /"[^"]+"\s*[-—]/.test(text)) score += 1;
 
-        // Multiple line breaks between sections
-        if (/\n\s*\n/.test(text)) score += 1;
+        // Multiple blank lines between sections (paragraph structure)
+        const blankLineCount = (text.match(/\n\s*\n/g) || []).length;
+        if (blankLineCount >= 2) score += 1;
 
-        return score >= 3;
+        return score >= 2;
     },
 
     // ==================== PASTE: MARKDOWN → HTML ====================
@@ -436,8 +437,8 @@ const RichTextEditor = {
                 closeBlockquote();
             }
 
-            // Unordered list: - item, * item, + item
-            const ulMatch = trimmed.match(/^[-*+]\s+(.+)$/);
+            // Unordered list: - item, * item, + item, • item, · item
+            const ulMatch = trimmed.match(/^[-*+•·]\s+(.+)$/);
             if (ulMatch) {
                 closeBlockquote();
                 if (!inList || listType !== 'ul') {
@@ -464,10 +465,29 @@ const RichTextEditor = {
                 continue;
             }
 
-            // Regular paragraph
+            // Regular paragraph — or heading heuristic for chat-copied text
             closeList();
             closeBlockquote();
-            html += `<p>${inlineFormat(trimmed)}</p>`;
+
+            // Heading heuristic: short line, no period at end, not a data line,
+            // appears after a blank line or at start, followed by content.
+            // This catches "Sección Final" or "Pitchers Confirmados" from chat copy.
+            const isShort = trimmed.length >= 3 && trimmed.length < 80;
+            const noPeriod = !trimmed.endsWith('.') && !trimmed.endsWith(':') && !trimmed.endsWith('!') && !trimmed.endsWith('?');
+            const noSeparator = !trimmed.includes(' — ') || trimmed.split(' — ').length === 2 && trimmed.split(' — ')[0].length < 40;
+            const prevIsBlank = (i === 0) || (lines[i - 1].trim() === '');
+            const nextLine = (i + 1 < lines.length) ? lines[i + 1].trim() : '';
+            const nextIsContentOrBlank = nextLine === '' || nextLine.length > trimmed.length;
+
+            // Additional check: line should not look like a data/detail line
+            // (data lines typically have numbers with parens, multiple — dashes, etc.)
+            const looksLikeData = /\(\d+/.test(trimmed) && /—/.test(trimmed);
+
+            if (isShort && noPeriod && prevIsBlank && nextIsContentOrBlank && !looksLikeData) {
+                html += `<h3>${inlineFormat(trimmed)}</h3>`;
+            } else {
+                html += `<p>${inlineFormat(trimmed)}</p>`;
+            }
         }
 
         closeList();
@@ -515,14 +535,16 @@ const RichTextEditor = {
                 continue;
             }
 
-            // Detect header-like lines: short, no period, followed by longer content
-            const isShortLine = trimmed.length < 60 && !trimmed.endsWith('.');
+            // Detect header-like lines: short, no period, followed by content
+            const isShortLine = trimmed.length >= 3 && trimmed.length < 80 &&
+                !trimmed.endsWith('.') && !trimmed.endsWith(':') && !trimmed.endsWith('!') && !trimmed.endsWith('?');
             const nextLine = (i + 1 < lines.length) ? lines[i + 1].trim() : '';
-            const nextIsContent = nextLine.length > 60 || nextLine.startsWith('•') || nextLine.match(/^[A-ZÁÉÍÓÚÑ]/);
+            const nextIsContent = nextLine.length > trimmed.length || nextLine.startsWith('•') || nextLine.startsWith('·') || nextLine === '';
             const prevLine = (i > 0) ? lines[i - 1].trim() : '';
-            const afterBlank = prevLine === '';
+            const afterBlank = prevLine === '' || i === 0;
+            const looksLikeData = /\(\d+/.test(trimmed) && /—/.test(trimmed);
 
-            if (isShortLine && (afterBlank || i === 0) && nextIsContent && !bulletMatch) {
+            if (isShortLine && afterBlank && nextIsContent && !bulletMatch && !looksLikeData) {
                 closeList();
                 html += `<h3>${trimmed}</h3>`;
                 continue;
