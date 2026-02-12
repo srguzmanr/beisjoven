@@ -134,7 +134,7 @@ const RichTextEditor = {
             hiddenInput.value = editor.innerHTML;
         });
         
-        // Handle paste - sanitize HTML to keep formatting
+        // Handle paste - sanitize HTML, with mobile plain-text fallback
         editor.addEventListener('paste', (e) => {
             const html = e.clipboardData.getData('text/html');
             const plain = e.clipboardData.getData('text/plain');
@@ -167,39 +167,16 @@ const RichTextEditor = {
                 });
                 document.execCommand('insertHTML', false, temp.innerHTML);
             } else if (plain) {
-                // Plain text fallback: convert line breaks to paragraphs
+                // Plain text fallback (mobile): convert line breaks to paragraphs
                 const paragraphs = plain.split(/\n\n+/);
-                const html_out = paragraphs
+                const htmlOut = paragraphs
                     .map(p => p.trim())
                     .filter(p => p.length > 0)
                     .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
                     .join('');
-                document.execCommand('insertHTML', false, html_out || plain);
+                document.execCommand('insertHTML', false, htmlOut || plain);
             }
             hiddenInput.value = editor.innerHTML;
-        });
-                // Strip unwanted tags, keep content
-                const allowed = ['P','BR','STRONG','B','EM','I','U','H1','H2','H3','H4','UL','OL','LI','A','IMG','BLOCKQUOTE','DIV'];
-                temp.querySelectorAll('*').forEach(el => {
-                    if (!allowed.includes(el.tagName)) {
-                        el.replaceWith(...el.childNodes);
-                    }
-                });
-                // Convert divs to paragraphs
-                temp.querySelectorAll('div').forEach(el => {
-                    const p = document.createElement('p');
-                    p.innerHTML = el.innerHTML;
-                    el.replaceWith(p);
-                });
-                // Clean empty paragraphs
-                temp.querySelectorAll('p').forEach(el => {
-                    if (!el.textContent.trim() && !el.querySelector('img')) {
-                        el.remove();
-                    }
-                });
-                document.execCommand('insertHTML', false, temp.innerHTML);
-                hiddenInput.value = editor.innerHTML;
-            }
         });
         
         // Keyboard shortcuts
@@ -253,6 +230,7 @@ const RichTextEditor = {
                 border-radius: 8px;
                 overflow: hidden;
                 background: white;
+                position: relative;
             }
             .rte-toolbar {
                 display: flex;
@@ -261,6 +239,10 @@ const RichTextEditor = {
                 padding: 8px 10px;
                 background: #f3f4f6;
                 border-bottom: 1px solid #d1d5db;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                -webkit-overflow-scrolling: touch;
             }
             .rte-btn {
                 width: 32px;
@@ -275,6 +257,12 @@ const RichTextEditor = {
                 font-size: 14px;
                 color: #374151;
                 transition: all 0.15s;
+                -webkit-appearance: none;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+                user-select: none;
+                -webkit-user-select: none;
+                flex-shrink: 0;
             }
             .rte-btn:hover {
                 background: #e5e7eb;
@@ -291,6 +279,7 @@ const RichTextEditor = {
                 height: 24px;
                 background: #d1d5db;
                 margin: 4px 6px;
+                flex-shrink: 0;
             }
             .rte-editor {
                 min-height: 300px;
@@ -301,6 +290,9 @@ const RichTextEditor = {
                 line-height: 1.6;
                 color: #1f2937;
                 outline: none;
+                -webkit-overflow-scrolling: touch;
+                -webkit-user-select: text;
+                user-select: text;
             }
             .rte-editor:empty:before {
                 content: attr(data-placeholder);
@@ -359,20 +351,31 @@ const RichTextEditor = {
             @media (max-width: 600px) {
                 .rte-toolbar {
                     padding: 6px;
+                    gap: 3px;
+                    overflow-x: auto;
+                    flex-wrap: nowrap;
+                    -webkit-overflow-scrolling: touch;
+                    scrollbar-width: none;
+                }
+                .rte-toolbar::-webkit-scrollbar {
+                    display: none;
                 }
                 .rte-btn {
-                    width: 28px;
-                    height: 28px;
-                    font-size: 12px;
+                    width: 34px;
+                    height: 34px;
+                    font-size: 13px;
+                    min-width: 34px;
                 }
                 .rte-separator {
                     height: 20px;
-                    margin: 4px 4px;
+                    margin: 7px 3px;
+                    min-width: 1px;
                 }
                 .rte-editor {
                     min-height: 200px;
+                    max-height: none;
                     padding: 12px;
-                    font-size: 15px;
+                    font-size: 16px;
                 }
             }
         `;
