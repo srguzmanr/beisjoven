@@ -134,15 +134,48 @@ const RichTextEditor = {
             hiddenInput.value = editor.innerHTML;
         });
         
-        // Handle paste - strip formatting optionally
+        // Handle paste - sanitize HTML to keep formatting
         editor.addEventListener('paste', (e) => {
-            // Allow normal paste with formatting
-            // If you want plain text only, uncomment below:
-            /*
-            e.preventDefault();
-            const text = e.clipboardData.getData('text/plain');
-            document.execCommand('insertText', false, text);
-            */
+            const html = e.clipboardData.getData('text/html');
+            if (html) {
+                e.preventDefault();
+                // Sanitize: keep only safe tags
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                // Remove all style attributes and classes
+                temp.querySelectorAll('*').forEach(el => {
+                    el.removeAttribute('style');
+                    el.removeAttribute('class');
+                    el.removeAttribute('id');
+                    // Convert Google Docs bold spans to <strong>
+                    if (el.tagName === 'SPAN' && el.style?.fontWeight >= 700) {
+                        const strong = document.createElement('strong');
+                        strong.innerHTML = el.innerHTML;
+                        el.replaceWith(strong);
+                    }
+                });
+                // Strip unwanted tags, keep content
+                const allowed = ['P','BR','STRONG','B','EM','I','U','H1','H2','H3','H4','UL','OL','LI','A','IMG','BLOCKQUOTE','DIV'];
+                temp.querySelectorAll('*').forEach(el => {
+                    if (!allowed.includes(el.tagName)) {
+                        el.replaceWith(...el.childNodes);
+                    }
+                });
+                // Convert divs to paragraphs
+                temp.querySelectorAll('div').forEach(el => {
+                    const p = document.createElement('p');
+                    p.innerHTML = el.innerHTML;
+                    el.replaceWith(p);
+                });
+                // Clean empty paragraphs
+                temp.querySelectorAll('p').forEach(el => {
+                    if (!el.textContent.trim() && !el.querySelector('img')) {
+                        el.remove();
+                    }
+                });
+                document.execCommand('insertHTML', false, temp.innerHTML);
+                hiddenInput.value = editor.innerHTML;
+            }
         });
         
         // Keyboard shortcuts
