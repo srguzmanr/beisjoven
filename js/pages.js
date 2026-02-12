@@ -376,7 +376,14 @@ const Pages = {
         
         // Obtener artículo de Supabase
         const articulo = await SupabaseAPI.getArticuloBySlug(params.slug);
-        
+        // Incrementar vistas (una vez por sesión por artículo)
+if (articulo) {
+    const viewedKey = `viewed_${articulo.id}`;
+    if (!sessionStorage.getItem(viewedKey)) {
+        sessionStorage.setItem(viewedKey, 'true');
+        SupabaseAPI.incrementVistas(articulo.id);
+    }
+}
         if (!articulo) {
             main.innerHTML = `
                 <div class="error-page">
