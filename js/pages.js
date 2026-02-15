@@ -960,30 +960,29 @@ const Pages = {
                             
                             <div class="contacto-methods">
                                 <div class="contacto-item">
-                                    <span class="contacto-icon">📧</span>
+                                    <span class="contacto-icon">✉️</span>
                                     <div>
-                                        <strong>Email</strong>
+                                        <strong>Email</strong><br>
                                         <a href="mailto:contacto@beisjoven.com">contacto@beisjoven.com</a>
                                     </div>
                                 </div>
                                 
                                 <div class="contacto-item">
-                                    <span class="contacto-icon">📱</span>
+                                    <span class="contacto-icon">🌐</span>
                                     <div>
-                                        <strong>Redes Sociales</strong>
-                                        <div class="social-links">
-                                            <a href="https://twitter.com/beisjoven" target="_blank" rel="noopener">Twitter/X</a>
-                                            <a href="https://facebook.com/beisjoven" target="_blank" rel="noopener">Facebook</a>
-                                            <a href="https://instagram.com/beisjoven" target="_blank" rel="noopener">Instagram</a>
-                                        </div>
+                                        <strong>Redes Sociales</strong><br>
+                                        <a href="https://facebook.com/beisjoven" target="_blank" rel="noopener">Facebook</a> · 
+                                        <a href="https://twitter.com/beisjoven" target="_blank" rel="noopener">X (Twitter)</a> · 
+                                        <a href="https://instagram.com/beisjoven" target="_blank" rel="noopener">Instagram</a> · 
+                                        <a href="https://youtube.com/@beisjoven" target="_blank" rel="noopener">YouTube</a>
                                     </div>
                                 </div>
                                 
                                 <div class="contacto-item">
                                     <span class="contacto-icon">📍</span>
                                     <div>
-                                        <strong>Ubicación</strong>
-                                        <p>Ciudad Obregón, Sonora, México</p>
+                                        <strong>Ubicación</strong><br>
+                                        Ciudad Obregón, Sonora, México
                                     </div>
                                 </div>
                             </div>
