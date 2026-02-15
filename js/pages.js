@@ -81,15 +81,15 @@ const Pages = {
         ] = await Promise.all([
             SupabaseAPI.getArticulos(20),
             SupabaseAPI.getArticulosDestacados(3),
-            SupabaseAPI.getVideosDestacados(6)
+            SupabaseAPI.getVideosDestacados(5)
         ]);
         
-        // Filtrar artículos por categoría (usando los datos ya cargados)
+        // Filtrar artículos por categoría (pilares editoriales)
         const ligaMexArticles = articulos.filter(a => a.categoria?.slug === 'liga-mexicana').slice(0, 4);
         const mlbArticles = articulos.filter(a => a.categoria?.slug === 'mlb').slice(0, 4);
         const seleccionArticles = articulos.filter(a => a.categoria?.slug === 'seleccion').slice(0, 4);
         const softbolArticles = articulos.filter(a => a.categoria?.slug === 'softbol').slice(0, 4);
-        const juvenilArticles = articulos.filter(a => a.categoria?.slug === 'juvenil').slice(0, 2);
+        const juvenilArticles = articulos.filter(a => a.categoria?.slug === 'juvenil').slice(0, 4);
         
         // Si no hay destacados, usar los primeros artículos
         const featuredArticles = articulosDestacados.length > 0 ? articulosDestacados : articulos.slice(0, 3);
@@ -198,45 +198,35 @@ const Pages = {
                     </div>
                 </div>
             </section>
-
+            
             <!-- MLB -->
             <section class="news-section alt-bg">
                 <div class="container">
-                    ${Components.sectionTitle('MLB', '🏆', { url: '/categoria/mlb', text: 'Ver más' })}
+                    ${Components.sectionTitle('MLB - Mexicanos en Grandes Ligas', '🏆', { url: '/categoria/mlb', text: 'Ver más' })}
                     <div class="featured-grid">
                         ${mlb.length > 0 ? mlb.slice(0, 2).map(a => Components.articleCardHorizontal(a)).join('') : '<p class="empty-message">Próximamente más noticias de MLB</p>'}
                     </div>
                 </div>
             </section>
-
-            <!-- Selección -->
-            <section class="news-section">
-                <div class="container">
-                    ${Components.sectionTitle('Selección', '🇲🇽', { url: '/categoria/seleccion', text: 'Ver más' })}
-                    <div class="news-grid">
-                        ${seleccion.length > 0 ? seleccion.map(a => Components.articleCard(a)).join('') : '<p class="empty-message">Próximamente más noticias de la Selección</p>'}
-                    </div>
-                </div>
-            </section>
-
+            
             <!-- Softbol -->
-            <section class="news-section alt-bg">
+            <section class="news-section">
                 <div class="container">
-                    ${Components.sectionTitle('Softbol', '🥎', { url: '/categoria/softbol', text: 'Ver más' })}
-                    <div class="featured-grid">
-                        ${softbol.length > 0 ? softbol.slice(0, 2).map(a => Components.articleCardHorizontal(a)).join('') : '<p class="empty-message">Próximamente más noticias de Softbol</p>'}
+                    ${Components.sectionTitle('Softbol México', '🥎', { url: '/categoria/softbol', text: 'Ver más' })}
+                    <div class="news-grid">
+                        ${softbol.length > 0 ? softbol.map(a => Components.articleCard(a)).join('') : '<p class="empty-message">Próximamente más noticias de Softbol</p>'}
                     </div>
                 </div>
             </section>
-
-            <!-- Juvenil + Sidebar -->
-            <section class="news-section">
+            
+            <!-- Selección -->
+            <section class="news-section alt-bg">
                 <div class="container">
                     <div class="two-column">
                         <div>
-                            ${Components.sectionTitle('Juvenil', '⭐', { url: '/categoria/juvenil', text: 'Ver más' })}
+                            ${Components.sectionTitle('Selección Mexicana', '🇲🇽', { url: '/categoria/seleccion', text: 'Ver más' })}
                             <div class="featured-grid single-column">
-                                ${juvenil.length > 0 ? juvenil.map(a => Components.articleCardHorizontal(a)).join('') : '<p class="empty-message">Próximamente más noticias juveniles</p>'}
+                                ${seleccion.length > 0 ? seleccion.slice(0, 2).map(a => Components.articleCardHorizontal(a)).join('') : '<p class="empty-message">Próximamente noticias de Selección</p>'}
                             </div>
                         </div>
                         <aside>
@@ -247,12 +237,25 @@ const Pages = {
                 </div>
             </section>
             
+            <!-- Juvenil -->
+            <section class="news-section">
+                <div class="container">
+                    ${Components.sectionTitle('Béisbol y Softbol Juvenil', '🌟', { url: '/categoria/juvenil', text: 'Ver más' })}
+                    <div class="news-grid">
+                        ${juvenil.length > 0 ? juvenil.map(a => Components.articleCard(a)).join('') : '<p class="empty-message">Próximamente más noticias juveniles</p>'}
+                    </div>
+                </div>
+            </section>
+            
             <!-- Videos -->
             <section class="news-section videos-section">
                 <div class="container">
                     ${Components.sectionTitle('Videos Destacados', '▶️', { url: '/videos', text: 'Ver canal' })}
-                    <div class="vid-grid-home">
-                        ${vids.map(v => Components.videoCard(v, 'featured')).join('')}
+                    <div class="videos-grid">
+                        ${vids[0] ? Components.videoCard(vids[0], 'featured') : '<p class="empty-message">Próximamente videos</p>'}
+                        <div class="videos-sidebar">
+                            ${vids.slice(1).map(v => Components.videoCard(v, 'small')).join('')}
+                        </div>
                     </div>
                 </div>
             </section>
@@ -376,14 +379,7 @@ const Pages = {
         
         // Obtener artículo de Supabase
         const articulo = await SupabaseAPI.getArticuloBySlug(params.slug);
-        // Incrementar vistas (una vez por sesión por artículo)
-if (articulo) {
-    const viewedKey = `viewed_${articulo.id}`;
-    if (!sessionStorage.getItem(viewedKey)) {
-        sessionStorage.setItem(viewedKey, 'true');
-        SupabaseAPI.incrementVistas(articulo.id);
-    }
-}
+        
         if (!articulo) {
             main.innerHTML = `
                 <div class="error-page">
@@ -572,7 +568,7 @@ if (articulo) {
                     </header>
                     
                     ${videos.length > 0 
-                        ? `<div class="vid-grid-page">
+                        ? `<div class="videos-full-grid">
                             ${videos.map(v => Components.videoCard(v, 'featured')).join('')}
                            </div>`
                         : Components.emptyState('No hay videos disponibles', '📹')
