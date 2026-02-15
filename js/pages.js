@@ -207,7 +207,7 @@ const Pages = {
             <!-- MLB -->
             <section class="news-section alt-bg">
                 <div class="container">
-                    ${Components.sectionTitle('MLB - Mexicanos en Grandes Ligas', '🏆', { url: '/categoria/mlb', text: 'Ver más' })}
+                    ${Components.sectionTitle('MLB', '🏆', { url: '/categoria/mlb', text: 'Ver más' })}
                     <div class="featured-grid">
                         ${mlb.length > 0 ? mlb.slice(0, 2).map(a => Components.articleCardHorizontal(a)).join('') : '<p class="empty-message">Próximamente más noticias de MLB</p>'}
                     </div>
