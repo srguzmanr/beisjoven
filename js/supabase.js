@@ -163,7 +163,8 @@ const SupabaseAPI = {
                 autor:autores(*)
             `)
             .eq('publicado', true)
-            .order('vistas', { ascending: false })
+            .order('vistas', { ascending: false }) 
+            .order('fecha', { ascending: false })
             .limit(limite);
         
         if (error) {
