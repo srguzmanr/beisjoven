@@ -152,7 +152,24 @@ const SupabaseAPI = {
             .order('fecha', { ascending: false })
             .order('created_at', { ascending: false })
             .limit(limite);
+        async getMasLeidos(limite = 5) {
+        const { data, error } = await supabaseClient
+            .from('articulos')
+            .select(`
+                *,
+                categoria:categorias(*),
+                autor:autores(*)
+            `)
+            .eq('publicado', true)
+            .order('vistas', { ascending: false })
+            .limit(limite);
         
+        if (error) {
+            console.error('Error cargando más leídos:', error);
+            return [];
+        }
+        return data;
+    },
         if (error) {
             console.error('Error cargando artículos destacados:', error);
             return [];
