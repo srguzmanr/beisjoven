@@ -107,13 +107,7 @@ const SupabaseAPI = {
         }
         return data;
     },
-    async incrementVistas(articleId) {
-        try {
-            await supabaseClient.rpc('increment_vistas', { article_id: articleId });
-        } catch (e) {
-            console.error('Error incrementando vistas:', e);
-        }
-    },
+    
     async getArticulosByCategoria(categoriaSlug, limite = 10) {
         // Primero obtener la categoría
         const categoria = await this.getCategoriaBySlug(categoriaSlug);
@@ -152,7 +146,15 @@ const SupabaseAPI = {
             .order('fecha', { ascending: false })
             .order('created_at', { ascending: false })
             .limit(limite);
-        async getMasLeidos(limite = 5) {
+        
+        if (error) {
+            console.error('Error cargando artículos destacados:', error);
+            return [];
+        }
+        return data;
+    },
+    
+    async getMasLeidos(limite = 5) {
         const { data, error } = await supabaseClient
             .from('articulos')
             .select(`
@@ -166,12 +168,6 @@ const SupabaseAPI = {
         
         if (error) {
             console.error('Error cargando más leídos:', error);
-            return [];
-        }
-        return data;
-    },
-        if (error) {
-            console.error('Error cargando artículos destacados:', error);
             return [];
         }
         return data;
