@@ -77,6 +77,7 @@ const Pages = {
         const [
             articulos,
             articulosDestacados,
+            masLeidos,
             ligaMexArticles,
             mlbArticles,
             seleccionArticles,
@@ -86,6 +87,7 @@ const Pages = {
         ] = await Promise.all([
             SupabaseAPI.getArticulos(10),
             SupabaseAPI.getArticulosDestacados(3),
+            SupabaseAPI.getMasLeidos(5),
             SupabaseAPI.getArticulosByCategoria('liga-mexicana', 4),
             SupabaseAPI.getArticulosByCategoria('mlb', 4),
             SupabaseAPI.getArticulosByCategoria('seleccion', 4),
@@ -97,8 +99,8 @@ const Pages = {
         // Si no hay destacados, usar los primeros artículos
         const featuredArticles = articulosDestacados.length > 0 ? articulosDestacados : articulos.slice(0, 3);
         
-        // Más leídos (por ahora usamos los más recientes)
-        const mostRead = articulos.slice(0, 5);
+        // Más leídos (ordenados por vistas)
+        const mostRead = masLeidos.length > 0 ? masLeidos : articulos.slice(0, 5);
         
         // Últimas noticias para ticker
         const latestNews = articulos.slice(0, 3);
@@ -298,7 +300,7 @@ const Pages = {
         
         const [articulosCategoria, articulosPopulares] = await Promise.all([
             SupabaseAPI.getArticulosByCategoria(params.slug, 50),
-            SupabaseAPI.getArticulos(5)
+            SupabaseAPI.getMasLeidos(5)
         ]);
         
         // Adaptar artículos
@@ -447,7 +449,7 @@ const Pages = {
         const currentUrl = window.location.href;
         
         // Obtener más leídos
-        const articulosPopulares = await SupabaseAPI.getArticulos(5);
+        const articulosPopulares = await SupabaseAPI.getMasLeidos(5);
         const mostRead = articulosPopulares.map(a => ({
             id: a.id,
             title: a.titulo,
