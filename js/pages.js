@@ -73,23 +73,26 @@ const Pages = {
             </div>
         `;
         
-        // Obtener datos de Supabase
+        // Obtener datos de Supabase — fetch per category for reliable results
         const [
             articulos,
             articulosDestacados,
+            ligaMexArticles,
+            mlbArticles,
+            seleccionArticles,
+            softbolArticles,
+            juvenilArticles,
             videos
         ] = await Promise.all([
-            SupabaseAPI.getArticulos(20),
+            SupabaseAPI.getArticulos(10),
             SupabaseAPI.getArticulosDestacados(3),
+            SupabaseAPI.getArticulosByCategoria('liga-mexicana', 4),
+            SupabaseAPI.getArticulosByCategoria('mlb', 4),
+            SupabaseAPI.getArticulosByCategoria('seleccion', 4),
+            SupabaseAPI.getArticulosByCategoria('softbol', 4),
+            SupabaseAPI.getArticulosByCategoria('juvenil', 4),
             SupabaseAPI.getVideosDestacados(5)
         ]);
-        
-        // Filtrar artículos por categoría (pilares editoriales)
-        const ligaMexArticles = articulos.filter(a => a.categoria?.slug === 'liga-mexicana').slice(0, 4);
-        const mlbArticles = articulos.filter(a => a.categoria?.slug === 'mlb').slice(0, 4);
-        const seleccionArticles = articulos.filter(a => a.categoria?.slug === 'seleccion').slice(0, 4);
-        const softbolArticles = articulos.filter(a => a.categoria?.slug === 'softbol').slice(0, 4);
-        const juvenilArticles = articulos.filter(a => a.categoria?.slug === 'juvenil').slice(0, 4);
         
         // Si no hay destacados, usar los primeros artículos
         const featuredArticles = articulosDestacados.length > 0 ? articulosDestacados : articulos.slice(0, 3);
