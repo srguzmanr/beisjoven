@@ -91,7 +91,7 @@ const Pages = {
             SupabaseAPI.getArticulosByCategoria('seleccion', 4),
             SupabaseAPI.getArticulosByCategoria('softbol', 4),
             SupabaseAPI.getArticulosByCategoria('juvenil', 4),
-            SupabaseAPI.getVideosDestacados(5)
+            SupabaseAPI.getVideosDestacados(6)
         ]);
         
         // Si no hay destacados, usar los primeros artículos
