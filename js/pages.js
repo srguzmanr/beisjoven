@@ -215,7 +215,7 @@ const Pages = {
             <!-- Softbol -->
             <section class="news-section">
                 <div class="container">
-                    ${Components.sectionTitle('Softbol México', '🥎', { url: '/categoria/softbol', text: 'Ver más' })}
+                    ${Components.sectionTitle('Softbol', '🥎', { url: '/categoria/softbol', text: 'Ver más' })}
                     <div class="news-grid">
                         ${softbol.length > 0 ? softbol.map(a => Components.articleCard(a)).join('') : '<p class="empty-message">Próximamente más noticias de Softbol</p>'}
                     </div>
@@ -243,7 +243,7 @@ const Pages = {
             <!-- Juvenil -->
             <section class="news-section">
                 <div class="container">
-                    ${Components.sectionTitle('Béisbol y Softbol Juvenil', '🌟', { url: '/categoria/juvenil', text: 'Ver más' })}
+                    ${Components.sectionTitle('Juvenil', '🌟', { url: '/categoria/juvenil', text: 'Ver más' })}
                     <div class="news-grid">
                         ${juvenil.length > 0 ? juvenil.map(a => Components.articleCard(a)).join('') : '<p class="empty-message">Próximamente más noticias juveniles</p>'}
                     </div>
@@ -251,15 +251,15 @@ const Pages = {
             </section>
             
             <!-- Videos -->
-            <section class="news-section videos-section">
+            <section class="news-section videos-section-dark">
                 <div class="container">
                     ${Components.sectionTitle('Videos Destacados', '▶️', { url: '/videos', text: 'Ver canal' })}
-                    <div class="videos-grid">
-                        ${vids[0] ? Components.videoCard(vids[0], 'featured') : '<p class="empty-message">Próximamente videos</p>'}
-                        <div class="videos-sidebar">
-                            ${vids.slice(1).map(v => Components.videoCard(v, 'small')).join('')}
-                        </div>
-                    </div>
+                    ${vids.length > 0 
+                        ? `<div class="vid-grid-home">
+                            ${vids.slice(0, 6).map(v => Components.videoCard(v)).join('')}
+                           </div>`
+                        : '<p class="empty-message" style="color:#aaa">Próximamente videos</p>'
+                    }
                 </div>
             </section>
         `;
@@ -571,8 +571,8 @@ const Pages = {
                     </header>
                     
                     ${videos.length > 0 
-                        ? `<div class="videos-full-grid">
-                            ${videos.map(v => Components.videoCard(v, 'featured')).join('')}
+                        ? `<div class="vid-grid-page">
+                            ${videos.map(v => Components.videoCard(v)).join('')}
                            </div>`
                         : Components.emptyState('No hay videos disponibles', '📹')
                     }
@@ -668,8 +668,8 @@ const Pages = {
                     ${relatedVideos.length > 0 ? `
                         <section class="related-videos">
                             ${Components.sectionTitle('Más Videos', '▶️')}
-                            <div class="videos-grid-4">
-                                ${relatedVideos.map(v => Components.videoCard(v, 'small')).join('')}
+                            <div class="vid-grid-related">
+                                ${relatedVideos.map(v => Components.videoCard(v)).join('')}
                             </div>
                         </section>
                     ` : ''}
