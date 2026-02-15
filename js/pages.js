@@ -251,7 +251,7 @@ const Pages = {
             </section>
             
             <!-- Videos -->
-            <section class="news-section videos-section-dark">
+            <section class="news-section videos-section">
                 <div class="container">
                     ${Components.sectionTitle('Videos Destacados', '▶️', { url: '/videos', text: 'Ver canal' })}
                     ${vids.length > 0 
