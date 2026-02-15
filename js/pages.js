@@ -195,9 +195,9 @@ const Pages = {
             <!-- Liga Mexicana -->
             <section class="news-section">
                 <div class="container">
-                    ${Components.sectionTitle('Liga Mexicana', '⚾', { url: '/categoria/liga-mexicana', text: 'Ver más' })}
+                    ${Components.sectionTitle('Ligas Mexicanas', '⚾', { url: '/categoria/liga-mexicana', text: 'Ver más' })}
                     <div class="news-grid">
-                        ${ligaMex.length > 0 ? ligaMex.map(a => Components.articleCard(a)).join('') : '<p class="empty-message">Próximamente más noticias de la Liga Mexicana</p>'}
+                        ${ligaMex.length > 0 ? ligaMex.map(a => Components.articleCard(a)).join('') : '<p class="empty-message">Próximamente más noticias de las Ligas Mexicanas</p>'}
                     </div>
                 </div>
             </section>
