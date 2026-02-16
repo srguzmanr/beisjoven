@@ -1245,12 +1245,64 @@ const AdminComponents = {
     header: function(title) {
         return `
             <header class="admin-header">
-                <h1>${title}</h1>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button class="mobile-menu-toggle" onclick="AdminComponents.toggleSidebar()" style="
+                        display: none;
+                        background: none;
+                        border: none;
+                        font-size: 1.5rem;
+                        cursor: pointer;
+                        padding: 4px;
+                        color: #e2e8f0;
+                    ">☰</button>
+                    <h1>${title}</h1>
+                </div>
                 <div class="header-actions">
                     <span class="current-date">${new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                 </div>
             </header>
+            <style>
+                @media (max-width: 768px) {
+                    .mobile-menu-toggle { display: block !important; }
+                    .admin-sidebar.mobile-open {
+                        display: flex !important;
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        bottom: 0;
+                        z-index: 9000;
+                        width: 250px;
+                        box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+                    }
+                    .sidebar-overlay {
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(0,0,0,0.5);
+                        z-index: 8999;
+                    }
+                }
+            </style>
         `;
+    },
+    
+    toggleSidebar: function() {
+        const sidebar = document.querySelector('.admin-sidebar');
+        if (!sidebar) return;
+        
+        const isOpen = sidebar.classList.contains('mobile-open');
+        
+        if (isOpen) {
+            sidebar.classList.remove('mobile-open');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if (overlay) overlay.remove();
+        } else {
+            sidebar.classList.add('mobile-open');
+            // Add overlay to close on tap outside
+            const overlay = document.createElement('div');
+            overlay.className = 'sidebar-overlay';
+            overlay.onclick = function() { AdminComponents.toggleSidebar(); };
+            sidebar.parentElement.appendChild(overlay);
+        }
     }
 };
 
