@@ -1215,19 +1215,19 @@ const AdminComponents = {
                 </div>
                 
                 <nav class="sidebar-nav">
-                    <a href="/admin" class="${currentPath === '/admin' ? 'active' : ''}">
+                    <a href="/admin" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath === '/admin' ? 'active' : ''}">
                         📊 Dashboard
                     </a>
-                    <a href="/admin/articulos" class="${currentPath.includes('/articulos') ? 'active' : ''}">
+                    <a href="/admin/articulos" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath.includes('/articulos') ? 'active' : ''}">
                         📝 Artículos
                     </a>
-                    <a href="/admin/nuevo" class="${currentPath === '/admin/nuevo' ? 'active' : ''}">
+                    <a href="/admin/nuevo" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath === '/admin/nuevo' ? 'active' : ''}">
                         ➕ Nuevo Artículo
                     </a>
-                    <a href="/admin/videos" class="${currentPath.includes('/videos') ? 'active' : ''}">
+                    <a href="/admin/videos" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath.includes('/videos') ? 'active' : ''}">
                         📹 Videos
                     </a>
-                    <a href="/admin/medios" class="${currentPath === '/admin/medios' ? 'active' : ''}">
+                    <a href="/admin/medios" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath === '/admin/medios' ? 'active' : ''}">
                         🖼️ Medios
                     </a>
                     <hr>
@@ -1246,62 +1246,41 @@ const AdminComponents = {
         return `
             <header class="admin-header">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <button class="mobile-menu-toggle" onclick="AdminComponents.toggleSidebar()" style="
-                        display: none;
-                        background: none;
-                        border: none;
-                        font-size: 1.5rem;
-                        cursor: pointer;
-                        padding: 4px;
-                        color: #e2e8f0;
-                    ">☰</button>
+                    <button class="mobile-menu-toggle" onclick="AdminComponents.toggleSidebar()">☰</button>
                     <h1>${title}</h1>
                 </div>
                 <div class="header-actions">
                     <span class="current-date">${new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
                 </div>
             </header>
-            <style>
-                @media (max-width: 768px) {
-                    .mobile-menu-toggle { display: block !important; }
-                    .admin-sidebar.mobile-open {
-                        display: flex !important;
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        bottom: 0;
-                        z-index: 9000;
-                        width: 250px;
-                        box-shadow: 4px 0 20px rgba(0,0,0,0.5);
-                    }
-                    .sidebar-overlay {
-                        position: fixed;
-                        inset: 0;
-                        background: rgba(0,0,0,0.5);
-                        z-index: 8999;
-                    }
-                }
-            </style>
         `;
     },
     
     toggleSidebar: function() {
-        const sidebar = document.querySelector('.admin-sidebar');
+        var sidebar = document.querySelector('.admin-sidebar');
         if (!sidebar) return;
         
-        const isOpen = sidebar.classList.contains('mobile-open');
+        var isOpen = sidebar.classList.contains('mobile-open');
         
         if (isOpen) {
             sidebar.classList.remove('mobile-open');
-            const overlay = document.querySelector('.sidebar-overlay');
+            var overlay = document.querySelector('.sidebar-overlay');
             if (overlay) overlay.remove();
         } else {
             sidebar.classList.add('mobile-open');
-            // Add overlay to close on tap outside
-            const overlay = document.createElement('div');
+            var overlay = document.createElement('div');
             overlay.className = 'sidebar-overlay';
             overlay.onclick = function() { AdminComponents.toggleSidebar(); };
             sidebar.parentElement.appendChild(overlay);
+        }
+    },
+    
+    closeSidebarMobile: function() {
+        var sidebar = document.querySelector('.admin-sidebar');
+        if (sidebar && sidebar.classList.contains('mobile-open')) {
+            sidebar.classList.remove('mobile-open');
+            var overlay = document.querySelector('.sidebar-overlay');
+            if (overlay) overlay.remove();
         }
     }
 };
