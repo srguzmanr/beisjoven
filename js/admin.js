@@ -168,20 +168,26 @@ const AdminPages = {
         `;
 
         // Manejar submit del formulario
-        document.getElementById('login-form').addEventListener('submit', function(e) {
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorDiv = document.getElementById('login-error');
+            const btn = e.target.querySelector('button[type="submit"]');
             
-            const result = Auth.login(email, password);
+            btn.disabled = true;
+            btn.textContent = 'Iniciando sesión...';
+            
+            const result = await Auth.login(email, password);
             
             if (result.success) {
                 Router.navigate('/admin');
             } else {
                 errorDiv.textContent = result.error;
                 errorDiv.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Iniciar Sesión';
             }
         });
 
@@ -706,9 +712,9 @@ const AdminPages = {
         }
     },
 
-    logout: function() {
+    logout: async function() {
         Autosave.stop();
-        Auth.logout();
+        await Auth.logout();
         Router.navigate('/login');
     },
 
