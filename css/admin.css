@@ -66,8 +66,8 @@
 }
 
 .error-message {
-    background: var(--error-light-bg);
-    color: var(--error-light-text);
+    background: #fee;
+    color: #c00;
     padding: 12px;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -128,7 +128,7 @@
     flex: 1;
     margin-left: 260px;
     min-height: 100vh;
-    background: var(--surface-bg);
+    background: #f5f5f5;
 }
 
 .sidebar-header {
@@ -437,8 +437,8 @@
 }
 
 .btn-danger {
-    background: var(--error-light-bg);
-    color: var(--error-light-text);
+    background: #fee;
+    color: #c00;
 }
 
 .btn-danger:hover {
@@ -591,9 +591,12 @@
     color: var(--white);
 }
 
-/* Responsive Admin */
+/* Hamburger menu - hidden on desktop */
+.mobile-menu-toggle {
+    display: none;
+}
 
-/* ==================== RESPONSIVE ADMIN ==================== */
+/* Responsive Admin */
 @media (max-width: 1200px) {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -608,482 +611,114 @@
     }
 }
 
-/* ==================== MOBILE NAVIGATION: HAMBURGER + SLIDE-OUT ==================== */
-
-/* Hamburger button */
-.hamburger-btn {
-    display: none;
-    width: 44px;
-    height: 44px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 5px;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.hamburger-btn span {
-    display: block;
-    width: 24px;
-    height: 2px;
-    background: currentColor;
-    border-radius: 2px;
-    transition: all 0.3s ease;
-}
-
-/* Sidebar close button (visible only on mobile) */
-.sidebar-close {
-    display: none;
-    width: 40px;
-    height: 40px;
-    border: none;
-    background: rgba(255,255,255,0.1);
-    color: white;
-    font-size: 1.3rem;
-    border-radius: 8px;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* Overlay behind sidebar */
-.sidebar-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 99;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.sidebar-overlay.active {
-    display: block;
-    opacity: 1;
-}
-
-/* Header layout: hamburger + title inline */
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-/* Mobile-only / Desktop-only helpers */
-.mobile-only { display: none !important; }
-.desktop-only { display: block; }
-table.desktop-only, .articles-table.desktop-only { display: table; }
-
-/* ==================== MOBILE ARTICLE CARDS ==================== */
-.article-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.article-card-mobile {
-    background: var(--white);
-    border-radius: 10px;
-    padding: 16px;
-    box-shadow: var(--shadow);
-}
-
-.article-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-}
-
-.article-card-date {
-    font-size: 0.8rem;
-    color: var(--gray);
-}
-
-.article-card-title {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0 0 12px 0;
-    line-height: 1.4;
-}
-
-.article-card-title a {
-    color: inherit;
-    text-decoration: none;
-}
-
-.article-card-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.article-card-actions .btn-small {
-    flex: 1;
-    text-align: center;
-    padding: 10px 12px;
-    font-size: 0.85rem;
-    border-radius: 8px;
-}
-
-/* Video mobile card */
-.video-card-mobile {
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-}
-
-.video-thumb-mobile {
-    width: 120px;
-    height: 68px;
-    object-fit: cover;
-    border-radius: 6px;
-    flex-shrink: 0;
-}
-
-.video-card-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.video-card-info .article-card-title {
-    font-size: 0.9rem;
-    margin-bottom: 8px;
-}
-
-/* ==================== MOBILE META FIELDS (editor) ==================== */
-.mobile-meta-fields {
-    background: var(--light);
-    padding: 16px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
-
-.form-row-inline {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-.mobile-meta-fields .form-group {
-    margin-bottom: 12px;
-}
-
-.mobile-meta-fields label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    display: block;
-    margin-bottom: 4px;
-    color: var(--dark);
-}
-
-.mobile-meta-fields select,
-.mobile-meta-fields input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 2px solid var(--light);
-    border-radius: 8px;
-    font-size: 0.95rem;
-    background: var(--white);
-}
-
-/* ==================== STICKY MOBILE PUBLISH BAR ==================== */
-.mobile-publish-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: var(--white);
-    padding: 12px 20px;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
-    display: flex;
-    gap: 12px;
-    z-index: 90;
-}
-
-.mobile-publish-bar .btn {
-    flex: 1;
-    padding: 14px;
-    font-size: 1rem;
-    font-weight: 600;
-    border-radius: 10px;
-    text-align: center;
-    text-decoration: none;
-}
-
-/* ==================== LOGIN SPINNER ==================== */
-.btn-spinner {
-    display: inline-block;
-    width: 18px;
-    height: 18px;
-    border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-    vertical-align: middle;
-    margin-right: 6px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* ==================== WELCOME BANNER MOBILE ==================== */
-.welcome-btn {
-    background: white;
-    color: var(--primary);
-    padding: 12px 24px;
-    border-radius: 25px;
-    font-weight: 600;
-    text-decoration: none;
-    white-space: nowrap;
-}
-
-.welcome-btn:hover {
-    background: #f0f0f0;
-}
-
-/* ==================== MEDIA PICKER BUTTON ==================== */
-.btn-media-picker {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.95rem;
-    white-space: nowrap;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.btn-media-picker:hover {
-    background: var(--primary-dark);
-}
-
-/* ==================== RESPONSIVE: TABLET (≤992px) ==================== */
-@media (max-width: 992px) {
-
-    /* Sidebar becomes slide-out drawer */
+/* Tablet: sidebar becomes horizontal bar */
+@media (max-width: 992px) and (min-width: 769px) {
+    .admin-layout {
+        display: block;
+    }
+    
     .admin-sidebar {
-        position: fixed;
-        left: -280px;
-        width: 260px;
-        height: 100vh;
-        transition: left 0.3s ease;
-        z-index: 200;
+        position: relative;
+        width: 100%;
+        height: auto;
+        padding-bottom: 20px;
     }
-
-    .admin-sidebar.open {
-        left: 0;
+    
+    .sidebar-nav {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 10px;
+        gap: 5px;
     }
-
+    
+    .sidebar-nav a {
+        padding: 10px 15px;
+    }
+    
+    .sidebar-nav hr {
+        display: none;
+    }
+    
     .admin-main {
         margin-left: 0;
     }
-
-    /* Show hamburger */
-    .hamburger-btn {
-        display: flex;
-    }
-
-    /* Show close button in sidebar */
-    .sidebar-close {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .sidebar-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    /* Sidebar nav: vertical on tablet/mobile */
-    .sidebar-nav {
-        display: flex;
-        flex-direction: column;
-        padding: 10px 0;
-    }
-
-    .sidebar-nav a {
-        padding: 14px 20px;
-        font-size: 1rem;
-    }
-
-    .sidebar-nav hr {
-        display: block;
-    }
-
+    
     .sidebar-user {
-        display: flex;
+        display: none;
     }
 }
 
-/* ==================== RESPONSIVE: MOBILE (≤768px) ==================== */
+/* Mobile: sidebar hidden, hamburger toggle */
 @media (max-width: 768px) {
-
-    /* Toggle visibility */
-    .mobile-only { display: block !important; }
-    .desktop-only { display: none !important; }
-    div.mobile-only { display: block !important; }
-    div.desktop-only { display: none !important; }
-    .articles-table.desktop-only { display: none !important; }
-    .article-cards.mobile-only { display: flex !important; }
-
+    .admin-layout {
+        display: block;
+    }
+    
+    .admin-sidebar {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 260px;
+        height: 100vh;
+        z-index: 9000;
+        flex-direction: column;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+    }
+    
+    .admin-sidebar.mobile-open {
+        display: flex;
+    }
+    
+    .sidebar-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 8999;
+    }
+    
+    .admin-main {
+        margin-left: 0;
+    }
+    
+    .mobile-menu-toggle {
+        display: block;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 4px 8px;
+        color: var(--dark);
+    }
+    
     .stats-grid {
         grid-template-columns: 1fr 1fr;
-        gap: 12px;
     }
-
-    .stat-card {
-        padding: 16px;
-    }
-
-    .stat-icon {
-        font-size: 2rem;
-    }
-
-    .stat-number {
-        font-size: 1.5rem;
-    }
-
+    
     .admin-content {
-        padding: 16px;
+        padding: 20px;
     }
-
+    
+    .articles-table {
+        overflow-x: auto;
+    }
+    
+    .articles-table table {
+        min-width: 600px;
+    }
+    
     .admin-header {
-        padding: 12px 16px;
+        padding: 15px 20px;
     }
-
+    
     .admin-header h1 {
         font-size: 1.3rem;
     }
-
-    /* Date hidden on very small screens */
-    .current-date {
+    
+    .header-actions {
         display: none;
     }
-
-    .content-header {
-        flex-direction: column;
-        gap: 12px;
-        align-items: stretch;
-    }
-
-    .content-header .btn {
-        text-align: center;
-    }
-
-    /* Welcome banner stacks */
-    .welcome-banner {
-        flex-direction: column;
-        text-align: center;
-        padding: 20px;
-        gap: 16px;
-    }
-
-    .welcome-banner h2 {
-        font-size: 1.4rem !important;
-    }
-
-    .welcome-btn {
-        width: 100%;
-        text-align: center;
-        display: block;
-    }
-
-    /* Article form: single column, no sidebar */
-    .article-form .form-grid {
-        grid-template-columns: 1fr;
-        gap: 0;
-    }
-
-    .form-main input,
-    .form-main textarea,
-    .form-main select {
-        padding: 12px;
-        font-size: 16px; /* prevents iOS zoom */
-    }
-
-    /* Make room for sticky publish bar */
-    .article-form {
-        padding-bottom: 80px;
-    }
-
-    /* Admin section */
-    .admin-section {
-        padding: 16px;
-    }
-
-    .admin-section h3 {
-        font-size: 1.1rem;
-    }
-
-    /* Upload zone */
-    .upload-zone {
-        padding: 24px 16px;
-    }
-
-    .upload-icon {
-        font-size: 2.5rem;
-    }
-
-    .media-gallery {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        gap: 8px;
-    }
-
-    /* Hide overlay on mobile — tap triggers JS action dialog instead */
-    .media-item .media-overlay {
-        display: none;
-    }
-
-    /* Touch-friendly buttons everywhere */
-    .btn, button, a.btn, .btn-small {
-        min-height: 44px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Video form sidebar stacks */
-    .form-sidebar {
-        order: unset;
-    }
-
-    .form-card {
-        margin-bottom: 16px;
-    }
 }
-
-/* ==================== RESPONSIVE: SMALL PHONE (≤480px) ==================== */
-@media (max-width: 480px) {
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .admin-content {
-        padding: 12px;
-    }
-
-    .form-row-inline {
-        grid-template-columns: 1fr;
-    }
-
-    .video-card-mobile {
-        flex-direction: column;
-    }
-
-    .video-thumb-mobile {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 16/9;
-    }
-}
-
 
 /* ==================== BIBLIOTECA DE MEDIOS ==================== */
 
@@ -1100,7 +735,7 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
 .upload-zone:hover,
 .upload-zone.dragover {
     border-color: var(--primary);
-    background: rgba(196, 30, 58, 0.04);
+    background: #fff5f5;
 }
 
 .upload-content {
@@ -1240,657 +875,3 @@ table.desktop-only, .articles-table.desktop-only { display: table; }
         gap: 10px;
     }
 }
-
-/* ============================================================
-   ADMIN PANEL — Dark Mode
-   Auto via prefers-color-scheme
-   Updated: February 10, 2026 — Reviewed & optimized
-   ============================================================ */
-
-@media (prefers-color-scheme: dark) {
-
-    /* ========== LOGIN PAGE ========== */
-    .login-page {
-        background: linear-gradient(135deg, #0f0f1a 0%, #1a1a35 100%);
-    }
-
-    .login-container {
-        background: var(--surface-elevated);
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    }
-
-    .login-header h1 {
-        color: var(--primary);
-    }
-
-    .login-header p {
-        color: var(--text-secondary);
-    }
-
-    .login-form label {
-        color: var(--form-text);
-    }
-
-    .login-form input {
-        background: var(--form-bg);
-        border-color: var(--form-border);
-        color: var(--form-text);
-    }
-
-    .login-form input:focus {
-        border-color: var(--primary);
-    }
-
-    .login-form input::placeholder {
-        color: var(--form-placeholder);
-    }
-
-    .error-message {
-        background: var(--error-bg);
-        color: var(--error-text);
-    }
-
-    .login-help {
-        border-top-color: var(--border-color);
-    }
-
-    .login-help p {
-        color: var(--text-muted);
-    }
-
-    .login-help code {
-        background: var(--form-bg);
-        color: #bbb;
-    }
-
-    /* ========== ADMIN LAYOUT ========== */
-    .admin-sidebar {
-        background: #111120;
-        border-right: 1px solid var(--form-bg);
-    }
-
-    .admin-main {
-        background: var(--surface-bg);
-    }
-
-    /* ========== ADMIN HEADER ========== */
-    .admin-header {
-        background: var(--surface-elevated);
-        box-shadow: var(--shadow);
-    }
-
-    .admin-header h1 {
-        color: var(--text-primary);
-    }
-
-    .current-date {
-        color: var(--text-secondary);
-    }
-
-    /* ========== STATS GRID ========== */
-    .stat-card {
-        background: var(--surface-card);
-        box-shadow: var(--shadow);
-    }
-
-    .stat-number {
-        color: var(--text-primary);
-    }
-
-    .stat-label {
-        color: var(--text-secondary);
-    }
-
-    /* ========== ADMIN SECTIONS ========== */
-    .admin-section {
-        background: var(--surface-card);
-        box-shadow: var(--shadow);
-    }
-
-    .admin-section h3 {
-        color: var(--text-primary);
-    }
-
-    /* ========== CONTENT HEADER ========== */
-    .content-header h2 {
-        color: var(--text-primary);
-    }
-
-    /* ========== ARTICLES TABLE ========== */
-    .articles-table {
-        background: var(--surface-card);
-        box-shadow: var(--shadow);
-    }
-
-    .articles-table th {
-        background: var(--form-bg);
-        color: #ccc;
-        border-bottom-color: var(--border-color);
-    }
-
-    .articles-table td {
-        color: var(--form-text);
-        border-bottom-color: var(--border-color);
-    }
-
-    .articles-table tr:hover {
-        background: rgba(255, 255, 255, 0.03);
-    }
-
-    .articles-table a {
-        color: var(--form-text);
-    }
-
-    .articles-table a:hover {
-        color: var(--primary);
-    }
-
-    .badge {
-        background: var(--form-bg);
-        color: #ccc;
-    }
-
-    .btn-small {
-        background: var(--form-bg);
-        color: var(--form-text);
-    }
-
-    .btn-small:hover {
-        background: var(--form-border);
-        color: #fff;
-    }
-
-    .btn-danger {
-        background: var(--error-bg);
-        color: var(--error-text);
-    }
-
-    .btn-danger:hover {
-        background: #c00;
-        color: #fff;
-    }
-
-    /* ========== EMPTY STATE ========== */
-    .empty-state-small {
-        color: var(--text-secondary);
-    }
-
-    /* ========== ARTICLE FORM ========== */
-    .form-main label {
-        color: var(--form-text);
-    }
-
-    .form-main input,
-    .form-main textarea,
-    .form-main select {
-        background: var(--form-bg);
-        border-color: var(--form-border);
-        color: var(--form-text);
-    }
-
-    .form-main input:focus,
-    .form-main textarea:focus,
-    .form-main select:focus {
-        border-color: var(--primary);
-    }
-
-    .form-main input::placeholder,
-    .form-main textarea::placeholder {
-        color: var(--form-placeholder);
-    }
-
-    .form-main small {
-        color: var(--text-muted);
-    }
-
-    /* --- Form Sidebar Cards --- */
-    .form-sidebar .form-card {
-        background: var(--surface-card);
-        box-shadow: var(--shadow);
-    }
-
-    .form-card h4 {
-        color: var(--text-primary);
-    }
-
-    .form-card label {
-        color: var(--form-text);
-    }
-
-    .form-card input,
-    .form-card select {
-        background: var(--form-bg);
-        border-color: var(--form-border);
-        color: var(--form-text);
-    }
-
-    .form-card input:focus,
-    .form-card select:focus {
-        border-color: var(--primary);
-    }
-
-    .form-card small {
-        color: var(--text-muted);
-    }
-
-    .image-preview {
-        background: var(--form-bg);
-    }
-
-    .image-preview span {
-        color: var(--text-muted);
-    }
-
-    /* --- Form Action Buttons --- */
-    .btn-secondary {
-        background: var(--form-bg);
-        color: var(--form-text);
-    }
-
-    .btn-secondary:hover {
-        background: var(--form-border);
-        color: #fff;
-    }
-
-    /* ========== MEDIA LIBRARY ========== */
-    .upload-zone {
-        background: var(--surface-card);
-        border-color: var(--form-border);
-    }
-
-    .upload-zone:hover,
-    .upload-zone.dragover {
-        border-color: var(--primary);
-        background: #2a1a2a;
-    }
-
-    .upload-zone p {
-        color: var(--form-text);
-    }
-
-    .upload-zone small {
-        color: var(--text-muted);
-    }
-
-    .progress-bar {
-        background: var(--form-bg);
-    }
-
-    .media-item {
-        box-shadow: var(--shadow);
-    }
-
-    .empty-media {
-        color: var(--text-muted);
-    }
-
-    /* ========== RICH TEXT EDITOR (Quill) ========== */
-    .ql-toolbar {
-        background: var(--form-bg) !important;
-        border-color: var(--form-border) !important;
-    }
-
-    .ql-toolbar button {
-        color: var(--form-text) !important;
-    }
-
-    .ql-toolbar button:hover,
-    .ql-toolbar button.ql-active {
-        color: var(--primary) !important;
-    }
-
-    .ql-toolbar .ql-stroke {
-        stroke: var(--form-text) !important;
-    }
-
-    .ql-toolbar button:hover .ql-stroke,
-    .ql-toolbar button.ql-active .ql-stroke {
-        stroke: var(--primary) !important;
-    }
-
-    .ql-toolbar .ql-fill {
-        fill: var(--form-text) !important;
-    }
-
-    .ql-toolbar button:hover .ql-fill,
-    .ql-toolbar button.ql-active .ql-fill {
-        fill: var(--primary) !important;
-    }
-
-    .ql-toolbar .ql-picker-label {
-        color: var(--form-text) !important;
-    }
-
-    .ql-toolbar .ql-picker-options {
-        background: var(--form-bg) !important;
-        border-color: var(--form-border) !important;
-    }
-
-    .ql-toolbar .ql-picker-item {
-        color: var(--form-text) !important;
-    }
-
-    .ql-container {
-        border-color: var(--form-border) !important;
-    }
-
-    .ql-editor {
-        background: var(--surface-elevated) !important;
-        color: var(--form-text) !important;
-    }
-
-    .ql-editor.ql-blank::before {
-        color: var(--form-placeholder) !important;
-    }
-
-    /* --- Custom editor toolbar --- */
-    .editor-toolbar,
-    .admin-layout [role="toolbar"] {
-        background: var(--form-bg) !important;
-        border-color: var(--form-border) !important;
-    }
-
-    .editor-toolbar button {
-        background: var(--form-bg) !important;
-        color: var(--form-text) !important;
-        border-color: var(--form-border) !important;
-    }
-
-    .editor-toolbar button:hover {
-        background: var(--form-border) !important;
-        color: #fff !important;
-    }
-
-    /* --- Editor content area --- */
-    .editor-content,
-    [contenteditable="true"] {
-        background: var(--surface-elevated) !important;
-        color: var(--form-text) !important;
-        border-color: var(--form-border) !important;
-        caret-color: #fff !important;
-    }
-
-    [contenteditable="true"]:empty::before,
-    [contenteditable="true"][data-placeholder]::before {
-        color: var(--form-placeholder) !important;
-    }
-
-    /* ========== MODALS (Vista Previa, Biblioteca de Medios, etc.) ========== */
-
-    /* --- Backdrop --- */
-    .modal-backdrop,
-    .overlay-backdrop {
-        background: rgba(0, 0, 0, 0.7) !important;
-    }
-
-    /* --- Modal containers --- */
-    .modal-content,
-    .modal-body,
-    .media-modal,
-    .media-modal .modal-content,
-    .preview-modal,
-    .preview-modal .modal-content {
-        background: var(--surface-elevated) !important;
-        border-color: var(--border-color) !important;
-        color: var(--form-text) !important;
-    }
-
-    /* --- Modal headers --- */
-    .modal-header {
-        background: var(--surface-elevated) !important;
-        border-bottom-color: var(--border-color) !important;
-        color: var(--text-primary) !important;
-    }
-
-    .modal-header h2,
-    .modal-header h3,
-    .modal-header h4,
-    .modal-header h5,
-    .modal-title {
-        color: var(--text-primary) !important;
-    }
-
-    /* --- Modal footers --- */
-    .modal-footer {
-        background: var(--surface-elevated) !important;
-        border-top-color: var(--border-color) !important;
-    }
-
-    /* --- Vista Previa (article preview modal) --- */
-    .preview-modal h1,
-    .preview-modal h2,
-    .preview-modal h3 {
-        color: var(--text-primary) !important;
-    }
-
-    .preview-modal p,
-    .preview-modal .meta,
-    .preview-modal .article-meta {
-        color: var(--text-secondary) !important;
-    }
-
-    /* --- Modal inputs --- */
-    .modal-content input[type="text"],
-    .modal-content input[type="search"],
-    .modal-content input[type="email"],
-    .modal-content textarea,
-    .modal-content select,
-    .media-modal input {
-        background: var(--form-bg) !important;
-        border-color: var(--form-border) !important;
-        color: var(--form-text) !important;
-    }
-
-    .modal-content input::placeholder,
-    .modal-content textarea::placeholder,
-    .media-modal input::placeholder {
-        color: var(--form-placeholder) !important;
-    }
-
-    /* --- Modal headings & text --- */
-    .modal-content h1,
-    .modal-content h2,
-    .modal-content h3,
-    .modal-content h4,
-    .modal-content h5 {
-        color: var(--text-primary) !important;
-    }
-
-    .modal-content p {
-        color: var(--form-text) !important;
-    }
-
-    .media-modal .media-count,
-    .modal-content small,
-    .modal-content .text-muted {
-        color: var(--text-muted) !important;
-    }
-
-    /* --- Close button in modals --- */
-    .modal .btn-close,
-    .modal .close,
-    .btn-close,
-    button.close,
-    [aria-label="Close"],
-    [aria-label="Cerrar"] {
-        filter: invert(1) !important;
-    }
-
-    /* --- Buttons inside modals --- */
-    .modal-content .btn,
-    .modal-footer .btn {
-        border-color: var(--form-border);
-    }
-
-    .modal-footer .btn:not(.btn-primary):not(.btn-danger):not(.btn-success) {
-        background: var(--form-bg) !important;
-        color: var(--form-text) !important;
-        border-color: var(--form-border) !important;
-    }
-
-    .modal-footer .btn:not(.btn-primary):not(.btn-danger):not(.btn-success):hover {
-        background: var(--form-border) !important;
-        color: #fff !important;
-    }
-
-    /* --- Cancelar / secondary action buttons --- */
-    .btn-cancel,
-    .form-actions .btn:not(.btn-primary):not(.btn-danger) {
-        background: var(--form-bg) !important;
-        border-color: var(--form-border) !important;
-        color: var(--form-text) !important;
-    }
-
-    .btn-cancel:hover,
-    .form-actions .btn:not(.btn-primary):not(.btn-danger):hover {
-        background: var(--form-border) !important;
-        color: #fff !important;
-    }
-
-    /* ========== INLINE STYLE OVERRIDES (admin panels with JS-set backgrounds) ========== */
-    .admin-layout [style*="background: white"],
-    .admin-layout [style*="background:#fff"],
-    .admin-layout [style*="background: #fff"],
-    .admin-layout [style*="background-color: white"],
-    .admin-layout [style*="background-color:#fff"],
-    .admin-layout [style*="background-color: #fff"] {
-        background: var(--surface-elevated) !important;
-        color: var(--form-text) !important;
-    }
-
-    /* ========== AUTOSAVE INDICATOR ========== */
-    .autosave-indicator {
-        color: var(--text-muted);
-    }
-
-    .autosave-indicator.saved {
-        color: var(--success-text);
-    }
-
-    /* ========== SCROLLBAR (admin sidebar) ========== */
-    .admin-sidebar::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .admin-sidebar::-webkit-scrollbar-track {
-        background: #111120;
-    }
-
-    .admin-sidebar::-webkit-scrollbar-thumb {
-        background: var(--form-bg);
-        border-radius: 3px;
-    }
-
-    /* ========== MEDIA GRID (in modal) ========== */
-    .media-gallery {
-        background: transparent !important;
-    }
-
-    /* ========== MOBILE COMPONENTS ========== */
-
-    /* Hamburger button */
-    .hamburger-btn span {
-        background: var(--form-text);
-    }
-
-    /* Sidebar overlay */
-    .sidebar-overlay.active {
-        background: rgba(0,0,0,0.7);
-    }
-
-    /* Sidebar close button */
-    .sidebar-close {
-        background: rgba(255,255,255,0.1);
-        color: white;
-    }
-
-    /* Article cards (mobile) */
-    .article-card-mobile {
-        background: var(--surface-card);
-        box-shadow: var(--shadow);
-    }
-
-    .article-card-title,
-    .article-card-title a {
-        color: var(--text-primary);
-    }
-
-    .article-card-date {
-        color: var(--text-muted);
-    }
-
-    .article-card-actions .btn-small {
-        background: var(--form-bg);
-        color: var(--form-text);
-    }
-
-    .article-card-actions .btn-small:hover {
-        background: var(--form-border);
-    }
-
-    /* Mobile meta fields */
-    .mobile-meta-fields {
-        background: var(--surface-card);
-    }
-
-    .mobile-meta-fields label {
-        color: var(--form-text);
-    }
-
-    .mobile-meta-fields select,
-    .mobile-meta-fields input {
-        background: var(--form-bg);
-        border-color: var(--form-border);
-        color: var(--form-text);
-    }
-
-    .mobile-meta-fields select:focus,
-    .mobile-meta-fields input:focus {
-        border-color: var(--primary);
-    }
-
-    /* Sticky publish bar */
-    .mobile-publish-bar {
-        background: var(--surface-elevated);
-        box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
-    }
-
-    .mobile-publish-bar .btn-secondary {
-        background: var(--form-bg) !important;
-        color: var(--form-text) !important;
-        border-color: var(--form-border) !important;
-    }
-
-    /* Login spinner */
-    .btn-spinner {
-        border-color: rgba(255,255,255,0.3);
-        border-top-color: #fff;
-    }
-
-    /* Video thumb mobile */
-    .video-thumb-mobile {
-        box-shadow: var(--shadow);
-    }
-
-    .video-card-info .article-card-title {
-        color: var(--text-primary);
-    }
-
-    /* Form card (shared mobile/desktop) */
-    .form-card {
-        background: var(--surface-card);
-        box-shadow: var(--shadow);
-    }
-
-    .form-card label {
-        color: var(--form-text);
-    }
-
-    .form-card input,
-    .form-card select {
-        background: var(--form-bg);
-        border-color: var(--form-border);
-        color: var(--form-text);
-    }
-
-} /* end @media prefers-color-scheme: dark */
