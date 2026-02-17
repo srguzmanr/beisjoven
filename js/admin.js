@@ -219,7 +219,7 @@ const AdminPages = {
         
         // Cargar datos de Supabase
         const [articulos, videos, categorias] = await Promise.all([
-            SupabaseAPI.getArticulos(100),
+            SupabaseAPI.getArticulos(500),
             SupabaseAPI.getVideos(100),
             SupabaseAPI.getCategorias()
         ]);
@@ -332,7 +332,7 @@ const AdminPages = {
         `;
         
         // Cargar artículos de Supabase
-        const articulos = await SupabaseAPI.getArticulos(100);
+        const articulos = await SupabaseAPI.getArticulos(500);
 
         main.innerHTML = `
             <div class="admin-layout">

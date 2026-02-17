@@ -219,7 +219,83 @@ const SupabaseAPI = {
         return data;
     },
     
-    // ==================== VIDEOS ====================
+    // ==================== PAGINACIÓN ====================
+    
+    async getArticulosByCategoriaPaginados(categoriaSlug, limite = 20, offset = 0) {
+        const categoria = await this.getCategoriaBySlug(categoriaSlug);
+        if (!categoria) return [];
+        
+        const { data, error } = await supabaseClient
+            .from('articulos')
+            .select(`
+                *,
+                categoria:categorias(*),
+                autor:autores(*)
+            `)
+            .eq('categoria_id', categoria.id)
+            .eq('publicado', true)
+            .order('fecha', { ascending: false })
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limite - 1);
+        
+        if (error) {
+            console.error('Error cargando artículos paginados:', error);
+            return [];
+        }
+        return data;
+    },
+    
+    async contarArticulosByCategoria(categoriaSlug) {
+        const categoria = await this.getCategoriaBySlug(categoriaSlug);
+        if (!categoria) return 0;
+        
+        const { count, error } = await supabaseClient
+            .from('articulos')
+            .select('id', { count: 'exact', head: true })
+            .eq('categoria_id', categoria.id)
+            .eq('publicado', true);
+        
+        if (error) {
+            console.error('Error contando artículos:', error);
+            return 0;
+        }
+        return count;
+    },
+
+    async getArticulosPaginados(limite = 20, offset = 0) {
+        const { data, error } = await supabaseClient
+            .from('articulos')
+            .select(`
+                *,
+                categoria:categorias(*),
+                autor:autores(*)
+            `)
+            .eq('publicado', true)
+            .order('fecha', { ascending: false })
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limite - 1);
+        
+        if (error) {
+            console.error('Error cargando artículos paginados:', error);
+            return [];
+        }
+        return data;
+    },
+
+    async contarArticulos() {
+        const { count, error } = await supabaseClient
+            .from('articulos')
+            .select('id', { count: 'exact', head: true })
+            .eq('publicado', true);
+        
+        if (error) {
+            console.error('Error contando artículos:', error);
+            return 0;
+        }
+        return count;
+    },
+
+    // ==================== VIDEOS (PUBLIC) ====================
     
     async getVideos(limite = 10) {
         const { data, error } = await supabaseClient
