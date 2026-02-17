@@ -298,16 +298,10 @@ const Pages = {
             return;
         }
         
-        const PAGE_SIZE = 20;
-        let currentOffset = 0;
-        
-        const [articulosCategoria, articulosPopulares, totalArticulos] = await Promise.all([
-            SupabaseAPI.getArticulosByCategoriaPaginados(params.slug, PAGE_SIZE, 0),
-            SupabaseAPI.getMasLeidos(5),
-            SupabaseAPI.contarArticulosByCategoria(params.slug)
+        const [articulosCategoria, articulosPopulares] = await Promise.all([
+            SupabaseAPI.getArticulosByCategoria(params.slug, 1000),
+            SupabaseAPI.getMasLeidos(5)
         ]);
-        
-        currentOffset = articulosCategoria.length;
         
         // Adaptar artículos
         const adaptArticle = (a) => ({
@@ -335,7 +329,6 @@ const Pages = {
         
         const articles = articulosCategoria.map(adaptArticle);
         const mostRead = articulosPopulares.map(adaptArticle);
-        const hasMore = currentOffset < totalArticulos;
         
         main.innerHTML = `
             ${Components.breadcrumb([
@@ -348,23 +341,15 @@ const Pages = {
                     <header class="category-header">
                         <span class="category-icon">${categoria.icono || '📰'}</span>
                         <h1>${categoria.nombre}</h1>
-                        <p>${totalArticulos} artículos</p>
+                        <p>${articles.length} artículos</p>
                     </header>
                     
                     <div class="two-column">
                         <div>
                             ${articles.length > 0 
-                                ? `<div class="articles-list" id="category-articles-list">
+                                ? `<div class="articles-list">
                                     ${articles.map(a => Components.articleCardHorizontal(a)).join('')}
-                                   </div>
-                                   ${hasMore ? `<div id="load-more-container" style="text-align:center;padding:2rem 0;">
-                                       <button id="load-more-btn" class="btn btn-primary" style="min-width:200px;">
-                                           Cargar más artículos
-                                       </button>
-                                       <p style="margin-top:0.5rem;color:#888;font-size:0.85rem;">
-                                           Mostrando ${articles.length} de ${totalArticulos}
-                                       </p>
-                                   </div>` : ''}`
+                                   </div>`
                                 : Components.emptyState('No hay artículos en esta categoría', '📭')
                             }
                         </div>
@@ -375,37 +360,6 @@ const Pages = {
                 </div>
             </section>
         `;
-        
-        // Attach load more handler
-        const loadMoreBtn = document.getElementById('load-more-btn');
-        if (loadMoreBtn) {
-            loadMoreBtn.addEventListener('click', async function() {
-                loadMoreBtn.disabled = true;
-                loadMoreBtn.textContent = 'Cargando...';
-                
-                const newArticulos = await SupabaseAPI.getArticulosByCategoriaPaginados(params.slug, PAGE_SIZE, currentOffset);
-                currentOffset += newArticulos.length;
-                
-                const list = document.getElementById('category-articles-list');
-                if (list && newArticulos.length > 0) {
-                    const newHtml = newArticulos.map(a => Components.articleCardHorizontal(adaptArticle(a))).join('');
-                    list.insertAdjacentHTML('beforeend', newHtml);
-                }
-                
-                // Update counter and button state
-                const moreAvailable = currentOffset < totalArticulos;
-                const container = document.getElementById('load-more-container');
-                if (container) {
-                    if (moreAvailable) {
-                        loadMoreBtn.disabled = false;
-                        loadMoreBtn.textContent = 'Cargar más artículos';
-                        container.querySelector('p').textContent = `Mostrando ${currentOffset} de ${totalArticulos}`;
-                    } else {
-                        container.innerHTML = `<p style="color:#888;font-size:0.85rem;padding:1rem 0;">Mostrando todos los ${totalArticulos} artículos</p>`;
-                    }
-                }
-            });
-        }
         
         document.title = `${categoria.nombre} - Beisjoven`;
         updateMetaTags({
