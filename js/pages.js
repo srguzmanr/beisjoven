@@ -340,7 +340,7 @@ const Pages = {
         main.innerHTML = `
             ${Components.breadcrumb([
                 { url: '/', text: 'Inicio' },
-                { url: \`/categoria/\${categoria.slug}\`, text: categoria.nombre }
+                { url: `/categoria/${categoria.slug}`, text: categoria.nombre }
             ])}
             
             <section class="category-page">
@@ -354,17 +354,17 @@ const Pages = {
                     <div class="two-column">
                         <div>
                             ${articles.length > 0 
-                                ? \`<div class="articles-list" id="category-articles-list">
-                                    \${articles.map(a => Components.articleCardHorizontal(a)).join('')}
+                                ? `<div class="articles-list" id="category-articles-list">
+                                    ${articles.map(a => Components.articleCardHorizontal(a)).join('')}
                                    </div>
-                                   \${hasMore ? \`<div id="load-more-container" style="text-align:center;padding:2rem 0;">
+                                   ${hasMore ? `<div id="load-more-container" style="text-align:center;padding:2rem 0;">
                                        <button id="load-more-btn" class="btn btn-primary" style="min-width:200px;">
                                            Cargar más artículos
                                        </button>
                                        <p style="margin-top:0.5rem;color:#888;font-size:0.85rem;">
-                                           Mostrando \${articles.length} de \${totalArticulos}
+                                           Mostrando ${articles.length} de ${totalArticulos}
                                        </p>
-                                   </div>\` : ''}\`
+                                   </div>` : ''}`
                                 : Components.emptyState('No hay artículos en esta categoría', '📭')
                             }
                         </div>
@@ -399,19 +399,19 @@ const Pages = {
                     if (moreAvailable) {
                         loadMoreBtn.disabled = false;
                         loadMoreBtn.textContent = 'Cargar más artículos';
-                        container.querySelector('p').textContent = \`Mostrando \${currentOffset} de \${totalArticulos}\`;
+                        container.querySelector('p').textContent = `Mostrando ${currentOffset} de ${totalArticulos}`;
                     } else {
-                        container.innerHTML = \`<p style="color:#888;font-size:0.85rem;padding:1rem 0;">Mostrando todos los \${totalArticulos} artículos</p>\`;
+                        container.innerHTML = `<p style="color:#888;font-size:0.85rem;padding:1rem 0;">Mostrando todos los ${totalArticulos} artículos</p>`;
                     }
                 }
             });
         }
         
-        document.title = \`\${categoria.nombre} - Beisjoven\`;
+        document.title = `${categoria.nombre} - Beisjoven`;
         updateMetaTags({
-            title: \`\${categoria.nombre} - Beisjoven\`,
-            description: \`Noticias y artículos de \${categoria.nombre} en Beisjoven.\`,
-            url: \`https://beisjoven.com/categoria/\${categoria.slug}\`
+            title: `${categoria.nombre} - Beisjoven`,
+            description: `Noticias y artículos de ${categoria.nombre} en Beisjoven.`,
+            url: `https://beisjoven.com/categoria/${categoria.slug}`
         });
     },
     
