@@ -298,9 +298,11 @@ const Pages = {
             return;
         }
         
-        const [articulosCategoria, articulosPopulares] = await Promise.all([
-            SupabaseAPI.getArticulosByCategoria(params.slug, 1000),
-            SupabaseAPI.getMasLeidos(5)
+        const PAGE_SIZE = 20;
+        const [articulosCategoria, articulosPopulares, totalArticulos] = await Promise.all([
+            SupabaseAPI.getArticulosByCategoriaPaginados(params.slug, PAGE_SIZE, 0),
+            SupabaseAPI.getMasLeidos(5),
+            SupabaseAPI.contarArticulosByCategoria(params.slug)
         ]);
         
         // Adaptar artículos
@@ -341,13 +343,13 @@ const Pages = {
                     <header class="category-header">
                         <span class="category-icon">${categoria.icono || '📰'}</span>
                         <h1>${categoria.nombre}</h1>
-                        <p>${articles.length} artículos</p>
+                        <p>${totalArticulos} artículos</p>
                     </header>
                     
                     <div class="two-column">
                         <div>
                             ${articles.length > 0 
-                                ? `<div class="articles-list">
+                                ? `<div class="articles-list" id="category-articles-list">
                                     ${articles.map(a => Components.articleCardHorizontal(a)).join('')}
                                    </div>`
                                 : Components.emptyState('No hay artículos en esta categoría', '📭')
@@ -367,6 +369,60 @@ const Pages = {
             description: `Noticias y artículos de ${categoria.nombre} en Beisjoven.`,
             url: `https://beisjoven.com/categoria/${categoria.slug}`
         });
+        
+        // Pagination: "Cargar más" button
+        var catOffset = articulosCategoria.length;
+        var catSlug = params.slug;
+        var catTotal = totalArticulos;
+        
+        if (catOffset < catTotal) {
+            var listEl = document.getElementById('category-articles-list');
+            if (listEl) {
+                var container = document.createElement('div');
+                container.id = 'load-more-container';
+                container.style.cssText = 'text-align:center;padding:2rem 0;';
+                
+                var btn = document.createElement('button');
+                btn.className = 'btn btn-primary';
+                btn.style.minWidth = '200px';
+                btn.textContent = 'Cargar más artículos';
+                
+                var counter = document.createElement('p');
+                counter.style.cssText = 'margin-top:0.5rem;color:#888;font-size:0.85rem;';
+                counter.textContent = 'Mostrando ' + catOffset + ' de ' + catTotal;
+                
+                container.appendChild(btn);
+                container.appendChild(counter);
+                listEl.parentNode.insertBefore(container, listEl.nextSibling);
+                
+                btn.addEventListener('click', async function() {
+                    btn.disabled = true;
+                    btn.textContent = 'Cargando...';
+                    
+                    var newData = await SupabaseAPI.getArticulosByCategoriaPaginados(catSlug, PAGE_SIZE, catOffset);
+                    catOffset += newData.length;
+                    
+                    if (newData.length > 0) {
+                        var newHtml = newData.map(function(a) {
+                            return Components.articleCardHorizontal(adaptArticle(a));
+                        }).join('');
+                        listEl.insertAdjacentHTML('beforeend', newHtml);
+                    }
+                    
+                    if (catOffset < catTotal) {
+                        btn.disabled = false;
+                        btn.textContent = 'Cargar más artículos';
+                        counter.textContent = 'Mostrando ' + catOffset + ' de ' + catTotal;
+                    } else {
+                        container.innerHTML = '';
+                        var done = document.createElement('p');
+                        done.style.cssText = 'color:#888;font-size:0.85rem;padding:1rem 0;';
+                        done.textContent = 'Mostrando todos los ' + catTotal + ' artículos';
+                        container.appendChild(done);
+                    }
+                });
+            }
+        }
     },
     
     // ==================== PÁGINA DE ARTÍCULO ====================
