@@ -406,10 +406,10 @@ footer { background: var(--dark); color: var(--white); padding: 60px 0 30px; }
 @media (max-width: 768px) {
     .header-main .container { flex-direction: column; gap: 15px; }
     .search-box { width: 100%; }
-    nav { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    nav .container { justify-content: flex-start; }
-    nav ul { flex-wrap: nowrap; justify-content: flex-start; min-width: max-content; }
-    nav ul li a { padding: 10px 15px; font-size: 0.9rem; white-space: nowrap; }
+nav { overflow-x: visible; }
+    nav .container { justify-content: center; }
+    nav ul { flex-wrap: wrap; justify-content: center; }
+    nav ul li a { padding: 8px 12px; font-size: 0.85rem; white-space: nowrap; }
     .ticker-label { padding: 4px 10px; font-size: 0.75rem; margin-right: 12px; }
     .hero-main { height: 350px; }
     .hero-sidebar { flex-direction: column; }
