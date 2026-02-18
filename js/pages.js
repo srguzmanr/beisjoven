@@ -559,6 +559,21 @@ const Pages = {
                     </div>
                     
                     ${relatedArticles.length > 0 ? `
+                        <div class="next-article-card">
+                            <a href="/articulo/${relatedArticles[0].slug}" class="next-article-link">
+                                <div class="next-article-label">Sigue leyendo ➜</div>
+                                <div class="next-article-content">
+                                    <img src="${relatedArticles[0].image}" alt="${relatedArticles[0].title}" loading="lazy">
+                                    <div class="next-article-text">
+                                        ${relatedArticles[0].category ? `<span class="category">${relatedArticles[0].category.name}</span>` : ''}
+                                        <h3>${relatedArticles[0].title}</h3>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    ` : ''}
+                    
+                    ${relatedArticles.length > 0 ? `
                         <section class="related-articles">
                             ${Components.sectionTitle('Artículos Relacionados', '📰')}
                             <div class="news-grid">
