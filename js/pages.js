@@ -573,11 +573,11 @@ const Pages = {
                         </div>
                     ` : ''}
                     
-                    ${relatedArticles.length > 0 ? `
+                    ${relatedArticles.length > 1 ? `
                         <section class="related-articles">
                             ${Components.sectionTitle('Artículos Relacionados', '📰')}
                             <div class="news-grid">
-                                ${relatedArticles.map(a => Components.articleCard(a)).join('')}
+                                ${relatedArticles.slice(1).map(a => Components.articleCard(a)).join('')}
                             </div>
                         </section>
                     ` : ''}
