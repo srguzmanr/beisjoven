@@ -455,7 +455,7 @@ const Pages = {
         
         // Obtener artículos relacionados (misma categoría)
         const articulosRelacionados = articulo.categoria 
-            ? await SupabaseAPI.getArticulosByCategoria(articulo.categoria.slug, 5)
+            ? await SupabaseAPI.getArticulosByCategoria(articulo.categoria.slug, 7)
             : [];
         
         // Adaptar artículo
@@ -487,7 +487,7 @@ const Pages = {
         // Adaptar relacionados (excluyendo el actual)
         const relatedArticles = articulosRelacionados
             .filter(a => a.id !== articulo.id)
-            .slice(0, 4)
+            .slice(0, 5)
             .map(a => ({
                 id: a.id,
                 title: a.titulo,
