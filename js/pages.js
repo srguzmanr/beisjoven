@@ -531,7 +531,6 @@ const Pages = {
                             <div class="meta-info">
                                 <span>📅 ${article.formattedDate}</span>
                                 <span>⏱ ${article.readTime}</span>
-                                <span>👁 ${article.views} vistas</span>
                             </div>
                         </div>
                     </header>

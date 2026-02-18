@@ -6,7 +6,6 @@ const Components = {
     articleCard: function(article, size = 'normal') {
         const sizeClass = size === 'small' ? 'news-card-small' : '';
         const dateStr = article.formattedDate || (article.date ? new Date(article.date).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
-        const viewsStr = typeof API !== 'undefined' && API._formatViews ? API._formatViews(article.views || 0) : (article.views || 0);
         const catSlug = article.category?.slug || 'general';
         const catName = article.category?.name || 'General';
         return `
@@ -19,7 +18,6 @@ const Components = {
                     <h3><a href="/articulo/${article.slug}">${article.title}</a></h3>
                     <div class="meta">
                         ${dateStr ? `<span>📅 ${dateStr}</span>` : ''}
-                        <span>👁 ${viewsStr}</span>
                     </div>
                 </div>
             </article>
