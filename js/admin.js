@@ -476,101 +476,120 @@ const AdminPages = {
                     
                     <div class="admin-content">
                         <form id="article-form" class="article-form">
-                            <div class="form-grid">
-                                <div class="form-main">
-                                    <div class="form-group">
-                                        <label for="title">Título *</label>
-                                        <input type="text" id="title" value="${article?.titulo || (useDraft && draft ? draft.titulo : '') || ''}" placeholder="Título de la noticia" required>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label for="excerpt">Extracto *</label>
-                                        <textarea id="excerpt" rows="2" placeholder="Breve descripción (aparece en tarjetas)" required>${article?.extracto || (useDraft && draft ? draft.extracto : '') || ''}</textarea>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label>Contenido *</label>
-                                        <div id="content-editor-container"></div>
+                            <!-- 
+                                FORM GRID: CSS Grid Areas
+                                Desktop: 2 columnas (main izq, sidebar der)
+                                Móvil: 1 columna en orden editorial
+                                Orden móvil: título → extracto → meta → contenido → imagen → checks → acciones
+                            -->
+                            <div class="form-grid-new">
+
+                                <div class="fg-titulo">
+                                    <label for="title">Título *</label>
+                                    <input type="text" id="title" value="${article?.titulo || (useDraft && draft ? draft.titulo : '') || ''}" placeholder="Título de la noticia" required>
+                                </div>
+
+                                <div class="fg-extracto">
+                                    <label for="excerpt">Extracto *</label>
+                                    <textarea id="excerpt" rows="3" placeholder="Breve descripción (aparece en tarjetas)" required>${article?.extracto || (useDraft && draft ? draft.extracto : '') || ''}</textarea>
+                                </div>
+
+                                <div class="fg-meta">
+                                    <div class="fg-meta-row">
+                                        <div class="form-group">
+                                            <label for="category">Categoría *</label>
+                                            <select id="category" required>
+                                                <option value="">Seleccionar...</option>
+                                                ${categorias.map(c => `
+                                                    <option value="${c.id}" ${article?.categoria_id === c.id ? 'selected' : (useDraft && draft && draft.categoria_id == c.id ? 'selected' : '')}>
+                                                        ${c.nombre}
+                                                    </option>
+                                                `).join('')}
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="author">Autor *</label>
+                                            <select id="author" required>
+                                                ${autores.map(a => `
+                                                    <option value="${a.id}" ${article?.autor_id === a.id ? 'selected' : (useDraft && draft && draft.autor_id == a.id ? 'selected' : '')}>
+                                                        ${a.nombre}
+                                                    </option>
+                                                `).join('')}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
-                                
-                                <div class="form-sidebar">
+
+                                <div class="fg-contenido">
+                                    <label>Contenido *</label>
+                                    <div id="content-editor-container"></div>
+                                </div>
+
+                                <div class="fg-imagen">
                                     <div class="form-group">
-                                        <label for="category">Categoría *</label>
-                                        <select id="category" required>
-                                            <option value="">Seleccionar...</option>
-                                            ${categorias.map(c => `
-                                                <option value="${c.id}" ${article?.categoria_id === c.id ? 'selected' : (useDraft && draft && draft.categoria_id == c.id ? 'selected' : '')}>                                                    ${c.nombre}
-                                                </option>
-                                            `).join('')}
-                                        </select>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label for="author">Autor *</label>
-                                        <select id="author" required>
-                                            ${autores.map(a => `
-                                                <option value="${a.id}" ${article?.autor_id === a.id ? 'selected' : (useDraft && draft && draft.autor_id == a.id ? 'selected' : '')}>                                                    ${a.nombre}
-                                                </option>
-                                            `).join('')}
-                                        </select>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label>Imagen del Artículo</label>
-                                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                            <input type="url" id="image" value="${article?.imagen_url || (useDraft && draft ? draft.imagen_url : '') || ''}" placeholder="URL de la imagen..." style="flex: 1;" readonly>
-                                            <button type="button" class="btn-media-picker" onclick="openMediaPicker()">
-                                                📷 Seleccionar
-                                            </button>
+                                        <label>Imagen principal</label>
+                                        <div style="display:flex;gap:8px;margin-bottom:8px;">
+                                            <input type="url" id="image" value="${article?.imagen_url || (useDraft && draft ? draft.imagen_url : '') || ''}" placeholder="URL de la imagen..." style="flex:1;" readonly>
+                                            <button type="button" class="btn-media-picker" onclick="openMediaPicker()">📷 Seleccionar</button>
                                         </div>
                                         <div id="image-preview" class="image-preview">
                                             ${(article?.imagen_url || (useDraft && draft?.imagen_url)) ? `<img src="${article?.imagen_url || draft.imagen_url}" alt="Preview">` : '<span>Sin imagen</span>'}
                                         </div>
                                     </div>
-                                    
                                     <div class="form-group">
                                         <label for="foto-pie">Pie de foto</label>
                                         <input type="text" id="foto-pie" value="${article?.pie_de_foto || (useDraft && draft ? draft.pie_de_foto : '') || ''}" placeholder="Descripción de la imagen principal">
                                     </div>
-                                    
                                     <div class="form-group">
                                         <label for="foto-credito">Crédito fotográfico</label>
                                         <input type="text" id="foto-credito" value="${article?.foto_credito || (useDraft && draft ? draft.foto_credito : '') || ''}" placeholder="Ej: Foto: Getty Images">
                                     </div>
+                                </div>
 
-                                    <div class="form-group">
-                                        <label class="checkbox-label">
-                                            <input type="checkbox" id="featured" ${article?.destacado ? 'checked' : (useDraft && draft?.destacado ? 'checked' : '')}>
-                                            Artículo destacado
-                                        </label>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label class="checkbox-label" style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;">
-                                            <input type="checkbox" id="es_wbc2026" ${article?.es_wbc2026 ? 'checked' : (useDraft && draft?.es_wbc2026 ? 'checked' : '')}>
-                                            <span>⚾ Cobertura WBC 2026 <span style="font-size:11px;color:#92400e;font-weight:normal;">(activa badge Caja Inmaculada)</span></span>
-                                        </label>
-                                    </div>
-                                    
-                                    <div class="form-actions">
-                                        <button type="submit" class="btn btn-primary btn-block">
-                                            ${isEdit ? 'Guardar Cambios' : 'Publicar Artículo'}
-                                        </button>
-                                        <a href="/admin/articulos" class="btn btn-secondary btn-block">Cancelar</a>
-                                    </div>
-                                    
-                                    <!-- Autosave indicator -->
-                                    <div id="autosave-indicator" style="text-align: center; font-size: 0.8rem; color: #9ca3af; margin-top: 12px;">
+                                <div class="fg-checks">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="featured" ${article?.destacado ? 'checked' : (useDraft && draft?.destacado ? 'checked' : '')}>
+                                        Artículo destacado
+                                    </label>
+                                    <label class="checkbox-label wbc-check-label">
+                                        <input type="checkbox" id="es_wbc2026" ${article?.es_wbc2026 ? 'checked' : (useDraft && draft?.es_wbc2026 ? 'checked' : '')}>
+                                        <span>⚾ Cobertura WBC 2026 <small>(activa badge Caja Inmaculada)</small></span>
+                                    </label>
+                                </div>
+
+                                <div class="fg-acciones">
+                                    <button type="submit" class="btn btn-primary btn-block">
+                                        ${isEdit ? 'Guardar Cambios' : 'Publicar Artículo'}
+                                    </button>
+                                    <a href="/admin/articulos" class="btn btn-secondary btn-block">Cancelar</a>
+                                    <div id="autosave-indicator" style="text-align:center;font-size:0.8rem;color:#9ca3af;margin-top:8px;">
                                         ${isEdit ? '' : 'Auto-guardado cada 30 segundos'}
                                     </div>
                                 </div>
+
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
         `;
+
+        // Sticky bar móvil — reemplaza .fg-acciones en pantallas pequeñas
+        if (window.innerWidth <= 768) {
+            const existingBar = document.getElementById('admin-sticky-bar');
+            if (existingBar) existingBar.remove();
+            const stickyBar = document.createElement('div');
+            stickyBar.id = 'admin-sticky-bar';
+            stickyBar.className = 'admin-sticky-bar';
+            stickyBar.innerHTML = `
+                <button type="button" class="btn-publish" onclick="document.getElementById('article-form').dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}))">
+                    ${isEdit ? 'Guardar Cambios' : 'Publicar Artículo'}
+                </button>
+                <a href="/admin/articulos" class="btn-cancel">Cancelar</a>
+                <span class="autosave-txt" id="autosave-indicator-sticky">${isEdit ? '' : 'Auto-guardado'}</span>
+            `;
+            document.body.appendChild(stickyBar);
+        }
 
         // Initialize Rich Text Editor
         const initialContent = article?.contenido || (useDraft && draft ? draft.contenido : '') || '';
