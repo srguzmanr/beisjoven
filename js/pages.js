@@ -67,6 +67,68 @@ function updateMetaTags(options = {}) {
     }
 }
 
+// ==================== MARKDOWN / CONTENT RENDERER ====================
+// Detecta si el contenido es HTML legacy o markdown nuevo y renderiza apropiadamente.
+// - HTML legacy (artículos migrados de Wix): pasa directo pero convierte ![alt](url) → <img>
+// - Markdown nuevo (artículos escritos en admin): parsea headings, bold, italic, listas, imágenes
+function renderContent(content) {
+    if (!content) return '';
+
+    // Detectar si es HTML (contiene etiquetas como <p>, <h2>, <strong>, etc.)
+    const isHTML = /<[a-zA-Z][^>]*>/m.test(content);
+
+    if (isHTML) {
+        // Contenido HTML legacy: solo procesar imágenes markdown que puedan haberse escrito inline
+        return content.replace(
+            /!\[([^\]]*)\]\(([^)]+)\)/g,
+            (_, alt, url) => `<figure class="article-inline-image"><img src="${url}" alt="${escapeHTML(alt)}" loading="lazy"><figcaption>${escapeHTML(alt)}</figcaption></figure>`
+        );
+    }
+
+    // Contenido markdown nuevo: parseo completo
+    let html = content;
+
+    // 1. Imágenes: ![alt](url) → <figure><img></figure>
+    html = html.replace(
+        /!\[([^\]]*)\]\(([^)]+)\)/g,
+        (_, alt, url) => `<figure class="article-inline-image"><img src="${url}" alt="${escapeHTML(alt)}" loading="lazy">${alt ? `<figcaption>${escapeHTML(alt)}</figcaption>` : ''}</figure>`
+    );
+
+    // 2. Headings: ### H3, ## H2
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+
+    // 3. Bold e italic: **bold**, *italic*
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    // 4. Links: [texto](url)
+    html = html.replace(
+        /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener">$1</a>'
+    );
+
+    // 5. Párrafos: separar bloques por línea en blanco
+    // Primero, dividir por doble salto de línea
+    const blocks = html.split(/\n\s*\n/);
+    html = blocks.map(block => {
+        block = block.trim();
+        if (!block) return '';
+        // No envolver en <p> si ya es un elemento bloque
+        if (/^<(h[1-6]|figure|ul|ol|li|blockquote|div)/i.test(block)) return block;
+        // Convertir saltos de línea simples dentro del párrafo
+        block = block.replace(/\n/g, '<br>');
+        return `<p>${block}</p>`;
+    }).join('\n');
+
+    return html;
+}
+
+// Helper: escape HTML para atributos
+function escapeHTML(str) {
+    return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 const Pages = {
     
     // ==================== PÁGINA DE INICIO ====================
@@ -550,7 +612,7 @@ const Pages = {
                     
                     <div class="article-body">
                         <div class="article-content">
-                            ${article.content}
+                            ${renderContent(article.content)}
                             
                             ${article.tags.length > 0 ? `
                                 <div class="article-tags">
