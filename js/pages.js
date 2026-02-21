@@ -49,12 +49,21 @@ function updateMetaTags(options = {}) {
     }
     canonical.setAttribute('href', meta.url);
     
-    // GA4 SPA page view tracking
-    if (typeof gtag === 'function') {
+    // GA4 SPA page view tracking (skip admin/login)
+    const path = window.location.pathname;
+    if (typeof gtag === 'function' && !path.startsWith('/admin') && path !== '/login') {
         gtag('event', 'page_view', {
             page_title: meta.title,
             page_location: meta.url
         });
+        // Key Events: category_browse
+        if (path.startsWith('/categoria/')) {
+            gtag('event', 'category_browse', { category: path.split('/')[2] });
+        }
+        // Key Events: contact_view
+        if (path === '/contacto') {
+            gtag('event', 'contact_view');
+        }
     }
 }
 
@@ -593,6 +602,40 @@ const Pages = {
             url: `https://beisjoven.com/articulo/${article.slug}`,
             type: 'article'
         });
+        
+        // GA4 Key Events: scroll-based article read tracking
+        if (typeof gtag === 'function') {
+            // Clean up previous listener if any
+            if (window._bjScrollHandler) {
+                window.removeEventListener('scroll', window._bjScrollHandler);
+            }
+            const firedEvents = { read50: false, readComplete: false };
+            window._bjScrollHandler = function() {
+                const articleEl = document.querySelector('.article-content');
+                if (!articleEl) return;
+                const rect = articleEl.getBoundingClientRect();
+                const articleTop = rect.top + window.scrollY;
+                const articleHeight = articleEl.offsetHeight;
+                const scrollPos = window.scrollY + window.innerHeight;
+                const progress = (scrollPos - articleTop) / articleHeight;
+                if (progress >= 0.5 && !firedEvents.read50) {
+                    firedEvents.read50 = true;
+                    gtag('event', 'article_read_50', {
+                        article_slug: article.slug,
+                        article_category: article.category.slug
+                    });
+                }
+                if (progress >= 0.9 && !firedEvents.readComplete) {
+                    firedEvents.readComplete = true;
+                    gtag('event', 'article_read_complete', {
+                        article_slug: article.slug,
+                        article_category: article.category.slug
+                    });
+                    window.removeEventListener('scroll', window._bjScrollHandler);
+                }
+            };
+            window.addEventListener('scroll', window._bjScrollHandler, { passive: true });
+        }
     },
     
     // ==================== PÁGINA DE VIDEOS ====================
