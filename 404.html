@@ -57,6 +57,9 @@
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-1RE839J27Q"></script>
     <script>
+      if (window.location.pathname.startsWith('/admin') || window.location.pathname === '/login') {
+          window['ga-disable-G-1RE839J27Q'] = true;
+      }
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
