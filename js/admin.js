@@ -619,6 +619,7 @@ const AdminPages = {
                 .admin-sticky-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; background: #ffffff; padding: 10px 16px; box-shadow: 0 -2px 12px rgba(0,0,0,0.15); display: flex; gap: 10px; align-items: center; color-scheme: light; }
                 .admin-sticky-bar .btn-publish { flex: 2; padding: 14px; background: #c4122e; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
                 .admin-sticky-bar .btn-cancel { flex: 1; padding: 14px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
+                .admin-sticky-bar .btn-preview { width: 48px; height: 48px; background: #1e3a5f; color: white; border: none; border-radius: 8px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
                 .admin-sticky-bar .autosave-txt { font-size: 0.72rem; color: #9ca3af; flex-shrink: 0; }
             `;
             document.head.appendChild(style);
@@ -633,7 +634,10 @@ const AdminPages = {
             stickyBar.className = 'admin-sticky-bar';
             stickyBar.innerHTML = `
                 <button type="button" class="btn-publish" onclick="document.getElementById('article-form').dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}))">
-                    ${isEdit ? 'Guardar Cambios' : 'Publicar Artículo'}
+                    ${isEdit ? 'Guardar Cambios' : 'Publicar'}
+                </button>
+                <button type="button" class="btn-preview" onclick="ArticlePreview.openDraft()">
+                    👁️
                 </button>
                 <a href="/admin/articulos" class="btn-cancel">Cancelar</a>
                 <span class="autosave-txt" id="autosave-indicator-sticky">${isEdit ? '' : 'Auto-guardado'}</span>
