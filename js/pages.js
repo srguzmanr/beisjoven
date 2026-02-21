@@ -1193,6 +1193,420 @@ const Pages = {
         const main = document.getElementById('main-content');
         main.innerHTML = '<div class="loader"><div class="loader-spinner"></div><p>Cargando...</p></div>';
 
+        // Inyectar CSS del hub — viaja con el JS para evitar desync de caché
+        if (!document.getElementById('bj-wbc-hub-styles')) {
+            const style = document.createElement('style');
+            style.id = 'bj-wbc-hub-styles';
+            style.textContent = `/* ================================================================
+   WBC 2026 HUB — Beisjoven Media
+   Diseño: Tournament hub editorial con energía de broadcast
+   Paleta: Navy #0f2044 / Rojo #c4122e / Oro #f0a500 / Blanco
+   ================================================================ */
+
+/* ── Variables ──────────────────────────────────────────────── */
+.wbc-hub {
+    --wbc-navy:   #0f2044;
+    --wbc-navy2:  #1a3a6b;
+    --wbc-red:    #c4122e;
+    --wbc-gold:   #f0a500;
+    --wbc-white:  #ffffff;
+    --wbc-light:  #f4f6f9;
+    --wbc-text:   #1a1a2e;
+    --wbc-muted:  #6b7280;
+    --mex-green:  #006847;
+    --mex-white:  #ffffff;
+    --mex-red:    #ce1126;
+    background: var(--wbc-light);
+    min-height: 100vh;
+}
+
+/* ── Franja tricolor México ─────────────────────────────────── */
+.wbc-tricolor {
+    display: flex;
+    height: 5px;
+    width: 100%;
+}
+.wbc-tricolor-verde  { flex: 1; background: var(--mex-green); }
+.wbc-tricolor-blanco { flex: 1; background: var(--mex-white); border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; }
+.wbc-tricolor-rojo   { flex: 1; background: var(--mex-red); }
+
+/* ── Hero Banner ────────────────────────────────────────────── */
+.wbc-hero-banner {
+    position: relative;
+    background: var(--wbc-navy);
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.wbc-hero-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.18;
+    filter: saturate(0.5);
+}
+.wbc-hero-placeholder .wbc-hero-img { display: none; }
+
+/* Textura diagonal sutil */
+.wbc-hero-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 40px,
+            rgba(255,255,255,0.015) 40px,
+            rgba(255,255,255,0.015) 41px
+        );
+    pointer-events: none;
+}
+
+/* Acento rojo diagonal en esquina */
+.wbc-hero-banner::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--mex-green) 33.3%, var(--mex-white) 33.3%, var(--mex-white) 66.6%, var(--mex-red) 66.6%);
+}
+
+.wbc-hero-overlay {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 48px 0 56px;
+}
+.wbc-hero-overlay .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+}
+
+/* Badge WBC */
+.wbc-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(240,165,0,0.15);
+    border: 1px solid rgba(240,165,0,0.4);
+    color: var(--wbc-gold);
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-family: 'Oswald', sans-serif;
+}
+
+.wbc-hero-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: clamp(2.4rem, 7vw, 4rem);
+    font-weight: 700;
+    color: var(--wbc-white);
+    line-height: 1.05;
+    letter-spacing: -0.5px;
+    margin: 0;
+}
+.wbc-hero-title span {
+    color: var(--wbc-gold);
+}
+
+.wbc-hero-subtitle {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 1.05rem;
+    color: rgba(255,255,255,0.65);
+    margin: 0;
+    letter-spacing: 0.3px;
+}
+
+/* Strip del sponsor debajo del hero */
+.wbc-sponsor-strip {
+    background: var(--wbc-navy2);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding: 14px 0;
+    text-align: center;
+}
+.wbc-sponsor-strip .container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.wbc-sponsor-label {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.wbc-sponsor-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--wbc-gold);
+    letter-spacing: 0.5px;
+}
+.wbc-sponsor-divider {
+    width: 1px;
+    height: 16px;
+    background: rgba(255,255,255,0.2);
+}
+/* Placeholder para logo CI — se reemplaza con <img> cuando llegue el asset */
+.wbc-sponsor-logo-placeholder {
+    background: rgba(240,165,0,0.12);
+    border: 1px dashed rgba(240,165,0,0.3);
+    color: var(--wbc-gold);
+    font-size: 0.72rem;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-family: 'Open Sans', sans-serif;
+}
+
+/* ── Layout principal ───────────────────────────────────────── */
+.wbc-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 28px;
+    padding: 28px 0 48px;
+    align-items: start;
+}
+
+/* ── Sidebar ────────────────────────────────────────────────── */
+.wbc-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: sticky;
+    top: 16px;
+}
+.wbc-sidebar-card {
+    background: var(--wbc-white);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+}
+.wbc-sidebar-header {
+    background: var(--wbc-navy);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.wbc-sidebar-header h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--wbc-white);
+    margin: 0;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.wbc-sidebar-header-icon {
+    font-size: 1.1rem;
+}
+.wbc-sidebar-body { padding: 16px; }
+
+/* ── Calendario — lista de partidos ────────────────────────── */
+.wbc-game-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+.wbc-game-item {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    align-items: center;
+    gap: 0 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+.wbc-game-item:last-child { border-bottom: none; }
+.wbc-game-item.wbc-game-final { /* Cuartos */ }
+
+.wbc-game-date {
+    text-align: center;
+}
+.wbc-game-date-day {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--wbc-navy);
+    line-height: 1.1;
+    display: block;
+}
+.wbc-game-date-mes {
+    font-size: 0.72rem;
+    color: var(--wbc-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+}
+
+.wbc-game-info {}
+.wbc-game-matchup {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--wbc-text);
+    line-height: 1.2;
+    display: block;
+}
+.wbc-game-matchup strong { color: var(--wbc-red); }
+.wbc-game-detail {
+    font-size: 0.73rem;
+    color: var(--wbc-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
+}
+
+.wbc-tv-badge {
+    display: inline-block;
+    background: var(--wbc-navy);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Oswald', sans-serif;
+    letter-spacing: 0.3px;
+}
+.wbc-tv-badge.tv-fox   { background: #000; }
+.wbc-tv-badge.tv-fs1   { background: #003087; }
+.wbc-tv-badge.tv-tubi  { background: #fa4b18; }
+.wbc-tv-badge.tv-tbd   { background: #6b7280; }
+
+.wbc-resultado-badge {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--wbc-muted);
+    text-align: right;
+    min-width: 32px;
+}
+.wbc-resultado-badge.pendiente { color: #d1d5db; font-size: 0.72rem; }
+
+.wbc-calendar-note {
+    font-size: 0.72rem;
+    color: var(--wbc-muted);
+    margin: 12px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid #f3f4f6;
+    line-height: 1.5;
+}
+
+/* ── Posiciones placeholder ─────────────────────────────────── */
+.wbc-posiciones-pending {
+    text-align: center;
+    padding: 24px 16px;
+    color: var(--wbc-muted);
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+.wbc-posiciones-pending strong {
+    display: block;
+    font-family: 'Oswald', sans-serif;
+    font-size: 1rem;
+    color: var(--wbc-navy);
+    margin-bottom: 4px;
+}
+
+/* ── Sección de artículos ───────────────────────────────────── */
+.wbc-articles {}
+.wbc-section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--wbc-red);
+}
+.wbc-section-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--wbc-navy);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.wbc-article-count {
+    font-size: 0.82rem;
+    color: var(--wbc-muted);
+    font-family: 'Open Sans', sans-serif;
+}
+
+/* Empty state */
+.wbc-empty-state {
+    text-align: center;
+    padding: 64px 24px;
+    background: var(--wbc-white);
+    border-radius: 12px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+}
+.wbc-empty-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 16px;
+}
+.wbc-empty-state h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.3rem;
+    color: var(--wbc-navy);
+    margin: 0 0 8px;
+}
+.wbc-empty-state p {
+    color: var(--wbc-muted);
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .wbc-hero-banner { min-height: 280px; }
+    .wbc-hero-overlay { padding: 32px 0 40px; }
+    .wbc-hero-title { font-size: 2rem; }
+
+    .wbc-layout {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 20px 0 40px;
+    }
+    .wbc-sidebar { position: static; }
+
+    /* Calendario compacto en móvil */
+    .wbc-game-item {
+        grid-template-columns: 52px 1fr auto;
+        gap: 0 10px;
+        padding: 10px 0;
+    }
+    .wbc-game-date-day { font-size: 1rem; }
+}
+
+@media (max-width: 480px) {
+    .wbc-sponsor-strip .container { flex-direction: column; gap: 6px; }
+    .wbc-sponsor-divider { display: none; }
+}
+`;
+            document.head.appendChild(style);
+        }
+
         updateMetaTags({
             title: 'Cobertura WBC 2026 — Beisjoven Media',
             description: 'Cobertura exclusiva del Clásico Mundial de Béisbol 2026. Pool B Houston. Presentado por Caja Inmaculada.',
