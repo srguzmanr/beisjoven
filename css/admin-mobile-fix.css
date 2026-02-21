@@ -120,6 +120,34 @@
 .login-page {
     color-scheme: light;
 }
+
+/* Forzar inputs claro en admin — color-scheme solo no es suficiente en todos los browsers */
+.admin-layout input,
+.admin-layout input[type="text"],
+.admin-layout input[type="url"],
+.admin-layout input[type="email"],
+.admin-layout input[type="password"],
+.admin-layout textarea,
+.admin-layout select,
+.login-page input,
+.login-page input[type="password"] {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    border-color: #e5e7eb !important;
+    -webkit-text-fill-color: #111827 !important;
+}
+.admin-layout input::placeholder,
+.admin-layout textarea::placeholder {
+    color: #9ca3af !important;
+    -webkit-text-fill-color: #9ca3af !important;
+    opacity: 1 !important;
+}
+/* Autofill de iOS también */
+.admin-layout input:-webkit-autofill,
+.admin-layout input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 100px #ffffff inset !important;
+    -webkit-text-fill-color: #111827 !important;
+}
 /* El dark-mode.css aplica a todo el body. El admin siempre debe ser claro. */
 @media (prefers-color-scheme: dark) {
     .admin-layout,
