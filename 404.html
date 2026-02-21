@@ -230,6 +230,13 @@
             Router.register('/admin/videos', AdminPages.videosList);
             Router.register('/admin/videos/nuevo', AdminPages.videoEditor);
             Router.register('/admin/videos/editar/:id', AdminPages.videoEditor);
+            // WBC 2026 Hub
+        const HUB_WBC_LIVE = false;
+        Router.register('/wbc-2026', function(ctx) {
+            const previewKey = new URLSearchParams(window.location.search).get('preview');
+            if (!HUB_WBC_LIVE && previewKey !== 'bj2026') { Router.navigate('/'); return; }
+            Pages.wbc2026(ctx);
+        });
             
             // Iniciar auth y luego router
             Auth.init().then(() => {
