@@ -114,6 +114,12 @@
 
 
 /* ==================== ADMIN FORZAR LIGHT MODE ==================== */
+/* color-scheme: light fuerza al navegador a renderizar controles nativos
+   (inputs, selects, checkboxes) en modo claro sin importar la preferencia del sistema */
+.admin-layout,
+.login-page {
+    color-scheme: light;
+}
 /* El dark-mode.css aplica a todo el body. El admin siempre debe ser claro. */
 @media (prefers-color-scheme: dark) {
     .admin-layout,
