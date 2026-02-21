@@ -825,3 +825,41 @@ footer { background: var(--dark); color: var(--white); padding: 60px 0 30px; }
     font-style: italic;
     text-align: center;
 }
+
+/* ==================== PIE DE FOTO Y CRÉDITO ====================
+   Agregar en styles.css al final, después del bloque .article-inline-image
+   ================================================================= */
+
+/* Crédito en imágenes inline */
+.article-content .foto-credito {
+    font-size: 0.8rem;
+    color: var(--gray, #888);
+    font-style: normal;
+    font-weight: 500;
+}
+
+/* Pie de foto + crédito bajo imagen hero del artículo */
+.article-image-caption {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 4px 0;
+    flex-wrap: wrap;
+}
+
+.article-image-caption .foto-pie {
+    font-size: 0.85rem;
+    color: var(--gray, #6b7280);
+    font-style: italic;
+    flex: 1;
+    line-height: 1.4;
+}
+
+.article-image-caption .foto-credito {
+    font-size: 0.8rem;
+    color: var(--gray, #9ca3af);
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
