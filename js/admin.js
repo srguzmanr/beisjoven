@@ -19,8 +19,19 @@ function sanitizeHtmlBasic(html) {
 
 // ==================== MEDIA LIBRARY PICKER ====================
 function openMediaPicker() {
-    MediaLibrary.open(function(imageUrl) {
-        document.getElementById('image').value = imageUrl;
+    MediaLibrary.open(function(result) {
+        // result puede ser {url, pieDeFoto, credito} o string (backward compat)
+        const url = result.url || result;
+        document.getElementById('image').value = url;
+        // Autocompletar crédito si existe el campo
+        if (result.credito) {
+            const creditoEl = document.getElementById('foto-credito');
+            if (creditoEl && !creditoEl.value) creditoEl.value = result.credito;
+        }
+        if (result.pieDeFoto) {
+            const pieEl = document.getElementById('foto-pie');
+            if (pieEl && !pieEl.value) pieEl.value = result.pieDeFoto;
+        }
         AdminPages.previewImage();
     });
 }
@@ -519,6 +530,16 @@ const AdminPages = {
                                     </div>
                                     
                                     <div class="form-group">
+                                        <label for="foto-pie">Pie de foto</label>
+                                        <input type="text" id="foto-pie" value="${article?.pie_de_foto || (useDraft && draft ? draft.pie_de_foto : '') || ''}" placeholder="Descripción de la imagen principal">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="foto-credito">Crédito fotográfico</label>
+                                        <input type="text" id="foto-credito" value="${article?.foto_credito || (useDraft && draft ? draft.foto_credito : '') || ''}" placeholder="Ej: Foto: Getty Images">
+                                    </div>
+
+                                    <div class="form-group">
                                         <label class="checkbox-label">
                                             <input type="checkbox" id="featured" ${article?.destacado ? 'checked' : (useDraft && draft?.destacado ? 'checked' : '')}>
                                             Artículo destacado
@@ -597,6 +618,8 @@ const AdminPages = {
     saveArticle: async function(editId) {
         const titulo = document.getElementById('title').value.trim();
         const extracto = document.getElementById('excerpt').value.trim();
+        const pie_de_foto = (document.getElementById('foto-pie')?.value || '').trim();
+        const foto_credito = (document.getElementById('foto-credito')?.value || '').trim();
         
         // Get content from Rich Text Editor or fallback to textarea
         let contenidoRaw;
@@ -635,6 +658,8 @@ const AdminPages = {
             categoria_id,
             autor_id,
             imagen_url,
+            pie_de_foto: pie_de_foto || null,
+            foto_credito: foto_credito || null,
             destacado,
             publicado: true
         };
@@ -738,8 +763,30 @@ const AdminPages = {
             </div>
         `;
         
-        // Cargar imágenes
+        // Cargar imágenes + metadatos
         const imagenes = await SupabaseStorage.listarImagenes();
+        
+        // Enriquecer con metadatos
+        let metaMap = {};
+        try {
+            const nombres = imagenes.map(img => img.nombre);
+            if (nombres.length > 0) {
+                const { data: meta } = await supabaseClient
+                    .from('imagenes_metadata')
+                    .select('*')
+                    .in('nombre', nombres);
+                (meta || []).forEach(m => { metaMap[m.nombre] = m; });
+            }
+        } catch(e) {}
+
+        const categoriasDisp = [
+            { key: 'wbc', label: 'WBC 2026' },
+            { key: 'mlb', label: 'MLB' },
+            { key: 'seleccion', label: 'Selección' },
+            { key: 'softbol', label: 'Softbol' },
+            { key: 'juvenil', label: 'Juvenil' },
+            { key: 'ligas', label: 'Ligas MX' },
+        ];
 
         main.innerHTML = `
             <div class="admin-layout">
@@ -763,24 +810,39 @@ const AdminPages = {
                             </div>
                         </div>
                         
-                        <!-- Image count -->
+                        <!-- Contador -->
                         <div style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px;">
                             <p style="color: #6b7280; font-size: 0.9rem; margin: 0;">
                                 ${imagenes.length} imagen${imagenes.length !== 1 ? 'es' : ''} en la biblioteca
                             </p>
                         </div>
                         
-                        <!-- Galería de imágenes - scrollable -->
-                        <div class="media-gallery" id="media-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; max-height: 65vh; overflow-y: auto; padding: 4px; -webkit-overflow-scrolling: touch;">
-                            ${imagenes.length > 0 ? imagenes.map(img => `
-                                <div class="media-item" data-url="${img.url}" data-nombre="${img.nombre}" style="position: relative; border-radius: 8px; overflow: hidden; aspect-ratio: 1; background: #f3f4f6;">
-                                    <img src="${img.url}" alt="${img.nombre}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; display: block;">
-                                    <div class="media-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; gap: 8px; opacity: 0; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'" ontouchstart="this.style.opacity='1'" ontouchend="setTimeout(function(el){el.style.opacity='0'}.bind(null,this), 2000)">
-                                        <button style="background:white;border:none;border-radius:50%;width:40px;height:40px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;" onclick="event.stopPropagation(); AdminPages.copiarUrl('${img.url}')" title="Copiar URL">📋</button>
-                                        <button style="background:#dc2626;border:none;border-radius:50%;width:40px;height:40px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;" onclick="event.stopPropagation(); AdminPages.eliminarImagen('${img.nombre}')" title="Eliminar">🗑️</button>
+                        <!-- Galería con metadatos -->
+                        <div class="media-gallery" id="media-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; padding: 4px;">
+                            ${imagenes.length > 0 ? imagenes.map(img => {
+                                const meta = metaMap[img.nombre] || {};
+                                const catLabel = categoriasDisp.find(c => c.key === meta.categoria)?.label || '';
+                                return `
+                                <div class="media-item-card" style="border-radius:10px; overflow:hidden; background:#f9fafb; border:1px solid #e5e7eb; display:flex; flex-direction:column;">
+                                    <div style="position:relative; aspect-ratio:16/9; overflow:hidden; background:#e5e7eb;">
+                                        <img src="${img.url}" alt="${img.nombre}" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;">
+                                        ${catLabel ? `<span style="position:absolute;top:6px;left:6px;background:#c41e3a;color:white;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700;">${catLabel}</span>` : ''}
+                                        <div style="position:absolute;top:6px;right:6px;display:flex;gap:4px;">
+                                            <button style="background:white;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;" onclick="AdminPages.copiarUrl('${img.url}')" title="Copiar URL">📋</button>
+                                            <button style="background:#dc2626;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;" onclick="AdminPages.eliminarImagen('${img.nombre}')" title="Eliminar">🗑️</button>
+                                        </div>
+                                    </div>
+                                    <div style="padding:10px; flex:1;">
+                                        <p style="font-size:11px;color:#9ca3af;margin:0 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${img.nombre}">${img.nombre}</p>
+                                        <select onchange="AdminPages.actualizarMeta('${img.nombre}', 'categoria', this.value)" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;margin-bottom:5px;color:#374151;">
+                                            <option value="">Sin categoría</option>
+                                            ${categoriasDisp.map(c => `<option value="${c.key}" ${meta.categoria === c.key ? 'selected' : ''}>${c.label}</option>`).join('')}
+                                        </select>
+                                        <input type="text" value="${meta.pie_de_foto || ''}" placeholder="Pie de foto..." onblur="AdminPages.actualizarMeta('${img.nombre}', 'pie_de_foto', this.value)" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;margin-bottom:5px;box-sizing:border-box;color:#374151;">
+                                        <input type="text" value="${meta.credito || ''}" placeholder="Crédito fotográfico..." onblur="AdminPages.actualizarMeta('${img.nombre}', 'credito', this.value)" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;box-sizing:border-box;color:#374151;">
                                     </div>
                                 </div>
-                            `).join('') : `
+                            `}).join('') : `
                                 <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #9ca3af;">
                                     <p style="font-size: 2rem; margin-bottom: 8px;">🖼️</p>
                                     <p>No hay imágenes aún</p>
@@ -865,6 +927,20 @@ const AdminPages = {
         setTimeout(() => {
             Router.navigate('/admin/medios');
         }, 1000);
+    },
+
+    // Actualizar metadatos de imagen desde página Medios
+    actualizarMeta: async function(nombre, campo, valor) {
+        try {
+            const update = { nombre };
+            update[campo] = valor || null;
+            await supabaseClient
+                .from('imagenes_metadata')
+                .upsert(update, { onConflict: 'nombre' });
+            showToast('✅ Guardado', 'success', 1200);
+        } catch(e) {
+            showToast('Error guardando metadato', 'error');
+        }
     },
 
     // Copiar URL al portapapeles
