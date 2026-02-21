@@ -71,28 +71,57 @@ const RichTextEditor = {
                 const savedRange = sel.rangeCount > 0 ? sel.getRangeAt(0).cloneRange() : null;
 
                 if (typeof MediaLibrary !== 'undefined') {
-                    MediaLibrary.open((url) => {
+                    MediaLibrary.open((result) => {
+                        // Acepta string (backward compat) o {url, pieDeFoto, credito}
+                        const url      = result.url      || result;
+                        const credito  = result.credito  || '';
+                        const pieDeFoto = result.pieDeFoto || '';
+
                         editor.focus();
                         if (savedRange) {
                             sel.removeAllRanges();
                             sel.addRange(savedRange);
                         }
 
+                        // Construir <figure> con <figcaption> editable
+                        const figure = document.createElement('figure');
+                        figure.className = 'rte-figure';
+
                         const img = document.createElement('img');
                         img.src = url;
-                        img.alt = 'Imagen del artículo';
-                        img.style.cssText = 'max-width:100%;border-radius:8px;margin:12px 0;display:block;';
+                        img.alt = pieDeFoto || 'Imagen del artículo';
+
+                        const figcaption = document.createElement('figcaption');
+                        figcaption.contentEditable = 'true';
+                        figcaption.className = 'rte-figcaption';
+                        figcaption.setAttribute('data-placeholder', 'Escribe el pie de foto...');
+
+                        // Precargar: pie de foto (editable) + crédito (separado con |)
+                        if (pieDeFoto && credito) {
+                            // Pie editable | crédito en span
+                            figcaption.innerHTML = pieDeFoto + ' <span class="foto-credito-inline" contenteditable="false">' + credito + '</span>';
+                        } else if (credito) {
+                            figcaption.innerHTML = '<span class="foto-credito-inline" contenteditable="false">' + credito + '</span>';
+                        }
+                        // Si no hay nada, queda vacío con placeholder para que el periodista escriba
+
+                        figure.appendChild(img);
+                        figure.appendChild(figcaption);
 
                         if (savedRange) {
                             savedRange.collapse(false);
-                            savedRange.insertNode(img);
-                            savedRange.setStartAfter(img);
-                            savedRange.collapse(true);
-                            sel.removeAllRanges();
-                            sel.addRange(savedRange);
+                            savedRange.insertNode(figure);
                         } else {
-                            editor.appendChild(img);
+                            editor.appendChild(figure);
                         }
+
+                        // Posicionar cursor al inicio del figcaption para escribir de inmediato
+                        const range = document.createRange();
+                        range.selectNodeContents(figcaption);
+                        range.collapse(true); // al inicio
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                        figcaption.focus();
 
                         hiddenInput.value = editor.innerHTML;
                     });
@@ -100,7 +129,7 @@ const RichTextEditor = {
                     const url = prompt('URL de la imagen:');
                     if (url) {
                         document.execCommand('insertHTML', false,
-                            `<img src="${url}" alt="Imagen" style="max-width:100%;border-radius:8px;margin:12px 0;display:block;">`);
+                            '<figure class="rte-figure"><img src="' + url + '" alt="Imagen"><figcaption class="rte-figcaption" contenteditable="true" data-placeholder="Escribe el pie de foto..."></figcaption></figure>');
                     }
                 }
                 hiddenInput.value = editor.innerHTML;
@@ -702,6 +731,51 @@ const RichTextEditor = {
             .rte-editor img:hover {
                 outline: 2px solid #1e3a5f;
                 outline-offset: 2px;
+            }
+            .rte-figure {
+                margin: 20px 0;
+                padding: 0;
+                border: 2px dashed transparent;
+                border-radius: 8px;
+                transition: border-color 0.2s;
+            }
+            .rte-figure:hover, .rte-figure:focus-within {
+                border-color: #e5e7eb;
+            }
+            .rte-figure img {
+                margin: 0 0 0 0;
+                border-radius: 8px 8px 0 0;
+            }
+            .rte-figcaption {
+                padding: 8px 10px;
+                font-size: 0.85rem;
+                color: #6b7280;
+                font-style: italic;
+                background: #f9fafb;
+                border-radius: 0 0 8px 8px;
+                border-top: 1px solid #e5e7eb;
+                outline: none;
+                min-height: 1.4em;
+                line-height: 1.4;
+            }
+            .rte-figcaption:empty:before {
+                content: attr(data-placeholder);
+                color: #d1d5db;
+                pointer-events: none;
+                font-style: italic;
+            }
+            .rte-figcaption:focus {
+                background: #f0f9ff;
+                border-top-color: #93c5fd;
+            }
+            .foto-credito-inline {
+                font-style: normal;
+                font-weight: 500;
+                color: #9ca3af;
+                font-size: 0.8rem;
+                margin-left: 6px;
+                cursor: default;
+                user-select: none;
             }
             .rte-hidden-input { display: none; }
 
