@@ -763,97 +763,51 @@ const AdminPages = {
             </div>
         `;
         
-        // Cargar imágenes + metadatos
+        // Cargar imágenes
         const imagenes = await SupabaseStorage.listarImagenes();
-        
+
         // Enriquecer con metadatos
         let metaMap = {};
         try {
-            const nombres = imagenes.map(img => img.nombre);
+            const nombres = imagenes.map(function(img) { return img.nombre; });
             if (nombres.length > 0) {
-                const { data: meta } = await supabaseClient
+                const metaResult = await supabaseClient
                     .from('imagenes_metadata')
                     .select('*')
                     .in('nombre', nombres);
-                (meta || []).forEach(m => { metaMap[m.nombre] = m; });
+                (metaResult.data || []).forEach(function(m) { metaMap[m.nombre] = m; });
             }
         } catch(e) {}
 
-        const categoriasDisp = [
-            { key: 'wbc', label: 'WBC 2026' },
-            { key: 'mlb', label: 'MLB' },
-            { key: 'seleccion', label: 'Selección' },
-            { key: 'softbol', label: 'Softbol' },
-            { key: 'juvenil', label: 'Juvenil' },
-            { key: 'ligas', label: 'Ligas MX' },
-        ];
+        main.innerHTML =
+            '<div class="admin-layout">' +
+                AdminComponents.sidebar() +
+                '<div class="admin-main">' +
+                    AdminComponents.header('Biblioteca de Medios') +
+                    '<div class="admin-content">' +
+                        '<div class="upload-zone" id="upload-zone">' +
+                            '<label for="file-input" class="upload-content">' +
+                                '<div class="upload-icon">📷</div>' +
+                                '<p><strong>Toca para subir</strong> o arrastra imágenes aquí</p>' +
+                                '<small>JPG, PNG, GIF • Máx 5MB</small>' +
+                            '</label>' +
+                            '<input type="file" id="file-input" accept="image/jpeg,image/png,image/gif,image/webp" multiple>' +
+                            '<div id="upload-progress" class="upload-progress" style="display:none;">' +
+                                '<div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>' +
+                                '<p id="progress-text">Subiendo...</p>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="margin:16px 0 8px;">' +
+                            '<p style="color:#6b7280;font-size:0.9rem;margin:0;">' + imagenes.length + ' imagen' + (imagenes.length !== 1 ? 'es' : '') + ' en la biblioteca</p>' +
+                        '</div>' +
+                        '<div class="media-gallery" id="media-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;padding:4px;">' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
 
-        main.innerHTML = `
-            <div class="admin-layout">
-                ${AdminComponents.sidebar()}
-                
-                <div class="admin-main">
-                    ${AdminComponents.header('Biblioteca de Medios')}
-                    
-                    <div class="admin-content">
-                        <!-- Zona de subida -->
-                        <div class="upload-zone" id="upload-zone">
-                            <label for="file-input" class="upload-content">
-                                <div class="upload-icon">📷</div>
-                                <p><strong>Toca para subir</strong> o arrastra imágenes aquí</p>
-                                <small>JPG, PNG, GIF • Máx 5MB</small>
-                            </label>
-                            <input type="file" id="file-input" accept="image/jpeg,image/png,image/gif,image/webp" multiple>
-                            <div id="upload-progress" class="upload-progress" style="display: none;">
-                                <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-                                <p id="progress-text">Subiendo...</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Contador -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px;">
-                            <p style="color: #6b7280; font-size: 0.9rem; margin: 0;">
-                                ${imagenes.length} imagen${imagenes.length !== 1 ? 'es' : ''} en la biblioteca
-                            </p>
-                        </div>
-                        
-                        <!-- Galería con metadatos -->
-                        <div class="media-gallery" id="media-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; padding: 4px;">
-                            ${imagenes.length > 0 ? imagenes.map(img => {
-                                const meta = metaMap[img.nombre] || {};
-                                const catLabel = categoriasDisp.find(c => c.key === meta.categoria)?.label || '';
-                                return `
-                                <div class="media-item-card" style="border-radius:10px; overflow:hidden; background:#f9fafb; border:1px solid #e5e7eb; display:flex; flex-direction:column;">
-                                    <div style="position:relative; aspect-ratio:16/9; overflow:hidden; background:#e5e7eb;">
-                                        <img src="${img.url}" alt="${img.nombre}" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;">
-                                        ${catLabel ? `<span style="position:absolute;top:6px;left:6px;background:#c41e3a;color:white;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700;">${catLabel}</span>` : ''}
-                                        <div style="position:absolute;top:6px;right:6px;display:flex;gap:4px;">
-                                            <button style="background:white;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;" onclick="AdminPages.copiarUrl('${img.url}')" title="Copiar URL">📋</button>
-                                            <button style="background:#dc2626;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;" onclick="AdminPages.eliminarImagen('${img.nombre}')" title="Eliminar">🗑️</button>
-                                        </div>
-                                    </div>
-                                    <div style="padding:10px; flex:1;">
-                                        <p style="font-size:11px;color:#9ca3af;margin:0 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${img.nombre}">${img.nombre}</p>
-                                        <select onchange="AdminPages.actualizarMeta('${img.nombre}', 'categoria', this.value)" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;margin-bottom:5px;color:#374151;">
-                                            <option value="">Sin categoría</option>
-                                            ${categoriasDisp.map(c => `<option value="${c.key}" ${meta.categoria === c.key ? 'selected' : ''}>${c.label}</option>`).join('')}
-                                        </select>
-                                        <input type="text" value="${meta.pie_de_foto || ''}" placeholder="Pie de foto..." onblur="AdminPages.actualizarMeta('${img.nombre}', 'pie_de_foto', this.value)" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;margin-bottom:5px;box-sizing:border-box;color:#374151;">
-                                        <input type="text" value="${meta.credito || ''}" placeholder="Crédito fotográfico..." onblur="AdminPages.actualizarMeta('${img.nombre}', 'credito', this.value)" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;box-sizing:border-box;color:#374151;">
-                                    </div>
-                                </div>
-                            `}).join('') : `
-                                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #9ca3af;">
-                                    <p style="font-size: 2rem; margin-bottom: 8px;">🖼️</p>
-                                    <p>No hay imágenes aún</p>
-                                    <p>Sube tu primera imagen arriba</p>
-                                </div>
-                            `}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        // Render cards separately to avoid template literal nesting issues
+        AdminPages.renderMediaCards(imagenes, metaMap);
 
         // Event listeners para subida
         const fileInput = document.getElementById('file-input');
@@ -927,6 +881,68 @@ const AdminPages = {
         setTimeout(() => {
             Router.navigate('/admin/medios');
         }, 1000);
+    },
+
+    // Render tarjetas de la biblioteca de medios (separado para evitar template literal anidados)
+    renderMediaCards: function(imagenes, metaMap) {
+        const gallery = document.getElementById('media-gallery');
+        if (!gallery) return;
+
+        const categorias = [
+            { key: 'wbc', label: 'WBC 2026' },
+            { key: 'mlb', label: 'MLB' },
+            { key: 'seleccion', label: 'Selección' },
+            { key: 'softbol', label: 'Softbol' },
+            { key: 'juvenil', label: 'Juvenil' },
+            { key: 'ligas', label: 'Ligas MX' },
+        ];
+
+        if (imagenes.length === 0) {
+            gallery.innerHTML =
+                '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#9ca3af;">' +
+                '<p style="font-size:2rem;margin-bottom:8px;">🖼️</p>' +
+                '<p>No hay imágenes aún</p>' +
+                '<p>Sube tu primera imagen arriba</p>' +
+                '</div>';
+            return;
+        }
+
+        const catOptions = categorias.map(function(c) {
+            return '<option value="' + c.key + '">' + c.label + '</option>';
+        }).join('');
+
+        gallery.innerHTML = imagenes.map(function(img) {
+            const meta = metaMap[img.nombre] || {};
+            const catLabel = (categorias.find(function(c) { return c.key === meta.categoria; }) || {}).label || '';
+            const badge = catLabel
+                ? '<span style="position:absolute;top:6px;left:6px;background:#c41e3a;color:white;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700;">' + catLabel + '</span>'
+                : '';
+            const catOpts = '<option value="">Sin categoría</option>' +
+                categorias.map(function(c) {
+                    return '<option value="' + c.key + '"' + (meta.categoria === c.key ? ' selected' : '') + '>' + c.label + '</option>';
+                }).join('');
+            const nombre = img.nombre || '';
+            const url = img.url || '';
+            const pieDeFoto = (meta.pie_de_foto || '').replace(/"/g, '&quot;');
+            const credito = (meta.credito || '').replace(/"/g, '&quot;');
+
+            return '<div style="border-radius:10px;overflow:hidden;background:#f9fafb;border:1px solid #e5e7eb;display:flex;flex-direction:column;">' +
+                '<div style="position:relative;aspect-ratio:16/9;overflow:hidden;background:#e5e7eb;">' +
+                    '<img src="' + url + '" alt="' + nombre + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">' +
+                    badge +
+                    '<div style="position:absolute;top:6px;right:6px;display:flex;gap:4px;">' +
+                        '<button style="background:white;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;" onclick="AdminPages.copiarUrl('' + url + '')" title="Copiar URL">📋</button>' +
+                        '<button style="background:#dc2626;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;color:white;" onclick="AdminPages.eliminarImagen('' + nombre + '')" title="Eliminar">🗑️</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="padding:10px;flex:1;">' +
+                    '<p style="font-size:11px;color:#9ca3af;margin:0 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + nombre + '">' + nombre + '</p>' +
+                    '<select onchange="AdminPages.actualizarMeta('' + nombre + '', 'categoria', this.value)" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;margin-bottom:5px;color:#374151;">' + catOpts + '</select>' +
+                    '<input type="text" value="' + pieDeFoto + '" placeholder="Pie de foto..." onblur="AdminPages.actualizarMeta('' + nombre + '', 'pie_de_foto', this.value)" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;margin-bottom:5px;box-sizing:border-box;color:#374151;">' +
+                    '<input type="text" value="' + credito + '" placeholder="Crédito fotográfico..." onblur="AdminPages.actualizarMeta('' + nombre + '', 'credito', this.value)" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;box-sizing:border-box;color:#374151;">' +
+                '</div>' +
+            '</div>';
+        }).join('');
     },
 
     // Actualizar metadatos de imagen desde página Medios
