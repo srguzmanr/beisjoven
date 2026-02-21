@@ -55,13 +55,37 @@ const RichTextEditor = {
         editor.innerHTML = initialContent;
         hiddenInput.value = initialContent;
 
+        // Guardar selección al perder foco (crítico iOS — contenteditable pierde selección al tocar toolbar)
+        let savedRange = null;
+        editor.addEventListener('blur', () => {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                savedRange = sel.getRangeAt(0).cloneRange();
+            }
+        });
+        // En touch: guardar antes de que el tap llegue al botón
+        toolbar.addEventListener('touchstart', (e) => {
+            const btn = e.target.closest('.rte-btn');
+            if (!btn) return;
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                savedRange = sel.getRangeAt(0).cloneRange();
+            }
+        }, { passive: true });
+
         // Toolbar button clicks
         toolbar.addEventListener('click', (e) => {
             const btn = e.target.closest('.rte-btn');
             if (!btn) return;
 
             e.preventDefault();
+            // Restaurar selección antes de ejecutar (fix iOS)
             editor.focus();
+            if (savedRange) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(savedRange);
+            }
 
             const cmd = btn.dataset.cmd;
             const value = btn.dataset.value || null;
@@ -656,6 +680,19 @@ const RichTextEditor = {
                 user-select: none;
                 -webkit-user-select: none;
                 flex-shrink: 0;
+            }
+            @media (max-width: 768px) {
+                .rte-btn {
+                    width: 44px;
+                    height: 44px;
+                    font-size: 16px;
+                }
+                .rte-toolbar {
+                    gap: 6px;
+                    padding: 10px 12px;
+                    overflow-x: auto;
+                    flex-wrap: nowrap;
+                }
             }
             .rte-btn:hover {
                 background: #e5e7eb;
