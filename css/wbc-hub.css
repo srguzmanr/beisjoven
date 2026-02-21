@@ -1,0 +1,164 @@
+/* ==================== WBC 2026 HUB ==================== */
+
+/* Badge "Presentado por" en artículos */
+.wbc-badge-presentado {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #1a3a6b 0%, #0f2544 100%);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+}
+.wbc-ci-logo-badge {
+    height: 28px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+/* Banner inline en artículos */
+.wbc-banner-inline {
+    margin: 28px 0;
+    text-align: center;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f3f4f6;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.wbc-banner-img {
+    width: 100%;
+    max-width: 728px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Hero banner del hub */
+.wbc-hero-banner {
+    position: relative;
+    width: 100%;
+    background: linear-gradient(135deg, #1a3a6b 0%, #0f2544 100%);
+    overflow: hidden;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+}
+.wbc-hero-img {
+    width: 100%;
+    height: 320px;
+    object-fit: cover;
+    display: block;
+    opacity: 0.6;
+}
+.wbc-hero-banner.wbc-hero-placeholder .wbc-hero-img { display: none; }
+.wbc-hero-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    padding-bottom: 24px;
+}
+.wbc-hero-text { color: white; }
+.wbc-hero-presentado { font-size: 0.85rem; opacity: 0.8; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+.wbc-hero-sponsor { font-size: 1.6rem; font-weight: 700; margin: 0; font-family: 'Oswald', sans-serif; }
+
+/* Layout: sidebar + grid */
+.wbc-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 32px;
+    padding: 32px 0;
+    align-items: start;
+}
+@media (max-width: 768px) {
+    .wbc-layout {
+        grid-template-columns: 1fr;
+    }
+    /* En móvil: sidebar arriba, artículos abajo */
+    .wbc-sidebar { order: -1; }
+}
+
+/* Sidebar cards */
+.wbc-sidebar-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+.wbc-sidebar-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #dc2626;
+}
+.wbc-table-wrap { overflow-x: auto; }
+.wbc-calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+}
+.wbc-calendar-table th {
+    background: #f9fafb;
+    padding: 6px 8px;
+    text-align: left;
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+}
+.wbc-calendar-table td {
+    padding: 7px 8px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+    vertical-align: middle;
+}
+.wbc-calendar-table tr:last-child td { border-bottom: none; }
+.wbc-tv-badge {
+    background: #1a3a6b;
+    color: white;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+.wbc-resultado { color: #dc2626; font-weight: 600; }
+.wbc-table-note { font-size: 0.72rem; color: #9ca3af; margin: 8px 0 0; }
+
+/* Section title */
+.wbc-section-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 20px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #dc2626;
+}
+
+.wbc-empty {
+    color: #9ca3af;
+    font-style: italic;
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .wbc-sidebar-card { background: #1f2937; border-color: #374151; }
+    .wbc-sidebar-title { color: #f9fafb; }
+    .wbc-calendar-table th { background: #374151; color: #9ca3af; }
+    .wbc-calendar-table td { color: #d1d5db; border-color: #374151; }
+    .wbc-section-title { color: #f9fafb; }
+    .wbc-banner-inline { background: #1f2937; }
+}
