@@ -52,3 +52,68 @@
         justify-content: center;
     }
 }
+
+/* ==================== ADMIN FORZAR LIGHT MODE ==================== */
+/* El dark-mode.css aplica a todo el body. El admin siempre debe ser claro. */
+@media (prefers-color-scheme: dark) {
+    .admin-layout,
+    .admin-layout .admin-main,
+    .admin-layout .admin-content,
+    .admin-layout .form-card,
+    .admin-layout .admin-section,
+    .admin-layout .admin-header,
+    .admin-layout .articles-table,
+    .admin-layout .article-form {
+        background: #f5f5f5 !important;
+        color: #111827 !important;
+    }
+    .admin-layout .form-card,
+    .admin-layout .admin-section,
+    .admin-layout .articles-table,
+    .admin-layout .admin-header,
+    .admin-layout .welcome-banner + *,
+    .admin-layout .stat-card {
+        background: #ffffff !important;
+        color: #111827 !important;
+    }
+    .admin-layout .form-main input,
+    .admin-layout .form-main textarea,
+    .admin-layout .form-main select,
+    .admin-layout .form-card input,
+    .admin-layout .form-card select,
+    .admin-layout .rte-editor,
+    .admin-layout .rte-toolbar {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border-color: #e5e7eb !important;
+    }
+    .admin-layout .form-main input::placeholder,
+    .admin-layout .form-main textarea::placeholder {
+        color: #9ca3af !important;
+    }
+    .admin-layout .admin-header h1,
+    .admin-layout .form-main label,
+    .admin-layout .form-card label,
+    .admin-layout .form-card h4,
+    .admin-layout .content-header h2 {
+        color: #111827 !important;
+    }
+    .admin-layout .articles-table th {
+        background: #f9fafb !important;
+        color: #374151 !important;
+    }
+    .admin-layout .articles-table td {
+        color: #374151 !important;
+        border-color: #f3f4f6 !important;
+    }
+    /* Login page también forzar claro */
+    .login-container {
+        background: #ffffff !important;
+        color: #111827 !important;
+    }
+    .login-page input {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border-color: #e5e7eb !important;
+    }
+}
