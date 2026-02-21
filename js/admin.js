@@ -546,6 +546,13 @@ const AdminPages = {
                                         </label>
                                     </div>
                                     
+                                    <div class="form-group">
+                                        <label class="checkbox-label" style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;">
+                                            <input type="checkbox" id="es_wbc2026" ${article?.es_wbc2026 ? 'checked' : (useDraft && draft?.es_wbc2026 ? 'checked' : '')}>
+                                            <span>⚾ Cobertura WBC 2026 <span style="font-size:11px;color:#92400e;font-weight:normal;">(activa badge Caja Inmaculada)</span></span>
+                                        </label>
+                                    </div>
+                                    
                                     <div class="form-actions">
                                         <button type="submit" class="btn btn-primary btn-block">
                                             ${isEdit ? 'Guardar Cambios' : 'Publicar Artículo'}
@@ -620,6 +627,7 @@ const AdminPages = {
         const extracto = document.getElementById('excerpt').value.trim();
         const pie_de_foto = (document.getElementById('foto-pie')?.value || '').trim();
         const foto_credito = (document.getElementById('foto-credito')?.value || '').trim();
+        const es_wbc2026 = document.getElementById('es_wbc2026')?.checked || false;
         
         // Get content from Rich Text Editor or fallback to textarea
         let contenidoRaw;
@@ -669,6 +677,7 @@ const AdminPages = {
             imagen_url,
             pie_de_foto: pie_de_foto || null,
             foto_credito: foto_credito || null,
+            es_wbc2026,
             destacado,
             publicado: true
         };
