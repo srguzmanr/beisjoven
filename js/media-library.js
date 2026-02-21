@@ -22,6 +22,18 @@ const MediaLibrary = {
         { key: 'ligas',     label: 'Ligas MX' },
     ],
 
+    // ── Cache ────────────────────────────────────────────────────
+    _cache: null,          // { images, ts } — se invalida al subir/eliminar
+    _cacheMaxAge: 60000,   // 60 segundos
+
+    _cacheValid() {
+        return this._cache && (Date.now() - this._cache.ts < this._cacheMaxAge);
+    },
+
+    _invalidateCache() {
+        this._cache = null;
+    },
+
     // ── Metadatos ────────────────────────────────────────────────
     async loadMetadata(nombres) {
         if (!nombres || nombres.length === 0) return {};
@@ -366,26 +378,35 @@ const MediaLibrary = {
     },
 
     // ── Cargar imágenes + metadatos ──────────────────────────────
-    async loadImages() {
+    async loadImages(forceRefresh = false) {
         const loading = document.getElementById('ml-loading');
         const grid = document.getElementById('ml-grid');
         const empty = document.getElementById('ml-empty');
+
+        // Servir desde caché si está vigente
+        if (!forceRefresh && this._cacheValid()) {
+            this.allImages = this._cache.images;
+            this.renderImages(this.allImages);
+            return;
+        }
 
         loading.style.display = 'flex';
         grid.innerHTML = '';
         empty.style.display = 'none';
 
         try {
-            let rawImages = [];
-            if (typeof SupabaseStorage !== 'undefined' && SupabaseStorage.listarImagenes) {
-                rawImages = await SupabaseStorage.listarImagenes();
-            } else {
+            if (typeof SupabaseStorage === 'undefined' || !SupabaseStorage.listarImagenes) {
                 throw new Error('SupabaseStorage no disponible');
             }
 
-            // Enriquecer con metadatos de la tabla imagenes_metadata
-            const nombres = rawImages.map(img => img.nombre || img.url?.split('/').pop() || '');
-            const metaMap = await this.loadMetadata(nombres);
+            // Queries en paralelo — mitad del tiempo de espera
+            const [rawImages, allMeta] = await Promise.all([
+                SupabaseStorage.listarImagenes(),
+                supabaseClient.from('imagenes_metadata').select('*').then(r => r.data || [])
+            ]);
+
+            const metaMap = {};
+            allMeta.forEach(m => { metaMap[m.nombre] = m; });
 
             this.allImages = rawImages.map(img => {
                 const nombre = img.nombre || img.url?.split('/').pop() || '';
@@ -398,6 +419,9 @@ const MediaLibrary = {
                     credito: meta.credito || ''
                 };
             });
+
+            // Guardar en caché
+            this._cache = { images: this.allImages, ts: Date.now() };
 
             loading.style.display = 'none';
             this.renderImages(this.allImages);
@@ -519,6 +543,7 @@ const MediaLibrary = {
                     metaPanel.style.display = 'block';
 
                     // Cargar la galería actualizada de fondo
+                    this._invalidateCache();
                     await this.loadImages();
                 } else {
                     throw new Error(result.error || 'Error al subir');
@@ -527,6 +552,7 @@ const MediaLibrary = {
         } catch (err) {
             console.error('Upload error:', err);
             showToast('Error subiendo imagen: ' + err.message, 'error');
+            this._invalidateCache();
             await this.loadImages();
         }
     },
