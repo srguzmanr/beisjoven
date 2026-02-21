@@ -689,7 +689,7 @@ const Pages = {
                 const creditDiv = document.getElementById('article-image-credit');
                 if (!creditDiv) return;
                 
-                const pieDeFoto = meta?.pie_de_foto || article.excerpt || '';
+                const pieDeFoto = meta?.pie_de_foto || '';
                 const credito = meta?.credito || '';
                 
                 if (pieDeFoto || credito) {
