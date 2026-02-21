@@ -173,6 +173,7 @@ nav ul li a.nav-live { background: var(--primary); animation: pulse-nav 2s infin
 .news-card:hover img { transform: scale(1.05); }
 .news-card-image { overflow: hidden; }
 .news-card-content { padding: 20px; }
+.card-excerpt { font-size: 0.85rem; color: #666; line-height: 1.4; margin: 8px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .news-card .category { background: var(--light); color: var(--primary); padding: 3px 10px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; display: inline-block; margin-bottom: 10px; border-radius: 3px; transition: var(--transition); }
 .news-card .category:hover { background: var(--primary); color: var(--white); }
 .news-card h3 { font-family: 'Oswald', sans-serif; font-size: 1.1rem; margin-bottom: 10px; line-height: 1.4; color: var(--dark); }
