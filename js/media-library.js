@@ -8,6 +8,18 @@ const MediaLibrary = {
     isOpen: false,
     onSelectCallback: null,
     allImages: [],
+    activeFilter: 'todas',
+    
+    // Etiquetas para filtrar — agrega aquí cuando necesites más
+    TAGS: [
+        { key: 'todas',     label: 'Todas' },
+        { key: 'wbc',       label: 'WBC 2026' },
+        { key: 'mlb',       label: 'MLB' },
+        { key: 'seleccion', label: 'Selección' },
+        { key: 'softbol',   label: 'Softbol' },
+        { key: 'juvenil',   label: 'Juvenil' },
+        { key: 'ligas',     label: 'Ligas MX' },
+    ],
     
     /**
      * Initialize the modal - call once when admin loads
@@ -29,6 +41,9 @@ const MediaLibrary = {
                             ⬆️ Subir
                         </button>
                         <input type="file" id="ml-upload-input" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="MediaLibrary.upload(event)">
+                    </div>
+                    <div class="ml-filters" id="ml-filters">
+                        ${this.TAGS.map(t => `<button type="button" class="ml-filter-btn ${t.key === 'todas' ? 'active' : ''}" data-key="${t.key}" onclick="MediaLibrary.setFilter('${t.key}')">${t.label}</button>`).join('')}
                     </div>
                     
                     <div class="ml-body">
@@ -203,6 +218,31 @@ const MediaLibrary = {
                     cursor: pointer;
                 }
                 .ml-cancel:hover { background: #475569; }
+                .ml-filters {
+                    display: flex;
+                    gap: 6px;
+                    padding: 10px 20px;
+                    background: #0f172a;
+                    border-bottom: 1px solid #334155;
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                    scrollbar-width: none;
+                }
+                .ml-filters::-webkit-scrollbar { display: none; }
+                .ml-filter-btn {
+                    padding: 6px 14px;
+                    border-radius: 20px;
+                    border: 1px solid #334155;
+                    background: #1e293b;
+                    color: #94a3b8;
+                    font-size: 13px;
+                    cursor: pointer;
+                    white-space: nowrap;
+                    transition: all 0.15s;
+                    flex-shrink: 0;
+                }
+                .ml-filter-btn:hover { border-color: #c41e3a; color: #f1f5f9; }
+                .ml-filter-btn.active { background: #c41e3a; border-color: #c41e3a; color: white; font-weight: 600; }
                 @media (max-width: 600px) {
                     .ml-overlay { padding: 10px; }
                     .ml-container { max-height: 90vh; }
@@ -238,6 +278,11 @@ const MediaLibrary = {
         document.getElementById('media-library-modal').style.display = 'flex';
         document.body.style.overflow = 'hidden';
         document.getElementById('ml-search').value = '';
+        this.activeFilter = 'todas';
+        // Reset filter buttons if already rendered
+        document.querySelectorAll('.ml-filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.key === 'todas');
+        });
         
         await this.loadImages();
     },
@@ -313,17 +358,42 @@ const MediaLibrary = {
     },
     
     /**
-     * Filter images by search term
+     * Set active category filter
+     */
+    setFilter(key) {
+        this.activeFilter = key;
+        // Update active button state
+        document.querySelectorAll('.ml-filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.key === key);
+        });
+        // Re-apply with current search term
+        const searchTerm = document.getElementById('ml-search').value;
+        this.filter(searchTerm);
+    },
+
+    /**
+     * Filter images by search term AND active category tag
      */
     filter(term) {
-        if (!term) {
-            this.renderImages(this.allImages);
-            return;
+        let filtered = this.allImages;
+
+        // Apply category filter first (skip if 'todas')
+        if (this.activeFilter && this.activeFilter !== 'todas') {
+            filtered = filtered.filter(img => {
+                const name = (img.nombre || img.url || img).toLowerCase();
+                return name.includes(this.activeFilter);
+            });
         }
-        const filtered = this.allImages.filter(img => {
-            const name = img.nombre || img.url || img;
-            return name.toLowerCase().includes(term.toLowerCase());
-        });
+
+        // Then apply search term
+        if (term && term.trim()) {
+            const t = term.toLowerCase();
+            filtered = filtered.filter(img => {
+                const name = (img.nombre || img.url || img).toLowerCase();
+                return name.includes(t);
+            });
+        }
+
         this.renderImages(filtered);
     },
     
