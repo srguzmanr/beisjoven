@@ -633,7 +633,7 @@ const AdminPages = {
         const categoria_id = parseInt(document.getElementById('category').value);
         const autor_id = parseInt(document.getElementById('author').value);
         // Imagen principal: (1) la que eligió el periodista, (2) primera img del cuerpo, (3) default BJ
-        const IMAGEN_DEFAULT_BJ = 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-image.jpg';
+        const IMAGEN_DEFAULT_BJ = 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-default.png';
         let imagen_url = document.getElementById('image').value.trim();
         if (!imagen_url) {
             // Buscar primera imagen en el contenido
