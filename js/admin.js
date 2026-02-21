@@ -911,6 +911,24 @@ const AdminPages = {
             return '<option value="' + c.key + '">' + c.label + '</option>';
         }).join('');
 
+        // Event delegation — evita problemas de escapado en onclick inline
+        gallery.addEventListener('click', function(e) {
+            const copyBtn = e.target.closest('.ml-copy-btn');
+            const deleteBtn = e.target.closest('.ml-delete-btn');
+            if (copyBtn) { e.stopPropagation(); AdminPages.copiarUrl(copyBtn.dataset.url); }
+            if (deleteBtn) { e.stopPropagation(); AdminPages.eliminarImagen(deleteBtn.dataset.nombre); }
+        });
+        gallery.addEventListener('change', function(e) {
+            const sel = e.target.closest('.ml-cat-select');
+            if (sel) AdminPages.actualizarMeta(sel.dataset.nombre, 'categoria', sel.value);
+        });
+        gallery.addEventListener('blur', function(e) {
+            const pie = e.target.closest('.ml-pie-input');
+            const cred = e.target.closest('.ml-cred-input');
+            if (pie) AdminPages.actualizarMeta(pie.dataset.nombre, 'pie_de_foto', pie.value);
+            if (cred) AdminPages.actualizarMeta(cred.dataset.nombre, 'credito', cred.value);
+        }, true);
+
         gallery.innerHTML = imagenes.map(function(img) {
             const meta = metaMap[img.nombre] || {};
             const catLabel = (categorias.find(function(c) { return c.key === meta.categoria; }) || {}).label || '';
@@ -926,22 +944,25 @@ const AdminPages = {
             const pieDeFoto = (meta.pie_de_foto || '').replace(/"/g, '&quot;');
             const credito = (meta.credito || '').replace(/"/g, '&quot;');
 
-            return '<div style="border-radius:10px;overflow:hidden;background:#f9fafb;border:1px solid #e5e7eb;display:flex;flex-direction:column;">' +
+            // Usar atributos data- para pasar nombre/url sin problemas de escapado
+            const card = document.createElement('div');
+            card.style.cssText = 'border-radius:10px;overflow:hidden;background:#f9fafb;border:1px solid #e5e7eb;display:flex;flex-direction:column;';
+            card.innerHTML =
                 '<div style="position:relative;aspect-ratio:16/9;overflow:hidden;background:#e5e7eb;">' +
-                    '<img src="' + url + '" alt="' + nombre + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">' +
+                    '<img src="' + url + '" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">' +
                     badge +
                     '<div style="position:absolute;top:6px;right:6px;display:flex;gap:4px;">' +
-                        '<button style="background:white;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;" onclick="AdminPages.copiarUrl('' + url + '')" title="Copiar URL">📋</button>' +
-                        '<button style="background:#dc2626;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;color:white;" onclick="AdminPages.eliminarImagen('' + nombre + '')" title="Eliminar">🗑️</button>' +
+                        '<button class="ml-copy-btn" data-url="' + url.replace(/"/g, '&quot;') + '" style="background:white;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;" title="Copiar URL">📋</button>' +
+                        '<button class="ml-delete-btn" data-nombre="' + nombre.replace(/"/g, '&quot;') + '" style="background:#dc2626;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;color:white;" title="Eliminar">🗑️</button>' +
                     '</div>' +
                 '</div>' +
                 '<div style="padding:10px;flex:1;">' +
                     '<p style="font-size:11px;color:#9ca3af;margin:0 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + nombre + '">' + nombre + '</p>' +
-                    '<select onchange="AdminPages.actualizarMeta('' + nombre + '', 'categoria', this.value)" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;margin-bottom:5px;color:#374151;">' + catOpts + '</select>' +
-                    '<input type="text" value="' + pieDeFoto + '" placeholder="Pie de foto..." onblur="AdminPages.actualizarMeta('' + nombre + '', 'pie_de_foto', this.value)" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;margin-bottom:5px;box-sizing:border-box;color:#374151;">' +
-                    '<input type="text" value="' + credito + '" placeholder="Crédito fotográfico..." onblur="AdminPages.actualizarMeta('' + nombre + '', 'credito', this.value)" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;box-sizing:border-box;color:#374151;">' +
-                '</div>' +
-            '</div>';
+                    '<select class="ml-cat-select" data-nombre="' + nombre.replace(/"/g, '&quot;') + '" style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;margin-bottom:5px;color:#374151;">' + catOpts + '</select>' +
+                    '<input type="text" class="ml-pie-input" data-nombre="' + nombre.replace(/"/g, '&quot;') + '" value="' + pieDeFoto + '" placeholder="Pie de foto..." style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;margin-bottom:5px;box-sizing:border-box;color:#374151;">' +
+                    '<input type="text" class="ml-cred-input" data-nombre="' + nombre.replace(/"/g, '&quot;') + '" value="' + credito + '" placeholder="Crédito fotográfico..." style="width:100%;padding:5px;font-size:12px;border:1px solid #d1d5db;border-radius:5px;box-sizing:border-box;color:#374151;">' +
+                '</div>';
+            return card.outerHTML;
         }).join('');
     },
 
