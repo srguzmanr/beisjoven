@@ -505,6 +505,36 @@ const Pages = {
     },
     
     // ==================== PÁGINA DE ARTÍCULO ====================
+    // ==================== WBC 2026 HELPERS ====================
+    _wbcBadge: function() {
+        return `<div class="wbc-badge-presentado">
+            <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-default.png" 
+                 alt="Caja Inmaculada" class="wbc-ci-logo-badge"
+                 onerror="this.style.display='none'">
+            <span>Cobertura presentada por <strong>Caja Inmaculada</strong></span>
+        </div>`;
+    },
+
+    _wbcInlineBanner: function() {
+        return `<div class="wbc-banner-inline">
+            <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-default.png"
+                 alt="Caja Inmaculada — Presentado por" class="wbc-banner-img"
+                 onerror="this.parentElement.style.display='none'">
+        </div>`;
+    },
+
+    _injectWbcBannerAfterParagraph3: function(htmlContent) {
+        // Inject inline banner after 3rd <p> tag
+        let count = 0;
+        return htmlContent.replace(/<\/p>/g, (match) => {
+            count++;
+            if (count === 3) {
+                return '</p>' + Pages._wbcInlineBanner();
+            }
+            return match;
+        });
+    },
+
     article: async function({ params }) {
         const main = document.getElementById('main-content');
         
@@ -605,7 +635,8 @@ const Pages = {
                     <header class="article-header">
                         <a href="/categoria/${article.category.slug}" class="category">${article.category.name}</a>
                         <h1>${article.title}</h1>
-                        <div class="article-meta">
+                        ${article.es_wbc2026 ? Pages._wbcBadge() : ''}
+                    <div class="article-meta">
                             ${Components.authorBox(article.author)}
                             <div class="meta-info">
                                 <span>📅 ${article.formattedDate}</span>
@@ -621,7 +652,7 @@ const Pages = {
                     
                     <div class="article-body">
                         <div class="article-content">
-                            ${renderContent(article.content)}
+                            ${article.es_wbc2026 ? Pages._injectWbcBannerAfterParagraph3(renderContent(article.content)) : renderContent(article.content)}
                             
                             ${article.tags.length > 0 ? `
                                 <div class="article-tags">
@@ -1157,6 +1188,137 @@ const Pages = {
     },
     
     // ==================== PÁGINA DE CONTACTO ====================
+    // ==================== HUB WBC 2026 ====================
+    wbc2026: async function() {
+        const main = document.getElementById('main-content');
+        main.innerHTML = '<div class="loader"><div class="loader-spinner"></div><p>Cargando...</p></div>';
+
+        updateMetaTags({
+            title: 'Cobertura WBC 2026 — Beisjoven Media',
+            description: 'Cobertura exclusiva del Clásico Mundial de Béisbol 2026. Pool B Houston. Presentado por Caja Inmaculada.',
+            image: 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-default.png',
+            type: 'website'
+        });
+
+        // Fetch artículos WBC
+        let articles = [];
+        try {
+            const { data, error } = await window.supabase
+                .from('articulos')
+                .select('id, titulo, slug, extracto, imagen_url, categoria, fecha_publicacion, autor')
+                .eq('es_wbc2026', true)
+                .eq('publicado', true)
+                .order('fecha_publicacion', { ascending: false })
+                .limit(50);
+            if (!error && data) articles = data;
+        } catch(e) { console.error('WBC fetch error:', e); }
+
+        // Calendario Pool B — datos estáticos
+        const calendario = [
+            { fecha: 'Jue 6 mar', hora: 'TBD CT', partido: 'México vs Gran Bretaña', tv: 'FS1', resultado: '—' },
+            { fecha: 'Sáb 8 mar', hora: 'TBD CT', partido: 'México vs Brasil', tv: 'FS1', resultado: '—' },
+            { fecha: 'Dom 9 mar', hora: 'TBD CT', partido: 'México vs EUA', tv: 'FOX', resultado: '—' },
+            { fecha: 'Mar 11 mar', hora: 'TBD CT', partido: 'México vs Italia', tv: 'Tubi', resultado: '—' },
+            { fecha: '13–14 mar', hora: 'TBD', partido: 'Cuartos de Final', tv: 'TBD', resultado: '—' },
+        ];
+
+        const calendarioRows = calendario.map(j => `
+            <tr>
+                <td>${j.fecha}</td>
+                <td>${j.hora}</td>
+                <td><strong>${j.partido}</strong></td>
+                <td><span class="wbc-tv-badge">${j.tv}</span></td>
+                <td class="wbc-resultado">${j.resultado}</td>
+            </tr>`).join('');
+
+        // Article cards
+        const articleCards = articles.length > 0
+            ? articles.map(a => {
+                const fecha = new Date(a.fecha_publicacion).toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' });
+                return `
+                <article class="article-card">
+                    <a href="/articulo/${a.slug}" class="article-card-link">
+                        <div class="article-card-image">
+                            <img src="${a.imagen_url || ''}" alt="${a.titulo}" loading="lazy">
+                            <span class="article-card-category cat-${(a.categoria||'').toLowerCase()}">${a.categoria || ''}</span>
+                        </div>
+                        <div class="article-card-content">
+                            <h3 class="article-card-title">${a.titulo}</h3>
+                            ${a.extracto ? `<p class="article-card-excerpt">${a.extracto}</p>` : ''}
+                            <div class="article-card-meta">
+                                <span>${a.autor || 'Redacción Beisjoven'}</span>
+                                <span>${fecha}</span>
+                            </div>
+                        </div>
+                    </a>
+                </article>`;
+            }).join('')
+            : '<p class="wbc-empty">Los artículos de cobertura aparecerán aquí en cuanto comience el torneo.</p>';
+
+        main.innerHTML = `
+            <div class="wbc-hub">
+
+                <!-- Hero banner Caja Inmaculada -->
+                <div class="wbc-hero-banner">
+                    <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-default.png"
+                         alt="Cobertura WBC 2026 — Presentado por Caja Inmaculada"
+                         class="wbc-hero-img"
+                         onerror="this.parentElement.classList.add('wbc-hero-placeholder')">
+                    <div class="wbc-hero-overlay">
+                        <div class="container">
+                            <div class="wbc-hero-text">
+                                <p class="wbc-hero-presentado">Cobertura exclusiva presentada por</p>
+                                <p class="wbc-hero-sponsor">Caja Inmaculada</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="container">
+                    <div class="wbc-layout">
+
+                        <!-- Sidebar: Calendario + Posiciones -->
+                        <aside class="wbc-sidebar">
+                            <div class="wbc-sidebar-card">
+                                <h3 class="wbc-sidebar-title">⚾ Calendario Pool B</h3>
+                                <div class="wbc-table-wrap">
+                                    <table class="wbc-calendar-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Hora</th>
+                                                <th>Partido</th>
+                                                <th>TV</th>
+                                                <th>Res.</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${calendarioRows}</tbody>
+                                    </table>
+                                </div>
+                                <p class="wbc-table-note">Horas en tiempo del Centro (CT). Resultados se actualizan tras cada juego.</p>
+                            </div>
+
+                            <div class="wbc-sidebar-card wbc-posiciones-placeholder">
+                                <h3 class="wbc-sidebar-title">📊 Posiciones Pool B</h3>
+                                <p class="wbc-empty" style="font-size:0.85rem;">La tabla de posiciones aparecerá al inicio del torneo (6 de marzo).</p>
+                            </div>
+                        </aside>
+
+                        <!-- Grid de artículos -->
+                        <main class="wbc-articles">
+                            <h2 class="wbc-section-title">Toda la Cobertura</h2>
+                            <div class="articles-grid">
+                                ${articleCards}
+                            </div>
+                        </main>
+
+                    </div>
+                </div>
+
+            </div>
+        `;
+    },
+
     contacto: function() {
         const main = document.getElementById('main-content');
         
