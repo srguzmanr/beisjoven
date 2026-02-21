@@ -574,6 +574,52 @@ const AdminPages = {
             </div>
         `;
 
+        // Inyectar CSS crítico del editor — garantiza que esté disponible
+        // independientemente del caché del CSS externo
+        if (!document.getElementById('bj-editor-styles')) {
+            const style = document.createElement('style');
+            style.id = 'bj-editor-styles';
+            style.textContent = `
+                .form-grid-new { display: grid; grid-template-columns: 1fr 320px; grid-template-areas: "titulo imagen" "extracto imagen" "meta checks" "contenido acciones"; gap: 0 24px; max-width: 100%; }
+                .fg-titulo { grid-area: titulo; padding-bottom: 20px; }
+                .fg-extracto { grid-area: extracto; padding-bottom: 20px; }
+                .fg-meta { grid-area: meta; padding-bottom: 20px; }
+                .fg-contenido { grid-area: contenido; padding-bottom: 20px; }
+                .fg-imagen { grid-area: imagen; background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
+                .fg-checks { grid-area: checks; background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
+                .fg-acciones { grid-area: acciones; background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+                .form-grid-new label { display: block; margin-bottom: 6px; font-weight: 600; color: #111827; font-size: 0.95rem; }
+                .form-grid-new input[type="text"], .form-grid-new input[type="url"], .form-grid-new textarea, .form-grid-new select { width: 100%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; font-family: inherit; box-sizing: border-box; background: #fff; color: #111827; }
+                .form-grid-new input:focus, .form-grid-new textarea:focus, .form-grid-new select:focus { outline: none; border-color: #c4122e; }
+                .fg-meta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+                .form-grid-new .checkbox-label { display: flex; align-items: center; gap: 10px; padding: 10px 0; cursor: pointer; min-height: 44px; border-bottom: 1px solid #f3f4f6; }
+                .form-grid-new .checkbox-label:last-child { border-bottom: none; }
+                .form-grid-new .checkbox-label input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; cursor: pointer; accent-color: #c4122e; }
+                .wbc-check-label { background: #fef3c7 !important; border: 1px solid #f59e0b !important; border-radius: 8px; padding: 10px 12px !important; margin-top: 4px; }
+                .wbc-check-label small { font-size: 0.75rem; color: #92400e; display: block; }
+                .fg-acciones .btn { width: 100%; padding: 14px; font-size: 1rem; border-radius: 8px; margin-bottom: 8px; cursor: pointer; text-align: center; display: block; text-decoration: none; border: none; font-family: inherit; font-weight: 600; }
+                .fg-acciones .btn-primary { background: #c4122e; color: white; }
+                .fg-acciones .btn-secondary { background: #f3f4f6; color: #374151; }
+                .btn-media-picker { padding: 10px 14px; background: #f3f4f6; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.9rem; white-space: nowrap; touch-action: manipulation; }
+                .form-grid-new .image-preview { width: 100%; height: 150px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 8px 0; overflow: hidden; color: #9ca3af; }
+                .form-grid-new .image-preview img { width: 100%; height: 100%; object-fit: cover; }
+                @media (max-width: 768px) {
+                    .form-grid-new { display: flex; flex-direction: column; gap: 0; padding-bottom: 80px; overflow: hidden; max-width: 100%; }
+                    .fg-titulo { order: 1; padding: 16px 16px 0; }
+                    .fg-extracto { order: 2; padding: 12px 16px 0; }
+                    .fg-meta { order: 3; padding: 12px 16px 0; }
+                    .fg-contenido { order: 4; padding: 12px 16px 0; }
+                    .fg-imagen { order: 5; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
+                    .fg-checks { order: 6; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
+                    .fg-acciones { order: 7; display: none; }
+                    .fg-meta-row { grid-template-columns: 1fr; gap: 12px; }
+                    .form-grid-new input, .form-grid-new textarea, .form-grid-new select { font-size: 16px !important; min-height: 44px; }
+                    .admin-main, .admin-content, .admin-layout { max-width: 100vw; overflow-x: hidden; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
         // Sticky bar móvil — reemplaza .fg-acciones en pantallas pequeñas
         if (window.innerWidth <= 768) {
             const existingBar = document.getElementById('admin-sticky-bar');
