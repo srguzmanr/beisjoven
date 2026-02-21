@@ -88,10 +88,18 @@ function renderContent(content) {
     // Contenido markdown nuevo: parseo completo
     let html = content;
 
-    // 1. Imágenes: ![alt](url) → <figure><img></figure>
+    // 1. Imágenes: ![caption||credito](url) o ![caption](url) → <figure><img></figure>
     html = html.replace(
         /!\[([^\]]*)\]\(([^)]+)\)/g,
-        (_, alt, url) => `<figure class="article-inline-image"><img src="${url}" alt="${escapeHTML(alt)}" loading="lazy">${alt ? `<figcaption>${escapeHTML(alt)}</figcaption>` : ''}</figure>`
+        (_, alt, url) => {
+            const parts = alt.split('||');
+            const caption = parts[0].trim();
+            const credito = parts[1] ? parts[1].trim() : '';
+            const figcaption = caption || credito
+                ? `<figcaption>${caption ? escapeHTML(caption) : ''}${caption && credito ? ' ' : ''}${credito ? `<span class="foto-credito">${escapeHTML(credito)}</span>` : ''}</figcaption>`
+                : '';
+            return `<figure class="article-inline-image"><img src="${url}" alt="${escapeHTML(caption || alt)}" loading="lazy">${figcaption}</figure>`;
+        }
     );
 
     // 2. Headings: ### H3, ## H2
@@ -608,6 +616,7 @@ const Pages = {
                     
                     <figure class="article-image">
                         <img src="${article.image}" alt="${article.title}">
+                        <div id="article-image-credit"></div>
                     </figure>
                     
                     <div class="article-body">
@@ -665,6 +674,35 @@ const Pages = {
             type: 'article'
         });
         
+        // Cargar metadatos de imagen principal (pie de foto + crédito)
+        (async function() {
+            try {
+                const imageUrl = article.image;
+                if (!imageUrl) return;
+                const nombre = imageUrl.split('/').pop().split('?')[0];
+                const { data: meta } = await supabaseClient
+                    .from('imagenes_metadata')
+                    .select('pie_de_foto, credito')
+                    .eq('nombre', nombre)
+                    .maybeSingle();
+                
+                const creditDiv = document.getElementById('article-image-credit');
+                if (!creditDiv) return;
+                
+                const pieDeFoto = meta?.pie_de_foto || article.excerpt || '';
+                const credito = meta?.credito || '';
+                
+                if (pieDeFoto || credito) {
+                    creditDiv.innerHTML = `
+                        <figcaption class="article-image-caption">
+                            ${pieDeFoto ? `<span class="foto-pie">${pieDeFoto}</span>` : ''}
+                            ${credito ? `<span class="foto-credito">${credito}</span>` : ''}
+                        </figcaption>
+                    `;
+                }
+            } catch(e) {}
+        })();
+
         // GA4 Key Events: scroll-based article read tracking
         if (typeof gtag === 'function') {
             // Clean up previous listener if any
