@@ -4,14 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
-
     <!-- SEO -->
     <title>Beisjoven - La Revista Digital de Béisbol y Softbol Mexicano</title>
     <meta name="description" content="Cobertura editorial del béisbol y softbol mexicano. MLB, LMB, LMP, Selección México, Softbol y más.">
     <meta name="keywords" content="beisbol, softbol, México, LMB, MLB, LMP, Liga Mexicana, Liga Mexicana del Pacífico, noticias deportivas, selección mexicana, béisbol mexicano">
     <meta name="author" content="Beisjoven">
     <link rel="canonical" href="https://beisjoven.com/">
-    
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://beisjoven.com/">
@@ -20,19 +18,16 @@
     <meta property="og:image" content="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-image.jpg">
     <meta property="og:site_name" content="Beisjoven">
     <meta property="og:locale" content="es_MX">
-    
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Beisjoven - La Revista Digital de Béisbol y Softbol Mexicano">
     <meta name="twitter:description" content="Cobertura editorial del béisbol y softbol mexicano. MLB, LMB, LMP, Selección México, Softbol y más.">
     <meta name="twitter:image" content="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-image.jpg">
-    
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    
     <!-- Structured Data -->
     <script type="application/ld+json">
     {
@@ -53,44 +48,40 @@
         }
     }
     </script>
-    
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-1RE839J27Q"></script>
     <script>
-      // Disable GA4 on admin/login pages
-      if (window.location.pathname.startsWith('/admin') || window.location.pathname === '/login') {
-          window['ga-disable-G-1RE839J27Q'] = true;
-      }
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-1RE839J27Q');
+        if (window.location.pathname.startsWith('/admin') || window.location.pathname === '/login') {
+            window['ga-disable-G-1RE839J27Q'] = true;
+        }
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-1RE839J27Q');
     </script>
-    
     <!-- GitHub Pages SPA redirect handler -->
     <script>
-      (function(l) {
-        if (l.search[1] === '/' ) {
-          var decoded = l.search.slice(1).split('&').map(function(s) { 
-            return s.replace(/~and~/g, '&')
-          }).join('?');
-          window.history.replaceState(null, null,
-              l.pathname.slice(0, -1) + decoded + l.hash
-          );
-        }
-      }(window.location))
+        (function(l) {
+            if (l.search[1] === '/' ) {
+                var decoded = l.search.slice(1).split('&').map(function(s) {
+                    return s.replace(/~and~/g, '&')
+                }).join('?');
+                window.history.replaceState(null, null,
+                    l.pathname.slice(0, -1) + decoded + l.hash
+                );
+            }
+        }(window.location))
     </script>
-    
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    
     <!-- Styles -->
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/envivo.css">
     <link rel="stylesheet" href="/css/dark-mode.css">
+    <link rel="stylesheet" href="/css/wbc-hub.css">
 </head>
 <body>
     <!-- Top Bar -->
@@ -104,7 +95,6 @@
             </div>
         </div>
     </div>
-
     <!-- Header -->
     <header id="main-header">
         <div class="header-main">
@@ -118,7 +108,6 @@
                 </form>
             </div>
         </div>
-
         <!-- Navigation -->
         <nav>
             <div class="container">
@@ -129,11 +118,14 @@
                     <li><a href="/categoria/seleccion">Selección</a></li>
                     <li><a href="/categoria/softbol">Softbol</a></li>
                     <li><a href="/categoria/juvenil">Juvenil</a></li>
+                    <!-- WBC 2026 — oculto hasta HUB_WBC_LIVE = true -->
+                    <li id="nav-wbc" style="display:none">
+                        <a href="/wbc-2026" style="color:#f59e0b;font-weight:700;">⚾ WBC 2026</a>
+                    </li>
                 </ul>
             </div>
         </nav>
     </header>
-
     <!-- Main Content (dinámico) -->
     <main id="main-content">
         <div class="loader">
@@ -141,7 +133,6 @@
             <p>Cargando...</p>
         </div>
     </main>
-
     <!-- Footer -->
     <footer id="main-footer">
         <div class="container">
@@ -180,10 +171,8 @@
             </div>
         </div>
     </footer>
-
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <!-- Scripts -->
     <script src="/js/supabase.js"></script>
     <script src="/data/database.js"></script>
@@ -198,7 +187,13 @@
     <script src="/js/article-preview.js"></script>
     <script src="/js/admin.js"></script>
     <script>
-        // Inicialización de la aplicación
+        // ================================================
+        // FLAG WBC 2026
+        // false = hub oculto (producción hasta 1 mar)
+        // true  = hub visible — cambiar esta línea para activar
+        // ================================================
+        const HUB_WBC_LIVE = false;
+
         document.addEventListener('DOMContentLoaded', function() {
             // Mostrar fecha actual
             const dateElement = document.getElementById('current-date');
@@ -207,7 +202,7 @@
                 const today = new Date().toLocaleDateString('es-MX', options);
                 dateElement.textContent = '📅 ' + today.charAt(0).toUpperCase() + today.slice(1);
             }
-            
+
             // Registrar rutas públicas
             Router.register('/', Pages.home);
             Router.register('/categoria/:slug', Pages.category);
@@ -221,7 +216,13 @@
             Router.register('/newsletter', Pages.newsletter);
             Router.register('/suscribete', Pages.newsletter);
             Router.register('/contacto', Pages.contacto);
-            
+
+            // Hub WBC 2026 — controlado por flag
+            Router.register('/wbc-2026', function(ctx) {
+                if (!HUB_WBC_LIVE) { Router.navigate('/'); return; }
+                Pages.wbc2026(ctx);
+            });
+
             // Registrar rutas del admin
             Router.register('/login', AdminPages.login);
             Router.register('/admin', AdminPages.dashboard);
@@ -232,21 +233,23 @@
             Router.register('/admin/videos', AdminPages.videosList);
             Router.register('/admin/videos/nuevo', AdminPages.videoEditor);
             Router.register('/admin/videos/editar/:id', AdminPages.videoEditor);
-            
+
+            // Mostrar/ocultar enlace WBC en nav según flag
+            const navWbc = document.getElementById('nav-wbc');
+            if (navWbc) navWbc.style.display = HUB_WBC_LIVE ? '' : 'none';
+
             // Iniciar auth y luego router
             Auth.init().then(() => {
                 Router.init();
             });
-            
+
             // Función para mostrar/ocultar header y footer
             function updateLayout() {
                 const path = window.location.pathname;
                 const isAdmin = path.startsWith('/admin') || path === '/login';
-                
                 const publicHeader = document.getElementById('public-header');
                 const mainHeader = document.getElementById('main-header');
                 const mainFooter = document.getElementById('main-footer');
-                
                 if (isAdmin) {
                     if (publicHeader) publicHeader.style.display = 'none';
                     if (mainHeader) mainHeader.style.display = 'none';
@@ -257,19 +260,15 @@
                     if (mainFooter) mainFooter.style.display = 'block';
                 }
             }
-            
-            // Ejecutar al cargar y en cada navegación
+
             updateLayout();
-            
-            // Sobrescribir navigate para actualizar layout
             const originalNavigate = Router.navigate.bind(Router);
             Router.navigate = function(path) {
                 originalNavigate(path);
                 setTimeout(updateLayout, 10);
             };
         });
-        
-        // Función de búsqueda (funciona desde header Y desde página de resultados)
+
         function handleSearch(event) {
             event.preventDefault();
             const headerInput = document.getElementById('header-search');
