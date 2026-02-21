@@ -1,0 +1,54 @@
+/* ==================== MOBILE iOS FIXES ==================== */
+
+/* Touch targets mínimos 44px en móvil */
+@media (max-width: 768px) {
+    /* Botones del formulario */
+    .btn-media-picker,
+    .form-actions .btn,
+    .btn-block {
+        min-height: 48px;
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Checkboxes y sus labels */
+    .checkbox-label,
+    .form-card label {
+        cursor: pointer;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Selects */
+    .form-card select,
+    .form-main select {
+        min-height: 44px;
+        cursor: pointer;
+        font-size: 16px; /* evita zoom automático en iOS */
+    }
+
+    /* Inputs — font-size 16px evita zoom en iOS */
+    .form-main input,
+    .form-main textarea,
+    .form-card input[type="text"] {
+        font-size: 16px;
+    }
+
+    /* Sidebar nav links */
+    .sidebar-nav a {
+        min-height: 48px;
+    }
+
+    /* Botones de artículos en tabla */
+    .btn-small {
+        min-height: 44px;
+        min-width: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
