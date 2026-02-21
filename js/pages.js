@@ -1222,14 +1222,41 @@ const Pages = {
             { fecha: '13–14 mar', hora: 'TBD', partido: 'Cuartos de Final', tv: 'TBD', resultado: '—' },
         ];
 
-        const calendarioRows = calendario.map(j => `
-            <tr>
-                <td>${j.fecha}</td>
-                <td>${j.hora}</td>
-                <td><strong>${j.partido}</strong></td>
-                <td><span class="wbc-tv-badge">${j.tv}</span></td>
-                <td class="wbc-resultado">${j.resultado}</td>
-            </tr>`).join('');
+        // Helper para clase de TV badge
+        const tvClass = (tv) => {
+            if (tv === 'FOX') return 'tv-fox';
+            if (tv === 'FS1') return 'tv-fs1';
+            if (tv === 'Tubi') return 'tv-tubi';
+            return 'tv-tbd';
+        };
+
+        // Parsear fecha para mostrar día y mes separados
+        const parseFecha = (f) => {
+            // Ej: "Jue 6 mar" → { dia: "6 mar", semana: "Jue" }
+            const parts = f.split(' ');
+            if (parts.length >= 3) return { semana: parts[0], dia: parts[1], mes: parts[2] };
+            return { semana: '', dia: f, mes: '' };
+        };
+
+        const calendarioRows = calendario.map(j => {
+            const f = parseFecha(j.fecha);
+            const esFinal = j.partido.includes('Cuartos');
+            return `
+            <div class="wbc-game-item${esFinal ? ' wbc-game-final' : ''}">
+                <div class="wbc-game-date">
+                    <span class="wbc-game-date-day">${esFinal ? '13-14' : f.dia}</span>
+                    <span class="wbc-game-date-mes">${esFinal ? 'mar' : f.mes}</span>
+                </div>
+                <div class="wbc-game-info">
+                    <span class="wbc-game-matchup">${esFinal ? j.partido : j.partido.replace('México', '<strong>México</strong>')}</span>
+                    <div class="wbc-game-detail">
+                        <span>${j.hora}</span>
+                        <span class="wbc-tv-badge ${tvClass(j.tv)}">${j.tv}</span>
+                    </div>
+                </div>
+                <div class="wbc-resultado-badge ${j.resultado === '—' ? 'pendiente' : ''}">${j.resultado}</div>
+            </div>`;
+        }).join('');
 
         // Article cards
         const articleCards = articles.length > 0
@@ -1255,22 +1282,40 @@ const Pages = {
             }).join('')
             : '<p class="wbc-empty">Los artículos de cobertura aparecerán aquí en cuanto comience el torneo.</p>';
 
+        const articleCount = articles.length;
+
         main.innerHTML = `
             <div class="wbc-hub">
 
-                <!-- Hero banner Caja Inmaculada -->
+                <!-- Franja tricolor superior -->
+                <div class="wbc-tricolor">
+                    <div class="wbc-tricolor-verde"></div>
+                    <div class="wbc-tricolor-blanco"></div>
+                    <div class="wbc-tricolor-rojo"></div>
+                </div>
+
+                <!-- Hero banner -->
                 <div class="wbc-hero-banner">
                     <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-default.png"
-                         alt="Cobertura WBC 2026 — Presentado por Caja Inmaculada"
+                         alt="Cobertura WBC 2026"
                          class="wbc-hero-img"
                          onerror="this.parentElement.classList.add('wbc-hero-placeholder')">
                     <div class="wbc-hero-overlay">
                         <div class="container">
-                            <div class="wbc-hero-text">
-                                <p class="wbc-hero-presentado">Cobertura exclusiva presentada por</p>
-                                <p class="wbc-hero-sponsor">Caja Inmaculada</p>
-                            </div>
+                            <div class="wbc-hero-badge">⚾ Clásico Mundial de Béisbol 2026</div>
+                            <h1 class="wbc-hero-title">México en el<br><span>WBC 2026</span></h1>
+                            <p class="wbc-hero-subtitle">Pool B · Houston, Texas · 6–14 de marzo</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Strip del sponsor -->
+                <div class="wbc-sponsor-strip">
+                    <div class="container">
+                        <span class="wbc-sponsor-label">Cobertura exclusiva presentada por</span>
+                        <div class="wbc-sponsor-divider"></div>
+                        <span class="wbc-sponsor-name">Caja Inmaculada</span>
+                        <div class="wbc-sponsor-logo-placeholder">Logo CI</div>
                     </div>
                 </div>
 
@@ -1279,37 +1324,47 @@ const Pages = {
 
                         <!-- Sidebar: Calendario + Posiciones -->
                         <aside class="wbc-sidebar">
+
                             <div class="wbc-sidebar-card">
-                                <h3 class="wbc-sidebar-title">⚾ Calendario Pool B</h3>
-                                <div class="wbc-table-wrap">
-                                    <table class="wbc-calendar-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Fecha</th>
-                                                <th>Hora</th>
-                                                <th>Partido</th>
-                                                <th>TV</th>
-                                                <th>Res.</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>${calendarioRows}</tbody>
-                                    </table>
+                                <div class="wbc-sidebar-header">
+                                    <span class="wbc-sidebar-header-icon">📅</span>
+                                    <h3>Calendario Pool B</h3>
                                 </div>
-                                <p class="wbc-table-note">Horas en tiempo del Centro (CT). Resultados se actualizan tras cada juego.</p>
+                                <div class="wbc-sidebar-body">
+                                    <div class="wbc-game-list">
+                                        ${calendarioRows}
+                                    </div>
+                                    <p class="wbc-calendar-note">Horas en tiempo del Centro (CT).<br>Resultados se actualizan tras cada juego.</p>
+                                </div>
                             </div>
 
-                            <div class="wbc-sidebar-card wbc-posiciones-placeholder">
-                                <h3 class="wbc-sidebar-title">📊 Posiciones Pool B</h3>
-                                <p class="wbc-empty" style="font-size:0.85rem;">La tabla de posiciones aparecerá al inicio del torneo (6 de marzo).</p>
+                            <div class="wbc-sidebar-card">
+                                <div class="wbc-sidebar-header">
+                                    <span class="wbc-sidebar-header-icon">📊</span>
+                                    <h3>Posiciones Pool B</h3>
+                                </div>
+                                <div class="wbc-posiciones-pending">
+                                    <strong>Disponible el 6 de marzo</strong>
+                                    La tabla de posiciones aparecerá al inicio del torneo.
+                                </div>
                             </div>
+
                         </aside>
 
                         <!-- Grid de artículos -->
                         <main class="wbc-articles">
-                            <h2 class="wbc-section-title">Toda la Cobertura</h2>
-                            <div class="articles-grid">
-                                ${articleCards}
+                            <div class="wbc-section-header">
+                                <h2 class="wbc-section-title">Toda la Cobertura</h2>
+                                ${articleCount > 0 ? `<span class="wbc-article-count">${articleCount} artículo${articleCount !== 1 ? 's' : ''}</span>` : ''}
                             </div>
+                            ${articleCount > 0
+                                ? `<div class="articles-grid">${articleCards}</div>`
+                                : `<div class="wbc-empty-state">
+                                    <span class="wbc-empty-icon">⚾</span>
+                                    <h3>La cobertura comienza el 6 de marzo</h3>
+                                    <p>Aquí encontrarás todas las notas, crónicas y análisis<br>de la participación de México en el WBC 2026.</p>
+                                   </div>`
+                            }
                         </main>
 
                     </div>
