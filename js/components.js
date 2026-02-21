@@ -16,6 +16,7 @@ const Components = {
                 <div class="news-card-content">
                     <a href="/categoria/${catSlug}" class="category">${catName}</a>
                     <h3><a href="/articulo/${article.slug}">${article.title}</a></h3>
+                    ${article.excerpt ? `<p class="card-excerpt">${article.excerpt}</p>` : ''}
                     <div class="meta">
                         ${dateStr ? `<span>📅 ${dateStr}</span>` : ''}
                     </div>
