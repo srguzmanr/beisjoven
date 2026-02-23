@@ -958,6 +958,7 @@ const AdminPages = {
                 'content',
                 initialContent
             );
+                        setTimeout(initMarkdownImport, 300);
         } else {
             // Fallback to plain textarea if RichTextEditor not loaded
             document.getElementById('content-editor-container').innerHTML = `
