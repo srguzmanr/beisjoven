@@ -61,7 +61,311 @@ function showToast(message, type, duration) {
         setTimeout(function() { toast.remove(); }, 300);
     }, duration);
 }
+// ============================================================
+// BJ-MOBILE-001 — Markdown Import para RTE Admin
+// Agregar en js/admin.js después de que se inicialice el RTE
+// ============================================================
 
+function initMarkdownImport() {
+// — 1. Convierte markdown a HTML —
+function markdownToHtml(md) {
+let html = md
+// Saltos de línea dobles → párrafos
+.split(/\n{2,}/)
+.map(block => {
+block = block.trim();
+if (!block) return ‘’;
+
+```
+    // ### H3
+    if (/^###\s+/.test(block)) {
+      return `<h3>${block.replace(/^###\s+/, '')}</h3>`;
+    }
+    // ## H2
+    if (/^##\s+/.test(block)) {
+      return `<h2>${block.replace(/^##\s+/, '')}</h2>`;
+    }
+    // # H1
+    if (/^#\s+/.test(block)) {
+      return `<h1>${block.replace(/^#\s+/, '')}</h1>`;
+    }
+    // Listas con - o *
+    if (/^[-*]\s+/.test(block)) {
+      const items = block
+        .split('\n')
+        .filter(l => /^[-*]\s+/.test(l.trim()))
+        .map(l => `<li>${inlineMarkdown(l.replace(/^[-*]\s+/, '').trim())}</li>`)
+        .join('');
+      return `<ul>${items}</ul>`;
+    }
+    // Listas numeradas
+    if (/^\d+\.\s+/.test(block)) {
+      const items = block
+        .split('\n')
+        .filter(l => /^\d+\.\s+/.test(l.trim()))
+        .map(l => `<li>${inlineMarkdown(l.replace(/^\d+\.\s+/, '').trim())}</li>`)
+        .join('');
+      return `<ol>${items}</ol>`;
+    }
+    // Párrafo normal
+    return `<p>${inlineMarkdown(block.replace(/\n/g, ' '))}</p>`;
+  })
+  .filter(Boolean)
+  .join('');
+
+return html;
+```
+
+}
+
+// Inline: negritas, itálicas, código
+function inlineMarkdown(text) {
+return text
+.replace(/**(.+?)**/g, ‘<strong>$1</strong>’)
+.replace(/*(.+?)*/g, ‘<em>$1</em>’)
+.replace(/*(.+?)*/g, ‘<em>$1</em>’)
+.replace(/`(.+?)`/g, ‘<code>$1</code>’);
+}
+
+// — 2. Crea el modal —
+function createModal() {
+// Evitar duplicados
+if (document.getElementById(‘bj-md-modal’)) return;
+
+```
+const overlay = document.createElement('div');
+overlay.id = 'bj-md-modal';
+overlay.innerHTML = `
+  <div id="bj-md-panel">
+    <div id="bj-md-header">
+      <span>📋 Pegar Markdown</span>
+      <button id="bj-md-close" aria-label="Cerrar">✕</button>
+    </div>
+    <textarea
+      id="bj-md-textarea"
+      placeholder="Pega aquí el markdown del artículo (## para títulos, ** para negritas)..."
+      spellcheck="false"
+    ></textarea>
+    <div id="bj-md-footer">
+      <button id="bj-md-cancel">Cancelar</button>
+      <button id="bj-md-import">Importar al editor →</button>
+    </div>
+  </div>
+`;
+
+// Estilos inyectados (patrón establecido en el proyecto)
+if (!document.getElementById('bj-md-styles')) {
+  const style = document.createElement('style');
+  style.id = 'bj-md-styles';
+  style.textContent = `
+    #bj-md-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 9999;
+      display: flex;
+      align-items: flex-end;       /* Sheet desde abajo en móvil */
+      justify-content: center;
+      padding: 0;
+      color-scheme: light;
+    }
+    #bj-md-panel {
+      background: #fff;
+      width: 100%;
+      max-width: 680px;
+      border-radius: 16px 16px 0 0;
+      display: flex;
+      flex-direction: column;
+      max-height: 90vh;
+      color-scheme: light;
+    }
+    #bj-md-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px 12px;
+      font-weight: 600;
+      font-size: 16px;
+      color: #111;
+      border-bottom: 1px solid #eee;
+    }
+    #bj-md-close {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #666;
+      padding: 4px 8px;
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #bj-md-textarea {
+      flex: 1;
+      min-height: 280px;
+      padding: 16px 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      border: none;
+      resize: none;
+      outline: none;
+      color: #222;
+      background: #fafafa;
+      -webkit-appearance: none;
+      color-scheme: light;
+    }
+    #bj-md-footer {
+      display: flex;
+      gap: 12px;
+      padding: 16px 20px;
+      border-top: 1px solid #eee;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+    #bj-md-cancel {
+      flex: 1;
+      padding: 14px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 15px;
+      cursor: pointer;
+      color: #444;
+      min-height: 44px;
+    }
+    #bj-md-import {
+      flex: 2;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+    }
+    #bj-md-import:active {
+      opacity: 0.85;
+    }
+    /* Desktop: modal centrado */
+    @media (min-width: 680px) {
+      #bj-md-modal {
+        align-items: center;
+      }
+      #bj-md-panel {
+        border-radius: 16px;
+        max-height: 80vh;
+        margin: 20px;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+document.body.appendChild(overlay);
+
+// --- 3. Eventos del modal ---
+const textarea  = overlay.querySelector('#bj-md-textarea');
+const btnClose  = overlay.querySelector('#bj-md-close');
+const btnCancel = overlay.querySelector('#bj-md-cancel');
+const btnImport = overlay.querySelector('#bj-md-import');
+
+const closeModal = () => overlay.remove();
+
+btnClose.addEventListener('click', closeModal);
+btnCancel.addEventListener('click', closeModal);
+overlay.addEventListener('click', e => {
+  if (e.target === overlay) closeModal();
+});
+
+btnImport.addEventListener('click', () => {
+  const md = textarea.value.trim();
+  if (!md) return;
+
+  const html = markdownToHtml(md);
+
+  // Busca el contenteditable del RTE
+  const editor = document.querySelector('[contenteditable="true"]');
+  if (!editor) {
+    alert('No se encontró el editor. Asegúrate de tener un artículo abierto.');
+    return;
+  }
+
+  // Opción: reemplazar o agregar al final
+  // Si el editor está vacío → reemplaza; si tiene contenido → pregunta
+  const editorEmpty = editor.innerText.trim().length === 0;
+  if (!editorEmpty) {
+    const ok = confirm('El editor ya tiene contenido. ¿Reemplazarlo con el markdown importado?');
+    if (!ok) return;
+  }
+
+  editor.innerHTML = html;
+
+  // Dispara evento input para que el autosave y otros listeners detecten el cambio
+  editor.dispatchEvent(new Event('input', { bubbles: true }));
+
+  closeModal();
+});
+
+// Focus automático al textarea
+setTimeout(() => textarea.focus(), 100);
+```
+
+}
+
+// — 4. Agrega el botón a la toolbar —
+function addImportButton() {
+// Evitar duplicados
+if (document.getElementById(‘bj-md-btn’)) return;
+
+```
+// Busca la toolbar del RTE — ajusta el selector si es necesario
+const toolbar = document.querySelector('.rte-toolbar, #rte-toolbar, .editor-toolbar, [class*="toolbar"]');
+
+const btn = document.createElement('button');
+btn.id = 'bj-md-btn';
+btn.type = 'button';
+btn.title = 'Importar desde Markdown';
+btn.innerHTML = '📋 MD';
+btn.style.cssText = `
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 44px;
+  min-width: 44px;
+  color-scheme: light;
+`;
+btn.addEventListener('click', createModal);
+
+if (toolbar) {
+  toolbar.appendChild(btn);
+} else {
+  // Fallback: inserta el botón justo antes del contenteditable
+  const editor = document.querySelector('[contenteditable="true"]');
+  if (editor) {
+    editor.parentNode.insertBefore(btn, editor);
+  }
+}
+```
+
+}
+
+// Inicializa
+addImportButton();
+}
+
+// Llama a la función después de que se monte el editor
+// En admin.js, busca donde se inicializa el RTE y agrega:
+// initMarkdownImport();
+// O si el editor se monta con delay:
+// setTimeout(initMarkdownImport, 500);
 // ==================== AUTOSAVE SYSTEM ====================
 var autosaveInterval = null;
 
