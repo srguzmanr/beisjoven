@@ -332,7 +332,7 @@ const MediaLibrary = {
                 .ml-cancel:hover { background: #475569; }
                 @media (max-width: 600px) {
                     .ml-overlay { padding: 0; align-items: flex-end; }
-                    .ml-container { max-height: 95vh; border-radius: 12px 12px 0 0; padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+                    .ml-container { max-height: 95vh; border-radius: 12px 12px 0 0; padding-bottom: 0; }
                     .ml-toolbar { flex-wrap: wrap; }
                     .ml-search { width: 100%; }
                     .ml-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
