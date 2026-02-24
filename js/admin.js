@@ -74,9 +74,8 @@ let html = md
 .split(/\n{2,}/)
 .map(block => {
 block = block.trim();
-if (!block) return ‘’;
+if (!block) return '';
 
-```
     // ### H3
     if (/^###\s+/.test(block)) {
       return `<h3>${block.replace(/^###\s+/, '')}</h3>`;
@@ -114,25 +113,23 @@ if (!block) return ‘’;
   .join('');
 
 return html;
-```
 
 }
 
 // Inline: negritas, itálicas, código
 function inlineMarkdown(text) {
 return text
-.replace(/**(.+?)**/g, ‘<strong>$1</strong>’)
-.replace(/*(.+?)*/g, ‘<em>$1</em>’)
-.replace(/*(.+?)*/g, ‘<em>$1</em>’)
-.replace(/`(.+?)`/g, ‘<code>$1</code>’);
+.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+.replace(/\*(.+?)\*/g, '<em>$1</em>')
+.replace(/\*(.+?)\*/g, '<em>$1</em>')
+.replace(/`(.+?)`/g, '<code>$1</code>');
 }
 
 // — 2. Crea el modal —
 function createModal() {
 // Evitar duplicados
-if (document.getElementById(‘bj-md-modal’)) return;
+if (document.getElementById('bj-md-modal')) return;
 
-```
 const overlay = document.createElement('div');
 overlay.id = 'bj-md-modal';
 overlay.innerHTML = `
@@ -312,16 +309,14 @@ btnImport.addEventListener('click', () => {
 
 // Focus automático al textarea
 setTimeout(() => textarea.focus(), 100);
-```
 
 }
 
 // — 4. Agrega el botón a la toolbar —
 function addImportButton() {
 // Evitar duplicados
-if (document.getElementById(‘bj-md-btn’)) return;
+if (document.getElementById('bj-md-btn')) return;
 
-```
 // Busca la toolbar del RTE — ajusta el selector si es necesario
 const toolbar = document.querySelector('.rte-toolbar, #rte-toolbar, .editor-toolbar, [class*="toolbar"]');
 
@@ -353,7 +348,6 @@ if (toolbar) {
     editor.parentNode.insertBefore(btn, editor);
   }
 }
-```
 
 }
 
