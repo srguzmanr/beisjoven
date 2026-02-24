@@ -331,11 +331,13 @@ const MediaLibrary = {
                 }
                 .ml-cancel:hover { background: #475569; }
                 @media (max-width: 600px) {
-                    .ml-overlay { padding: 10px; }
-                    .ml-container { max-height: 93vh; }
+                    .ml-overlay { padding: 0; align-items: flex-end; }
+                    .ml-container { max-height: 95vh; border-radius: 12px 12px 0 0; padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
                     .ml-toolbar { flex-wrap: wrap; }
                     .ml-search { width: 100%; }
                     .ml-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+                    .ml-footer { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+                    #ml-meta-panel { padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important; }
                 }
             </style>
         `;
