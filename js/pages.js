@@ -562,6 +562,9 @@ const Pages = {
             return;
         }
         
+        // Incrementar vistas (fire-and-forget, no bloquea la carga)
+        SupabaseAPI.incrementVistas(articulo.id);
+        
         // Obtener artículos relacionados (misma categoría)
         const articulosRelacionados = articulo.categoria 
             ? await SupabaseAPI.getArticulosByCategoria(articulo.categoria.slug, 7)
