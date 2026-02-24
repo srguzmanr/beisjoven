@@ -332,12 +332,16 @@ const MediaLibrary = {
                 .ml-cancel:hover { background: #475569; }
                 @media (max-width: 600px) {
                     .ml-overlay { padding: 0; align-items: flex-end; }
-                    .ml-container { max-height: 95vh; border-radius: 12px 12px 0 0; padding-bottom: 0; }
+                    .ml-container { max-height: 95vh; border-radius: 12px 12px 0 0; }
                     .ml-toolbar { flex-wrap: wrap; }
                     .ml-search { width: 100%; }
                     .ml-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
-                    .ml-footer { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
-                    #ml-meta-panel { padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important; }
+                    .ml-footer { flex-shrink: 0; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+                    #ml-meta-panel { flex-shrink: 0 !important; padding: 10px 16px !important; }
+                    #ml-meta-panel p { margin: 0 0 6px !important; font-size: 13px !important; }
+                    #ml-meta-panel label { margin-bottom: 2px !important; }
+                    #ml-meta-panel input, #ml-meta-panel select { padding: 6px !important; font-size: 12px !important; }
+                    #ml-meta-panel button { padding: 6px 12px !important; font-size: 12px !important; }
                 }
             </style>
         `;
