@@ -174,6 +174,14 @@ const SupabaseAPI = {
         return data;
     },
     
+    async incrementVistas(articuloId) {
+        const { error } = await supabaseClient
+            .rpc('increment_vistas', { articulo_id: articuloId });
+        if (error) {
+            console.error('Error incrementando vistas:', error);
+        }
+    },
+
     async getArticulosByAutor(autorSlug, limite = 10) {
         const autor = await this.getAutorBySlug(autorSlug);
         if (!autor) return [];
