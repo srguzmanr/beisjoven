@@ -470,7 +470,7 @@ const Pages = {
                     </div>
                 </header>
 
-                <div class="container">
+                <div class="container" style="padding-top:2.5rem;padding-bottom:2.5rem;">
                     <div class="two-column">
                         <div>
                             <div class="articles-list" id="category-articles-list">
