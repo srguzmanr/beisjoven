@@ -350,6 +350,40 @@ const Pages = {
     },
     
     // ==================== PÁGINA DE CATEGORÍA ====================
+    // Configuración de identidad visual por categoría
+    _categoryConfig: {
+        'mlb': {
+            tagline: 'Mexicanos en las Grandes Ligas y el escenario mundial',
+            accent: '#1a5276',
+            image: null
+        },
+        'liga-mexicana': {
+            tagline: 'LMB · LMP · Serie del Caribe · Todo el circuito mexicano',
+            accent: '#c41e3a',
+            image: null
+        },
+        'softbol': {
+            tagline: 'El softbol tiene casa aquí',
+            accent: '#b7950b',
+            image: null
+        },
+        'seleccion': {
+            tagline: 'Cuando México se pone el uniforme',
+            accent: '#006847',
+            image: null
+        },
+        'juvenil': {
+            tagline: 'Del diamante local al colegial — el camino empieza aquí',
+            accent: '#d35400',
+            image: null
+        },
+        'opinion': {
+            tagline: 'Análisis, contexto y las historias detrás del juego',
+            accent: '#566573',
+            image: null
+        }
+    },
+
     category: async function({ params }) {
         const main = document.getElementById('main-content');
         
@@ -378,6 +412,9 @@ const Pages = {
         }
         
         const PAGE_SIZE = 20;
+        var catPage = 0;
+        var catSlug = params.slug;
+
         const [articulosCategoria, articulosPopulares, totalArticulos] = await Promise.all([
             SupabaseAPI.getArticulosByCategoriaPaginados(params.slug, PAGE_SIZE, 0),
             SupabaseAPI.getMasLeidos(5),
@@ -410,7 +447,19 @@ const Pages = {
         
         const articles = articulosCategoria.map(adaptArticle);
         const mostRead = articulosPopulares.map(adaptArticle);
-        
+
+        // Config de identidad visual
+        const catConfig = Pages._categoryConfig[params.slug] || {
+            tagline: '',
+            accent: '#c41e3a',
+            image: null
+        };
+
+        // Construir estilo del hero header
+        const heroStyle = catConfig.image
+            ? `background-image: linear-gradient(rgba(27,42,74,0.78), rgba(27,42,74,0.78)), url('${catConfig.image}'); background-size: cover; background-position: center;`
+            : `background: linear-gradient(135deg, #1B2A4A 0%, ${catConfig.accent} 100%);`;
+
         main.innerHTML = `
             ${Components.breadcrumb([
                 { url: '/', text: 'Inicio' },
@@ -418,21 +467,24 @@ const Pages = {
             ])}
             
             <section class="category-page">
+                <header class="category-hero" style="${heroStyle}">
+                    <div class="category-hero-inner">
+                        <h1 class="category-hero-title">${categoria.nombre}</h1>
+                        ${catConfig.tagline ? `<p class="category-hero-tagline">${catConfig.tagline}</p>` : ''}
+                        <div class="category-hero-accent" style="background:${catConfig.accent};"></div>
+                    </div>
+                </header>
+
                 <div class="container">
-                    <header class="category-header">
-                        <span class="category-icon">${categoria.icono || '📰'}</span>
-                        <h1>${categoria.nombre}</h1>
-                        <p>${totalArticulos} artículos</p>
-                    </header>
-                    
                     <div class="two-column">
                         <div>
-                            ${articles.length > 0 
-                                ? `<div class="articles-list" id="category-articles-list">
-                                    ${articles.map(a => Components.articleCardHorizontal(a)).join('')}
-                                   </div>`
-                                : Components.emptyState('No hay artículos en esta categoría', '📭')
-                            }
+                            <div class="articles-list" id="category-articles-list">
+                                ${articles.length > 0
+                                    ? articles.map(a => Components.articleCardHorizontal(a)).join('')
+                                    : Components.emptyState('No hay artículos en esta categoría', '📭')
+                                }
+                            </div>
+                            <div id="category-pagination"></div>
                         </div>
                         <aside>
                             ${Components.mostReadWidget(mostRead)}
@@ -441,6 +493,89 @@ const Pages = {
                 </div>
             </section>
         `;
+
+        // Inyectar estilos del hero si no existen
+        if (!document.getElementById('category-hero-styles')) {
+            var s = document.createElement('style');
+            s.id = 'category-hero-styles';
+            s.textContent = `
+                .category-hero {
+                    width: 100%;
+                    padding: 3rem 1.5rem 2.5rem;
+                    text-align: center;
+                    position: relative;
+                    overflow: hidden;
+                }
+                .category-hero-inner {
+                    position: relative;
+                    z-index: 1;
+                    max-width: 700px;
+                    margin: 0 auto;
+                }
+                .category-hero-title {
+                    font-size: 2.8rem;
+                    font-weight: 800;
+                    color: #fff;
+                    margin: 0 0 0.5rem;
+                    letter-spacing: -0.5px;
+                    text-transform: uppercase;
+                }
+                .category-hero-tagline {
+                    font-size: 1rem;
+                    color: rgba(255,255,255,0.82);
+                    margin: 0 0 1.2rem;
+                    font-weight: 400;
+                    line-height: 1.5;
+                }
+                .category-hero-accent {
+                    width: 48px;
+                    height: 4px;
+                    border-radius: 2px;
+                    margin: 0 auto;
+                }
+                .category-pagination {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.4rem;
+                    padding: 2rem 0 1rem;
+                    flex-wrap: wrap;
+                }
+                .cat-page-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-width: 38px;
+                    height: 38px;
+                    padding: 0 0.6rem;
+                    border-radius: 6px;
+                    border: 1px solid rgba(255,255,255,0.15);
+                    background: transparent;
+                    color: inherit;
+                    font-size: 0.9rem;
+                    cursor: pointer;
+                    transition: background 0.15s, color 0.15s;
+                }
+                .cat-page-btn:hover:not(:disabled) {
+                    background: rgba(255,255,255,0.1);
+                }
+                .cat-page-btn.active {
+                    background: #c41e3a;
+                    border-color: #c41e3a;
+                    color: #fff;
+                    font-weight: 700;
+                }
+                .cat-page-btn:disabled {
+                    opacity: 0.3;
+                    cursor: default;
+                }
+                @media (max-width: 600px) {
+                    .category-hero-title { font-size: 2rem; }
+                    .category-hero-tagline { font-size: 0.9rem; }
+                }
+            `;
+            document.head.appendChild(s);
+        }
         
         document.title = `${categoria.nombre} - Beisjoven`;
         updateMetaTags({
@@ -448,60 +583,89 @@ const Pages = {
             description: `Noticias y artículos de ${categoria.nombre} en Beisjoven.`,
             url: `https://beisjoven.com/categoria/${categoria.slug}`
         });
-        
-        // Pagination: "Cargar más" button
-        var catOffset = articulosCategoria.length;
-        var catSlug = params.slug;
+
+        // Paginación numerada
         var catTotal = totalArticulos;
-        
-        if (catOffset < catTotal) {
+        var totalPages = Math.ceil(catTotal / PAGE_SIZE);
+
+        function renderPagination(currentPage) {
+            var paginationEl = document.getElementById('category-pagination');
+            if (!paginationEl || totalPages <= 1) return;
+
+            var html = '<div class="category-pagination">';
+
+            // Flecha izquierda
+            html += '<button class="cat-page-btn" id="cat-prev"' + (currentPage === 0 ? ' disabled' : '') + '>&#8592;</button>';
+
+            // Números de página — mostrar máximo 5 números centrados en la página actual
+            var start = Math.max(0, currentPage - 2);
+            var end = Math.min(totalPages - 1, currentPage + 2);
+            // Ajustar ventana para siempre mostrar 5 si hay suficientes páginas
+            if (end - start < 4) {
+                if (start === 0) end = Math.min(totalPages - 1, 4);
+                else start = Math.max(0, end - 4);
+            }
+
+            if (start > 0) {
+                html += '<button class="cat-page-btn" data-page="0">1</button>';
+                if (start > 1) html += '<span style="padding:0 0.2rem;opacity:0.4;">…</span>';
+            }
+
+            for (var i = start; i <= end; i++) {
+                html += '<button class="cat-page-btn' + (i === currentPage ? ' active' : '') + '" data-page="' + i + '">' + (i + 1) + '</button>';
+            }
+
+            if (end < totalPages - 1) {
+                if (end < totalPages - 2) html += '<span style="padding:0 0.2rem;opacity:0.4;">…</span>';
+                html += '<button class="cat-page-btn" data-page="' + (totalPages - 1) + '">' + totalPages + '</button>';
+            }
+
+            // Flecha derecha
+            html += '<button class="cat-page-btn" id="cat-next"' + (currentPage >= totalPages - 1 ? ' disabled' : '') + '>&#8594;</button>';
+
+            html += '</div>';
+            paginationEl.innerHTML = html;
+
+            // Event listeners
+            var prevBtn = document.getElementById('cat-prev');
+            var nextBtn = document.getElementById('cat-next');
+            if (prevBtn) prevBtn.addEventListener('click', function() { goToPage(currentPage - 1); });
+            if (nextBtn) nextBtn.addEventListener('click', function() { goToPage(currentPage + 1); });
+
+            paginationEl.querySelectorAll('.cat-page-btn[data-page]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    goToPage(parseInt(this.getAttribute('data-page')));
+                });
+            });
+        }
+
+        async function goToPage(page) {
+            if (page < 0 || page >= totalPages) return;
+            catPage = page;
+            var offset = page * PAGE_SIZE;
+
             var listEl = document.getElementById('category-articles-list');
             if (listEl) {
-                var container = document.createElement('div');
-                container.id = 'load-more-container';
-                container.style.cssText = 'text-align:center;padding:2rem 0;';
-                
-                var btn = document.createElement('button');
-                btn.className = 'btn btn-primary';
-                btn.style.minWidth = '200px';
-                btn.textContent = 'Cargar más artículos';
-                
-                var counter = document.createElement('p');
-                counter.style.cssText = 'margin-top:0.5rem;color:#888;font-size:0.85rem;';
-                counter.textContent = 'Mostrando ' + catOffset + ' de ' + catTotal;
-                
-                container.appendChild(btn);
-                container.appendChild(counter);
-                listEl.parentNode.insertBefore(container, listEl.nextSibling);
-                
-                btn.addEventListener('click', async function() {
-                    btn.disabled = true;
-                    btn.textContent = 'Cargando...';
-                    
-                    var newData = await SupabaseAPI.getArticulosByCategoriaPaginados(catSlug, PAGE_SIZE, catOffset);
-                    catOffset += newData.length;
-                    
-                    if (newData.length > 0) {
-                        var newHtml = newData.map(function(a) {
-                            return Components.articleCardHorizontal(adaptArticle(a));
-                        }).join('');
-                        listEl.insertAdjacentHTML('beforeend', newHtml);
-                    }
-                    
-                    if (catOffset < catTotal) {
-                        btn.disabled = false;
-                        btn.textContent = 'Cargar más artículos';
-                        counter.textContent = 'Mostrando ' + catOffset + ' de ' + catTotal;
-                    } else {
-                        container.innerHTML = '';
-                        var done = document.createElement('p');
-                        done.style.cssText = 'color:#888;font-size:0.85rem;padding:1rem 0;';
-                        done.textContent = 'Mostrando todos los ' + catTotal + ' artículos';
-                        container.appendChild(done);
-                    }
-                });
+                listEl.innerHTML = '<p style="padding:2rem;text-align:center;opacity:0.5;">Cargando...</p>';
             }
+
+            var newData = await SupabaseAPI.getArticulosByCategoriaPaginados(catSlug, PAGE_SIZE, offset);
+            var newArticles = newData.map(adaptArticle);
+
+            if (listEl) {
+                listEl.innerHTML = newArticles.length > 0
+                    ? newArticles.map(function(a) { return Components.articleCardHorizontal(a); }).join('')
+                    : Components.emptyState('No hay artículos en esta página', '📭');
+            }
+
+            renderPagination(catPage);
+
+            // Scroll al inicio de la lista
+            var hero = document.querySelector('.category-hero');
+            if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+
+        renderPagination(catPage);
     },
     
     // ==================== PÁGINA DE ARTÍCULO ====================
