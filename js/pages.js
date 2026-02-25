@@ -363,7 +363,7 @@ const Pages = {
             image: null
         },
         'softbol': {
-            tagline: 'El softbol tiene casa aquí',
+            tagline: 'Femenil, varonil y juvenil — el softbol tiene casa aquí',
             accent: '#b7950b',
             image: null
         },
@@ -461,11 +461,6 @@ const Pages = {
             : `background: linear-gradient(135deg, #1B2A4A 0%, ${catConfig.accent} 100%);`;
 
         main.innerHTML = `
-            ${Components.breadcrumb([
-                { url: '/', text: 'Inicio' },
-                { url: `/categoria/${categoria.slug}`, text: categoria.nombre }
-            ])}
-            
             <section class="category-page">
                 <header class="category-hero" style="${heroStyle}">
                     <div class="category-hero-inner">
@@ -501,7 +496,7 @@ const Pages = {
             s.textContent = `
                 .category-hero {
                     width: 100%;
-                    padding: 3rem 1.5rem 2.5rem;
+                    padding: 5rem 1.5rem 4rem;
                     text-align: center;
                     position: relative;
                     overflow: hidden;
