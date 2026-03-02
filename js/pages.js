@@ -1692,6 +1692,7 @@ const Pages = {
     overflow: hidden;
     box-shadow: 0 1px 8px rgba(0,0,0,0.07);
     background: #ffffff;
+    border: 1px solid #e5e7eb;
 }
 .wbc-hub .article-card-content {
     padding: 16px;
@@ -1722,9 +1723,20 @@ const Pages = {
     letter-spacing: 0.5px;
 }
 @media (prefers-color-scheme: dark) {
+    .wbc-hub {
+        background: #0f172a;
+    }
+    .wbc-hub .wbc-card {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    .wbc-hub .wbc-section-header {
+        background: #1e3a5f;
+    }
     .wbc-hub .article-card,
     .wbc-hub .article-card-content {
         background: #1e293b !important;
+        border-color: #334155;
     }
     .wbc-hub .article-card-title {
         color: #f1f5f9 !important;
@@ -1734,6 +1746,34 @@ const Pages = {
     }
     .wbc-hub .article-card-meta {
         color: #94a3b8 !important;
+    }
+    .wbc-hub .wbc-calendar-item {
+        border-color: #334155;
+    }
+    .wbc-hub .wbc-cal-day {
+        color: #f1f5f9;
+    }
+    .wbc-hub .wbc-cal-time {
+        color: #94a3b8;
+    }
+    .wbc-hub .wbc-standings-table th {
+        background: #1e3a5f;
+        color: #cbd5e1;
+    }
+    .wbc-hub .wbc-standings-table td {
+        color: #e2e8f0;
+        border-color: #334155;
+    }
+    .wbc-hub .wbc-standings-table tr:hover td {
+        background: #263548;
+    }
+    .wbc-hub .wbc-gallery-empty,
+    .wbc-hub .wbc-articles-empty {
+        background: #1e293b;
+        color: #94a3b8;
+    }
+    .wbc-hub .wbc-calendar-note {
+        color: #64748b;
     }
 }
 .wbc-hub .article-card-image {
