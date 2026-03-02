@@ -1756,6 +1756,18 @@ const Pages = {
     .wbc-hub .wbc-cal-time {
         color: #94a3b8;
     }
+    .wbc-hub .wbc-game-date-day {
+        color: #f1f5f9 !important;
+    }
+    .wbc-hub .wbc-game-date-mes {
+        color: #94a3b8 !important;
+    }
+    .wbc-hub .wbc-game-matchup {
+        color: #e2e8f0 !important;
+    }
+    .wbc-hub .wbc-game-item {
+        border-color: #334155 !important;
+    }
     .wbc-hub .wbc-standings-table th {
         background: #1e3a5f;
         color: #cbd5e1;
