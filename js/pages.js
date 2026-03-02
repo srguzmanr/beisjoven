@@ -1685,16 +1685,22 @@ const Pages = {
     display: flex;
     flex-direction: column;
     gap: 32px;
+    margin-bottom: 32px;
 }
 .wbc-hub .article-card {
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 1px 8px rgba(0,0,0,0.07);
 }
+.wbc-hub .article-card-image {
+    overflow: hidden;
+    max-height: 280px;
+}
 .wbc-hub .article-card-image img {
-    max-height: 320px;
-    object-fit: cover;
     width: 100%;
+    height: 280px;
+    object-fit: cover;
+    object-position: center 20%;
 }
 
 /* Responsive */
