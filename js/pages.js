@@ -1749,7 +1749,7 @@ const Pages = {
             const [artRes, galRes, vidRes] = await Promise.all([
                 supabaseClient
                     .from('articulos')
-                    .select('id, titulo, slug, extracto, imagen_url, categoria, fecha, autor')
+                    .select(`*, categoria:categorias(*), autor:autores(*)`)
                     .eq('es_wbc2026', true)
                     .eq('publicado', true)
                     .order('fecha', { ascending: false })
@@ -1793,18 +1793,21 @@ const Pages = {
                 </div>`;
             return '<div class="articles-grid">' + arts.map(a => {
                 const fecha = new Date(a.fecha).toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' });
+                const catNombre = a.categoria ? a.categoria.nombre : '';
+                const catSlug = a.categoria ? a.categoria.slug : '';
+                const autorNombre = a.autor ? a.autor.nombre : 'Redacción Beisjoven';
                 return `
                 <article class="article-card">
                     <a href="/articulo/${a.slug}" class="article-card-link">
                         <div class="article-card-image">
                             <img src="${a.imagen_url || ''}" alt="${a.titulo}" loading="lazy">
-                            <span class="article-card-category cat-${(a.categoria||'').toLowerCase()}">${a.categoria || ''}</span>
+                            <span class="article-card-category cat-${catSlug}">${catNombre}</span>
                         </div>
                         <div class="article-card-content">
                             <h3 class="article-card-title">${a.titulo}</h3>
                             ${a.extracto ? `<p class="article-card-excerpt">${a.extracto}</p>` : ''}
                             <div class="article-card-meta">
-                                <span>${a.autor || 'Redaccion Beisjoven'}</span>
+                                <span>${autorNombre}</span>
                                 <span>${fecha}</span>
                             </div>
                         </div>
