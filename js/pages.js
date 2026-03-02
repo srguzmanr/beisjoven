@@ -1730,10 +1730,10 @@ const Pages = {
         // ── Datos estáticos — Calendario Pool B ───────────────────────
         // Horarios en CT verificados con FOX Sports. DST inicia 8 mar (clocks spring forward)
         const calendario = [
-            { dia: '6',  mes: 'mar', dia_sem: 'Jue', partido: 'México vs Gran Bretaña', hora: '12:00 p.m. CT', tv: ['FS1','FOX Dep'],  resultado: '—', clases: 'pendiente' },
-            { dia: '8',  mes: 'mar', dia_sem: 'Sáb', partido: 'México vs Brasil',        hora: '7:00 p.m. CT',  tv: ['FS1','FOX Dep'],  resultado: '—', clases: 'pendiente' },
-            { dia: '9',  mes: 'mar', dia_sem: 'Dom', partido: 'México vs EUA',           hora: '7:00 p.m. CT',  tv: ['FOX','FOX Dep'],  resultado: '—', clases: 'pendiente' },
-            { dia: '11', mes: 'mar', dia_sem: 'Mar', partido: 'México vs Italia',        hora: '6:00 p.m. CT',  tv: ['Tubi'],           resultado: '—', clases: 'pendiente' },
+            { dia: '6',  mes: 'mar', dia_sem: 'Jue', partido: 'México vs Gran Bretaña', hora: '12:00 p.m. CDMX', tv: ['FS1','FOX Dep'],  resultado: '—', clases: 'pendiente' },
+            { dia: '8',  mes: 'mar', dia_sem: 'Sáb', partido: 'México vs Brasil',        hora: '6:00 p.m. CDMX',  tv: ['FS1','FOX Dep'],  resultado: '—', clases: 'pendiente' },
+            { dia: '9',  mes: 'mar', dia_sem: 'Dom', partido: 'México vs EUA',           hora: '6:00 p.m. CDMX',  tv: ['FOX','FOX Dep'],  resultado: '—', clases: 'pendiente' },
+            { dia: '11', mes: 'mar', dia_sem: 'Mar', partido: 'México vs Italia',        hora: '5:00 p.m. CDMX',  tv: ['Tubi'],           resultado: '—', clases: 'pendiente' },
             { dia: '13–14', mes: 'mar', dia_sem: '',  partido: 'Cuartos de Final',       hora: 'Si México avanza', tv: ['FOX'],          resultado: '', clases: '' },
         ];
 
@@ -2019,7 +2019,7 @@ const Pages = {
                     </div>
                     <div class="wbc-card-body">
                         <div class="wbc-game-list">${calendarioRows}</div>
-                        <p class="wbc-calendar-note">Horas en Tiempo del Centro (CT). FOX Dep = FOX Deportes.<br>Resultados se actualizan tras cada juego.</p>
+                        <p class="wbc-calendar-note">Horas en Tiempo de la Ciudad de México (CDMX). FOX Dep = FOX Deportes.<br>Resultados se actualizan tras cada juego.</p>
                     </div>
                 </div>
 
