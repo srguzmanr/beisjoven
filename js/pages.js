@@ -1742,7 +1742,15 @@ const Pages = {
     .wbc-hub .wbc-articles-header {
         color: #f1f5f9 !important;
     }
+    .wbc-hub .wbc-articles-title {
+        color: #f1f5f9 !important;
+    }
+    .wbc-hub .wbc-article-count,
     .wbc-hub .wbc-articles-count {
+        color: #94a3b8 !important;
+    }
+    .wbc-hub .wbc-empty-state {
+        background: #1e293b !important;
         color: #94a3b8 !important;
     }
 
