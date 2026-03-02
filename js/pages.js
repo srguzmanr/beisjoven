@@ -1680,6 +1680,23 @@ const Pages = {
 .wbc-social-icon:hover { background: rgba(255,255,255,0.2); transform: scale(1.08); }
 .wbc-social-icon svg { width: 22px; height: 22px; fill: currentColor; }
 
+/* Articles grid spacing override dentro del hub */
+.wbc-hub .articles-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+.wbc-hub .article-card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+}
+.wbc-hub .article-card-image img {
+    max-height: 320px;
+    object-fit: cover;
+    width: 100%;
+}
+
 /* Responsive */
 @media (max-width: 480px) {
     .wbc-hero-banner { min-height: 260px; }
