@@ -90,6 +90,7 @@
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="/css/envivo.css">
     <link rel="stylesheet" href="/css/dark-mode.css">
+    <link rel="stylesheet" href="/css/wbc-hub.css">
 </head>
 <body>
     <!-- Top Bar -->
@@ -128,6 +129,7 @@
                     <li><a href="/categoria/seleccion">Selección</a></li>
                     <li><a href="/categoria/softbol">Softbol</a></li>
                     <li><a href="/categoria/juvenil">Juvenil</a></li>
+                    <li id="nav-wbc"><a href="/wbc-2026" style="color:#f59e0b;font-weight:700;">⚾ WBC 2026</a></li>
                 </ul>
             </div>
         </nav>
@@ -231,7 +233,7 @@
             Router.register('/admin/videos/nuevo', AdminPages.videoEditor);
             Router.register('/admin/videos/editar/:id', AdminPages.videoEditor);
             // WBC 2026 Hub
-        const HUB_WBC_LIVE = false;
+        const HUB_WBC_LIVE = true;
         Router.register('/wbc-2026', function(ctx) {
             const previewKey = new URLSearchParams(window.location.search).get('preview');
             if (!HUB_WBC_LIVE && previewKey !== 'bj2026') { Router.navigate('/'); return; }
