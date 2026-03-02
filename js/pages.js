@@ -1816,8 +1816,8 @@ const Pages = {
             if (!arts.length) return `
                 <div class="wbc-empty-state">
                     <span class="wbc-empty-icon">⚾</span>
-                    <h3>La cobertura comienza el 6 de marzo</h3>
-                    <p>Aqui encontraras todas las notas, cronicas y analisis<br>de la participacion de Mexico en el WBC 2026.</p>
+                    <h3>La cobertura ya comenzó</h3>
+                    <p>Los artículos aparecerán aquí conforme se publiquen.</p>
                 </div>`;
             return '<div class="articles-grid">' + arts.map(a => {
                 const fecha = new Date(a.fecha_publicacion).toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' });
@@ -1999,7 +1999,7 @@ const Pages = {
                     <div class="container">
                         <div class="wbc-hero-badge">⚾ Clasico Mundial de Beisbol 2026</div>
                         <h1 class="wbc-hero-title">Mexico en el<br><span>WBC 2026</span></h1>
-                        <p class="wbc-hero-subtitle">Pool B · Daikin Park, Houston · 6–14 de marzo</p>
+                        <p class="wbc-hero-subtitle">Cobertura completa del Clásico Mundial de Béisbol 2026</p>
                         <p class="wbc-hero-hashtag">#EsMiSangre</p>
                     </div>
                 </div>
