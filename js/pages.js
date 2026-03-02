@@ -664,35 +664,7 @@ const Pages = {
     },
     
     // ==================== PÁGINA DE ARTÍCULO ====================
-    // ==================== WBC 2026 HELPERS ====================
-    _wbcBadge: function() {
-        return `<div class="wbc-badge-presentado">
-            <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-default.png" 
-                 alt="Caja Inmaculada" class="wbc-ci-logo-badge"
-                 onerror="this.style.display='none'">
-            <span>Cobertura presentada por <strong>Caja Inmaculada</strong></span>
-        </div>`;
-    },
-
-    _wbcInlineBanner: function() {
-        return `<div class="wbc-banner-inline">
-            <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-default.png"
-                 alt="Caja Inmaculada — Presentado por" class="wbc-banner-img"
-                 onerror="this.parentElement.style.display='none'">
-        </div>`;
-    },
-
-    _injectWbcBannerAfterParagraph3: function(htmlContent) {
-        // Inject inline banner after 3rd <p> tag
-        let count = 0;
-        return htmlContent.replace(/<\/p>/g, (match) => {
-            count++;
-            if (count === 3) {
-                return '</p>' + Pages._wbcInlineBanner();
-            }
-            return match;
-        });
-    },
+    // WBC sponsor helpers — removidos. Activar cuando haya contrato firmado.
 
     article: async function({ params }) {
         const main = document.getElementById('main-content');
@@ -1992,13 +1964,11 @@ const Pages = {
 
             <!-- Hero -->
             <div class="wbc-hero-banner">
-                <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-default.png"
-                     alt="WBC 2026" class="wbc-hero-img"
-                     onerror="this.style.display='none'">
+<!-- Hero image: Sergio reemplaza el 6 de marzo con foto desde Daikin Park -->
                 <div class="wbc-hero-overlay">
                     <div class="container">
                         <div class="wbc-hero-badge">⚾ Clasico Mundial de Beisbol 2026</div>
-                        <h1 class="wbc-hero-title">Mexico en el<br><span>WBC 2026</span></h1>
+                        <h1 class="wbc-hero-title">México en el<br><span>WBC 2026</span></h1>
                         <p class="wbc-hero-subtitle">Cobertura completa del Clásico Mundial de Béisbol 2026</p>
                         <p class="wbc-hero-hashtag">#EsMiSangre</p>
                     </div>
