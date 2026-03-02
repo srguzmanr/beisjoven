@@ -769,7 +769,7 @@ const Pages = {
                     <header class="article-header">
                         <a href="/categoria/${article.category.slug}" class="category">${article.category.name}</a>
                         <h1>${article.title}</h1>
-                        ${article.es_wbc2026 ? Pages._wbcBadge() : ''}
+                        
                     <div class="article-meta">
                             ${Components.authorBox(article.author)}
                             <div class="meta-info">
@@ -786,7 +786,7 @@ const Pages = {
                     
                     <div class="article-body">
                         <div class="article-content">
-                            ${article.es_wbc2026 ? Pages._injectWbcBannerAfterParagraph3(renderContent(article.content)) : renderContent(article.content)}
+                            ${renderContent(article.content)}
                             
                             ${article.tags.length > 0 ? `
                                 <div class="article-tags">
