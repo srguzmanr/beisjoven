@@ -1723,9 +1723,12 @@ const Pages = {
     letter-spacing: 0.5px;
 }
 @media (prefers-color-scheme: dark) {
+    /* ── Hub background ── */
     .wbc-hub {
         background: #0f172a;
     }
+
+    /* ── Cards / contenedores ── */
     .wbc-hub .wbc-card {
         background: #1e293b;
         border-color: #334155;
@@ -1733,6 +1736,17 @@ const Pages = {
     .wbc-hub .wbc-section-header {
         background: #1e3a5f;
     }
+
+    /* ── Sección "Toda la Cobertura" ── */
+    .wbc-hub .wbc-articles-section h2,
+    .wbc-hub .wbc-articles-header {
+        color: #f1f5f9 !important;
+    }
+    .wbc-hub .wbc-articles-count {
+        color: #94a3b8 !important;
+    }
+
+    /* ── Article cards ── */
     .wbc-hub .article-card,
     .wbc-hub .article-card-content {
         background: #1e293b !important;
@@ -1747,45 +1761,88 @@ const Pages = {
     .wbc-hub .article-card-meta {
         color: #94a3b8 !important;
     }
-    .wbc-hub .wbc-calendar-item {
-        border-color: #334155;
+    .wbc-hub .article-card-category {
+        opacity: 0.9;
     }
-    .wbc-hub .wbc-cal-day {
-        color: #f1f5f9;
-    }
-    .wbc-hub .wbc-cal-time {
-        color: #94a3b8;
+
+    /* ── Calendario ── */
+    .wbc-hub .wbc-game-item {
+        border-color: #334155 !important;
     }
     .wbc-hub .wbc-game-date-day {
         color: #f1f5f9 !important;
     }
     .wbc-hub .wbc-game-date-mes {
-        color: #94a3b8 !important;
+        color: #64748b !important;
     }
     .wbc-hub .wbc-game-matchup {
         color: #e2e8f0 !important;
     }
-    .wbc-hub .wbc-game-item {
-        border-color: #334155 !important;
+    .wbc-hub .wbc-game-matchup strong {
+        color: #f87171 !important;
+    }
+    .wbc-hub .wbc-game-detail {
+        color: #94a3b8 !important;
+    }
+    .wbc-hub .wbc-resultado.pendiente {
+        color: #475569 !important;
+    }
+    .wbc-hub .wbc-resultado.ganado {
+        color: #4ade80 !important;
+    }
+    .wbc-hub .wbc-resultado.perdido {
+        color: #f87171 !important;
+    }
+    .wbc-hub .wbc-tv-badge.tv-tbd {
+        background: #374151 !important;
+        color: #9ca3af !important;
+    }
+    .wbc-hub .wbc-calendar-note {
+        color: #475569;
+    }
+
+    /* ── Posiciones ── */
+    .wbc-hub .wbc-standings-table {
+        background: transparent;
     }
     .wbc-hub .wbc-standings-table th {
         background: #1e3a5f;
-        color: #cbd5e1;
+        color: #94a3b8;
+        border-color: #334155;
     }
     .wbc-hub .wbc-standings-table td {
         color: #e2e8f0;
         border-color: #334155;
+        background: transparent;
+    }
+    .wbc-hub .wbc-standings-table tr.mexico-row td {
+        background: rgba(196,18,46,0.15) !important;
+        color: #fca5a5 !important;
     }
     .wbc-hub .wbc-standings-table tr:hover td {
         background: #263548;
     }
+    .wbc-hub .wbc-standings-footer {
+        color: #475569;
+    }
+
+    /* ── Galería y videos ── */
     .wbc-hub .wbc-gallery-empty,
     .wbc-hub .wbc-articles-empty {
         background: #1e293b;
         color: #94a3b8;
+        border-color: #334155;
     }
-    .wbc-hub .wbc-calendar-note {
+    .wbc-hub .wbc-video-empty {
         color: #64748b;
+    }
+    .wbc-hub .wbc-gallery-caption {
+        color: #94a3b8;
+    }
+
+    /* ── Tricolor (mantener colores nacionales) ── */
+    .wbc-tricolor-blanco {
+        background: rgba(255,255,255,0.15) !important;
     }
 }
 .wbc-hub .article-card-image {
