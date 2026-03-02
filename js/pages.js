@@ -1747,19 +1747,19 @@ const Pages = {
         let articles = [], galeria = [], videos = [];
         try {
             const [artRes, galRes, vidRes] = await Promise.all([
-                window.supabase
+                supabaseClient
                     .from('articulos')
                     .select('id, titulo, slug, extracto, imagen_url, categoria, fecha_publicacion, autor')
                     .eq('es_wbc2026', true)
                     .eq('publicado', true)
                     .order('fecha_publicacion', { ascending: false })
                     .limit(50),
-                window.supabase
+                supabaseClient
                     .from('wbc_galeria')
                     .select('id, imagen_url, pie_de_foto, created_at')
                     .order('created_at', { ascending: false })
                     .limit(60),
-                window.supabase
+                supabaseClient
                     .from('wbc_videos')
                     .select('id, titulo, youtube_url')
                     .order('id', { ascending: true })
@@ -1772,7 +1772,7 @@ const Pages = {
 
         // ── Intentar fetch de posiciones desde Supabase ───────────────
         try {
-            const { data: posData, error: posErr } = await window.supabase
+            const { data: posData, error: posErr } = await supabaseClient
                 .from('wbc_posiciones')
                 .select('equipo, jj, jg, jp, orden')
                 .order('jg', { ascending: false })
@@ -1870,7 +1870,7 @@ const Pages = {
         // ── Determinar si hay usuario autenticado ─────────────────────
         let isAdmin = false;
         try {
-            const { data: { user } } = await window.supabase.auth.getUser();
+            const { data: { user } } = await supabaseClient.auth.getUser();
             isAdmin = !!user;
         } catch(e) {}
 
@@ -2066,17 +2066,17 @@ const Pages = {
             try {
                 const ext = file.name.split('.').pop();
                 const filename = 'wbc2026/' + Date.now() + '.' + ext;
-                const { error: upErr } = await window.supabase.storage
+                const { error: upErr } = await supabaseClient.storage
                     .from('imagenes').upload(filename, file, { cacheControl: '3600', upsert: false });
                 if (upErr) throw upErr;
-                const { data: { publicUrl } } = window.supabase.storage.from('imagenes').getPublicUrl(filename);
-                const { error: dbErr } = await window.supabase.from('wbc_galeria')
+                const { data: { publicUrl } } = supabaseClient.storage.from('imagenes').getPublicUrl(filename);
+                const { error: dbErr } = await supabaseClient.from('wbc_galeria')
                     .insert({ imagen_url: publicUrl, pie_de_foto: captionInput.value.trim() || null });
                 if (dbErr) throw dbErr;
                 statusEl.textContent = '✓ Publicado';
                 fileInput.value = ''; captionInput.value = '';
                 // Refresh gallery
-                const { data: fresh } = await window.supabase.from('wbc_galeria')
+                const { data: fresh } = await supabaseClient.from('wbc_galeria')
                     .select('id, imagen_url, pie_de_foto').order('created_at', { ascending: false }).limit(60);
                 if (fresh) {
                     document.getElementById('wbc-galeria-display').innerHTML = renderGallery(fresh);
@@ -2092,9 +2092,9 @@ const Pages = {
         window.wbcDeletePhoto = async function(id, btn) {
             if (!confirm('Eliminar esta foto?')) return;
             btn.disabled = true;
-            const { error } = await window.supabase.from('wbc_galeria').delete().eq('id', id);
+            const { error } = await supabaseClient.from('wbc_galeria').delete().eq('id', id);
             if (error) { alert('Error: ' + error.message); btn.disabled = false; return; }
-            const { data: fresh } = await window.supabase.from('wbc_galeria')
+            const { data: fresh } = await supabaseClient.from('wbc_galeria')
                 .select('id, imagen_url, pie_de_foto').order('created_at', { ascending: false }).limit(60);
             if (fresh) {
                 document.getElementById('wbc-galeria-display').innerHTML = renderGallery(fresh);
@@ -2111,11 +2111,11 @@ const Pages = {
                     titulo: document.getElementById('wbc-vid-titulo-' + n).value.trim() || null,
                     youtube_url: document.getElementById('wbc-vid-url-' + n).value.trim() || null
                 }));
-                const { error } = await window.supabase.from('wbc_videos').upsert(upserts, { onConflict: 'id' });
+                const { error } = await supabaseClient.from('wbc_videos').upsert(upserts, { onConflict: 'id' });
                 if (error) throw error;
                 statusEl.textContent = '✓ Videos guardados';
                 // Refresh video section
-                const { data: freshVids } = await window.supabase.from('wbc_videos')
+                const { data: freshVids } = await supabaseClient.from('wbc_videos')
                     .select('id, titulo, youtube_url').order('id').limit(3);
                 if (freshVids) {
                     const rendered = renderVideos(freshVids);
@@ -2144,7 +2144,7 @@ const Pages = {
                     jp: parseInt(document.getElementById('pos-jp-' + i).value) || 0,
                     orden: i + 1
                 }));
-                const { error } = await window.supabase.from('wbc_posiciones')
+                const { error } = await supabaseClient.from('wbc_posiciones')
                     .upsert(rows, { onConflict: 'equipo' });
                 if (error) throw error;
                 statusEl.textContent = '✓ Posiciones actualizadas';
