@@ -851,7 +851,7 @@ const AdminPages = {
                                     </label>
                                     <label class="checkbox-label wbc-check-label">
                                         <input type="checkbox" id="es_wbc2026" ${article?.es_wbc2026 ? 'checked' : (useDraft && draft?.es_wbc2026 ? 'checked' : '')}>
-                                        <span>⚾ Cobertura WBC 2026 <small>(activa badge Caja Inmaculada)</small></span>
+                                        <span>⚾ Cobertura WBC 2026 <small>(aparece en el hub WBC)</small></span>
                                     </label>
                                 </div>
 
