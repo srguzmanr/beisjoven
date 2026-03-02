@@ -1749,10 +1749,10 @@ const Pages = {
             const [artRes, galRes, vidRes] = await Promise.all([
                 supabaseClient
                     .from('articulos')
-                    .select('id, titulo, slug, extracto, imagen_url, categoria, fecha_publicacion, autor')
+                    .select('id, titulo, slug, extracto, imagen_url, categoria, fecha, autor')
                     .eq('es_wbc2026', true)
                     .eq('publicado', true)
-                    .order('fecha_publicacion', { ascending: false })
+                    .order('fecha', { ascending: false })
                     .limit(50),
                 supabaseClient
                     .from('wbc_galeria')
@@ -1792,7 +1792,7 @@ const Pages = {
                     <p>Los artículos aparecerán aquí conforme se publiquen.</p>
                 </div>`;
             return '<div class="articles-grid">' + arts.map(a => {
-                const fecha = new Date(a.fecha_publicacion).toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' });
+                const fecha = new Date(a.fecha).toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' });
                 return `
                 <article class="article-card">
                     <a href="/articulo/${a.slug}" class="article-card-link">
