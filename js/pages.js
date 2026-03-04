@@ -1716,6 +1716,21 @@ const Pages = {
     position: absolute; top: 0; left: 0;
     width: 100%; height: 100%; border-radius: 8px; border: none;
 }
+.wbc-yt-cta {
+    display: block;
+    text-align: center;
+    padding: 14px 16px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--wbc-navy);
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-top: 1px solid #E5E7EB;
+    transition: color 0.2s;
+}
+.wbc-yt-cta:hover { color: #C8102E; }
 
 /* ── CTA Redes ──────────────────────────────────────────── */
 .wbc-social-cta {
@@ -1908,6 +1923,8 @@ const Pages = {
     .wbc-hub .wbc-video-empty {
         color: #64748b;
     }
+    .wbc-yt-cta { color: #e2e8f0; border-top-color: #334155; }
+    .wbc-yt-cta:hover { color: #D4A843; }
     .wbc-hub .wbc-gallery-caption {
         color: #94a3b8;
     }
@@ -2496,6 +2513,9 @@ const Pages = {
                     ? renderVideos(videos)
                     : '<p class="wbc-video-empty" style="text-align:center;color:#6b7280;padding:20px 0;">Los videos aparecerán aquí. Agrega URLs de YouTube desde el panel admin.</p>'}
             </div>
+            <a href="https://www.youtube.com/@BeisJoven" target="_blank" rel="noopener" class="wbc-yt-cta">
+                Ver toda la cobertura en video →
+            </a>
         </div>`;
 
         const articleCount = articles.length;
