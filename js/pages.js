@@ -1374,7 +1374,7 @@ const Pages = {
     --wbc-muted:  #6b7280;
     --mex-green:  #006847;
     --mex-red:    #ce1126;
-    background: #111827;
+    background: var(--wbc-light);
     min-height: 100vh;
 }
 
@@ -2037,6 +2037,34 @@ const Pages = {
     font-weight: 500;
 }
 
+/* ── Paginación "Ver más" ──────────────────────────────── */
+.wbc-load-more {
+    text-align: center;
+    padding: 24px 0 8px;
+}
+.wbc-load-more-btn {
+    background: linear-gradient(135deg, #1B2A4A 0%, #2D3F6B 100%);
+    color: #D4A843;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 8px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.wbc-load-more-btn:hover { opacity: 0.85; }
+.wbc-load-more-count {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: var(--wbc-muted);
+    font-family: 'Open Sans', sans-serif;
+}
+
 /* ── MÓDULO 4 — Cierre CI (antes de social CTA) ────────── */
 .ci-closing {
     text-align: center;
@@ -2196,7 +2224,9 @@ const Pages = {
                     <span class="ci-branded-label">PATROCINADOR OFICIAL</span>
                 </div>
                 <div class="ci-branded-body">
-                    <img src="${ciLogoUrl}" alt="Caja Inmaculada" class="ci-branded-logo">
+                    <a href="https://www.cajainmaculada.com.mx/" target="_blank" rel="noopener sponsored">
+                        <img src="${ciLogoUrl}" alt="Caja Inmaculada" class="ci-branded-logo">
+                    </a>
                     <p class="ci-branded-tagline">La Primera Caja Autorizada de México</p>
                     <div class="ci-branded-divider"></div>
                     <p class="ci-branded-message">Caja Inmaculada respalda la cobertura de Beisjoven en el World Baseball Classic 2026</p>
@@ -2204,6 +2234,8 @@ const Pages = {
             </div>`;
 
         // ── Helpers de render ─────────────────────────────────────────
+        const ARTICLES_PER_PAGE = 6;
+
         function renderArticleCards(arts) {
             if (!arts.length) return `
                 <div class="wbc-empty-state">
@@ -2216,8 +2248,9 @@ const Pages = {
                 const catNombre = a.categoria ? a.categoria.nombre : '';
                 const catSlug = a.categoria ? a.categoria.slug : '';
                 const autorNombre = a.autor ? a.autor.nombre : 'Redacción Beisjoven';
+                const hidden = i >= ARTICLES_PER_PAGE ? ' style="display:none"' : '';
                 let card = `
-                <article class="article-card">
+                <article class="article-card wbc-art-item" data-art-index="${i}"${hidden}>
                     <a href="/articulo/${a.slug}" class="article-card-link">
                         <div class="article-card-image">
                             <img src="${a.imagen_url || ''}" alt="${a.titulo}" loading="lazy">
@@ -2247,7 +2280,15 @@ const Pages = {
             if (arts.length <= 3 && arts.length > 0) {
                 cards += ciBrandedCard;
             }
-            return '<div class="articles-grid">' + cards + '</div>';
+            // Botón "Ver más" si hay más de 6 artículos
+            const loadMoreBtn = arts.length > ARTICLES_PER_PAGE ? `
+                <div class="wbc-load-more" id="wbc-load-more">
+                    <button class="wbc-load-more-btn" onclick="wbcLoadMoreArticles()">
+                        Ver más artículos
+                    </button>
+                    <span class="wbc-load-more-count">Mostrando ${Math.min(ARTICLES_PER_PAGE, arts.length)} de ${arts.length}</span>
+                </div>` : '';
+            return '<div class="articles-grid">' + cards + '</div>' + loadMoreBtn;
         }
 
         function renderGallery(items) {
@@ -2375,16 +2416,18 @@ const Pages = {
             </div>
         </div>` : '';
 
-        const videoSection = videos.some(v => v.youtube_url && getYouTubeId(v.youtube_url)) ? `
+        const videoSection = `
         <div class="wbc-card">
             <div class="wbc-card-header">
                 <span class="wbc-card-icon">🎬</span>
                 <h2>Video</h2>
             </div>
-            <div class="wbc-card-body">
-                ${renderVideos(videos)}
+            <div class="wbc-card-body" id="wbc-video-display">
+                ${videos.some(v => v.youtube_url && getYouTubeId(v.youtube_url))
+                    ? renderVideos(videos)
+                    : '<p class="wbc-video-empty" style="text-align:center;color:#6b7280;padding:20px 0;">Los videos aparecerán aquí. Agrega URLs de YouTube desde el panel admin.</p>'}
             </div>
-        </div>` : '';
+        </div>`;
 
         const articleCount = articles.length;
 
@@ -2423,10 +2466,12 @@ const Pages = {
             <div class="wbc-sponsor-strip">
                 <span class="wbc-sponsor-label">Cobertura presentada por</span>
                 <span class="wbc-sponsor-divider"></span>
-                <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/ci-logo-horizontal.png"
-                     alt="Caja Inmaculada"
-                     class="wbc-sponsor-logo"
-                     onerror="this.style.display='none'">
+                <a href="https://www.cajainmaculada.com.mx/" target="_blank" rel="noopener sponsored">
+                    <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/ci-logo-horizontal.png"
+                         alt="Caja Inmaculada"
+                         class="wbc-sponsor-logo"
+                         onerror="this.parentElement.style.display='none'">
+                </a>
             </div>
 
             <!-- Panel admin (solo autenticado) -->
@@ -2482,8 +2527,10 @@ const Pages = {
                 <!-- MÓDULO 4 — Cierre CI -->
                 <div class="ci-closing">
                     <p class="ci-closing-text">Esta cobertura es posible gracias a</p>
-                    <img src="${ciLogoUrl}"
-                         alt="Caja Inmaculada" class="ci-closing-logo">
+                    <a href="https://www.cajainmaculada.com.mx/" target="_blank" rel="noopener sponsored">
+                        <img src="${ciLogoUrl}"
+                             alt="Caja Inmaculada" class="ci-closing-logo">
+                    </a>
                     <p class="ci-closing-sub">Patrocinador exclusivo del sector financiero</p>
                 </div>
 
@@ -2509,6 +2556,25 @@ const Pages = {
         `;
 
         // ── Funciones globales del hub (admin) ────────────────────────
+        // ── Load more articles ────────────────────────────────────────
+        let wbcArticlesShown = ARTICLES_PER_PAGE;
+        window.wbcLoadMoreArticles = function() {
+            const items = document.querySelectorAll('.wbc-art-item');
+            const nextBatch = Math.min(wbcArticlesShown + ARTICLES_PER_PAGE, items.length);
+            for (let i = wbcArticlesShown; i < nextBatch; i++) {
+                items[i].style.display = '';
+            }
+            wbcArticlesShown = nextBatch;
+            // Update count
+            const countEl = document.querySelector('.wbc-load-more-count');
+            if (countEl) countEl.textContent = `Mostrando ${nextBatch} de ${items.length}`;
+            // Hide button if all shown
+            if (nextBatch >= items.length) {
+                const btn = document.getElementById('wbc-load-more');
+                if (btn) btn.style.display = 'none';
+            }
+        };
+
         window.wbcToggleAdmin = function(btn) {
             const body = document.getElementById('wbc-admin-body');
             const icon = document.getElementById('wbc-admin-toggle-icon');
@@ -2581,15 +2647,9 @@ const Pages = {
                     .select('id, titulo, youtube_url').order('id').limit(3);
                 if (freshVids) {
                     const rendered = renderVideos(freshVids);
-                    const card = document.querySelector('.wbc-video-item')?.closest('.wbc-card');
-                    if (rendered && !card) {
-                        document.querySelector('.wbc-social-cta').insertAdjacentHTML('beforebegin', `
-                            <div class="wbc-card">
-                                <div class="wbc-card-header"><span class="wbc-card-icon">🎬</span><h2>Video</h2></div>
-                                <div class="wbc-card-body">${rendered}</div>
-                            </div>`);
-                    } else if (rendered && card) {
-                        card.querySelector('.wbc-card-body').innerHTML = rendered;
+                    const displayEl = document.getElementById('wbc-video-display');
+                    if (displayEl) {
+                        displayEl.innerHTML = rendered || '<p class="wbc-video-empty" style="text-align:center;color:#6b7280;padding:20px 0;">Los videos aparecerán aquí. Agrega URLs de YouTube desde el panel admin.</p>';
                     }
                 }
             } catch(e) { statusEl.textContent = 'Error: ' + (e.message || e); statusEl.className = 'wbc-admin-status error'; }
