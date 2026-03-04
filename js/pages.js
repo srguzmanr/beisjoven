@@ -1919,6 +1919,9 @@ const Pages = {
     .ci-card-badge { border-color: #334155; }
     .ci-card-badge-text { color: #64748b; }
     .ci-card-badge-logo { opacity: 0.5; }
+    /* Pagination dark mode */
+    .wbc-page-btn { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+    .wbc-page-btn:hover:not(:disabled) { background: #334155; color: #fff; border-color: #475569; }
 }
 .wbc-hub .article-card-image {
     overflow: hidden;
@@ -2047,33 +2050,68 @@ const Pages = {
     font-weight: 500;
 }
 
-/* ── Paginación "Ver más" ──────────────────────────────── */
-.wbc-load-more {
-    text-align: center;
-    padding: 24px 0 8px;
+/* ── Paginación numerada WBC ───────────────────────────── */
+.wbc-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 2rem 0 1rem;
+    flex-wrap: wrap;
 }
-.wbc-load-more-btn {
-    background: linear-gradient(135deg, #1B2A4A 0%, #2D3F6B 100%);
+.wbc-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 0.6rem;
+    border-radius: 6px;
+    border: 1px solid #D1D5DB;
+    background: #FFFFFF;
+    color: var(--wbc-navy);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.wbc-page-btn:hover:not(:disabled) {
+    background: var(--wbc-navy);
+    color: #FFFFFF;
+    border-color: var(--wbc-navy);
+}
+.wbc-page-btn.active {
+    background: #C8102E;
+    border-color: #C8102E;
+    color: #FFFFFF;
+    font-weight: 700;
+}
+.wbc-page-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+/* ── Scroll-to-top button ─────────────────────────────── */
+#wbc-scroll-top {
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--wbc-navy);
     color: #D4A843;
     border: none;
-    padding: 12px 32px;
-    border-radius: 8px;
-    font-family: 'Oswald', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
+    font-size: 1.2rem;
+    font-weight: 700;
     cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 999;
     transition: opacity 0.2s;
 }
-.wbc-load-more-btn:hover { opacity: 0.85; }
-.wbc-load-more-count {
-    display: block;
-    margin-top: 8px;
-    font-size: 0.78rem;
-    color: var(--wbc-muted);
-    font-family: 'Open Sans', sans-serif;
-}
+#wbc-scroll-top:hover { opacity: 0.85; }
 
 /* ── MÓDULO 4 — Cierre CI (antes de social CTA) ────────── */
 .ci-closing {
@@ -2249,7 +2287,7 @@ const Pages = {
             </a>`;
 
         // ── Helpers de render ─────────────────────────────────────────
-        const ARTICLES_PER_PAGE = 6;
+        const WBC_PAGE_SIZE = 6;
 
         function renderArticleCards(arts) {
             if (!arts.length) return `
@@ -2263,9 +2301,10 @@ const Pages = {
                 const catNombre = a.categoria ? a.categoria.nombre : '';
                 const catSlug = a.categoria ? a.categoria.slug : '';
                 const autorNombre = a.autor ? a.autor.nombre : 'Redacción Beisjoven';
-                const hidden = i >= ARTICLES_PER_PAGE ? ' style="display:none"' : '';
+                const pageNum = Math.floor(i / WBC_PAGE_SIZE);
+                const hidden = pageNum > 0 ? ' style="display:none"' : '';
                 let card = `
-                <article class="article-card wbc-art-item" data-art-index="${i}"${hidden}>
+                <article class="article-card wbc-art-item" data-wbc-page="${pageNum}"${hidden}>
                     <a href="/articulo/${a.slug}" class="article-card-link">
                         <div class="article-card-image">
                             <img src="${a.imagen_url || ''}" alt="${a.titulo}" loading="lazy">
@@ -2285,7 +2324,7 @@ const Pages = {
                         </div>
                     </a>
                 </article>`;
-                // Insertar tarjeta branded CI después del artículo 3
+                // Insertar tarjeta branded CI después del artículo 3 (posición fija, siempre visible)
                 if (i === 2 && arts.length > 3) {
                     card += ciBrandedCard;
                 }
@@ -2295,15 +2334,10 @@ const Pages = {
             if (arts.length <= 3 && arts.length > 0) {
                 cards += ciBrandedCard;
             }
-            // Botón "Ver más" si hay más de 6 artículos
-            const loadMoreBtn = arts.length > ARTICLES_PER_PAGE ? `
-                <div class="wbc-load-more" id="wbc-load-more">
-                    <button class="wbc-load-more-btn" onclick="wbcLoadMoreArticles()">
-                        Ver más artículos
-                    </button>
-                    <span class="wbc-load-more-count">Mostrando ${Math.min(ARTICLES_PER_PAGE, arts.length)} de ${arts.length}</span>
-                </div>` : '';
-            return '<div class="articles-grid">' + cards + '</div>' + loadMoreBtn;
+            // Paginación numerada si hay más de 1 página
+            const wbcTotalPages = Math.ceil(arts.length / WBC_PAGE_SIZE);
+            const paginationHtml = wbcTotalPages > 1 ? `<div id="wbc-pagination"></div>` : '';
+            return '<div class="articles-grid" id="wbc-articles-grid">' + cards + '</div>' + paginationHtml;
         }
 
         function renderGallery(items) {
@@ -2472,7 +2506,7 @@ const Pages = {
                         <p class="wbc-hero-pre-title">México en el</p>
                         <h1 class="wbc-hero-title">WBC 2026</h1>
                         <p class="wbc-hero-subtitle">Cobertura completa del Clásico Mundial de Béisbol 2026</p>
-                        <p class="wbc-hero-hashtag">#EsMiSangre</p>
+                        <p class="wbc-hero-hashtag">#WorldBaseballClassic</p>
                     </div>
                 </div>
             </div>
@@ -2544,7 +2578,7 @@ const Pages = {
                     <p class="ci-closing-text">Esta cobertura es posible gracias a</p>
                     <img src="${ciLogoUrl}"
                          alt="Caja Inmaculada" class="ci-closing-logo">
-                    <p class="ci-closing-sub">Patrocinador exclusivo del sector financiero</p>
+                    <p class="ci-closing-sub">Patrocinador exclusivo del sector financiero en Beisjoven</p>
                 </a>
 
                 <!-- CTA Redes -->
@@ -2569,24 +2603,88 @@ const Pages = {
         `;
 
         // ── Funciones globales del hub (admin) ────────────────────────
-        // ── Load more articles ────────────────────────────────────────
-        let wbcArticlesShown = ARTICLES_PER_PAGE;
-        window.wbcLoadMoreArticles = function() {
+        // ── Paginación numerada WBC ───────────────────────────────────
+        let wbcCurrentPage = 0;
+        function wbcRenderPagination() {
+            const pagEl = document.getElementById('wbc-pagination');
+            if (!pagEl) return;
             const items = document.querySelectorAll('.wbc-art-item');
-            const nextBatch = Math.min(wbcArticlesShown + ARTICLES_PER_PAGE, items.length);
-            for (let i = wbcArticlesShown; i < nextBatch; i++) {
-                items[i].style.display = '';
+            const totalPages = Math.ceil(items.length / WBC_PAGE_SIZE);
+            if (totalPages <= 1) { pagEl.innerHTML = ''; return; }
+
+            let html = '<div class="wbc-pagination">';
+            // Flecha izquierda
+            html += `<button class="wbc-page-btn" id="wbc-prev"${wbcCurrentPage === 0 ? ' disabled' : ''}>&#8592;</button>`;
+            // Números
+            let start = Math.max(0, wbcCurrentPage - 2);
+            let end = Math.min(totalPages - 1, wbcCurrentPage + 2);
+            if (end - start < 4) {
+                if (start === 0) end = Math.min(totalPages - 1, 4);
+                else start = Math.max(0, end - 4);
             }
-            wbcArticlesShown = nextBatch;
-            // Update count
-            const countEl = document.querySelector('.wbc-load-more-count');
-            if (countEl) countEl.textContent = `Mostrando ${nextBatch} de ${items.length}`;
-            // Hide button if all shown
-            if (nextBatch >= items.length) {
-                const btn = document.getElementById('wbc-load-more');
-                if (btn) btn.style.display = 'none';
+            if (start > 0) {
+                html += '<button class="wbc-page-btn" data-wbc-pg="0">1</button>';
+                if (start > 1) html += '<span style="padding:0 0.2rem;opacity:0.4;">…</span>';
             }
-        };
+            for (let i = start; i <= end; i++) {
+                html += `<button class="wbc-page-btn${i === wbcCurrentPage ? ' active' : ''}" data-wbc-pg="${i}">${i + 1}</button>`;
+            }
+            if (end < totalPages - 1) {
+                if (end < totalPages - 2) html += '<span style="padding:0 0.2rem;opacity:0.4;">…</span>';
+                html += `<button class="wbc-page-btn" data-wbc-pg="${totalPages - 1}">${totalPages}</button>`;
+            }
+            // Flecha derecha
+            html += `<button class="wbc-page-btn" id="wbc-next"${wbcCurrentPage >= totalPages - 1 ? ' disabled' : ''}>&#8594;</button>`;
+            html += '</div>';
+            pagEl.innerHTML = html;
+
+            // Event listeners
+            const prev = document.getElementById('wbc-prev');
+            const next = document.getElementById('wbc-next');
+            if (prev) prev.addEventListener('click', () => wbcGoToPage(wbcCurrentPage - 1));
+            if (next) next.addEventListener('click', () => wbcGoToPage(wbcCurrentPage + 1));
+            pagEl.querySelectorAll('.wbc-page-btn[data-wbc-pg]').forEach(btn => {
+                btn.addEventListener('click', () => wbcGoToPage(parseInt(btn.getAttribute('data-wbc-pg'))));
+            });
+        }
+
+        function wbcGoToPage(page) {
+            const items = document.querySelectorAll('.wbc-art-item');
+            const totalPages = Math.ceil(items.length / WBC_PAGE_SIZE);
+            if (page < 0 || page >= totalPages) return;
+            wbcCurrentPage = page;
+            // Show/hide articles
+            items.forEach(item => {
+                const itemPage = parseInt(item.getAttribute('data-wbc-page'));
+                item.style.display = itemPage === page ? '' : 'none';
+            });
+            // Show/hide branded card (always visible on page 0 since it's after art 3)
+            const brandedCard = document.querySelector('.ci-branded-card');
+            if (brandedCard) brandedCard.style.display = page === 0 ? '' : 'none';
+            // Re-render pagination
+            wbcRenderPagination();
+            // Scroll to articles section
+            const header = document.querySelector('.wbc-articles-header');
+            if (header) header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Initialize pagination after render
+        setTimeout(() => wbcRenderPagination(), 100);
+
+        // ── Scroll-to-top button ─────────────────────────────────────
+        (function() {
+            const btn = document.createElement('button');
+            btn.id = 'wbc-scroll-top';
+            btn.innerHTML = '&#8593;';
+            btn.setAttribute('aria-label', 'Volver al inicio');
+            document.body.appendChild(btn);
+            window.addEventListener('scroll', () => {
+                btn.style.display = window.scrollY > 600 ? 'flex' : 'none';
+            });
+            btn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        })();
 
         window.wbcToggleAdmin = function(btn) {
             const body = document.getElementById('wbc-admin-body');
