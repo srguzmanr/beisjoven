@@ -1388,7 +1388,7 @@ const Pages = {
 .wbc-hero-banner {
     position: relative;
     background: linear-gradient(180deg, #0D1B2A 0%, #1B2A4A 40%, #1B2A4A 70%, #0D1B2A 100%);
-    padding: 60px 20px 40px;
+    padding: 48px 20px 16px;
     text-align: center;
     overflow: hidden;
 }
@@ -1931,7 +1931,7 @@ const Pages = {
     .ci-card-badge { border-color: #334155; }
     .ci-card-badge-text { color: #64748b; }
     .ci-card-badge-logo { opacity: 0.5; }
-    .ci-closing { background: #1e293b; border-color: #334155; border-top-color: #C8102E; }
+    .ci-closing { background: #1e293b; border: none; border-top: 3px solid #C8102E; }
     .ci-closing-text { color: #94a3b8; }
     .ci-closing-sub { color: #64748b; }
     /* Pagination dark mode */
@@ -2139,13 +2139,12 @@ const Pages = {
     text-align: center;
     padding: 40px 24px;
     background: #FFFFFF;
+    border: none;
     border-top: 3px solid #C8102E;
     border-radius: 12px;
     margin-bottom: 24px;
     cursor: pointer;
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    border: 1px solid #E5E7EB;
-    border-top: 3px solid #C8102E;
     transition: box-shadow 0.2s;
 }
 .ci-closing:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
@@ -2298,11 +2297,10 @@ const Pages = {
         const ciBrandedCard = `
             <a href="https://www.cajainmaculada.com.mx/" target="_blank" rel="noopener sponsored" class="ci-branded-card">
                 <div class="ci-branded-header">
-                    <span class="ci-branded-label">PATROCINADOR OFICIAL</span>
+                    <span class="ci-branded-label">NUESTRO PATROCINADOR</span>
                 </div>
                 <div class="ci-branded-body">
                     <img src="${ciLogoUrl}" alt="Caja Inmaculada" class="ci-branded-logo">
-                    <p class="ci-branded-tagline">La Primera Caja Autorizada de México</p>
                     <div class="ci-branded-divider"></div>
                     <p class="ci-branded-message">Caja Inmaculada respalda la cobertura de Beisjoven en el World Baseball Classic 2026</p>
                 </div>
@@ -2553,7 +2551,7 @@ const Pages = {
                 <div class="wbc-card">
                     <div class="wbc-card-header">
                         <span class="wbc-card-icon">📅</span>
-                        <h2>Calendario Pool B — Mexico</h2>
+                        <h2>Calendario Pool B — México</h2>
                     </div>
                     <div class="wbc-card-body">
                         <div class="wbc-game-list">${calendarioRows}</div>
