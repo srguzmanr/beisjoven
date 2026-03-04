@@ -1374,7 +1374,7 @@ const Pages = {
     --wbc-muted:  #6b7280;
     --mex-green:  #006847;
     --mex-red:    #ce1126;
-    background: var(--wbc-light);
+    background: #111827;
     min-height: 100vh;
 }
 
@@ -1384,26 +1384,28 @@ const Pages = {
 .wbc-tricolor-blanco { flex:1; background: #fff; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; }
 .wbc-tricolor-rojo   { flex:1; background: var(--mex-red); }
 
-/* Hero */
+/* Hero — rediseño Marketing 03-mar-2026 */
 .wbc-hero-banner {
     position: relative;
-    background: var(--wbc-navy);
-    min-height: 320px;
-    display: flex;
-    flex-direction: column;
+    background: linear-gradient(180deg, #0D1B2A 0%, #1B2A4A 40%, #1B2A4A 70%, #0D1B2A 100%);
+    padding: 60px 20px 40px;
+    text-align: center;
     overflow: hidden;
 }
 .wbc-hero-banner::before {
     content: '';
-    position: absolute; inset: 0;
-    background: repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(255,255,255,0.015) 40px, rgba(255,255,255,0.015) 41px);
+    position: absolute;
+    top: -50%; left: 50%;
+    transform: translateX(-50%);
+    width: 120%; height: 100%;
+    background: radial-gradient(ellipse at center, rgba(212,168,67,0.06) 0%, transparent 70%);
     pointer-events: none;
 }
 .wbc-hero-banner::after {
     content: '';
-    position: absolute; bottom: -1px; left: 0; right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, var(--mex-green) 33.3%, #fff 33.3%, #fff 66.6%, var(--mex-red) 66.6%);
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 0;
+    background: none;
 }
 .wbc-hero-img {
     position: absolute; inset: 0;
@@ -1412,36 +1414,61 @@ const Pages = {
 }
 .wbc-hero-overlay {
     position: relative; z-index: 2;
-    flex: 1; display: flex; flex-direction: column;
-    justify-content: center; padding: 48px 0 56px;
+    display: flex; flex-direction: column;
+    align-items: center; text-align: center;
 }
 .wbc-hero-overlay .container {
     display: flex; flex-direction: column;
-    align-items: center; text-align: center; gap: 16px;
+    align-items: center; text-align: center; gap: 0;
 }
 .wbc-hero-badge {
-    display: inline-flex; align-items: center; gap: 8px;
-    background: rgba(240,165,0,0.15); border: 1px solid rgba(240,165,0,0.4);
-    color: var(--wbc-gold); padding: 6px 16px; border-radius: 100px;
-    font-size: 0.78rem; font-weight: 700; letter-spacing: 1.5px;
-    text-transform: uppercase; font-family: 'Oswald', sans-serif;
+    display: inline-block;
+    background: linear-gradient(135deg, #003C37 0%, #004D40 100%);
+    color: #FFFFFF;
+    font-family: system-ui, -apple-system, 'Oswald', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 8px 20px;
+    border-radius: 4px;
+    border-left: 3px solid #FFC107;
+    margin-bottom: 16px;
+}
+.wbc-hero-pre-title {
+    font-family: system-ui, -apple-system, 'Open Sans', sans-serif;
+    font-size: 28px;
+    font-weight: 300;
+    color: #FFFFFF;
+    margin: 0;
+    letter-spacing: 1px;
 }
 .wbc-hero-title {
-    font-family: 'Oswald', sans-serif;
-    font-size: clamp(2.2rem, 7vw, 3.6rem);
-    font-weight: 700; color: var(--wbc-white);
-    line-height: 1.05; letter-spacing: -0.5px; margin: 0;
+    font-family: system-ui, -apple-system, 'Oswald', sans-serif;
+    font-size: 72px;
+    font-weight: 900;
+    color: #D4A843;
+    margin: 0;
+    line-height: 1;
+    letter-spacing: -1px;
+    text-shadow: 0 2px 20px rgba(212, 168, 67, 0.3);
 }
-.wbc-hero-title span { color: var(--wbc-gold); }
+.wbc-hero-title span { color: #D4A843; }
 .wbc-hero-subtitle {
-    font-family: 'Open Sans', sans-serif;
-    font-size: 1rem; color: rgba(255,255,255,0.65);
-    margin: 0; letter-spacing: 0.3px;
+    font-family: system-ui, -apple-system, 'Open Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: #A0ACC3;
+    margin: 16px 0 0;
+    letter-spacing: 0.5px;
 }
 .wbc-hero-hashtag {
-    font-family: 'Oswald', sans-serif;
-    font-size: 1rem; color: rgba(255,255,255,0.45);
-    letter-spacing: 1px;
+    font-family: system-ui, -apple-system, 'Oswald', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #D4A843;
+    margin-top: 12px;
+    letter-spacing: 2px;
 }
 
 /* ── Panel de admin (solo autenticado) ──────────────────── */
@@ -1878,11 +1905,12 @@ const Pages = {
         background: rgba(255,255,255,0.15) !important;
     }
 
-    /* ── Sponsor strip ── */
+    /* ── Sponsor strip — mantener fondo claro en dark mode (diseño aprobado) ── */
     .wbc-sponsor-strip {
-        background: #0a1628;
-        border-color: rgba(255,255,255,0.04);
+        background: #F0F1F5;
+        border-color: #C8102E;
     }
+    .wbc-sponsor-label { color: #6B7280; }
 }
 .wbc-hub .article-card-image {
     overflow: hidden;
@@ -1895,41 +1923,28 @@ const Pages = {
     object-position: center 20%;
 }
 
-/* ── Logo WBC en hero ──────────────────────────────────── */
-.wbc-hero-event-logo {
-    max-width: 280px;
-    width: 100%;
-    height: auto;
-    margin-bottom: 4px;
-    border-radius: 10px;
-    mix-blend-mode: screen;
-}
-
-/* ── Sponsor strip (separado del hero — regla Jurídico) ── */
+/* ── Sponsor strip CI (separado del hero — regla Jurídico) ── */
 .wbc-sponsor-strip {
-    background: #0b1a33;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    padding: 14px 0;
-    text-align: center;
-}
-.wbc-sponsor-strip .container {
+    background: #F8F9FC;
+    padding: 20px 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    gap: 16px;
+    border-top: 3px solid #C8102E;
 }
 .wbc-sponsor-label {
-    font-family: 'Open Sans', sans-serif;
-    font-size: 0.78rem;
-    color: rgba(255,255,255,0.5);
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    color: #6B7280;
 }
 .wbc-sponsor-divider {
     width: 1px;
-    height: 20px;
-    background: rgba(255,255,255,0.15);
+    height: 28px;
+    background: #D1D5DB;
 }
 .wbc-sponsor-logo {
     height: 36px;
@@ -1948,18 +1963,17 @@ const Pages = {
 }
 
 /* Responsive */
+@media (max-width: 768px) {
+    .wbc-hero-title { font-size: 48px; }
+    .wbc-hero-pre-title { font-size: 22px; }
+}
 @media (max-width: 600px) {
-    .wbc-hero-event-logo { max-width: 200px; }
-    .wbc-sponsor-logo { height: 26px; }
-    .wbc-sponsor-label { font-size: 0.7rem; letter-spacing: 0.5px; }
-    .wbc-sponsor-divider { height: 16px; }
+    .wbc-sponsor-strip { flex-direction: column; gap: 8px; }
+    .wbc-sponsor-divider { width: 40px; height: 1px; }
 }
 @media (max-width: 480px) {
-    .wbc-hero-banner { min-height: 260px; }
-    .wbc-hero-title { font-size: 2rem; }
     .wbc-gallery-grid { grid-template-columns: repeat(2, 1fr); }
     .wbc-admin-gallery-list { grid-template-columns: repeat(3, 1fr); }
-    .wbc-sponsor-strip .container { gap: 8px; }
 }
 `;
             document.head.appendChild(style);
@@ -2239,39 +2253,35 @@ const Pages = {
                 <div class="wbc-tricolor-rojo"></div>
             </div>
 
-            <!-- Hero -->
+            <!-- Hero — rediseño Marketing 03-mar-2026 -->
             <div class="wbc-hero-banner">
 <!-- Hero image: Sergio reemplaza el 6 de marzo con foto desde Daikin Park -->
                 <div class="wbc-hero-overlay">
                     <div class="container">
-                        <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/2026_World_Baseball_Classic_logo.png"
-                             alt="World Baseball Classic 2026"
-                             class="wbc-hero-event-logo"
-                             onerror="this.outerHTML='<div class=\\'wbc-hero-badge\\'>⚾ Clásico Mundial de Béisbol 2026</div>'">
-                        <h1 class="wbc-hero-title">México en el<br><span>WBC 2026</span></h1>
+                        <span class="wbc-hero-badge">World Baseball Classic 2026 · Houston</span>
+                        <p class="wbc-hero-pre-title">México en el</p>
+                        <h1 class="wbc-hero-title">WBC 2026</h1>
                         <p class="wbc-hero-subtitle">Cobertura completa del Clásico Mundial de Béisbol 2026</p>
                         <p class="wbc-hero-hashtag">#EsMiSangre</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Sponsor strip — separado del hero (regla Jurídico) -->
+            <!-- Sponsor strip CI — separado del hero (regla Jurídico) -->
             <div class="wbc-sponsor-strip">
-                <div class="container">
-                    <span class="wbc-sponsor-label">Cobertura presentada por</span>
-                    <div class="wbc-sponsor-divider"></div>
-                    <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/ci-logo-horizontal.png"
-                         alt="Caja Inmaculada"
-                         class="wbc-sponsor-logo"
-                         onerror="this.style.display='none'">
-                </div>
+                <span class="wbc-sponsor-label">Cobertura presentada por</span>
+                <span class="wbc-sponsor-divider"></span>
+                <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/ci-logo-horizontal.png"
+                     alt="Caja Inmaculada"
+                     class="wbc-sponsor-logo"
+                     onerror="this.style.display='none'">
             </div>
 
             <!-- Panel admin (solo autenticado) -->
             ${adminPanel}
 
             <!-- Contenido: una columna -->
-            <div class="wbc-content">
+            <div class="wbc-content" style="padding-top:40px;">
 
                 <!-- Calendario -->
                 <div class="wbc-card">
