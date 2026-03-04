@@ -345,7 +345,7 @@ const Pages = {
             </section>
         `;
         
-        document.title = 'Beisjoven - Revista de Beisbol y Softbol de México';
+        document.title = 'Beisjoven - Revista de Béisbol y Softbol de México';
         updateMetaTags();
     },
     
@@ -1913,13 +1913,9 @@ const Pages = {
     .wbc-sponsor-label { color: #6B7280; }
 
     /* ── CI modules dark mode ── */
-    .ci-branded-card {
-        background: #1e293b;
-        border-color: #334155;
-    }
+    .ci-branded-card { background: #1e293b; border-color: #334155; }
     .ci-branded-tagline { color: #94a3b8; }
     .ci-branded-message { color: #cbd5e1; }
-
     .ci-card-badge { border-color: #334155; }
     .ci-card-badge-text { color: #64748b; }
     .ci-card-badge-logo { opacity: 0.5; }
@@ -1961,6 +1957,14 @@ const Pages = {
 .wbc-sponsor-logo {
     height: 36px;
     width: auto;
+}
+
+/* ── Logo WBC en hero (transparente, desde Mac de Sergio) ── */
+.wbc-hero-logo {
+    height: 80px;
+    width: auto;
+    opacity: 0.85;
+    margin-bottom: 16px;
 }
 
 /* ── MÓDULO 2 — Tarjeta CI branded (después del art. 3) ── */
@@ -2013,7 +2017,7 @@ const Pages = {
     margin: 0 auto;
 }
 
-/* ── MÓDULO 3 — Badge CI en article cards ─────────────── */
+/* ── MÓDULO 3 — Badge CI en article cards del hub ─────── */
 .ci-card-badge {
     display: flex;
     align-items: center;
@@ -2033,7 +2037,7 @@ const Pages = {
     font-weight: 500;
 }
 
-/* ── MÓDULO 4 — Cierre CI ─────────────────────────────── */
+/* ── MÓDULO 4 — Cierre CI (antes de social CTA) ────────── */
 .ci-closing {
     text-align: center;
     padding: 40px 24px;
@@ -2077,6 +2081,7 @@ const Pages = {
 @media (max-width: 768px) {
     .wbc-hero-title { font-size: 48px; }
     .wbc-hero-pre-title { font-size: 22px; }
+    .wbc-hero-logo { height: 50px; }
 }
 @media (max-width: 600px) {
     .wbc-sponsor-strip { flex-direction: column; gap: 8px; }
@@ -2093,7 +2098,7 @@ const Pages = {
         // ── Meta tags ──────────────────────────────────────────────────
         updateMetaTags({
             title: 'Cobertura WBC 2026 — Beisjoven Media',
-            description: 'Cobertura editorial del Clasico Mundial de Beisbol 2026. Pool B Houston, 6-14 de marzo. Solo en Beisjoven.',
+            description: 'Cobertura editorial del Clásico Mundial de Béisbol 2026. Pool B Houston, 6-14 de marzo. Solo en Beisjoven.',
             image: 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/wbc-hero-og-tag.png',
             type: 'website'
         });
@@ -2182,7 +2187,7 @@ const Pages = {
             }
         } catch(e) { /* usa datos estáticos */ }
 
-        // ── Helpers de render ─────────────────────────────────────────
+        // ── CI Integration ───────────────────────────────────────────
         const ciLogoUrl = 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/ci-logo-horizontal.png';
 
         const ciBrandedCard = `
@@ -2198,6 +2203,7 @@ const Pages = {
                 </div>
             </div>`;
 
+        // ── Helpers de render ─────────────────────────────────────────
         function renderArticleCards(arts) {
             if (!arts.length) return `
                 <div class="wbc-empty-state">
@@ -2237,7 +2243,7 @@ const Pages = {
                 }
                 return card;
             }).join('');
-            // Si hay 3 o menos artículos, poner tarjeta al final
+            // Si hay 3 o menos artículos, poner tarjeta branded al final
             if (arts.length <= 3 && arts.length > 0) {
                 cards += ciBrandedCard;
             }
@@ -2245,7 +2251,7 @@ const Pages = {
         }
 
         function renderGallery(items) {
-            if (!items.length) return '<p class="wbc-gallery-empty">Las fotos desde Houston apareceran aqui.</p>';
+            if (!items.length) return '<p class="wbc-gallery-empty">Las fotos desde Houston aparecerán aquí.</p>';
             return '<div class="wbc-gallery-grid">' + items.map(item => `
                 <div class="wbc-gallery-item">
                     <img src="${item.imagen_url}" alt="${item.pie_de_foto || 'Foto WBC 2026'}" loading="lazy">
@@ -2295,7 +2301,7 @@ const Pages = {
                     }).join('')}
                 </tbody>
             </table>
-            <p class="wbc-standings-note">Pool B · Daikin Park, Houston TX · Actualizado al ultimo juego jugado</p>`;
+            <p class="wbc-standings-note">Pool B · Daikin Park, Houston TX · Actualizado al último juego jugado</p>`;
         }
 
         // ── Determinar si hay usuario autenticado ─────────────────────
@@ -2398,6 +2404,12 @@ const Pages = {
 <!-- Hero image: Sergio reemplaza el 6 de marzo con foto desde Daikin Park -->
                 <div class="wbc-hero-overlay">
                     <div class="container">
+                        <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/wbc26-white.png"
+                             alt="World Baseball Classic 2026"
+                             class="wbc-hero-logo"
+                             style="display:none"
+                             onload="this.style.display='block';this.nextElementSibling.style.display='none'"
+                             onerror="this.style.display='none'">
                         <span class="wbc-hero-badge">World Baseball Classic 2026 · Houston</span>
                         <p class="wbc-hero-pre-title">México en el</p>
                         <h1 class="wbc-hero-title">WBC 2026</h1>
@@ -2449,7 +2461,7 @@ const Pages = {
                 <!-- Artículos -->
                 <div class="wbc-articles-header">
                     <h2 class="wbc-articles-title">Toda la Cobertura</h2>
-                    ${articleCount > 0 ? `<span class="wbc-article-count">${articleCount} articulo${articleCount !== 1 ? 's' : ''}</span>` : ''}
+                    ${articleCount > 0 ? `<span class="wbc-article-count">${articleCount} artículo${articleCount !== 1 ? 's' : ''}</span>` : ''}
                 </div>
                 ${renderArticleCards(articles)}
 
@@ -2457,7 +2469,7 @@ const Pages = {
                 <div class="wbc-card">
                     <div class="wbc-card-header">
                         <span class="wbc-card-icon">📷</span>
-                        <h2>Galeria desde Houston</h2>
+                        <h2>Galería desde Houston</h2>
                     </div>
                     <div class="wbc-card-body" id="wbc-galeria-display">
                         ${renderGallery(galeria)}
@@ -2478,7 +2490,7 @@ const Pages = {
                 <!-- CTA Redes -->
                 <div class="wbc-social-cta">
                     <p class="wbc-social-cta-eyebrow">Cobertura en vivo</p>
-                    <p class="wbc-social-cta-title">Siguenos en vivo desde Houston</p>
+                    <p class="wbc-social-cta-title">Síguenos en vivo desde Houston</p>
                     <div class="wbc-social-icons">
                         <a href="https://x.com/beisjoven" target="_blank" rel="noopener" class="wbc-social-icon" aria-label="X / Twitter">
                             <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
