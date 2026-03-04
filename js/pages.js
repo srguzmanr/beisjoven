@@ -1901,6 +1901,7 @@ const Pages = {
     width: 100%;
     height: auto;
     margin-bottom: 4px;
+    border-radius: 10px;
 }
 
 /* ── Sponsor strip (separado del hero — regla Jurídico) ── */
