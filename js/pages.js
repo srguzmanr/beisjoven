@@ -664,8 +664,8 @@ const Pages = {
     },
     
     // ==================== PÁGINA DE ARTÍCULO ====================
-    // WBC sponsor helpers — removidos. Activar cuando haya contrato firmado.
-
+    // WBC sponsor helpers — activados. Contrato CI firmado.
+    
     article: async function({ params }) {
         const main = document.getElementById('main-content');
         
@@ -724,7 +724,8 @@ const Pages = {
                 slug: articulo.autor.slug,
                 avatar: articulo.autor.avatar_url,
                 bio: articulo.autor.bio
-            } : { name: 'Redacción', slug: 'redaccion' }
+            } : { name: 'Redacción', slug: 'redaccion' },
+            esWbc2026: !!articulo.es_wbc2026
         };
         
         // Adaptar relacionados (excluyendo el actual)
@@ -779,6 +780,18 @@ const Pages = {
                         </div>
                     </header>
                     
+                    ${article.esWbc2026 ? `
+                    <div class="wbc-article-badge-ci">
+                        <picture>
+                            <source media="(max-width: 600px)"
+                                    srcset="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/badge-ci-mobile.png">
+                            <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/badge-ci-desktop.png"
+                                 alt="Presentado por Caja Inmaculada — Cobertura WBC 2026"
+                                 class="wbc-badge-img"
+                                 onerror="this.parentElement.parentElement.style.display='none'">
+                        </picture>
+                    </div>` : ''}
+
                     <figure class="article-image">
                         <img src="${article.image}" alt="${article.title}">
                         <div id="article-image-credit"></div>
@@ -829,6 +842,18 @@ const Pages = {
                 </div>
             </article>
         `;
+        
+        // Inyectar estilos del badge CI si es artículo WBC y no están cargados
+        if (article.esWbc2026 && !document.getElementById('bj-wbc-badge-styles')) {
+            const badgeStyle = document.createElement('style');
+            badgeStyle.id = 'bj-wbc-badge-styles';
+            badgeStyle.textContent = `
+.wbc-article-badge-ci { margin: 16px 0 20px; text-align: center; }
+.wbc-badge-img { max-width: 100%; height: auto; border-radius: 6px; }
+@media (max-width: 600px) { .wbc-badge-img { max-width: 375px; } }
+`;
+            document.head.appendChild(badgeStyle);
+        }
         
         document.title = `${article.title} - Beisjoven`;
         updateMetaTags({
@@ -1852,6 +1877,12 @@ const Pages = {
     .wbc-tricolor-blanco {
         background: rgba(255,255,255,0.15) !important;
     }
+
+    /* ── Sponsor strip ── */
+    .wbc-sponsor-strip {
+        background: #0a1628;
+        border-color: rgba(255,255,255,0.04);
+    }
 }
 .wbc-hub .article-card-image {
     overflow: hidden;
@@ -1864,12 +1895,69 @@ const Pages = {
     object-position: center 20%;
 }
 
+/* ── Logo WBC en hero ──────────────────────────────────── */
+.wbc-hero-event-logo {
+    max-width: 280px;
+    width: 100%;
+    height: auto;
+    margin-bottom: 4px;
+}
+
+/* ── Sponsor strip (separado del hero — regla Jurídico) ── */
+.wbc-sponsor-strip {
+    background: #0b1a33;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 14px 0;
+    text-align: center;
+}
+.wbc-sponsor-strip .container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.wbc-sponsor-label {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.wbc-sponsor-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,0.15);
+}
+.wbc-sponsor-logo {
+    height: 36px;
+    width: auto;
+}
+
+/* ── Badge CI en artículos WBC ─────────────────────────── */
+.wbc-article-badge-ci {
+    margin: 16px 0 20px;
+    text-align: center;
+}
+.wbc-badge-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+}
+
 /* Responsive */
+@media (max-width: 600px) {
+    .wbc-hero-event-logo { max-width: 200px; }
+    .wbc-sponsor-logo { height: 26px; }
+    .wbc-sponsor-label { font-size: 0.7rem; letter-spacing: 0.5px; }
+    .wbc-sponsor-divider { height: 16px; }
+}
 @media (max-width: 480px) {
     .wbc-hero-banner { min-height: 260px; }
     .wbc-hero-title { font-size: 2rem; }
     .wbc-gallery-grid { grid-template-columns: repeat(2, 1fr); }
     .wbc-admin-gallery-list { grid-template-columns: repeat(3, 1fr); }
+    .wbc-sponsor-strip .container { gap: 8px; }
 }
 `;
             document.head.appendChild(style);
@@ -1879,7 +1967,7 @@ const Pages = {
         updateMetaTags({
             title: 'Cobertura WBC 2026 — Beisjoven Media',
             description: 'Cobertura editorial del Clasico Mundial de Beisbol 2026. Pool B Houston, 6-14 de marzo. Solo en Beisjoven.',
-            image: 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-default.png',
+            image: 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/wbc-hero-og-tag.png',
             type: 'website'
         });
 
@@ -2154,11 +2242,26 @@ const Pages = {
 <!-- Hero image: Sergio reemplaza el 6 de marzo con foto desde Daikin Park -->
                 <div class="wbc-hero-overlay">
                     <div class="container">
-                        <div class="wbc-hero-badge">⚾ Clasico Mundial de Beisbol 2026</div>
+                        <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/wbc-pool-houston-logo.png"
+                             alt="World Baseball Classic 2026 — Pool Houston"
+                             class="wbc-hero-event-logo"
+                             onerror="this.outerHTML='<div class=\\'wbc-hero-badge\\'>⚾ Clásico Mundial de Béisbol 2026</div>'">
                         <h1 class="wbc-hero-title">México en el<br><span>WBC 2026</span></h1>
                         <p class="wbc-hero-subtitle">Cobertura completa del Clásico Mundial de Béisbol 2026</p>
                         <p class="wbc-hero-hashtag">#EsMiSangre</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- Sponsor strip — separado del hero (regla Jurídico) -->
+            <div class="wbc-sponsor-strip">
+                <div class="container">
+                    <span class="wbc-sponsor-label">Cobertura presentada por</span>
+                    <div class="wbc-sponsor-divider"></div>
+                    <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/ci-logo-horizontal.png"
+                         alt="Caja Inmaculada"
+                         class="wbc-sponsor-logo"
+                         onerror="this.style.display='none'">
                 </div>
             </div>
 
