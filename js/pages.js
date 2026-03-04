@@ -1647,7 +1647,7 @@ const Pages = {
 
 /* ── Artículos ─────────────────────────────────────────── */
 .wbc-articles-header {
-    display: flex; align-items: baseline; gap: 12px;
+    display: flex; align-items: center; gap: 12px;
     margin-bottom: 20px; padding-bottom: 12px;
     border-bottom: 3px solid var(--wbc-red);
 }
@@ -1660,6 +1660,18 @@ const Pages = {
     font-size: 0.82rem; color: var(--wbc-muted);
     font-family: 'Open Sans', sans-serif;
 }
+.wbc-articles-ci {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+.wbc-articles-ci-logo {
+    height: 22px;
+    width: auto;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+.wbc-articles-ci:hover .wbc-articles-ci-logo { opacity: 1; }
 .wbc-empty-state {
     text-align: center; padding: 48px 24px;
     background: var(--wbc-white); border-radius: 12px;
@@ -1919,6 +1931,9 @@ const Pages = {
     .ci-card-badge { border-color: #334155; }
     .ci-card-badge-text { color: #64748b; }
     .ci-card-badge-logo { opacity: 0.5; }
+    .ci-closing { background: #1e293b; border-color: #334155; border-top-color: #C8102E; }
+    .ci-closing-text { color: #94a3b8; }
+    .ci-closing-sub { color: #64748b; }
     /* Pagination dark mode */
     .wbc-page-btn { background: #1e293b; border-color: #334155; color: #e2e8f0; }
     .wbc-page-btn:hover:not(:disabled) { background: #334155; color: #fff; border-color: #475569; }
@@ -1936,14 +1951,18 @@ const Pages = {
 
 /* ── Sponsor strip CI (separado del hero — regla Jurídico) ── */
 .wbc-sponsor-strip {
+    display: flex;
+    text-decoration: none;
     background: #F8F9FC;
     padding: 20px 24px;
-    display: flex;
     align-items: center;
     justify-content: center;
     gap: 16px;
     border-top: 3px solid #C8102E;
+    cursor: pointer;
+    transition: background 0.2s;
 }
+.wbc-sponsor-strip:hover { background: #EEF0F5; }
 .wbc-sponsor-label {
     font-family: system-ui, -apple-system, sans-serif;
     font-size: 11px;
@@ -2119,17 +2138,20 @@ const Pages = {
     text-decoration: none;
     text-align: center;
     padding: 40px 24px;
-    background: linear-gradient(180deg, #111827 0%, #1B2A4A 100%);
+    background: #FFFFFF;
     border-top: 3px solid #C8102E;
     border-radius: 12px;
     margin-bottom: 24px;
     cursor: pointer;
-    transition: opacity 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border: 1px solid #E5E7EB;
+    border-top: 3px solid #C8102E;
+    transition: box-shadow 0.2s;
 }
-.ci-closing:hover { opacity: 0.9; }
+.ci-closing:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
 .ci-closing-text {
     font-size: 14px;
-    color: #9CA3AF;
+    color: #6B7280;
     font-weight: 400;
     margin: 0 0 16px;
     text-transform: uppercase;
@@ -2143,7 +2165,7 @@ const Pages = {
 }
 .ci-closing-sub {
     font-size: 12px;
-    color: #6B7280;
+    color: #9CA3AF;
     font-weight: 500;
     margin: 0;
     text-decoration: none;
@@ -2512,16 +2534,14 @@ const Pages = {
             </div>
 
             <!-- Sponsor strip CI — separado del hero (regla Jurídico) -->
-            <div class="wbc-sponsor-strip">
+            <a href="https://www.cajainmaculada.com.mx/" target="_blank" rel="noopener sponsored" class="wbc-sponsor-strip">
                 <span class="wbc-sponsor-label">Cobertura presentada por</span>
                 <span class="wbc-sponsor-divider"></span>
-                <a href="https://www.cajainmaculada.com.mx/" target="_blank" rel="noopener sponsored">
-                    <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/ci-logo-horizontal.png"
-                         alt="Caja Inmaculada"
-                         class="wbc-sponsor-logo"
-                         onerror="this.parentElement.style.display='none'">
-                </a>
-            </div>
+                <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/ci-logo-horizontal.png"
+                     alt="Caja Inmaculada"
+                     class="wbc-sponsor-logo"
+                     onerror="this.style.display='none'">
+            </a>
 
             <!-- Panel admin (solo autenticado) -->
             ${adminPanel}
@@ -2556,6 +2576,9 @@ const Pages = {
                 <div class="wbc-articles-header">
                     <h2 class="wbc-articles-title">Toda la Cobertura</h2>
                     ${articleCount > 0 ? `<span class="wbc-article-count">${articleCount} artículo${articleCount !== 1 ? 's' : ''}</span>` : ''}
+                    <a href="https://www.cajainmaculada.com.mx/" target="_blank" rel="noopener sponsored" class="wbc-articles-ci">
+                        <img src="${ciLogoUrl}" alt="Caja Inmaculada" class="wbc-articles-ci-logo">
+                    </a>
                 </div>
                 ${renderArticleCards(articles)}
 
