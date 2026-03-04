@@ -1911,6 +1911,18 @@ const Pages = {
         border-color: #C8102E;
     }
     .wbc-sponsor-label { color: #6B7280; }
+
+    /* ── CI modules dark mode ── */
+    .ci-branded-card {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    .ci-branded-tagline { color: #94a3b8; }
+    .ci-branded-message { color: #cbd5e1; }
+
+    .ci-card-badge { border-color: #334155; }
+    .ci-card-badge-text { color: #64748b; }
+    .ci-card-badge-logo { opacity: 0.5; }
 }
 .wbc-hub .article-card-image {
     overflow: hidden;
@@ -1949,6 +1961,105 @@ const Pages = {
 .wbc-sponsor-logo {
     height: 36px;
     width: auto;
+}
+
+/* ── MÓDULO 2 — Tarjeta CI branded (después del art. 3) ── */
+.ci-branded-card {
+    background: #FFFFFF;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 32px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border: 1px solid #E5E7EB;
+}
+.ci-branded-header {
+    background: linear-gradient(135deg, #1B2A4A 0%, #2D3F6B 100%);
+    padding: 10px 24px;
+    border-bottom: 3px solid #C8102E;
+}
+.ci-branded-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #D4A843;
+}
+.ci-branded-body {
+    padding: 32px 24px;
+    text-align: center;
+}
+.ci-branded-logo {
+    height: 60px;
+    width: auto;
+    margin-bottom: 12px;
+}
+.ci-branded-tagline {
+    font-size: 13px;
+    color: #6B7280;
+    font-weight: 500;
+    margin: 0 0 16px;
+}
+.ci-branded-divider {
+    width: 40px;
+    height: 2px;
+    background: #C8102E;
+    margin: 0 auto 16px;
+}
+.ci-branded-message {
+    font-size: 14px;
+    color: #374151;
+    font-weight: 400;
+    line-height: 1.5;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* ── MÓDULO 3 — Badge CI en article cards ─────────────── */
+.ci-card-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 10px;
+    margin-top: 10px;
+    border-top: 1px solid #F3F4F6;
+}
+.ci-card-badge-logo {
+    height: 18px;
+    width: auto;
+    opacity: 0.7;
+}
+.ci-card-badge-text {
+    font-size: 11px;
+    color: #9CA3AF;
+    font-weight: 500;
+}
+
+/* ── MÓDULO 4 — Cierre CI ─────────────────────────────── */
+.ci-closing {
+    text-align: center;
+    padding: 40px 24px;
+    background: linear-gradient(180deg, #111827 0%, #1B2A4A 100%);
+    border-top: 3px solid #C8102E;
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+.ci-closing-text {
+    font-size: 14px;
+    color: #9CA3AF;
+    font-weight: 400;
+    margin: 0 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.ci-closing-logo {
+    height: 50px;
+    width: auto;
+    margin-bottom: 12px;
+}
+.ci-closing-sub {
+    font-size: 12px;
+    color: #6B7280;
+    font-weight: 500;
+    margin: 0;
 }
 
 /* ── Badge CI en artículos WBC ─────────────────────────── */
@@ -2072,6 +2183,21 @@ const Pages = {
         } catch(e) { /* usa datos estáticos */ }
 
         // ── Helpers de render ─────────────────────────────────────────
+        const ciLogoUrl = 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/ci-logo-horizontal.png';
+
+        const ciBrandedCard = `
+            <div class="ci-branded-card">
+                <div class="ci-branded-header">
+                    <span class="ci-branded-label">PATROCINADOR OFICIAL</span>
+                </div>
+                <div class="ci-branded-body">
+                    <img src="${ciLogoUrl}" alt="Caja Inmaculada" class="ci-branded-logo">
+                    <p class="ci-branded-tagline">La Primera Caja Autorizada de México</p>
+                    <div class="ci-branded-divider"></div>
+                    <p class="ci-branded-message">Caja Inmaculada respalda la cobertura de Beisjoven en el World Baseball Classic 2026</p>
+                </div>
+            </div>`;
+
         function renderArticleCards(arts) {
             if (!arts.length) return `
                 <div class="wbc-empty-state">
@@ -2079,12 +2205,12 @@ const Pages = {
                     <h3>La cobertura ya comenzó</h3>
                     <p>Los artículos aparecerán aquí conforme se publiquen.</p>
                 </div>`;
-            return '<div class="articles-grid">' + arts.map(a => {
+            let cards = arts.map((a, i) => {
                 const fecha = new Date(a.fecha).toLocaleDateString('es-MX', { day:'numeric', month:'short', year:'numeric' });
                 const catNombre = a.categoria ? a.categoria.nombre : '';
                 const catSlug = a.categoria ? a.categoria.slug : '';
                 const autorNombre = a.autor ? a.autor.nombre : 'Redacción Beisjoven';
-                return `
+                let card = `
                 <article class="article-card">
                     <a href="/articulo/${a.slug}" class="article-card-link">
                         <div class="article-card-image">
@@ -2098,10 +2224,24 @@ const Pages = {
                                 <span>${autorNombre}</span>
                                 <span>${fecha}</span>
                             </div>
+                            <div class="ci-card-badge">
+                                <img src="${ciLogoUrl}" alt="CI" class="ci-card-badge-logo">
+                                <span class="ci-card-badge-text">Presentado por Caja Inmaculada</span>
+                            </div>
                         </div>
                     </a>
                 </article>`;
-            }).join('') + '</div>';
+                // Insertar tarjeta branded CI después del artículo 3
+                if (i === 2 && arts.length > 3) {
+                    card += ciBrandedCard;
+                }
+                return card;
+            }).join('');
+            // Si hay 3 o menos artículos, poner tarjeta al final
+            if (arts.length <= 3 && arts.length > 0) {
+                cards += ciBrandedCard;
+            }
+            return '<div class="articles-grid">' + cards + '</div>';
         }
 
         function renderGallery(items) {
@@ -2326,6 +2466,14 @@ const Pages = {
 
                 <!-- Videos -->
                 ${videoSection}
+
+                <!-- MÓDULO 4 — Cierre CI -->
+                <div class="ci-closing">
+                    <p class="ci-closing-text">Esta cobertura es posible gracias a</p>
+                    <img src="${ciLogoUrl}"
+                         alt="Caja Inmaculada" class="ci-closing-logo">
+                    <p class="ci-closing-sub">Patrocinador exclusivo del sector financiero</p>
+                </div>
 
                 <!-- CTA Redes -->
                 <div class="wbc-social-cta">
