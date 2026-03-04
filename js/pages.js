@@ -1902,6 +1902,7 @@ const Pages = {
     height: auto;
     margin-bottom: 4px;
     border-radius: 10px;
+    mix-blend-mode: screen;
 }
 
 /* ── Sponsor strip (separado del hero — regla Jurídico) ── */
@@ -2243,8 +2244,8 @@ const Pages = {
 <!-- Hero image: Sergio reemplaza el 6 de marzo con foto desde Daikin Park -->
                 <div class="wbc-hero-overlay">
                     <div class="container">
-                        <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/wbc-pool-houston-logo.png"
-                             alt="World Baseball Classic 2026 — Pool Houston"
+                        <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/2026_World_Baseball_Classic_logo.png"
+                             alt="World Baseball Classic 2026"
                              class="wbc-hero-event-logo"
                              onerror="this.outerHTML='<div class=\\'wbc-hero-badge\\'>⚾ Clásico Mundial de Béisbol 2026</div>'">
                         <h1 class="wbc-hero-title">México en el<br><span>WBC 2026</span></h1>
