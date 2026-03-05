@@ -845,20 +845,20 @@ const Pages = {
             badgeStyle.id = 'bj-wbc-badge-styles';
             badgeStyle.textContent = `
 .wbc-article-badge-ci {
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-    background: #1b3557; border-radius: 8px; padding: 12px 20px;
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    background: #1b3557; border-radius: 12px; padding: 16px 24px;
     margin: 0 0 24px; text-decoration: none; transition: opacity 0.2s;
 }
 .wbc-article-badge-ci:hover { opacity: 0.9; }
 .wbc-article-badge-text {
     font-family: system-ui, -apple-system, sans-serif;
-    font-size: 13px; font-weight: 500; color: #FFFFFF;
-    text-transform: uppercase; letter-spacing: 0.5px;
+    font-size: 11px; font-weight: 600; color: #FFFFFF;
+    text-transform: uppercase; letter-spacing: 1.5px;
 }
-.wbc-article-badge-logo { height: 22px; width: auto; }
+.wbc-article-badge-logo { height: 30px; width: auto; }
 @media (max-width: 600px) {
-    .wbc-article-badge-ci { padding: 10px 16px; gap: 10px; }
-    .wbc-article-badge-logo { height: 18px; }
+    .wbc-article-badge-ci { padding: 14px 20px; gap: 14px; }
+    .wbc-article-badge-logo { height: 24px; }
 }
 `;
             document.head.appendChild(badgeStyle);
