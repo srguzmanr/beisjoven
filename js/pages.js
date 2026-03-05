@@ -2275,7 +2275,7 @@ const Pages = {
                     .select(`*, categoria:categorias(*), autor:autores(*)`)
                     .eq('es_wbc2026', true)
                     .eq('publicado', true)
-                    .order('fecha', { ascending: false })
+                    .order('created_at', { ascending: false })
                     .limit(50),
                 supabaseClient
                     .from('wbc_galeria')
