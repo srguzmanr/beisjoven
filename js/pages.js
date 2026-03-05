@@ -780,22 +780,18 @@ const Pages = {
                         </div>
                     </header>
                     
-                    ${article.esWbc2026 ? `
-                    <div class="wbc-article-badge-ci">
-                        <picture>
-                            <source media="(max-width: 600px)"
-                                    srcset="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/badge-ci-mobile.png">
-                            <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/badge-ci-desktop.png"
-                                 alt="Presentado por Caja Inmaculada — Cobertura WBC 2026"
-                                 class="wbc-badge-img"
-                                 onerror="this.parentElement.parentElement.style.display='none'">
-                        </picture>
-                    </div>` : ''}
-
                     <figure class="article-image">
                         <img src="${article.image}" alt="${article.title}">
                         <div id="article-image-credit"></div>
                     </figure>
+
+                    ${article.esWbc2026 ? `
+                    <a href="https://www.cajainmaculada.com.mx/" target="_blank" rel="noopener sponsored" class="wbc-article-badge-ci">
+                        <span class="wbc-article-badge-text">Presentado por</span>
+                        <img src="https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/ci-logo-horizontal.png"
+                             alt="Caja Inmaculada" class="wbc-article-badge-logo"
+                             onerror="this.parentElement.style.display='none'">
+                    </a>` : ''}
                     
                     <div class="article-body">
                         <div class="article-content">
@@ -848,9 +844,22 @@ const Pages = {
             const badgeStyle = document.createElement('style');
             badgeStyle.id = 'bj-wbc-badge-styles';
             badgeStyle.textContent = `
-.wbc-article-badge-ci { margin: 16px 0 20px; text-align: center; }
-.wbc-badge-img { max-width: 100%; height: auto; border-radius: 6px; }
-@media (max-width: 600px) { .wbc-badge-img { max-width: 375px; } }
+.wbc-article-badge-ci {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    background: #1b3557; border-radius: 8px; padding: 12px 20px;
+    margin: 0 0 24px; text-decoration: none; transition: opacity 0.2s;
+}
+.wbc-article-badge-ci:hover { opacity: 0.9; }
+.wbc-article-badge-text {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 13px; font-weight: 500; color: #FFFFFF;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+.wbc-article-badge-logo { height: 22px; width: auto; }
+@media (max-width: 600px) {
+    .wbc-article-badge-ci { padding: 10px 16px; gap: 10px; }
+    .wbc-article-badge-logo { height: 18px; }
+}
 `;
             document.head.appendChild(badgeStyle);
         }
@@ -2185,17 +2194,6 @@ const Pages = {
     font-weight: 500;
     margin: 0;
     text-decoration: none;
-}
-
-/* ── Badge CI en artículos WBC ─────────────────────────── */
-.wbc-article-badge-ci {
-    margin: 16px 0 20px;
-    text-align: center;
-}
-.wbc-badge-img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 6px;
 }
 
 /* Responsive */
