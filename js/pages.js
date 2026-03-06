@@ -1618,13 +1618,22 @@ const Pages = {
     font-weight: 600; color: var(--wbc-text); line-height: 1.2; display: block;
 }
 .wbc-game-matchup strong { color: var(--wbc-red); }
+.wbc-game-right {
+    text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+}
 .wbc-game-hora {
-    font-size: 0.78rem; color: var(--wbc-muted); margin-top: 4px; display: block;
+    font-size: 0.78rem; color: var(--wbc-muted); display: block;
 }
 .wbc-game-tv {
-    display: flex; align-items: center; gap: 5px; margin-top: 6px;
-    flex-wrap: wrap;
+    display: flex; align-items: center; gap: 5px;
+    flex-wrap: wrap; justify-content: flex-end;
 }
+.wbc-game-resultado-inline {
+    font-family: 'Oswald', sans-serif; font-size: 1.1rem;
+    font-weight: 700; display: block;
+}
+.wbc-game-resultado-inline.ganado { color: #16a34a; }
+.wbc-game-resultado-inline.perdido { color: var(--wbc-red); }
 .wbc-tv-badge {
     display: inline-block; background: var(--wbc-navy); color: white;
     font-size: 0.68rem; font-weight: 700; padding: 3px 7px;
@@ -1635,13 +1644,6 @@ const Pages = {
 .tv-tubi  { background: #fa4b18; }
 .tv-tbd   { background: #6b7280; }
 .tv-foxd  { background: #c41e3a; }
-.wbc-resultado {
-    font-family: 'Oswald', sans-serif; font-size: 0.85rem;
-    font-weight: 700; color: var(--wbc-muted); min-width: 30px; text-align: right;
-}
-.wbc-resultado.pendiente { color: #d1d5db; font-size: 0.72rem; }
-.wbc-resultado.ganado { color: #16a34a; }
-.wbc-resultado.perdido { color: var(--wbc-red); }
 .wbc-calendar-note {
     font-size: 0.7rem; color: var(--wbc-muted); margin: 12px 0 0;
     padding-top: 10px; border-top: 1px solid #f3f4f6; line-height: 1.5;
@@ -1889,13 +1891,10 @@ const Pages = {
     .wbc-hub .wbc-game-hora {
         color: #94a3b8 !important;
     }
-    .wbc-hub .wbc-resultado.pendiente {
-        color: #475569 !important;
-    }
-    .wbc-hub .wbc-resultado.ganado {
+    .wbc-hub .wbc-game-resultado-inline.ganado {
         color: #4ade80 !important;
     }
-    .wbc-hub .wbc-resultado.perdido {
+    .wbc-hub .wbc-game-resultado-inline.perdido {
         color: #f87171 !important;
     }
     .wbc-hub .wbc-tv-badge.tv-tbd {
@@ -2255,10 +2254,12 @@ const Pages = {
                 </div>
                 <div>
                     <span class="wbc-game-matchup">${matchup}</span>
+                </div>
+                <div class="wbc-game-right">
                     <span class="wbc-game-hora">${j.hora}</span>
                     <div class="wbc-game-tv">${badges}</div>
+                    ${j.resultado && j.resultado !== '—' ? `<span class="wbc-game-resultado-inline ${j.clases}">${j.resultado}</span>` : ''}
                 </div>
-                <div class="wbc-resultado ${j.clases}">${j.resultado}</div>
             </div>`;
         }).join('');
 
