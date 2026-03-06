@@ -1599,14 +1599,14 @@ const Pages = {
 /* ── Calendario ────────────────────────────────────────── */
 .wbc-game-list { display: flex; flex-direction: column; }
 .wbc-game-item {
-    display: grid; grid-template-columns: 56px 1fr auto;
-    align-items: center; gap: 0 12px;
-    padding: 12px 0; border-bottom: 1px solid #f3f4f6;
+    display: grid; grid-template-columns: 60px 1fr auto;
+    align-items: center; gap: 0 16px;
+    padding: 16px 0; border-bottom: 1px solid #f3f4f6;
 }
 .wbc-game-item:last-child { border-bottom: none; }
 .wbc-game-date { text-align: center; }
 .wbc-game-date-day {
-    font-family: 'Oswald', sans-serif; font-size: 1.15rem;
+    font-family: 'Oswald', sans-serif; font-size: 1.3rem;
     font-weight: 700; color: var(--wbc-navy); line-height: 1.1; display: block;
 }
 .wbc-game-date-mes {
@@ -1614,19 +1614,21 @@ const Pages = {
     text-transform: uppercase; letter-spacing: 0.5px; display: block;
 }
 .wbc-game-matchup {
-    font-family: 'Oswald', sans-serif; font-size: 0.92rem;
+    font-family: 'Oswald', sans-serif; font-size: 1rem;
     font-weight: 600; color: var(--wbc-text); line-height: 1.2; display: block;
 }
 .wbc-game-matchup strong { color: var(--wbc-red); }
-.wbc-game-detail {
-    font-size: 0.72rem; color: var(--wbc-muted);
-    display: flex; align-items: center; gap: 6px; margin-top: 3px;
+.wbc-game-hora {
+    font-size: 0.78rem; color: var(--wbc-muted); margin-top: 4px; display: block;
+}
+.wbc-game-tv {
+    display: flex; align-items: center; gap: 5px; margin-top: 6px;
     flex-wrap: wrap;
 }
 .wbc-tv-badge {
     display: inline-block; background: var(--wbc-navy); color: white;
-    font-size: 0.63rem; font-weight: 700; padding: 2px 5px;
-    border-radius: 3px; font-family: 'Oswald', sans-serif; letter-spacing: 0.3px;
+    font-size: 0.68rem; font-weight: 700; padding: 3px 7px;
+    border-radius: 4px; font-family: 'Oswald', sans-serif; letter-spacing: 0.3px;
 }
 .tv-fox   { background: #000; }
 .tv-fs1   { background: #003087; }
@@ -1884,7 +1886,7 @@ const Pages = {
     .wbc-hub .wbc-game-matchup strong {
         color: #f87171 !important;
     }
-    .wbc-hub .wbc-game-detail {
+    .wbc-hub .wbc-game-hora {
         color: #94a3b8 !important;
     }
     .wbc-hub .wbc-resultado.pendiente {
@@ -2253,10 +2255,8 @@ const Pages = {
                 </div>
                 <div>
                     <span class="wbc-game-matchup">${matchup}</span>
-                    <div class="wbc-game-detail">
-                        <span>${j.hora}</span>
-                        ${badges}
-                    </div>
+                    <span class="wbc-game-hora">${j.hora}</span>
+                    <div class="wbc-game-tv">${badges}</div>
                 </div>
                 <div class="wbc-resultado ${j.clases}">${j.resultado}</div>
             </div>`;
