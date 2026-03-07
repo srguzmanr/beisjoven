@@ -1599,25 +1599,20 @@ const Pages = {
 /* ── Calendario ────────────────────────────────────────── */
 .wbc-game-list { display: flex; flex-direction: column; }
 .wbc-game-item {
-    display: grid; grid-template-columns: 60px 1fr auto;
+    display: grid; grid-template-columns: 1fr auto;
     align-items: center; gap: 0 16px;
     padding: 16px 0; border-bottom: 1px solid #f3f4f6;
 }
 .wbc-game-item:last-child { border-bottom: none; }
-.wbc-game-date { text-align: center; }
-.wbc-game-date-day {
-    font-family: 'Oswald', sans-serif; font-size: 1.3rem;
-    font-weight: 700; color: var(--wbc-navy); line-height: 1.1; display: block;
-}
-.wbc-game-date-mes {
-    font-size: 0.7rem; color: var(--wbc-muted);
-    text-transform: uppercase; letter-spacing: 0.5px; display: block;
-}
 .wbc-game-matchup {
     font-family: 'Oswald', sans-serif; font-size: 1rem;
     font-weight: 600; color: var(--wbc-text); line-height: 1.2; display: block;
 }
-.wbc-game-matchup strong { color: var(--wbc-red); }
+.wbc-cal-mexico { color: #D4A843; }
+.wbc-game-cuarto-label {
+    font-size: 0.7rem; color: var(--wbc-muted); display: block; margin-top: 2px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
 .wbc-game-right {
     text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
 }
@@ -1632,7 +1627,7 @@ const Pages = {
     font-family: 'Oswald', sans-serif; font-size: 1.1rem;
     font-weight: 700; display: block;
 }
-.wbc-game-resultado-inline.ganado { color: #16a34a; }
+.wbc-game-resultado-inline.ganado { color: #D4A843; }
 .wbc-game-resultado-inline.perdido { color: var(--wbc-red); }
 .wbc-game-final-label {
     font-family: system-ui, -apple-system, sans-serif;
@@ -1640,8 +1635,52 @@ const Pages = {
     text-transform: uppercase; letter-spacing: 1px; display: block;
 }
 .wbc-game-played .wbc-game-matchup { color: var(--wbc-text); }
-.wbc-game-played .wbc-game-date-day { opacity: 0.7; }
-.wbc-game-played .wbc-game-date-mes { opacity: 0.7; }
+
+/* ── Slider tabs ──────────────────────────────────────── */
+.wbc-cal-tabs-wrap {
+    display: flex; align-items: center; gap: 4px;
+    margin-bottom: 4px;
+}
+.wbc-cal-tabs {
+    display: flex; gap: 4px; overflow-x: auto;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    flex: 1; padding: 4px 0;
+}
+.wbc-cal-tabs::-webkit-scrollbar { display: none; }
+.wbc-cal-tab {
+    flex: 0 0 auto; background: none; border: 1px solid #e5e7eb;
+    border-radius: 8px; padding: 8px 12px; cursor: pointer;
+    text-align: center; transition: all 0.2s; min-width: 48px;
+}
+.wbc-cal-tab:hover { background: #f3f4f6; }
+.wbc-cal-tab.active {
+    background: var(--wbc-navy); border-color: var(--wbc-navy); color: white;
+}
+.wbc-cal-tab.active .wbc-cal-tab-day { color: white; }
+.wbc-cal-tab.active .wbc-cal-tab-label { color: rgba(255,255,255,0.7); }
+.wbc-cal-tab-mex { border-color: #D4A843; }
+.wbc-cal-tab-mex.active { border-color: #D4A843; }
+.wbc-cal-tab-day {
+    font-family: 'Oswald', sans-serif; font-size: 1rem;
+    font-weight: 700; color: var(--wbc-navy); display: block; line-height: 1.1;
+}
+.wbc-cal-tab-label {
+    font-size: 0.6rem; color: var(--wbc-muted); text-transform: uppercase;
+    letter-spacing: 0.3px; display: block;
+}
+.wbc-cal-arrow {
+    background: none; border: 1px solid #e5e7eb; border-radius: 6px;
+    width: 28px; height: 28px; font-size: 1.1rem; cursor: pointer;
+    color: var(--wbc-navy); display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0;
+}
+.wbc-cal-arrow:disabled { opacity: 0.3; cursor: default; }
+.wbc-cal-arrow:hover:not(:disabled) { background: #f3f4f6; }
+.wbc-cal-day-header {
+    font-family: 'Oswald', sans-serif; font-size: 0.85rem;
+    font-weight: 600; color: var(--wbc-muted); text-transform: uppercase;
+    letter-spacing: 1px; padding: 8px 0 4px; border-bottom: 2px solid #e5e7eb;
+}
 .wbc-tv-badge {
     display: inline-block; background: var(--wbc-navy); color: white;
     font-size: 0.68rem; font-weight: 700; padding: 3px 7px;
@@ -1652,6 +1691,7 @@ const Pages = {
 .tv-tubi  { background: #fa4b18; }
 .tv-tbd   { background: #6b7280; }
 .tv-foxd  { background: #c41e3a; }
+.tv-app   { background: #6366f1; }
 .wbc-calendar-note {
     font-size: 0.7rem; color: var(--wbc-muted); margin: 12px 0 0;
     padding-top: 10px; border-top: 1px solid #f3f4f6; line-height: 1.5;
@@ -1884,34 +1924,42 @@ const Pages = {
     .wbc-hub .wbc-game-item {
         border-color: #334155 !important;
     }
-    .wbc-hub .wbc-game-date-day {
-        color: #f1f5f9 !important;
-    }
-    .wbc-hub .wbc-game-date-mes {
-        color: #64748b !important;
-    }
     .wbc-hub .wbc-game-matchup {
         color: #e2e8f0 !important;
-    }
-    .wbc-hub .wbc-game-matchup strong {
-        color: #f87171 !important;
     }
     .wbc-hub .wbc-game-hora {
         color: #94a3b8 !important;
     }
     .wbc-hub .wbc-game-resultado-inline.ganado {
-        color: #4ade80 !important;
+        color: #D4A843 !important;
     }
     .wbc-hub .wbc-game-resultado-inline.perdido {
         color: #f87171 !important;
     }
     .wbc-hub .wbc-game-final-label { color: #64748b !important; }
+    .wbc-hub .wbc-game-cuarto-label { color: #64748b !important; }
     .wbc-hub .wbc-tv-badge.tv-tbd {
         background: #374151 !important;
         color: #9ca3af !important;
     }
     .wbc-hub .wbc-calendar-note {
         color: #475569;
+    }
+    .wbc-hub .wbc-cal-tab {
+        border-color: #334155; color: #94a3b8;
+    }
+    .wbc-hub .wbc-cal-tab:hover { background: #1e293b; }
+    .wbc-hub .wbc-cal-tab.active {
+        background: #0f172a; border-color: #475569;
+    }
+    .wbc-hub .wbc-cal-tab-day { color: #e2e8f0; }
+    .wbc-hub .wbc-cal-tab-mex { border-color: #D4A843; }
+    .wbc-hub .wbc-cal-arrow {
+        border-color: #334155; color: #94a3b8;
+    }
+    .wbc-hub .wbc-cal-arrow:hover:not(:disabled) { background: #1e293b; }
+    .wbc-hub .wbc-cal-day-header {
+        color: #64748b; border-color: #334155;
     }
 
     /* ── Posiciones ── */
@@ -2239,20 +2287,44 @@ const Pages = {
             type: 'website'
         });
 
-        // ── Datos estáticos — Calendario Pool B ───────────────────────
-        // Horarios en CT verificados con FOX Sports. DST inicia 8 mar (clocks spring forward)
-        // Resultados se cargan desde wbc_resultados en Supabase; estos son fallback.
-        const calendario = [
-            { dia: '6',  mes: 'mar', dia_sem: 'Jue', partido: 'México vs Gran Bretaña', hora: '12:00 p.m. CDMX', tv: ['FS1','FOX Dep'],  resultado: '8-2', clases: 'ganado' },
-            { dia: '8',  mes: 'mar', dia_sem: 'Sáb', partido: 'México vs Brasil',        hora: '6:00 p.m. CDMX',  tv: ['FS1','FOX Dep'],  resultado: '—', clases: 'pendiente' },
-            { dia: '9',  mes: 'mar', dia_sem: 'Dom', partido: 'México vs EUA',           hora: '6:00 p.m. CDMX',  tv: ['FOX','FOX Dep'],  resultado: '—', clases: 'pendiente' },
-            { dia: '11', mes: 'mar', dia_sem: 'Mar', partido: 'México vs Italia',        hora: '5:00 p.m. CDMX',  tv: ['Tubi'],           resultado: '—', clases: 'pendiente' },
-            { dia: '13–14', mes: 'mar', dia_sem: '',  partido: 'Cuartos de Final',       hora: 'Si México avanza', tv: ['FOX'],          resultado: '', clases: '' },
+        // ── Datos — Calendario Pool B COMPLETO ─────────────────────────
+        // Horarios CDMX verificados. DST Houston inicia 8 mar.
+        // 6-7 mar: CT = CDMX | 8+ mar: CDT = CDMX +1h
+        // Resultados se cargan desde wbc_resultados en Supabase.
+        const calDias = [
+            { fecha: '6 mar', diaSem: 'Viernes', juegos: [
+                { id: 1, local: 'México', visit: 'Gran Bretaña', hora: '12:00 p.m.', tv: ['FS1','FOX Dep'], resultado: '8-2', clases: 'ganado' },
+                { id: 2, local: 'Estados Unidos', visit: 'Brasil', hora: '7:00 p.m.', tv: ['FS1','FOX Dep'], resultado: '15-5', clases: 'ganado' },
+            ]},
+            { fecha: '7 mar', diaSem: 'Sábado', juegos: [
+                { id: 3, local: 'Brasil', visit: 'Italia', hora: '12:00 p.m.', tv: ['App'], resultado: '—', clases: 'pendiente' },
+                { id: 4, local: 'Gran Bretaña', visit: 'Estados Unidos', hora: '7:00 p.m.', tv: ['FOX'], resultado: '—', clases: 'pendiente' },
+            ]},
+            { fecha: '8 mar', diaSem: 'Domingo', juegos: [
+                { id: 5, local: 'Gran Bretaña', visit: 'Italia', hora: '11:00 a.m.', tv: ['Tubi'], resultado: '—', clases: 'pendiente' },
+                { id: 6, local: 'Brasil', visit: 'México', hora: '6:00 p.m.', tv: ['FS1','FOX Dep'], resultado: '—', clases: 'pendiente' },
+            ]},
+            { fecha: '9 mar', diaSem: 'Lunes', juegos: [
+                { id: 7, local: 'Brasil', visit: 'Gran Bretaña', hora: '11:00 a.m.', tv: ['Tubi'], resultado: '—', clases: 'pendiente' },
+                { id: 8, local: 'México', visit: 'Estados Unidos', hora: '6:00 p.m.', tv: ['FOX','FOX Dep'], resultado: '—', clases: 'pendiente' },
+            ]},
+            { fecha: '10 mar', diaSem: 'Martes', juegos: [
+                { id: 9, local: 'Italia', visit: 'Estados Unidos', hora: '7:00 p.m.', tv: ['FS1','FOX Dep'], resultado: '—', clases: 'pendiente' },
+            ]},
+            { fecha: '11 mar', diaSem: 'Miércoles', juegos: [
+                { id: 10, local: 'Italia', visit: 'México', hora: '5:00 p.m.', tv: ['Tubi'], resultado: '—', clases: 'pendiente' },
+            ]},
+            { fecha: '13 mar', diaSem: 'Viernes', juegos: [
+                { id: 11, local: '2do Pool A', visit: '1ro Pool B', hora: '6:00 p.m.', tv: ['FS1','FOX Dep'], resultado: '—', clases: 'pendiente', esCuarto: true },
+            ]},
+            { fecha: '14 mar', diaSem: 'Sábado', juegos: [
+                { id: 12, local: '2do Pool B', visit: '1ro Pool A', hora: '1:00 p.m.', tv: ['FOX','FOX Dep'], resultado: '—', clases: 'pendiente', esCuarto: true },
+            ]},
         ];
 
-        const tvColor = { 'FOX': 'tv-fox', 'FS1': 'tv-fs1', 'Tubi': 'tv-tubi', 'FOX Dep': 'tv-foxd', 'TBD': 'tv-tbd' };
+        const tvColor = { 'FOX': 'tv-fox', 'FS1': 'tv-fs1', 'Tubi': 'tv-tubi', 'FOX Dep': 'tv-foxd', 'App': 'tv-app', 'TBD': 'tv-tbd' };
 
-        // calendarioRows se genera después del fetch de resultados
+        // calendarioContent se genera después del fetch de resultados
 
         // ── Datos estáticos — Posiciones iniciales ────────────────────
         // ACTUALIZAR estos valores después de cada juego.
@@ -2306,49 +2378,90 @@ const Pages = {
         } catch(e) { /* usa datos estáticos */ }
 
         // ── Fetch resultados del calendario desde Supabase ────────────
+        // Helper: obtener todos los juegos flat
+        function getAllGames() {
+            const games = [];
+            calDias.forEach(d => d.juegos.forEach(j => games.push(j)));
+            return games;
+        }
         try {
             const { data: resData, error: resErr } = await supabaseClient
                 .from('wbc_resultados')
                 .select('id, resultado, clases')
                 .order('id', { ascending: true });
             if (!resErr && resData && resData.length > 0) {
+                const allGames = getAllGames();
                 resData.forEach(r => {
-                    if (calendario[r.id - 1]) {
-                        calendario[r.id - 1].resultado = r.resultado || '—';
-                        calendario[r.id - 1].clases = r.clases || 'pendiente';
+                    const game = allGames.find(g => g.id === r.id);
+                    if (game) {
+                        game.resultado = r.resultado || '—';
+                        game.clases = r.clases || 'pendiente';
                     }
                 });
             }
         } catch(e) { /* usa datos hardcodeados */ }
 
-        // ── Generar filas del calendario ──────────────────────────────
-        function buildCalendarioRows() {
-            return calendario.map(j => {
+        // ── Determinar día default del slider ─────────────────────────
+        function getDefaultDayIndex() {
+            const now = new Date();
+            const month = now.getMonth() + 1; // 1-indexed
+            const day = now.getDate();
+            if (month !== 3) return 0;
+            const dayMap = { 6:0, 7:1, 8:2, 9:3, 10:4, 11:5, 12:5, 13:6, 14:7 };
+            return dayMap[day] !== undefined ? dayMap[day] : (day < 6 ? 0 : 7);
+        }
+
+        // ── Generar slider de calendario ─────────────────────────────
+        function highlightMexico(text) {
+            return text.replace(/México/g, '<span class="wbc-cal-mexico">México</span>');
+        }
+
+        function buildCalendarioSlider(activeIdx) {
+            const tabs = calDias.map((d, i) => {
+                const diaNum = d.fecha.split(' ')[0];
+                const hasMex = d.juegos.some(j => j.local === 'México' || j.visit === 'México');
+                return `<button class="wbc-cal-tab ${i === activeIdx ? 'active' : ''} ${hasMex ? 'wbc-cal-tab-mex' : ''}" onclick="wbcCalGoTo(${i})">
+                    <span class="wbc-cal-tab-day">${diaNum}</span>
+                    <span class="wbc-cal-tab-label">${d.diaSem.substring(0,3)}</span>
+                </button>`;
+            }).join('');
+
+            const dia = calDias[activeIdx];
+            const games = dia.juegos.map(j => {
                 const badges = j.tv.map(t => `<span class="wbc-tv-badge ${tvColor[t] || 'tv-tbd'}">${t}</span>`).join(' ');
-                const esFinal = j.partido.includes('Cuartos');
-                const matchup = esFinal ? j.partido : j.partido.replace('México', '<strong>México</strong>');
                 const yaJugado = j.clases === 'ganado' || j.clases === 'perdido';
+                const matchup = j.esCuarto
+                    ? `${highlightMexico(j.local)} vs ${highlightMexico(j.visit)}`
+                    : `${highlightMexico(j.local)} vs ${highlightMexico(j.visit)}`;
                 const rightContent = yaJugado
                     ? `<span class="wbc-game-final-label">FINAL</span>
-                       <span class="wbc-game-resultado-inline ${j.clases}">${j.resultado} ${j.clases === 'ganado' ? '✓' : '✗'}</span>`
-                    : `<span class="wbc-game-hora">${j.hora}</span>
+                       <span class="wbc-game-resultado-inline ${j.clases}">${j.resultado}</span>`
+                    : `<span class="wbc-game-hora">${j.hora} CDMX</span>
                        <div class="wbc-game-tv">${badges}</div>`;
                 return `
                 <div class="wbc-game-item ${yaJugado ? 'wbc-game-played' : ''}">
-                    <div class="wbc-game-date">
-                        <span class="wbc-game-date-day">${j.dia}</span>
-                        <span class="wbc-game-date-mes">${j.mes}</span>
-                    </div>
                     <div>
                         <span class="wbc-game-matchup">${matchup}</span>
+                        ${j.esCuarto ? '<span class="wbc-game-cuarto-label">Cuartos de Final</span>' : ''}
                     </div>
                     <div class="wbc-game-right">
                         ${rightContent}
                     </div>
                 </div>`;
             }).join('');
+
+            return `
+            <div class="wbc-cal-tabs-wrap">
+                <button class="wbc-cal-arrow" onclick="wbcCalGoTo(${Math.max(0, activeIdx - 1)})" ${activeIdx === 0 ? 'disabled' : ''}>‹</button>
+                <div class="wbc-cal-tabs" id="wbc-cal-tabs">${tabs}</div>
+                <button class="wbc-cal-arrow" onclick="wbcCalGoTo(${Math.min(calDias.length - 1, activeIdx + 1)})" ${activeIdx === calDias.length - 1 ? 'disabled' : ''}>›</button>
+            </div>
+            <div class="wbc-cal-day-header">${dia.diaSem} ${dia.fecha}</div>
+            <div class="wbc-game-list">${games}</div>`;
         }
-        const calendarioRows = buildCalendarioRows();
+
+        let calCurrentIdx = getDefaultDayIndex();
+        const calendarioContent = buildCalendarioSlider(calCurrentIdx);
 
         // ── CI Integration ───────────────────────────────────────────
         const ciLogoUrl = 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/ci-logo-horizontal.png';
@@ -2547,17 +2660,19 @@ const Pages = {
 
                     <!-- Resultados editor -->
                     <div class="wbc-admin-section">
-                        <h4>⚾ Actualizar resultados</h4>
-                        ${calendario.slice(0, 5).map((j, i) => `
-                        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-                            <span style="color:#94a3b8;font-size:0.8rem;min-width:90px;">${j.partido.replace('México vs ','vs ')}</span>
-                            <input type="text" id="res-score-${i}" class="wbc-admin-input" placeholder="Ej: 8-2" value="${j.resultado !== '—' ? j.resultado : ''}" style="width:70px;flex:none;">
-                            <select id="res-clases-${i}" class="wbc-admin-input" style="width:auto;flex:none;">
-                                <option value="pendiente" ${j.clases === 'pendiente' ? 'selected' : ''}>Pend</option>
+                        <h4>⚾ Actualizar resultados (Pool B)</h4>
+                        ${calDias.map(d => `
+                        <div style="color:#64748b;font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;">${d.fecha}</div>
+                        ${d.juegos.map(j => `
+                        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+                            <span style="color:#94a3b8;font-size:0.75rem;min-width:100px;white-space:nowrap;">${j.local.substring(0,3).toUpperCase()} vs ${j.visit.substring(0,3).toUpperCase()}</span>
+                            <input type="text" id="res-score-${j.id}" class="wbc-admin-input" placeholder="8-2" value="${j.resultado !== '—' ? j.resultado : ''}" style="width:60px;flex:none;">
+                            <select id="res-clases-${j.id}" class="wbc-admin-input" style="width:auto;flex:none;">
+                                <option value="pendiente" ${j.clases === 'pendiente' ? 'selected' : ''}>—</option>
                                 <option value="ganado" ${j.clases === 'ganado' ? 'selected' : ''}>W</option>
                                 <option value="perdido" ${j.clases === 'perdido' ? 'selected' : ''}>L</option>
                             </select>
-                        </div>`).join('')}
+                        </div>`).join('')}`).join('')}
                         <button class="wbc-admin-btn" style="margin-top:10px;" onclick="wbcSaveResultados()">Guardar resultados</button>
                         <div class="wbc-admin-status" id="wbc-resultados-status"></div>
                     </div>
@@ -2635,11 +2750,11 @@ const Pages = {
                 <div class="wbc-card">
                     <div class="wbc-card-header">
                         <span class="wbc-card-icon">📅</span>
-                        <h2>Calendario Pool B — México</h2>
+                        <h2>Calendario Pool B</h2>
                     </div>
-                    <div class="wbc-card-body">
-                        <div class="wbc-game-list" id="wbc-calendario-display">${calendarioRows}</div>
-                        <p class="wbc-calendar-note">Horas en Tiempo de la Ciudad de México (CDMX). FOX Dep = FOX Deportes.<br>Resultados se actualizan tras cada juego.</p>
+                    <div class="wbc-card-body" id="wbc-calendario-display">
+                        ${calendarioContent}
+                        <p class="wbc-calendar-note">Horas CDMX. FOX Dep = FOX Deportes. App = Fox Sports App.<br>Resultados se actualizan tras cada juego.</p>
                     </div>
                 </div>
 
@@ -2896,24 +3011,55 @@ const Pages = {
             const statusEl = document.getElementById('wbc-resultados-status');
             statusEl.className = 'wbc-admin-status'; statusEl.textContent = 'Guardando...';
             try {
-                const upserts = calendario.map((j, i) => ({
-                    id: i + 1,
-                    resultado: document.getElementById('res-score-' + i).value.trim() || '—',
-                    clases: document.getElementById('res-clases-' + i).value
+                const allGames = getAllGames();
+                const upserts = allGames.map(j => ({
+                    id: j.id,
+                    resultado: document.getElementById('res-score-' + j.id).value.trim() || '—',
+                    clases: document.getElementById('res-clases-' + j.id).value
                 }));
                 const { error } = await supabaseClient.from('wbc_resultados')
                     .upsert(upserts, { onConflict: 'id' });
                 if (error) throw error;
-                // Update local data and refresh display
-                upserts.forEach((u, i) => {
-                    calendario[i].resultado = u.resultado;
-                    calendario[i].clases = u.clases;
+                upserts.forEach(u => {
+                    const game = allGames.find(g => g.id === u.id);
+                    if (game) { game.resultado = u.resultado; game.clases = u.clases; }
                 });
                 const displayEl = document.getElementById('wbc-calendario-display');
-                if (displayEl) displayEl.innerHTML = buildCalendarioRows();
+                if (displayEl) {
+                    displayEl.innerHTML = buildCalendarioSlider(calCurrentIdx)
+                        + '<p class="wbc-calendar-note">Horas CDMX. FOX Dep = FOX Deportes. App = Fox Sports App.<br>Resultados se actualizan tras cada juego.</p>';
+                }
                 statusEl.textContent = '✓ Resultados actualizados';
             } catch(e) { statusEl.textContent = 'Error: ' + (e.message || e); statusEl.className = 'wbc-admin-status error'; }
         };
+
+        // ── Slider navigation ─────────────────────────────────────────
+        window.wbcCalGoTo = function(idx) {
+            calCurrentIdx = idx;
+            const displayEl = document.getElementById('wbc-calendario-display');
+            if (displayEl) {
+                displayEl.innerHTML = buildCalendarioSlider(calCurrentIdx)
+                    + '<p class="wbc-calendar-note">Horas CDMX. FOX Dep = FOX Deportes. App = Fox Sports App.<br>Resultados se actualizan tras cada juego.</p>';
+            }
+            // Scroll active tab into view
+            const activeTab = document.querySelector('.wbc-cal-tab.active');
+            if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        };
+
+        // Swipe support for mobile
+        (function() {
+            let startX = 0;
+            const el = document.getElementById('wbc-calendario-display');
+            if (!el) return;
+            el.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+            el.addEventListener('touchend', e => {
+                const diff = startX - e.changedTouches[0].clientX;
+                if (Math.abs(diff) > 50) {
+                    if (diff > 0 && calCurrentIdx < calDias.length - 1) wbcCalGoTo(calCurrentIdx + 1);
+                    else if (diff < 0 && calCurrentIdx > 0) wbcCalGoTo(calCurrentIdx - 1);
+                }
+            }, { passive: true });
+        })();
 
     },
 
