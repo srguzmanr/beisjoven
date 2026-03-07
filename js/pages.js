@@ -1634,6 +1634,14 @@ const Pages = {
 }
 .wbc-game-resultado-inline.ganado { color: #16a34a; }
 .wbc-game-resultado-inline.perdido { color: var(--wbc-red); }
+.wbc-game-final-label {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 0.65rem; font-weight: 700; color: var(--wbc-muted);
+    text-transform: uppercase; letter-spacing: 1px; display: block;
+}
+.wbc-game-played .wbc-game-matchup { color: var(--wbc-text); }
+.wbc-game-played .wbc-game-date-day { opacity: 0.7; }
+.wbc-game-played .wbc-game-date-mes { opacity: 0.7; }
 .wbc-tv-badge {
     display: inline-block; background: var(--wbc-navy); color: white;
     font-size: 0.68rem; font-weight: 700; padding: 3px 7px;
@@ -1897,6 +1905,7 @@ const Pages = {
     .wbc-hub .wbc-game-resultado-inline.perdido {
         color: #f87171 !important;
     }
+    .wbc-hub .wbc-game-final-label { color: #64748b !important; }
     .wbc-hub .wbc-tv-badge.tv-tbd {
         background: #374151 !important;
         color: #9ca3af !important;
@@ -2232,8 +2241,9 @@ const Pages = {
 
         // ── Datos estáticos — Calendario Pool B ───────────────────────
         // Horarios en CT verificados con FOX Sports. DST inicia 8 mar (clocks spring forward)
+        // Resultados se cargan desde wbc_resultados en Supabase; estos son fallback.
         const calendario = [
-            { dia: '6',  mes: 'mar', dia_sem: 'Jue', partido: 'México vs Gran Bretaña', hora: '12:00 p.m. CDMX', tv: ['FS1','FOX Dep'],  resultado: '—', clases: 'pendiente' },
+            { dia: '6',  mes: 'mar', dia_sem: 'Jue', partido: 'México vs Gran Bretaña', hora: '12:00 p.m. CDMX', tv: ['FS1','FOX Dep'],  resultado: '8-2', clases: 'ganado' },
             { dia: '8',  mes: 'mar', dia_sem: 'Sáb', partido: 'México vs Brasil',        hora: '6:00 p.m. CDMX',  tv: ['FS1','FOX Dep'],  resultado: '—', clases: 'pendiente' },
             { dia: '9',  mes: 'mar', dia_sem: 'Dom', partido: 'México vs EUA',           hora: '6:00 p.m. CDMX',  tv: ['FOX','FOX Dep'],  resultado: '—', clases: 'pendiente' },
             { dia: '11', mes: 'mar', dia_sem: 'Mar', partido: 'México vs Italia',        hora: '5:00 p.m. CDMX',  tv: ['Tubi'],           resultado: '—', clases: 'pendiente' },
@@ -2242,26 +2252,7 @@ const Pages = {
 
         const tvColor = { 'FOX': 'tv-fox', 'FS1': 'tv-fs1', 'Tubi': 'tv-tubi', 'FOX Dep': 'tv-foxd', 'TBD': 'tv-tbd' };
 
-        const calendarioRows = calendario.map(j => {
-            const badges = j.tv.map(t => `<span class="wbc-tv-badge ${tvColor[t] || 'tv-tbd'}">${t}</span>`).join(' ');
-            const esFinal = j.partido.includes('Cuartos');
-            const matchup = esFinal ? j.partido : j.partido.replace('México', '<strong>México</strong>');
-            return `
-            <div class="wbc-game-item">
-                <div class="wbc-game-date">
-                    <span class="wbc-game-date-day">${j.dia}</span>
-                    <span class="wbc-game-date-mes">${j.mes}</span>
-                </div>
-                <div>
-                    <span class="wbc-game-matchup">${matchup}</span>
-                </div>
-                <div class="wbc-game-right">
-                    <span class="wbc-game-hora">${j.hora}</span>
-                    <div class="wbc-game-tv">${badges}</div>
-                    ${j.resultado && j.resultado !== '—' ? `<span class="wbc-game-resultado-inline ${j.clases}">${j.resultado}</span>` : ''}
-                </div>
-            </div>`;
-        }).join('');
+        // calendarioRows se genera después del fetch de resultados
 
         // ── Datos estáticos — Posiciones iniciales ────────────────────
         // ACTUALIZAR estos valores después de cada juego.
@@ -2313,6 +2304,51 @@ const Pages = {
                 posicionesData = posData;
             }
         } catch(e) { /* usa datos estáticos */ }
+
+        // ── Fetch resultados del calendario desde Supabase ────────────
+        try {
+            const { data: resData, error: resErr } = await supabaseClient
+                .from('wbc_resultados')
+                .select('id, resultado, clases')
+                .order('id', { ascending: true });
+            if (!resErr && resData && resData.length > 0) {
+                resData.forEach(r => {
+                    if (calendario[r.id - 1]) {
+                        calendario[r.id - 1].resultado = r.resultado || '—';
+                        calendario[r.id - 1].clases = r.clases || 'pendiente';
+                    }
+                });
+            }
+        } catch(e) { /* usa datos hardcodeados */ }
+
+        // ── Generar filas del calendario ──────────────────────────────
+        function buildCalendarioRows() {
+            return calendario.map(j => {
+                const badges = j.tv.map(t => `<span class="wbc-tv-badge ${tvColor[t] || 'tv-tbd'}">${t}</span>`).join(' ');
+                const esFinal = j.partido.includes('Cuartos');
+                const matchup = esFinal ? j.partido : j.partido.replace('México', '<strong>México</strong>');
+                const yaJugado = j.clases === 'ganado' || j.clases === 'perdido';
+                const rightContent = yaJugado
+                    ? `<span class="wbc-game-final-label">FINAL</span>
+                       <span class="wbc-game-resultado-inline ${j.clases}">${j.resultado} ${j.clases === 'ganado' ? '✓' : '✗'}</span>`
+                    : `<span class="wbc-game-hora">${j.hora}</span>
+                       <div class="wbc-game-tv">${badges}</div>`;
+                return `
+                <div class="wbc-game-item ${yaJugado ? 'wbc-game-played' : ''}">
+                    <div class="wbc-game-date">
+                        <span class="wbc-game-date-day">${j.dia}</span>
+                        <span class="wbc-game-date-mes">${j.mes}</span>
+                    </div>
+                    <div>
+                        <span class="wbc-game-matchup">${matchup}</span>
+                    </div>
+                    <div class="wbc-game-right">
+                        ${rightContent}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        const calendarioRows = buildCalendarioRows();
 
         // ── CI Integration ───────────────────────────────────────────
         const ciLogoUrl = 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/ci-logo-horizontal.png';
@@ -2414,7 +2450,12 @@ const Pages = {
         }
 
         function renderStandingsTable(rows) {
-            const pct = r => (r.jj === 0) ? '.000' : '.' + String(Math.round((r.jg / r.jj) * 1000)).padStart(3, '0');
+            const pct = r => {
+                if (r.jj === 0) return '.000';
+                const val = r.jg / r.jj;
+                if (val === 1) return '1.000';
+                return '.' + String(Math.round(val * 1000)).padStart(3, '0');
+            };
             return `
             <table class="wbc-standings-table">
                 <thead>
@@ -2504,6 +2545,23 @@ const Pages = {
                         <div class="wbc-admin-status" id="wbc-posiciones-status"></div>
                     </div>
 
+                    <!-- Resultados editor -->
+                    <div class="wbc-admin-section">
+                        <h4>⚾ Actualizar resultados</h4>
+                        ${calendario.slice(0, 5).map((j, i) => `
+                        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                            <span style="color:#94a3b8;font-size:0.8rem;min-width:90px;">${j.partido.replace('México vs ','vs ')}</span>
+                            <input type="text" id="res-score-${i}" class="wbc-admin-input" placeholder="Ej: 8-2" value="${j.resultado !== '—' ? j.resultado : ''}" style="width:70px;flex:none;">
+                            <select id="res-clases-${i}" class="wbc-admin-input" style="width:auto;flex:none;">
+                                <option value="pendiente" ${j.clases === 'pendiente' ? 'selected' : ''}>Pend</option>
+                                <option value="ganado" ${j.clases === 'ganado' ? 'selected' : ''}>W</option>
+                                <option value="perdido" ${j.clases === 'perdido' ? 'selected' : ''}>L</option>
+                            </select>
+                        </div>`).join('')}
+                        <button class="wbc-admin-btn" style="margin-top:10px;" onclick="wbcSaveResultados()">Guardar resultados</button>
+                        <div class="wbc-admin-status" id="wbc-resultados-status"></div>
+                    </div>
+
                 </div>
             </div>
         </div>` : '';
@@ -2552,7 +2610,7 @@ const Pages = {
                         <p class="wbc-hero-pre-title">México en el</p>
                         <h1 class="wbc-hero-title">WBC 2026</h1>
                         <p class="wbc-hero-subtitle">Cobertura completa del Clásico Mundial de Béisbol 2026</p>
-                        <p class="wbc-hero-hashtag">#WorldBaseballClassic</p>
+                        <p class="wbc-hero-hashtag">#EsMiSangre  #WorldBaseballClassic</p>
                     </div>
                 </div>
             </div>
@@ -2580,7 +2638,7 @@ const Pages = {
                         <h2>Calendario Pool B — México</h2>
                     </div>
                     <div class="wbc-card-body">
-                        <div class="wbc-game-list">${calendarioRows}</div>
+                        <div class="wbc-game-list" id="wbc-calendario-display">${calendarioRows}</div>
                         <p class="wbc-calendar-note">Horas en Tiempo de la Ciudad de México (CDMX). FOX Dep = FOX Deportes.<br>Resultados se actualizan tras cada juego.</p>
                     </div>
                 </div>
@@ -2831,6 +2889,29 @@ const Pages = {
                 // Re-sort and refresh display
                 rows.sort((a,b) => b.jg - a.jg || a.jp - b.jp);
                 document.getElementById('wbc-posiciones-display').innerHTML = renderStandingsTable(rows);
+            } catch(e) { statusEl.textContent = 'Error: ' + (e.message || e); statusEl.className = 'wbc-admin-status error'; }
+        };
+
+        window.wbcSaveResultados = async function() {
+            const statusEl = document.getElementById('wbc-resultados-status');
+            statusEl.className = 'wbc-admin-status'; statusEl.textContent = 'Guardando...';
+            try {
+                const upserts = calendario.map((j, i) => ({
+                    id: i + 1,
+                    resultado: document.getElementById('res-score-' + i).value.trim() || '—',
+                    clases: document.getElementById('res-clases-' + i).value
+                }));
+                const { error } = await supabaseClient.from('wbc_resultados')
+                    .upsert(upserts, { onConflict: 'id' });
+                if (error) throw error;
+                // Update local data and refresh display
+                upserts.forEach((u, i) => {
+                    calendario[i].resultado = u.resultado;
+                    calendario[i].clases = u.clases;
+                });
+                const displayEl = document.getElementById('wbc-calendario-display');
+                if (displayEl) displayEl.innerHTML = buildCalendarioRows();
+                statusEl.textContent = '✓ Resultados actualizados';
             } catch(e) { statusEl.textContent = 'Error: ' + (e.message || e); statusEl.className = 'wbc-admin-status error'; }
         };
 
