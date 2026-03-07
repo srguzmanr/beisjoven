@@ -1627,8 +1627,8 @@ const Pages = {
     font-family: 'Oswald', sans-serif; font-size: 1.1rem;
     font-weight: 700; display: block;
 }
-.wbc-game-resultado-inline.ganado { color: #D4A843; }
-.wbc-game-resultado-inline.perdido { color: var(--wbc-red); }
+.wbc-game-resultado-inline.ganado { color: var(--wbc-navy); }
+.wbc-game-resultado-inline.perdido { color: var(--wbc-navy); }
 .wbc-game-final-label {
     font-family: system-ui, -apple-system, sans-serif;
     font-size: 0.65rem; font-weight: 700; color: var(--wbc-muted);
@@ -1691,7 +1691,7 @@ const Pages = {
 .tv-tubi  { background: #fa4b18; }
 .tv-tbd   { background: #6b7280; }
 .tv-foxd  { background: #c41e3a; }
-.tv-app   { background: #6366f1; }
+.tv-app   { background: #6B7280; }
 .wbc-calendar-note {
     font-size: 0.7rem; color: var(--wbc-muted); margin: 12px 0 0;
     padding-top: 10px; border-top: 1px solid #f3f4f6; line-height: 1.5;
@@ -1931,10 +1931,10 @@ const Pages = {
         color: #94a3b8 !important;
     }
     .wbc-hub .wbc-game-resultado-inline.ganado {
-        color: #D4A843 !important;
+        color: #FFFFFF !important;
     }
     .wbc-hub .wbc-game-resultado-inline.perdido {
-        color: #f87171 !important;
+        color: #FFFFFF !important;
     }
     .wbc-hub .wbc-game-final-label { color: #64748b !important; }
     .wbc-hub .wbc-game-cuarto-label { color: #64748b !important; }
