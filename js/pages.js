@@ -1759,7 +1759,7 @@ const Pages = {
 .wbc-gallery-item { position: relative; }
 .wbc-gallery-item img {
     width: 100%; aspect-ratio: 4/3; object-fit: cover;
-    border-radius: 6px; display: block;
+    object-position: center top; border-radius: 6px; display: block;
 }
 .wbc-gallery-caption {
     font-size: 0.7rem; color: var(--wbc-muted);
@@ -1768,6 +1768,10 @@ const Pages = {
 .wbc-gallery-empty {
     font-size: 0.88rem; color: var(--wbc-muted);
     padding: 24px 0; text-align: center;
+}
+.wbc-gallery-hint {
+    font-size: 0.72rem; color: var(--wbc-muted);
+    text-align: center; margin-top: 10px; opacity: 0.7;
 }
 .wbc-gallery-item img { cursor: pointer; transition: opacity 0.2s; }
 .wbc-gallery-item img:hover { opacity: 0.85; }
@@ -2586,6 +2590,7 @@ const Pages = {
                     <img src="${item.imagen_url}" alt="${item.pie_de_foto || 'Foto WBC 2026'}" loading="lazy" onclick="wbcLightboxOpen(${i})" data-lb-index="${i}">
                     ${item.pie_de_foto ? `<p class="wbc-gallery-caption">${item.pie_de_foto}</p>` : ''}
                 </div>`).join('') + '</div>' +
+                `<p class="wbc-gallery-hint">📸 Toca una foto para verla completa</p>` +
                 `<div class="wbc-lightbox" id="wbc-lightbox">
                     <button class="wbc-lightbox-close" onclick="wbcLightboxClose()">&times;</button>
                     <button class="wbc-lightbox-nav wbc-lightbox-prev" onclick="wbcLightboxNav(-1)">&#8249;</button>
