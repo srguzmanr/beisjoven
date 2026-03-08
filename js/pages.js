@@ -1609,6 +1609,7 @@ const Pages = {
     font-weight: 600; color: var(--wbc-text); line-height: 1.2; display: block;
 }
 .wbc-cal-mexico { color: #D4A843; }
+.wbc-cal-record { font-size: 0.72em; opacity: 0.6; font-weight: 400; }
 .wbc-game-cuarto-label {
     font-size: 0.7rem; color: var(--wbc-muted); display: block; margin-top: 2px;
     text-transform: uppercase; letter-spacing: 0.5px;
@@ -2471,9 +2472,24 @@ const Pages = {
             return dayMap[day] !== undefined ? dayMap[day] : (day < 6 ? 0 : 7);
         }
 
+        // ── Banderas y récords ────────────────────────────────────────
+        const teamFlags = {
+            'México': '🇲🇽', 'Estados Unidos': '🇺🇸', 'Italia': '🇮🇹',
+            'Gran Bretaña': '🇬🇧', 'Brasil': '🇧🇷',
+            '1ro Pool A': '', '2do Pool A': '', '1ro Pool B': '', '2do Pool B': ''
+        };
+        function teamWithFlag(name) {
+            const flag = teamFlags[name];
+            return (flag ? flag + ' ' : '') + name;
+        }
+        function getRecord(name) {
+            const row = posicionesData.find(r => r.equipo.includes(name));
+            return row && row.jj > 0 ? ` <span class="wbc-cal-record">(${row.jg}-${row.jp})</span>` : '';
+        }
+
         // ── Generar slider de calendario ─────────────────────────────
         function highlightMexico(text) {
-            return text.replace(/México/g, '<span class="wbc-cal-mexico">México</span>');
+            return text.replace(/🇲🇽\s*México/g, '<span class="wbc-cal-mexico">🇲🇽 México</span>');
         }
 
         function buildCalendarioSlider(activeIdx) {
@@ -2490,9 +2506,9 @@ const Pages = {
             const games = dia.juegos.map(j => {
                 const badges = j.tv.map(t => `<span class="wbc-tv-badge ${tvColor[t] || 'tv-tbd'}">${t}</span>`).join(' ');
                 const yaJugado = j.clases === 'ganado' || j.clases === 'perdido';
-                const matchup = j.esCuarto
-                    ? `${highlightMexico(j.local)} vs ${highlightMexico(j.visit)}`
-                    : `${highlightMexico(j.local)} vs ${highlightMexico(j.visit)}`;
+                const localDisplay = teamWithFlag(j.local) + (j.esCuarto ? '' : getRecord(j.local));
+                const visitDisplay = teamWithFlag(j.visit) + (j.esCuarto ? '' : getRecord(j.visit));
+                const matchup = highlightMexico(`${localDisplay} vs ${visitDisplay}`);
                 const rightContent = yaJugado
                     ? `<span class="wbc-game-final-label">FINAL</span>
                        <span class="wbc-game-resultado-inline ${j.clases}">${j.resultado}</span>`
@@ -3156,7 +3172,14 @@ const Pages = {
                 statusEl.textContent = '✓ Posiciones actualizadas';
                 // Re-sort and refresh display
                 rows.sort((a,b) => b.jg - a.jg || a.jp - b.jp);
+                posicionesData = rows;
                 document.getElementById('wbc-posiciones-display').innerHTML = renderStandingsTable(rows);
+                // Refresh calendar to update records
+                const calEl = document.getElementById('wbc-calendario-display');
+                if (calEl) {
+                    calEl.innerHTML = buildCalendarioSlider(calCurrentIdx)
+                        + '<p class="wbc-calendar-note">Horas CDMX. FOX Dep = FOX Deportes. App = Fox Sports App.<br>Resultados se actualizan tras cada juego.</p>';
+                }
             } catch(e) { statusEl.textContent = 'Error: ' + (e.message || e); statusEl.className = 'wbc-admin-status error'; }
         };
 
