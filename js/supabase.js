@@ -527,7 +527,7 @@ const SupabaseAdmin = {
         
         if (error) {
             console.error('Error actualizando stream:', error);
-            return { success: true, data };
+            return { success: false, error: error.message };
         }
         return { success: true, data };
     },
