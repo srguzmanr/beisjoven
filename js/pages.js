@@ -1773,6 +1773,15 @@ const Pages = {
     font-size: 0.72rem; color: var(--wbc-muted);
     text-align: center; margin-top: 10px; opacity: 0.7;
 }
+.wbc-gallery-more {
+    display: block; margin: 12px auto 0; padding: 8px 24px;
+    background: transparent; color: var(--wbc-muted);
+    border: 1px solid var(--wbc-muted); border-radius: 20px;
+    font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
+}
+.wbc-gallery-more:hover {
+    color: #D4A843; border-color: #D4A843;
+}
 .wbc-gallery-item img { cursor: pointer; transition: opacity 0.2s; }
 .wbc-gallery-item img:hover { opacity: 0.85; }
 
@@ -2583,14 +2592,18 @@ const Pages = {
             return '<div class="articles-grid" id="wbc-articles-grid">' + cards + '</div>' + paginationHtml;
         }
 
+        const WBC_GAL_PAGE = 6;
         function renderGallery(items) {
             if (!items.length) return '<p class="wbc-gallery-empty">Las fotos desde Houston aparecerán aquí.</p>';
-            return '<div class="wbc-gallery-grid">' + items.map((item, i) => `
-                <div class="wbc-gallery-item">
+            const cards = items.map((item, i) => `
+                <div class="wbc-gallery-item" data-gal-idx="${i}"${i >= WBC_GAL_PAGE ? ' style="display:none"' : ''}>
                     <img src="${item.imagen_url}" alt="${item.pie_de_foto || 'Foto WBC 2026'}" loading="lazy" onclick="wbcLightboxOpen(${i})" data-lb-index="${i}">
                     ${item.pie_de_foto ? `<p class="wbc-gallery-caption">${item.pie_de_foto}</p>` : ''}
-                </div>`).join('') + '</div>' +
+                </div>`).join('');
+            const hasMore = items.length > WBC_GAL_PAGE;
+            return '<div class="wbc-gallery-grid">' + cards + '</div>' +
                 `<p class="wbc-gallery-hint">📸 Toca una foto para verla completa</p>` +
+                (hasMore ? `<button class="wbc-gallery-more" id="wbc-gallery-more" onclick="wbcGalleryMore()">Ver más fotos (${items.length - WBC_GAL_PAGE} más)</button>` : '') +
                 `<div class="wbc-lightbox" id="wbc-lightbox">
                     <button class="wbc-lightbox-close" onclick="wbcLightboxClose()">&times;</button>
                     <button class="wbc-lightbox-nav wbc-lightbox-prev" onclick="wbcLightboxNav(-1)">&#8249;</button>
@@ -2999,6 +3012,7 @@ const Pages = {
                     .select('id, imagen_url, pie_de_foto').order('created_at', { ascending: false }).limit(60);
                 if (fresh) {
                     window._wbcGaleria = fresh;
+                    _galVisible = WBC_GAL_PAGE;
                     document.getElementById('wbc-galeria-display').innerHTML = renderGallery(fresh);
                     document.getElementById('wbc-admin-gallery-list').innerHTML = buildAdminGalleryItems(fresh);
                 }
@@ -3007,6 +3021,24 @@ const Pages = {
                 statusEl.className = 'wbc-admin-status error';
             }
             btn.disabled = false;
+        };
+
+        // ── Gallery "Ver más" ────────────────────────────────────────
+        let _galVisible = WBC_GAL_PAGE;
+        window.wbcGalleryMore = function() {
+            const items = document.querySelectorAll('.wbc-gallery-item[data-gal-idx]');
+            const total = items.length;
+            const next = Math.min(_galVisible + WBC_GAL_PAGE, total);
+            for (let i = _galVisible; i < next; i++) {
+                items[i].style.display = '';
+            }
+            _galVisible = next;
+            const btn = document.getElementById('wbc-gallery-more');
+            if (_galVisible >= total) {
+                btn.style.display = 'none';
+            } else {
+                btn.textContent = 'Ver más fotos (' + (total - _galVisible) + ' más)';
+            }
         };
 
         // ── Lightbox ────────────────────────────────────────────────────
@@ -3076,6 +3108,7 @@ const Pages = {
                 .select('id, imagen_url, pie_de_foto').order('created_at', { ascending: false }).limit(60);
             if (fresh) {
                 window._wbcGaleria = fresh;
+                _galVisible = WBC_GAL_PAGE;
                 document.getElementById('wbc-galeria-display').innerHTML = renderGallery(fresh);
                 document.getElementById('wbc-admin-gallery-list').innerHTML = buildAdminGalleryItems(fresh);
             }
