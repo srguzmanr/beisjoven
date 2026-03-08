@@ -1769,6 +1769,52 @@ const Pages = {
     font-size: 0.88rem; color: var(--wbc-muted);
     padding: 24px 0; text-align: center;
 }
+.wbc-gallery-item img { cursor: pointer; transition: opacity 0.2s; }
+.wbc-gallery-item img:hover { opacity: 0.85; }
+
+/* ── Lightbox ─────────────────────────────────────────── */
+.wbc-lightbox {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.92); display: flex;
+    align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.25s ease;
+    pointer-events: none;
+}
+.wbc-lightbox.active { opacity: 1; pointer-events: auto; }
+.wbc-lightbox img {
+    max-width: 92vw; max-height: 85vh; object-fit: contain;
+    border-radius: 6px; user-select: none;
+}
+.wbc-lightbox-caption {
+    position: absolute; bottom: 16px; left: 50%;
+    transform: translateX(-50%); color: #e2e8f0;
+    font-size: 0.82rem; text-align: center;
+    max-width: 80vw; line-height: 1.4;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+}
+.wbc-lightbox-close {
+    position: absolute; top: 16px; right: 20px;
+    color: #fff; font-size: 2rem; cursor: pointer;
+    background: none; border: none; line-height: 1;
+    z-index: 10; opacity: 0.8;
+}
+.wbc-lightbox-close:hover { opacity: 1; }
+.wbc-lightbox-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    color: #fff; font-size: 2.2rem; cursor: pointer;
+    background: rgba(0,0,0,0.4); border: none;
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0.7; z-index: 10;
+}
+.wbc-lightbox-nav:hover { opacity: 1; background: rgba(0,0,0,0.6); }
+.wbc-lightbox-prev { left: 12px; }
+.wbc-lightbox-next { right: 12px; }
+.wbc-lightbox-counter {
+    position: absolute; top: 20px; left: 50%;
+    transform: translateX(-50%); color: #94a3b8;
+    font-size: 0.75rem;
+}
 
 /* ── Videos ─────────────────────────────────────────────── */
 .wbc-video-item { margin-bottom: 16px; }
@@ -2361,6 +2407,7 @@ const Pages = {
             ]);
             if (!artRes.error && artRes.data) articles = artRes.data;
             if (!galRes.error && galRes.data) galeria = galRes.data;
+            window._wbcGaleria = galeria;
             if (!vidRes.error && vidRes.data) videos = vidRes.data;
         } catch(e) { console.error('WBC fetch error:', e); }
 
@@ -2534,11 +2581,19 @@ const Pages = {
 
         function renderGallery(items) {
             if (!items.length) return '<p class="wbc-gallery-empty">Las fotos desde Houston aparecerán aquí.</p>';
-            return '<div class="wbc-gallery-grid">' + items.map(item => `
+            return '<div class="wbc-gallery-grid">' + items.map((item, i) => `
                 <div class="wbc-gallery-item">
-                    <img src="${item.imagen_url}" alt="${item.pie_de_foto || 'Foto WBC 2026'}" loading="lazy">
+                    <img src="${item.imagen_url}" alt="${item.pie_de_foto || 'Foto WBC 2026'}" loading="lazy" onclick="wbcLightboxOpen(${i})" data-lb-index="${i}">
                     ${item.pie_de_foto ? `<p class="wbc-gallery-caption">${item.pie_de_foto}</p>` : ''}
-                </div>`).join('') + '</div>';
+                </div>`).join('') + '</div>' +
+                `<div class="wbc-lightbox" id="wbc-lightbox">
+                    <button class="wbc-lightbox-close" onclick="wbcLightboxClose()">&times;</button>
+                    <button class="wbc-lightbox-nav wbc-lightbox-prev" onclick="wbcLightboxNav(-1)">&#8249;</button>
+                    <img id="wbc-lightbox-img" src="" alt="">
+                    <button class="wbc-lightbox-nav wbc-lightbox-next" onclick="wbcLightboxNav(1)">&#8250;</button>
+                    <p class="wbc-lightbox-caption" id="wbc-lightbox-caption"></p>
+                    <span class="wbc-lightbox-counter" id="wbc-lightbox-counter"></span>
+                </div>`;
         }
 
         function getYouTubeId(url) {
@@ -2938,6 +2993,7 @@ const Pages = {
                 const { data: fresh } = await supabaseClient.from('wbc_galeria')
                     .select('id, imagen_url, pie_de_foto').order('created_at', { ascending: false }).limit(60);
                 if (fresh) {
+                    window._wbcGaleria = fresh;
                     document.getElementById('wbc-galeria-display').innerHTML = renderGallery(fresh);
                     document.getElementById('wbc-admin-gallery-list').innerHTML = buildAdminGalleryItems(fresh);
                 }
@@ -2948,6 +3004,64 @@ const Pages = {
             btn.disabled = false;
         };
 
+        // ── Lightbox ────────────────────────────────────────────────────
+        let _lbIdx = 0;
+        window.wbcLightboxOpen = function(idx) {
+            const items = window._wbcGaleria || [];
+            if (!items.length) return;
+            _lbIdx = idx;
+            _lbShow();
+            const lb = document.getElementById('wbc-lightbox');
+            lb.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            // swipe support
+            let tx = 0;
+            lb._ts = function(e) { tx = e.touches[0].clientX; };
+            lb._te = function(e) {
+                const dx = e.changedTouches[0].clientX - tx;
+                if (Math.abs(dx) > 50) wbcLightboxNav(dx < 0 ? 1 : -1);
+            };
+            lb.addEventListener('touchstart', lb._ts, { passive: true });
+            lb.addEventListener('touchend', lb._te, { passive: true });
+        };
+        window.wbcLightboxClose = function() {
+            const lb = document.getElementById('wbc-lightbox');
+            lb.classList.remove('active');
+            document.body.style.overflow = '';
+            if (lb._ts) lb.removeEventListener('touchstart', lb._ts);
+            if (lb._te) lb.removeEventListener('touchend', lb._te);
+        };
+        window.wbcLightboxNav = function(dir) {
+            const items = window._wbcGaleria || [];
+            if (!items.length) return;
+            _lbIdx = (_lbIdx + dir + items.length) % items.length;
+            _lbShow();
+        };
+        function _lbShow() {
+            const items = window._wbcGaleria || [];
+            const item = items[_lbIdx];
+            if (!item) return;
+            document.getElementById('wbc-lightbox-img').src = item.imagen_url;
+            document.getElementById('wbc-lightbox-img').alt = item.pie_de_foto || 'Foto WBC 2026';
+            const cap = document.getElementById('wbc-lightbox-caption');
+            cap.textContent = item.pie_de_foto || '';
+            cap.style.display = item.pie_de_foto ? '' : 'none';
+            document.getElementById('wbc-lightbox-counter').textContent = (_lbIdx + 1) + ' / ' + items.length;
+        }
+        // close on Escape key
+        document.addEventListener('keydown', function(e) {
+            const lb = document.getElementById('wbc-lightbox');
+            if (!lb || !lb.classList.contains('active')) return;
+            if (e.key === 'Escape') wbcLightboxClose();
+            if (e.key === 'ArrowLeft') wbcLightboxNav(-1);
+            if (e.key === 'ArrowRight') wbcLightboxNav(1);
+        });
+        // close on backdrop click
+        document.addEventListener('click', function(e) {
+            const lb = document.getElementById('wbc-lightbox');
+            if (e.target === lb) wbcLightboxClose();
+        });
+
         window.wbcDeletePhoto = async function(id, btn) {
             if (!confirm('Eliminar esta foto?')) return;
             btn.disabled = true;
@@ -2956,6 +3070,7 @@ const Pages = {
             const { data: fresh } = await supabaseClient.from('wbc_galeria')
                 .select('id, imagen_url, pie_de_foto').order('created_at', { ascending: false }).limit(60);
             if (fresh) {
+                window._wbcGaleria = fresh;
                 document.getElementById('wbc-galeria-display').innerHTML = renderGallery(fresh);
                 document.getElementById('wbc-admin-gallery-list').innerHTML = buildAdminGalleryItems(fresh);
             }
