@@ -82,8 +82,8 @@ const MediaLibrary = {
                         </button>
                         <input type="file" id="ml-upload-input" accept="image/jpeg,image/png,image/gif,image/webp" multiple style="display:none" onchange="MediaLibrary.upload(event)">
                     </div>
-                    <div style="padding:0 20px 6px;background:#0f172a;">
-                        <small style="color:#64748b;font-size:11px;">JPG, PNG, GIF, WebP · Máx 5 MB por imagen · Puedes seleccionar varias a la vez</small>
+                    <div style="padding:0 20px 6px;background:#f8fafc;">
+                        <small style="color:#6b7280;font-size:11px;">JPG, PNG, GIF, WebP · Máx 5 MB por imagen · Puedes seleccionar varias a la vez</small>
                     </div>
 
                     <div class="ml-filters" id="ml-filters">
@@ -102,28 +102,28 @@ const MediaLibrary = {
                     </div>
 
                     <!-- Panel de metadatos al subir -->
-                    <div id="ml-meta-panel" style="display:none; padding: 16px 20px; background:#0f172a; border-top:1px solid #334155;">
-                        <p style="color:#f1f5f9; font-size:14px; font-weight:600; margin:0 0 4px;">✅ <span id="ml-meta-title">Imagen subida</span></p>
-                        <p style="color:#64748b; font-size:11px; margin:0 0 12px;" id="ml-meta-queue-info"></p>
+                    <div id="ml-meta-panel" style="display:none; padding: 16px 20px; background:#f8fafc; border-top:1px solid #e5e7eb;">
+                        <p style="color:#1e293b; font-size:14px; font-weight:600; margin:0 0 4px;">✅ <span id="ml-meta-title">Imagen subida</span></p>
+                        <p style="color:#9ca3af; font-size:11px; margin:0 0 12px;" id="ml-meta-queue-info"></p>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
                             <div>
-                                <label style="color:#94a3b8; font-size:12px; display:block; margin-bottom:4px;">Categoría</label>
-                                <select id="ml-meta-categoria" style="width:100%; padding:8px; border-radius:6px; background:#1e293b; color:#f1f5f9; border:1px solid #334155; font-size:13px;">
+                                <label style="color:#6b7280; font-size:12px; display:block; margin-bottom:4px;">Categoría</label>
+                                <select id="ml-meta-categoria" style="width:100%; padding:8px; border-radius:6px; background:#ffffff; color:#1e293b; border:1px solid #d1d5db; font-size:13px;">
                                     <option value="">Sin categoría</option>
                                     ${categoriaOptions}
                                 </select>
                             </div>
                             <div>
-                                <label style="color:#94a3b8; font-size:12px; display:block; margin-bottom:4px;">Crédito fotográfico</label>
-                                <input type="text" id="ml-meta-credito" placeholder="Ej: Foto: Getty Images" style="width:100%; padding:8px; border-radius:6px; background:#1e293b; color:#f1f5f9; border:1px solid #334155; font-size:13px; box-sizing:border-box;">
+                                <label style="color:#6b7280; font-size:12px; display:block; margin-bottom:4px;">Crédito fotográfico</label>
+                                <input type="text" id="ml-meta-credito" placeholder="Ej: Foto: Getty Images" style="width:100%; padding:8px; border-radius:6px; background:#ffffff; color:#1e293b; border:1px solid #d1d5db; font-size:13px; box-sizing:border-box;">
                             </div>
                         </div>
                         <div style="margin-bottom:12px;">
-                            <label style="color:#94a3b8; font-size:12px; display:block; margin-bottom:4px;">Pie de foto</label>
-                            <input type="text" id="ml-meta-pie" placeholder="Descripción de la imagen" style="width:100%; padding:8px; border-radius:6px; background:#1e293b; color:#f1f5f9; border:1px solid #334155; font-size:13px; box-sizing:border-box;">
+                            <label style="color:#6b7280; font-size:12px; display:block; margin-bottom:4px;">Pie de foto</label>
+                            <input type="text" id="ml-meta-pie" placeholder="Descripción de la imagen" style="width:100%; padding:8px; border-radius:6px; background:#ffffff; color:#1e293b; border:1px solid #d1d5db; font-size:13px; box-sizing:border-box;">
                         </div>
                         <div style="display:flex; gap:8px; justify-content:flex-end;">
-                            <button type="button" onclick="MediaLibrary.skipMetadata()" style="padding:8px 16px; background:#334155; color:#e2e8f0; border:none; border-radius:6px; cursor:pointer; font-size:13px;">Omitir</button>
+                            <button type="button" onclick="MediaLibrary.skipMetadata()" style="padding:8px 16px; background:#e5e7eb; color:#374151; border:none; border-radius:6px; cursor:pointer; font-size:13px;">Omitir</button>
                             <button type="button" id="ml-meta-save-btn" onclick="MediaLibrary.confirmMetadata()" style="padding:8px 16px; background:#c41e3a; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">Guardar y continuar</button>
                         </div>
                     </div>
@@ -147,14 +147,15 @@ const MediaLibrary = {
                     padding: 20px;
                 }
                 .ml-container {
-                    background: #1e293b;
+                    background: #ffffff;
                     border-radius: 12px;
+                    border: 1px solid #e5e7eb;
                     width: 100%;
                     max-width: 800px;
                     max-height: 85vh;
                     display: flex;
                     flex-direction: column;
-                    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.25);
                     overflow: hidden;
                 }
                 .ml-header {
@@ -162,7 +163,7 @@ const MediaLibrary = {
                     justify-content: space-between;
                     align-items: center;
                     padding: 16px 20px;
-                    border-bottom: 1px solid #334155;
+                    border-bottom: 1px solid #e5e7eb;
                     flex-shrink: 0;
                 }
                 .ml-header h3 { margin: 0; color: #c41e3a; }
@@ -171,30 +172,30 @@ const MediaLibrary = {
                     border: none;
                     font-size: 28px;
                     cursor: pointer;
-                    color: #94a3b8;
+                    color: #6b7280;
                     line-height: 1;
                 }
-                .ml-close:hover { color: #f1f5f9; }
+                .ml-close:hover { color: #1e293b; }
                 .ml-toolbar {
                     display: flex;
                     flex-shrink: 0;
                     gap: 10px;
                     padding: 12px 20px;
-                    background: #0f172a;
-                    border-bottom: 1px solid #334155;
+                    background: #f8fafc;
+                    border-bottom: 1px solid #e5e7eb;
                 }
                 .ml-search {
                     flex: 1;
                     padding: 10px 14px;
-                    border: 1px solid #334155 !important;
+                    border: 1px solid #d1d5db !important;
                     border-radius: 8px;
                     font-size: 14px;
-                    background: #1e293b !important;
-                    color: #f1f5f9 !important;
+                    background: #ffffff !important;
+                    color: #1e293b !important;
                     box-shadow: none !important;
                     -webkit-appearance: none !important;
                 }
-                .ml-search::placeholder { color: #64748b !important; }
+                .ml-search::placeholder { color: #9ca3af !important; }
                 .ml-search:focus {
                     outline: none !important;
                     border-color: #c41e3a !important;
@@ -216,8 +217,8 @@ const MediaLibrary = {
                     flex-shrink: 0;
                     gap: 6px;
                     padding: 10px 20px;
-                    background: #0f172a;
-                    border-bottom: 1px solid #334155;
+                    background: #f8fafc;
+                    border-bottom: 1px solid #e5e7eb;
                     overflow-x: auto;
                     -webkit-overflow-scrolling: touch;
                     scrollbar-width: none;
@@ -226,9 +227,9 @@ const MediaLibrary = {
                 .ml-filter-btn {
                     padding: 6px 14px;
                     border-radius: 20px;
-                    border: 1px solid #334155;
-                    background: #1e293b;
-                    color: #94a3b8;
+                    border: 1px solid #d1d5db;
+                    background: #ffffff;
+                    color: #6b7280;
                     font-size: 13px;
                     font-family: inherit;
                     cursor: pointer;
@@ -236,7 +237,7 @@ const MediaLibrary = {
                     transition: all 0.15s;
                     flex-shrink: 0;
                 }
-                .ml-filter-btn:hover { border-color: #c41e3a; color: #f1f5f9; }
+                .ml-filter-btn:hover { border-color: #c41e3a; color: #1e293b; }
                 .ml-filter-btn.active { background: #c41e3a; border-color: #c41e3a; color: white; font-weight: 600; }
                 .ml-body {
                     flex: 1;
@@ -280,7 +281,7 @@ const MediaLibrary = {
                     text-overflow: ellipsis;
                 }
                 .ml-item-meta {
-                    color: #94a3b8;
+                    color: #cbd5e1;
                     font-size: 9px;
                     white-space: nowrap;
                     overflow: hidden;
@@ -305,12 +306,12 @@ const MediaLibrary = {
                     align-items: center;
                     justify-content: center;
                     padding: 40px;
-                    color: #94a3b8;
+                    color: #6b7280;
                 }
                 .ml-spinner {
                     width: 36px;
                     height: 36px;
-                    border: 3px solid #334155;
+                    border: 3px solid #e5e7eb;
                     border-top-color: #c41e3a;
                     border-radius: 50%;
                     animation: ml-spin 0.8s linear infinite;
@@ -321,21 +322,21 @@ const MediaLibrary = {
                     justify-content: space-between;
                     align-items: center;
                     padding: 12px 20px;
-                    border-top: 1px solid #334155;
-                    background: #0f172a;
+                    border-top: 1px solid #e5e7eb;
+                    background: #f8fafc;
                     border-radius: 0 0 12px 12px;
                     flex-shrink: 0;
                 }
-                #ml-count { color: #94a3b8; font-size: 14px; }
+                #ml-count { color: #6b7280; font-size: 14px; }
                 .ml-cancel {
                     padding: 10px 20px;
-                    background: #334155;
-                    color: #e2e8f0;
+                    background: #e5e7eb;
+                    color: #374151;
                     border: none;
                     border-radius: 8px;
                     cursor: pointer;
                 }
-                .ml-cancel:hover { background: #475569; }
+                .ml-cancel:hover { background: #d1d5db; }
                 @media (max-width: 600px) {
                     .ml-overlay { padding: 0; align-items: flex-end; }
                     .ml-container { max-height: 95vh; border-radius: 12px 12px 0 0; }
@@ -567,7 +568,7 @@ const MediaLibrary = {
         const metaPanel = document.getElementById('ml-meta-panel');
 
         // Upload all files with progress
-        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;"><div class="ml-spinner" style="margin:0 auto;"></div><p style="margin-top:12px;color:#94a3b8;" id="ml-upload-progress">Subiendo 1 de ${valid.length}...</p></div>`;
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;"><div class="ml-spinner" style="margin:0 auto;"></div><p style="margin-top:12px;color:#6b7280;" id="ml-upload-progress">Subiendo 1 de ${valid.length}...</p></div>`;
 
         this._pendingUploads = [];
         let uploaded = 0;
