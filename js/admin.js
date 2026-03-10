@@ -652,8 +652,19 @@ const AdminPages = {
                     
                     <div class="admin-content">
                         <div class="content-header">
-                            <p>Total: ${articulos.length} artículos</p>
+                            <p>Total: <span id="admin-article-count">${articulos.length}</span> artículos</p>
                             <a href="/admin/nuevo" class="btn btn-primary">+ Nuevo Artículo</a>
+                        </div>
+                        <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <select id="admin-cat-filter" onchange="AdminPages._filterArticles()" style="padding:6px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:0.85rem;background:#fff;cursor:pointer;">
+                                <option value="">Todas las categorías</option>
+                                ${[...new Set(articulos.map(a => a.categoria?.nombre).filter(Boolean))].sort().map(c => `<option value="${c}">${c}</option>`).join('')}
+                            </select>
+                            <select id="admin-wbc-filter" onchange="AdminPages._filterArticles()" style="padding:6px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:0.85rem;background:#fff;cursor:pointer;">
+                                <option value="">WBC: Todos</option>
+                                <option value="wbc">Solo WBC 2026</option>
+                                <option value="no-wbc">Sin WBC</option>
+                            </select>
                         </div>
                         
                         ${articulos.length > 0 ? `
@@ -670,7 +681,7 @@ const AdminPages = {
                                     </thead>
                                     <tbody>
                                         ${articulos.map(article => `
-                                            <tr>
+                                            <tr data-cat="${article.categoria?.nombre || ''}" data-wbc="${article.es_wbc2026 ? 'wbc' : 'no-wbc'}">
                                                 <td>
                                                     <a href="/articulo/${article.slug}" target="_blank">
                                                         ${article.titulo.substring(0, 60)}${article.titulo.length > 60 ? '...' : ''}
@@ -1079,6 +1090,23 @@ const AdminPages = {
         }
         
         setTimeout(function() { Router.navigate('/admin/articulos'); }, 800);
+    },
+
+    // Filtrar artículos por categoría y WBC
+    _filterArticles: function() {
+        const cat = document.getElementById('admin-cat-filter').value;
+        const wbc = document.getElementById('admin-wbc-filter').value;
+        const rows = document.querySelectorAll('.articles-table tbody tr');
+        let visible = 0;
+        rows.forEach(row => {
+            const matchCat = !cat || row.dataset.cat === cat;
+            const matchWbc = !wbc || row.dataset.wbc === wbc;
+            const show = matchCat && matchWbc;
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        const counter = document.getElementById('admin-article-count');
+        if (counter) counter.textContent = visible;
     },
 
     // Copiar URL del artículo al portapapeles
