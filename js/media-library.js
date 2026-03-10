@@ -10,6 +10,8 @@ const MediaLibrary = {
     onSelectCallback: null,
     allImages: [],       // [{url, nombre, categoria, pieDeFoto, credito}]
     activeFilter: 'todas',
+    _pendingUploads: [],  // queue of nombres to edit metadata
+    _pendingIdx: 0,
 
     // Etiquetas — agregar aquí cuando sea necesario
     TAGS: [
@@ -78,7 +80,10 @@ const MediaLibrary = {
                         <button type="button" class="ml-upload-btn" onclick="document.getElementById('ml-upload-input').click()">
                             ⬆️ Subir
                         </button>
-                        <input type="file" id="ml-upload-input" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="MediaLibrary.upload(event)">
+                        <input type="file" id="ml-upload-input" accept="image/jpeg,image/png,image/gif,image/webp" multiple style="display:none" onchange="MediaLibrary.upload(event)">
+                    </div>
+                    <div style="padding:0 20px 6px;background:#0f172a;">
+                        <small style="color:#64748b;font-size:11px;">JPG, PNG, GIF, WebP · Máx 5 MB por imagen · Puedes seleccionar varias a la vez</small>
                     </div>
 
                     <div class="ml-filters" id="ml-filters">
@@ -98,7 +103,8 @@ const MediaLibrary = {
 
                     <!-- Panel de metadatos al subir -->
                     <div id="ml-meta-panel" style="display:none; padding: 16px 20px; background:#0f172a; border-top:1px solid #334155;">
-                        <p style="color:#f1f5f9; font-size:14px; font-weight:600; margin:0 0 12px;">✅ Imagen subida — agrega los datos editoriales:</p>
+                        <p style="color:#f1f5f9; font-size:14px; font-weight:600; margin:0 0 4px;">✅ <span id="ml-meta-title">Imagen subida</span></p>
+                        <p style="color:#64748b; font-size:11px; margin:0 0 12px;" id="ml-meta-queue-info"></p>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
                             <div>
                                 <label style="color:#94a3b8; font-size:12px; display:block; margin-bottom:4px;">Categoría</label>
@@ -118,7 +124,7 @@ const MediaLibrary = {
                         </div>
                         <div style="display:flex; gap:8px; justify-content:flex-end;">
                             <button type="button" onclick="MediaLibrary.skipMetadata()" style="padding:8px 16px; background:#334155; color:#e2e8f0; border:none; border-radius:6px; cursor:pointer; font-size:13px;">Omitir</button>
-                            <button type="button" onclick="MediaLibrary.confirmMetadata()" style="padding:8px 16px; background:#c41e3a; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">Guardar y continuar</button>
+                            <button type="button" id="ml-meta-save-btn" onclick="MediaLibrary.confirmMetadata()" style="padding:8px 16px; background:#c41e3a; color:white; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600;">Guardar y continuar</button>
                         </div>
                     </div>
 
@@ -362,7 +368,8 @@ const MediaLibrary = {
         this.init();
         this.onSelectCallback = callback;
         this.isOpen = true;
-        this._pendingUploadNombre = null;
+        this._pendingUploads = [];
+        this._pendingIdx = 0;
 
         document.getElementById('media-library-modal').style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -380,7 +387,8 @@ const MediaLibrary = {
         this.isOpen = false;
         document.getElementById('media-library-modal').style.display = 'none';
         document.body.style.overflow = '';
-        this._pendingUploadNombre = null;
+        this._pendingUploads = [];
+        this._pendingIdx = 0;
     },
 
     // ── Cargar imágenes + metadatos ──────────────────────────────
@@ -424,6 +432,11 @@ const MediaLibrary = {
                     pieDeFoto: meta.pie_de_foto || '',
                     credito: meta.credito || ''
                 };
+            }).filter(img => {
+                if (!img.url || !img.nombre) return false;
+                if (img.url.endsWith('/') || img.nombre.startsWith('.')) return false;
+                if (!/\.(jpe?g|png|gif|webp|svg|bmp|avif)$/i.test(img.nombre)) return false;
+                return true;
             });
 
             // Guardar en caché
@@ -444,6 +457,15 @@ const MediaLibrary = {
         const grid = document.getElementById('ml-grid');
         const empty = document.getElementById('ml-empty');
         const count = document.getElementById('ml-count');
+
+        // Filter out broken images (no valid URL, empty names, folders, placeholders)
+        images = (images || []).filter(img => {
+            if (!img.url || !img.nombre) return false;
+            if (img.url.endsWith('/') || img.nombre.startsWith('.')) return false;
+            // Filter folder entries (no file extension)
+            if (!/\.(jpe?g|png|gif|webp|svg|bmp|avif)$/i.test(img.nombre)) return false;
+            return true;
+        });
 
         if (!images || images.length === 0) {
             grid.innerHTML = '';
@@ -520,75 +542,126 @@ const MediaLibrary = {
         this.close();
     },
 
-    // ── Subir imagen ─────────────────────────────────────────────
+    // ── Subir imagen(es) ───────────────────────────────────────────
     async upload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+        const files = Array.from(event.target.files || []);
         event.target.value = '';
+        if (!files.length) return;
 
-        if (file.size > 5 * 1024 * 1024) {
-            showToast('Imagen muy grande (máx 5MB)', 'error');
-            return;
+        // Validate all files first
+        const valid = [];
+        for (const file of files) {
+            if (file.size > 5 * 1024 * 1024) {
+                showToast(file.name + ' es muy grande (máx 5MB)', 'error');
+                continue;
+            }
+            if (!file.type.startsWith('image/')) {
+                showToast(file.name + ' no es una imagen', 'error');
+                continue;
+            }
+            valid.push(file);
         }
+        if (!valid.length) return;
 
         const grid = document.getElementById('ml-grid');
         const metaPanel = document.getElementById('ml-meta-panel');
-        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;"><div class="ml-spinner" style="margin:0 auto;"></div><p style="margin-top:12px;color:#94a3b8;">Subiendo...</p></div>`;
 
-        try {
-            if (typeof SupabaseStorage !== 'undefined' && SupabaseStorage.subirImagen) {
-                const result = await SupabaseStorage.subirImagen(file);
-                if (result.success) {
-                    // Guardar el nombre para asociar metadatos
-                    this._pendingUploadNombre = result.nombre || result.data?.nombre || file.name;
+        // Upload all files with progress
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;"><div class="ml-spinner" style="margin:0 auto;"></div><p style="margin-top:12px;color:#94a3b8;" id="ml-upload-progress">Subiendo 1 de ${valid.length}...</p></div>`;
 
-                    // Mostrar panel de metadatos
-                    document.getElementById('ml-meta-categoria').value = this.activeFilter !== 'todas' ? this.activeFilter : '';
-                    document.getElementById('ml-meta-pie').value = '';
-                    document.getElementById('ml-meta-credito').value = '';
-                    metaPanel.style.display = 'block';
+        this._pendingUploads = [];
+        let uploaded = 0;
 
-                    // Cargar la galería actualizada de fondo
-                    this._invalidateCache();
-                    await this.loadImages();
-                } else {
-                    throw new Error(result.error || 'Error al subir');
+        for (const file of valid) {
+            const progEl = document.getElementById('ml-upload-progress');
+            if (progEl) progEl.textContent = `Subiendo ${uploaded + 1} de ${valid.length}...`;
+
+            try {
+                if (typeof SupabaseStorage !== 'undefined' && SupabaseStorage.subirImagen) {
+                    const result = await SupabaseStorage.subirImagen(file);
+                    if (result.success) {
+                        const nombre = result.nombre || result.data?.nombre || file.name;
+                        this._pendingUploads.push(nombre);
+                        uploaded++;
+                    } else {
+                        showToast('Error subiendo ' + file.name, 'error');
+                    }
                 }
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
             }
-        } catch (err) {
-            console.error('Upload error:', err);
-            showToast('Error subiendo imagen: ' + err.message, 'error');
-            this._invalidateCache();
-            await this.loadImages();
         }
+
+        // Refresh gallery
+        this._invalidateCache();
+        await this.loadImages();
+
+        // Start metadata queue if there are uploads
+        if (this._pendingUploads.length > 0) {
+            this._pendingIdx = 0;
+            this._showMetaForCurrent();
+        }
+    },
+
+    // ── Mostrar panel de metadatos para imagen actual en cola ────
+    _showMetaForCurrent() {
+        const panel = document.getElementById('ml-meta-panel');
+        const nombre = this._pendingUploads[this._pendingIdx];
+        if (!nombre) { panel.style.display = 'none'; return; }
+
+        const total = this._pendingUploads.length;
+        const current = this._pendingIdx + 1;
+        const remaining = total - current;
+
+        document.getElementById('ml-meta-title').textContent = nombre.length > 40 ? nombre.substring(0, 40) + '...' : nombre;
+        document.getElementById('ml-meta-queue-info').textContent = total > 1
+            ? `Imagen ${current} de ${total}` + (remaining > 0 ? ` · ${remaining} más por editar` : '')
+            : 'Agrega los datos editoriales:';
+        document.getElementById('ml-meta-save-btn').textContent = remaining > 0 ? 'Guardar → siguiente' : 'Guardar y cerrar';
+
+        // Pre-fill category from active filter
+        document.getElementById('ml-meta-categoria').value = this.activeFilter !== 'todas' ? this.activeFilter : '';
+        document.getElementById('ml-meta-pie').value = '';
+        document.getElementById('ml-meta-credito').value = '';
+        panel.style.display = 'block';
+
+        // Focus pie de foto for fast editing
+        setTimeout(() => document.getElementById('ml-meta-pie').focus(), 100);
     },
 
     // ── Guardar metadatos post-subida ────────────────────────────
     async confirmMetadata() {
-        if (!this._pendingUploadNombre) {
-            this.skipMetadata();
-            return;
-        }
+        const nombre = this._pendingUploads[this._pendingIdx];
+        if (!nombre) { this.skipMetadata(); return; }
 
         const categoria = document.getElementById('ml-meta-categoria').value;
         const pieDeFoto = document.getElementById('ml-meta-pie').value.trim();
         const credito = document.getElementById('ml-meta-credito').value.trim();
 
-        await this.saveMetadata(this._pendingUploadNombre, { categoria, pieDeFoto, credito });
+        await this.saveMetadata(nombre, { categoria, pieDeFoto, credito });
 
-        // Actualizar en memoria también
-        const img = this.allImages.find(i => i.nombre === this._pendingUploadNombre);
+        // Update in memory
+        const img = this.allImages.find(i => i.nombre === nombre);
         if (img) { img.categoria = categoria; img.pieDeFoto = pieDeFoto; img.credito = credito; }
 
-        this._pendingUploadNombre = null;
-        document.getElementById('ml-meta-panel').style.display = 'none';
-        showToast('✅ Imagen y datos guardados');
-        this.filter(document.getElementById('ml-search').value);
+        showToast('✅ Datos guardados', 'success', 1200);
+        this._advanceQueue();
     },
 
     skipMetadata() {
-        this._pendingUploadNombre = null;
-        document.getElementById('ml-meta-panel').style.display = 'none';
-        this.filter(document.getElementById('ml-search').value);
+        this._advanceQueue();
+    },
+
+    _advanceQueue() {
+        this._pendingIdx++;
+        if (this._pendingIdx < this._pendingUploads.length) {
+            this._showMetaForCurrent();
+        } else {
+            // Queue finished
+            this._pendingUploads = [];
+            this._pendingIdx = 0;
+            document.getElementById('ml-meta-panel').style.display = 'none';
+            this.filter(document.getElementById('ml-search').value);
+        }
     }
 };
