@@ -117,7 +117,8 @@
 /* color-scheme: light fuerza al navegador a renderizar controles nativos
    (inputs, selects, checkboxes) en modo claro sin importar la preferencia del sistema */
 .admin-layout,
-.login-page {
+.login-page,
+#media-library-modal {
     color-scheme: light;
 }
 
@@ -212,6 +213,68 @@
         background: #ffffff !important;
         color: #111827 !important;
         border-color: #e5e7eb !important;
+    }
+    /* ── Media Library Modal — force light mode ────────────── */
+    #media-library-modal .ml-container {
+        background: #ffffff !important;
+        color: #111827 !important;
+    }
+    #media-library-modal .ml-header {
+        border-bottom-color: #e5e7eb !important;
+    }
+    #media-library-modal .ml-header .ml-close {
+        color: #6b7280 !important;
+    }
+    #media-library-modal .ml-toolbar,
+    #media-library-modal .ml-footer,
+    #media-library-modal #ml-meta-panel {
+        background: #f8fafc !important;
+        border-color: #e5e7eb !important;
+    }
+    #media-library-modal .ml-search {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border-color: #d1d5db !important;
+    }
+    #media-library-modal .ml-search::placeholder {
+        color: #9ca3af !important;
+    }
+    #media-library-modal .ml-filter-btn {
+        background: #ffffff !important;
+        color: #6b7280 !important;
+        border-color: #d1d5db !important;
+    }
+    #media-library-modal .ml-filter-btn.active {
+        background: #c41e3a !important;
+        color: #ffffff !important;
+        border-color: #c41e3a !important;
+    }
+    #media-library-modal .ml-body {
+        background: #ffffff !important;
+    }
+    #media-library-modal #ml-count {
+        color: #6b7280 !important;
+    }
+    #media-library-modal .ml-cancel {
+        background: #e5e7eb !important;
+        color: #374151 !important;
+    }
+    #media-library-modal .ml-loading,
+    #media-library-modal .ml-empty {
+        color: #6b7280 !important;
+    }
+    #media-library-modal #ml-meta-panel p,
+    #media-library-modal #ml-meta-panel label {
+        color: #374151 !important;
+    }
+    #media-library-modal #ml-meta-panel input,
+    #media-library-modal #ml-meta-panel select {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border-color: #d1d5db !important;
+    }
+    #media-library-modal small {
+        color: #6b7280 !important;
     }
 }
 
