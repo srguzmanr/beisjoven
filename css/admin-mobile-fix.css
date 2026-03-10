@@ -122,6 +122,13 @@
     color-scheme: light;
 }
 
+/* Force native controls light — checkboxes, selects, etc. */
+.admin-layout input[type="checkbox"],
+.admin-layout select,
+.form-grid-new input[type="checkbox"] {
+    color-scheme: light !important;
+}
+
 /* Forzar inputs claro en admin — color-scheme solo no es suficiente en todos los browsers */
 .admin-layout input,
 .admin-layout input[type="text"],
