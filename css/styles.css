@@ -130,7 +130,8 @@ nav ul li a.nav-live { background: var(--primary); animation: pulse-nav 2s infin
 @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
 /* ==================== HERO ==================== */
-.hero { padding: 40px 0; background: var(--white); }
+.last-updated { font-size: 0.8rem; color: var(--gray); padding: 6px 0; }
+.hero { padding: 16px 0 20px; background: var(--white); }
 .hero-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
 
 .hero-main { position: relative; border-radius: var(--radius); overflow: hidden; height: 500px; }
@@ -152,7 +153,7 @@ nav ul li a.nav-live { background: var(--primary); animation: pulse-nav 2s infin
 .hero-sidebar-item h3 a:hover { color: var(--accent); }
 
 /* ==================== SECTION TITLES ==================== */
-.section-title { display: flex; align-items: center; margin-bottom: 30px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
+.section-title { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 3px solid var(--primary); padding-bottom: 10px; }
 .section-title .icon { width: 40px; height: 40px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 1.2rem; }
 .section-title h2 { font-family: 'Oswald', sans-serif; font-size: 1.8rem; color: var(--dark); text-transform: uppercase; letter-spacing: 1px; }
 .section-title .ver-mas { margin-left: auto; color: var(--primary); font-weight: 600; font-size: 0.9rem; transition: var(--transition); }
@@ -162,7 +163,7 @@ nav ul li a.nav-live { background: var(--primary); animation: pulse-nav 2s infin
 .category { display: inline-block; padding: 4px 12px; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 4px; line-height: 1.4; transition: var(--transition); cursor: pointer; }
 
 /* ==================== NEWS SECTIONS ==================== */
-.news-section { padding: 50px 0; }
+.news-section { padding: 35px 0; }
 .news-section.alt-bg { background: var(--white); }
 .news-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 25px; }
 
