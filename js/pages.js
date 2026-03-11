@@ -1571,8 +1571,52 @@ const Pages = {
 
 /* ── Contenido principal — una columna ─────────────────── */
 .wbc-content {
-    max-width: 720px; margin: 0 auto;
+    max-width: 900px; margin: 0 auto;
     padding: 24px 16px 48px;
+}
+
+/* ── Dashboard: calendario + posiciones lado a lado ──── */
+.wbc-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.wbc-dashboard .wbc-card { margin-bottom: 0; }
+
+/* ── Featured article card ─────────────────────────────── */
+.wbc-featured {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    height: 360px;
+    display: block;
+    text-decoration: none;
+    transition: transform 0.2s;
+}
+.wbc-featured:hover { transform: scale(1.005); }
+.wbc-featured img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.wbc-featured .wbc-featured-overlay {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.9));
+    padding: 32px 24px 24px; color: #fff;
+}
+.wbc-featured .wbc-featured-cat {
+    background: #e83646; color: #fff; padding: 4px 12px;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    border-radius: 4px; display: inline-block; margin-bottom: 10px;
+}
+.wbc-featured .wbc-featured-title {
+    font-family: 'Oswald', sans-serif; font-size: 1.8rem;
+    font-weight: 700; line-height: 1.2; margin: 0 0 8px; color: #fff;
+}
+.wbc-featured:hover .wbc-featured-title { color: #D4A843; }
+.wbc-featured .wbc-featured-excerpt {
+    font-size: 0.9rem; opacity: 0.85; line-height: 1.4;
+    max-width: 600px; margin: 0;
 }
 
 /* Tarjetas genéricas */
@@ -2330,6 +2374,11 @@ const Pages = {
 @media (max-width: 600px) {
     .wbc-sponsor-strip { flex-direction: column; gap: 8px; }
     .wbc-sponsor-divider { width: 40px; height: 1px; }
+    .wbc-dashboard { grid-template-columns: 1fr; }
+    .wbc-featured { height: 280px; }
+    .wbc-featured .wbc-featured-title { font-size: 1.3rem; }
+    .wbc-featured .wbc-featured-excerpt { font-size: 0.82rem; }
+    .wbc-featured .wbc-featured-overlay { padding: 24px 16px 16px; }
 }
 @media (max-width: 480px) {
     .wbc-gallery-grid { grid-template-columns: repeat(2, 1fr); }
@@ -2677,7 +2726,7 @@ const Pages = {
                     }).join('')}
                 </tbody>
             </table>
-            <p class="wbc-standings-note">Pool B · Daikin Park, Houston TX · Actualizado al último juego jugado</p>`;
+            <p class="wbc-standings-note">Grupo B · Daikin Park, Houston TX · Actualizado al último juego jugado</p>`;
         }
 
         // ── Determinar si hay usuario autenticado ─────────────────────
@@ -2833,30 +2882,42 @@ const Pages = {
             ${adminPanel}
 
             <!-- Contenido: una columna -->
-            <div class="wbc-content" style="padding-top:40px;">
+            <div class="wbc-content" style="padding-top:24px;">
 
-                <!-- Calendario -->
-                <div class="wbc-card">
-                    <div class="wbc-card-header">
-                        <span class="wbc-card-icon">📅</span>
-                        <h2>Calendario Pool B</h2>
+                <!-- Dashboard: Calendario + Posiciones lado a lado -->
+                <div class="wbc-dashboard">
+                    <div class="wbc-card">
+                        <div class="wbc-card-header">
+                            <span class="wbc-card-icon">📅</span>
+                            <h2>Calendario Grupo B</h2>
+                        </div>
+                        <div class="wbc-card-body" id="wbc-calendario-display">
+                            ${calendarioContent}
+                            <p class="wbc-calendar-note">Horas CDMX. FOX Dep = FOX Deportes. App = Fox Sports App.<br>Resultados se actualizan tras cada juego.</p>
+                        </div>
                     </div>
-                    <div class="wbc-card-body" id="wbc-calendario-display">
-                        ${calendarioContent}
-                        <p class="wbc-calendar-note">Horas CDMX. FOX Dep = FOX Deportes. App = Fox Sports App.<br>Resultados se actualizan tras cada juego.</p>
+                    <div class="wbc-card" id="wbc-posiciones-card">
+                        <div class="wbc-card-header">
+                            <span class="wbc-card-icon">📊</span>
+                            <h2>Posiciones Grupo B</h2>
+                        </div>
+                        <div class="wbc-card-body" id="wbc-posiciones-display">
+                            ${renderStandingsTable(posicionesData)}
+                        </div>
                     </div>
                 </div>
 
-                <!-- Posiciones -->
-                <div class="wbc-card" id="wbc-posiciones-card">
-                    <div class="wbc-card-header">
-                        <span class="wbc-card-icon">📊</span>
-                        <h2>Posiciones Pool B</h2>
+                <!-- Featured article -->
+                ${articles.length > 0 ? `
+                <a href="/articulo/${articles[0].slug}" class="wbc-featured">
+                    <img src="${articles[0].imagen_url || articles[0].image || ''}" alt="${articles[0].titulo || ''}" loading="lazy">
+                    <div class="wbc-featured-overlay">
+                        <span class="wbc-featured-cat">${articles[0].categoria?.nombre || 'MLB'}</span>
+                        <h3 class="wbc-featured-title">${articles[0].titulo || ''}</h3>
+                        ${articles[0].extracto ? `<p class="wbc-featured-excerpt">${articles[0].extracto}</p>` : ''}
                     </div>
-                    <div class="wbc-card-body" id="wbc-posiciones-display">
-                        ${renderStandingsTable(posicionesData)}
-                    </div>
-                </div>
+                </a>
+                ` : ''}
 
                 <!-- Artículos -->
                 <div class="wbc-articles-header">
@@ -2866,7 +2927,7 @@ const Pages = {
                         <img src="${ciLogoUrl}" alt="Caja Inmaculada" class="wbc-articles-ci-logo">
                     </a>
                 </div>
-                ${renderArticleCards(articles)}
+                ${renderArticleCards(articles.slice(1))}
 
                 <!-- Galería -->
                 <div class="wbc-card">
