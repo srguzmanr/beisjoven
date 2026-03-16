@@ -1597,7 +1597,7 @@ const Pages = {
 }
 .wbc-featured:hover { transform: scale(1.005); }
 .wbc-featured img {
-    width: 100%; height: 100%; object-fit: cover; display: block;
+    width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block;
 }
 .wbc-featured .wbc-featured-overlay {
     position: absolute; bottom: 0; left: 0; right: 0;
