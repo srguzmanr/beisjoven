@@ -2809,13 +2809,13 @@ const Pages = {
             sf: [
                 // ── SF1 · 15 mar · loanDepot Park, Miami ──
                 // ACTUALIZAR: score1, score2, winner, status:'completed'
-                { id:'SF1', date:'15 mar', time:'7:00 p.m. CT', venue:'Miami',
+                { id:'SF1', date:'15 mar', time:'8 PM ET / 6 PM CDMX', venue:'Miami',
                   team1:'Rep. Dominicana', seed1:'D1',
                   team2:'Estados Unidos',  seed2:'B2',
                   score1:null, score2:null, winner:null, status:'today' },
                 // ── SF2 · 16 mar · loanDepot Park, Miami ──
                 // ACTUALIZAR: status:'today' el 16 mar, luego 'completed'
-                { id:'SF2', date:'16 mar', time:'7:00 p.m. CT', venue:'Miami',
+                { id:'SF2', date:'16 mar', time:'8 PM ET / 6 PM CDMX', venue:'Miami',
                   team1:'Italia',    seed1:'B1',
                   team2:'Venezuela', seed2:'D2',
                   score1:null, score2:null, winner:null, status:'tomorrow' }
@@ -2823,7 +2823,7 @@ const Pages = {
             // ── FINAL · 17 mar · loanDepot Park, Miami ──
             // ACTUALIZAR: team1/team2 con nombres reales, luego scores
             final: {
-                id:'Final', date:'17 mar', time:'7:00 p.m. CT', venue:'Miami',
+                id:'Final', date:'17 mar', time:'8 PM ET / 6 PM CDMX', venue:'Miami',
                 team1:'Ganador SF1', seed1:'',
                 team2:'Ganador SF2', seed2:'',
                 score1:null, score2:null, winner:null, status:'tbd'
