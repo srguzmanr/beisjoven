@@ -2135,13 +2135,12 @@ const Pages = {
 }
 .wbc-hub .article-card-image {
     overflow: hidden;
-    max-height: 280px;
 }
 .wbc-hub .article-card-image img {
     width: 100%;
-    height: 280px;
+    aspect-ratio: 16 / 9;
     object-fit: cover;
-    object-position: center 20%;
+    object-position: center top;
 }
 
 /* ── Sponsor strip CI (separado del hero — regla Jurídico) ── */
