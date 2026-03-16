@@ -2384,6 +2384,272 @@ const Pages = {
     .wbc-gallery-grid { grid-template-columns: repeat(2, 1fr); }
     .wbc-admin-gallery-list { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ================================================================
+   BRACKET ELIMINATORIO WBC 2026
+   ================================================================ */
+.wbc-bracket-section {
+    margin: 32px 0 40px;
+    padding: 0;
+}
+.wbc-bracket-section h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #c4122e;
+    margin: 0 0 6px;
+}
+.wbc-bracket-sponsor {
+    font-size: 0.75rem;
+    color: var(--wbc-muted);
+    margin: 0 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.wbc-bracket-sponsor img {
+    height: 18px;
+    width: auto;
+    vertical-align: middle;
+}
+.wbc-bkt-round-labels {
+    display: grid;
+    grid-template-columns: 1fr 24px 1fr 24px 1fr;
+    margin-bottom: 10px;
+}
+.wbc-bkt-round-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--wbc-muted);
+    text-align: center;
+    padding: 0 4px;
+}
+.wbc-bkt-round-spacer { width: 24px; }
+
+/* ── Bracket grid ── */
+.wbc-bkt-grid {
+    display: grid;
+    grid-template-columns: 1fr 24px 1fr 24px 1fr;
+    grid-template-rows: repeat(4, auto);
+    gap: 6px 0;
+    align-items: stretch;
+}
+.wbc-bkt-qf1 { grid-column: 1; grid-row: 1; }
+.wbc-bkt-qf2 { grid-column: 1; grid-row: 2; }
+.wbc-bkt-qf3 { grid-column: 1; grid-row: 3; }
+.wbc-bkt-qf4 { grid-column: 1; grid-row: 4; }
+.wbc-bkt-conn1 { grid-column: 2; grid-row: 1 / 3; position: relative; }
+.wbc-bkt-conn2 { grid-column: 2; grid-row: 3 / 5; position: relative; }
+.wbc-bkt-sf1 { grid-column: 3; grid-row: 1 / 3; align-self: center; }
+.wbc-bkt-sf2 { grid-column: 3; grid-row: 3 / 5; align-self: center; }
+.wbc-bkt-conn3 { grid-column: 4; grid-row: 1 / 5; position: relative; }
+.wbc-bkt-final { grid-column: 5; grid-row: 1 / 5; align-self: center; }
+
+/* ── Conectores ── */
+.wbc-bkt-connector {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    width: 24px;
+}
+.wbc-bkt-connector::before {
+    content: '';
+    position: absolute;
+    top: 25%;
+    bottom: 25%;
+    left: 50%;
+    width: 1.5px;
+    background: rgba(255,255,255,0.15);
+}
+.wbc-bkt-connector::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 1.5px;
+    background: rgba(255,255,255,0.15);
+}
+.wbc-bkt-connector-final {
+    width: 24px;
+    display: flex;
+    align-items: stretch;
+}
+.wbc-bkt-connector-final::before {
+    content: '';
+    position: absolute;
+    top: 30%;
+    bottom: 30%;
+    left: 50%;
+    width: 1.5px;
+    background: rgba(255,255,255,0.15);
+}
+.wbc-bkt-connector-final::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 1.5px;
+    background: rgba(255,255,255,0.15);
+}
+
+/* ── Matchup card ── */
+.wbc-bkt-match {
+    background: rgba(15, 32, 68, 0.6);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+}
+.wbc-bkt-match.is-today {
+    border-color: #c4122e;
+    box-shadow: 0 0 12px rgba(196, 18, 46, 0.3);
+}
+.wbc-bkt-match.is-tomorrow {
+    border: 2px dashed rgba(255,255,255,0.2);
+}
+.wbc-bkt-match.is-tbd {
+    border: 2px dashed rgba(255,255,255,0.1);
+}
+.wbc-bkt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    background: rgba(255,255,255,0.04);
+    font-size: 0.6rem;
+    color: var(--wbc-muted);
+}
+.wbc-bkt-badge {
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+.wbc-bkt-badge-live {
+    background: #c4122e;
+    color: #fff;
+    animation: wbc-bkt-pulse 1.5s ease-in-out infinite;
+}
+.wbc-bkt-badge-tomorrow {
+    background: rgba(100, 140, 180, 0.25);
+    color: #8fb8d4;
+}
+.wbc-bkt-badge-tbd {
+    background: rgba(100, 100, 120, 0.2);
+    color: var(--wbc-muted);
+}
+@keyframes wbc-bkt-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+.wbc-bkt-team {
+    display: flex;
+    align-items: center;
+    padding: 5px 8px;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: #c8d6e0;
+    transition: opacity 0.2s;
+}
+.wbc-bkt-team + .wbc-bkt-team {
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.wbc-bkt-team.is-winner {
+    color: #ffffff;
+    font-weight: 600;
+}
+.wbc-bkt-team.is-loser {
+    opacity: 0.4;
+}
+.wbc-bkt-flag {
+    font-size: 1rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.wbc-bkt-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wbc-bkt-seed {
+    font-size: 0.55rem;
+    color: var(--wbc-muted);
+    font-family: monospace;
+    flex-shrink: 0;
+}
+.wbc-bkt-score {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    min-width: 20px;
+    text-align: right;
+    flex-shrink: 0;
+}
+.wbc-bkt-team.is-winner .wbc-bkt-score {
+    color: #c4122e;
+}
+.wbc-bkt-score-dash {
+    color: rgba(255,255,255,0.2);
+}
+.wbc-bkt-match.is-final .wbc-bkt-header {
+    background: rgba(196, 18, 46, 0.1);
+}
+.wbc-bkt-match.is-final.is-tbd .wbc-bkt-team {
+    color: var(--wbc-muted);
+    font-style: italic;
+}
+.wbc-bracket-mexico-note {
+    margin-top: 20px;
+    padding: 12px 14px;
+    background: rgba(15, 32, 68, 0.5);
+    border-left: 3px solid rgba(100, 140, 180, 0.4);
+    border-radius: 0 6px 6px 0;
+    font-size: 0.75rem;
+    color: var(--wbc-muted);
+    line-height: 1.5;
+}
+.wbc-bkt-mobile-round {
+    display: none;
+}
+@media (max-width: 699px) {
+    .wbc-bkt-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .wbc-bkt-connector,
+    .wbc-bkt-connector-final {
+        display: none;
+    }
+    .wbc-bkt-round-labels {
+        display: none;
+    }
+    .wbc-bkt-mobile-round {
+        display: block;
+        font-family: 'Oswald', sans-serif;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #c4122e;
+        margin: 14px 0 6px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid rgba(196, 18, 46, 0.2);
+    }
+    .wbc-bkt-mobile-round:first-child {
+        margin-top: 0;
+    }
+}
 `;
             document.head.appendChild(style);
         }
@@ -2534,6 +2800,138 @@ const Pages = {
         function getRecord(name) {
             const row = posicionesData.find(r => r.equipo.includes(name));
             return row && row.jj > 0 ? ` <span class="wbc-cal-record">(${row.jg}-${row.jp})</span>` : '';
+        }
+
+        // ── BRACKET ELIMINATORIO — DATOS ────────────────────────────
+        // CÓMO ACTUALIZAR:
+        // 1. Cambiar score1/score2 del juego
+        // 2. Cambiar status: 'completed' y winner: 'Nombre'
+        // 3. Para la final: cambiar team1/team2 al nombre real
+        const bracketFlags = {
+            'Rep. Dominicana': '🇩🇴', 'Corea del Sur': '🇰🇷',
+            'Estados Unidos': '🇺🇸', 'Canadá': '🇨🇦',
+            'Italia': '🇮🇹', 'Puerto Rico': '🇵🇷',
+            'Venezuela': '🇻🇪', 'Japón': '🇯🇵', 'México': '🇲🇽',
+            'Ganador SF1': '🏆', 'Ganador SF2': '🏆'
+        };
+        const bracketData = {
+            qf: [
+                // ── QF1 · 13 mar · loanDepot Park, Miami ──
+                { id:'QF1', date:'13 mar', venue:'Miami',
+                  team1:'Rep. Dominicana', seed1:'D1', score1:10,
+                  team2:'Corea del Sur',   seed2:'C2', score2:0,
+                  winner:'Rep. Dominicana', status:'completed', note:'7 inn' },
+                // ── QF2 · 13 mar · Daikin Park, Houston ──
+                { id:'QF2', date:'13 mar', venue:'Houston',
+                  team1:'Estados Unidos', seed1:'B2', score1:5,
+                  team2:'Canadá',         seed2:'A1', score2:3,
+                  winner:'Estados Unidos', status:'completed' },
+                // ── QF3 · 14 mar · Daikin Park, Houston ──
+                { id:'QF3', date:'14 mar', venue:'Houston',
+                  team1:'Italia',      seed1:'B1', score1:8,
+                  team2:'Puerto Rico', seed2:'A2', score2:6,
+                  winner:'Italia', status:'completed' },
+                // ── QF4 · 14 mar · loanDepot Park, Miami ──
+                { id:'QF4', date:'14 mar', venue:'Miami',
+                  team1:'Venezuela', seed1:'D2', score1:8,
+                  team2:'Japón',     seed2:'C1', score2:5,
+                  winner:'Venezuela', status:'completed' }
+            ],
+            sf: [
+                // ── SF1 · 15 mar · loanDepot Park, Miami ──
+                // ACTUALIZAR: score1, score2, winner, status:'completed'
+                { id:'SF1', date:'15 mar', time:'7:00 p.m. CT', venue:'Miami',
+                  team1:'Rep. Dominicana', seed1:'D1',
+                  team2:'Estados Unidos',  seed2:'B2',
+                  score1:null, score2:null, winner:null, status:'today' },
+                // ── SF2 · 16 mar · loanDepot Park, Miami ──
+                // ACTUALIZAR: status:'today' el 16 mar, luego 'completed'
+                { id:'SF2', date:'16 mar', time:'7:00 p.m. CT', venue:'Miami',
+                  team1:'Italia',    seed1:'B1',
+                  team2:'Venezuela', seed2:'D2',
+                  score1:null, score2:null, winner:null, status:'tomorrow' }
+            ],
+            // ── FINAL · 17 mar · loanDepot Park, Miami ──
+            // ACTUALIZAR: team1/team2 con nombres reales, luego scores
+            final: {
+                id:'Final', date:'17 mar', time:'7:00 p.m. CT', venue:'Miami',
+                team1:'Ganador SF1', seed1:'',
+                team2:'Ganador SF2', seed2:'',
+                score1:null, score2:null, winner:null, status:'tbd'
+            }
+        };
+
+        function renderWBCBracket() {
+            function bktFlag(name) { return bracketFlags[name] || ''; }
+            function bktStatusClass(s) {
+                if (s === 'today') return 'is-today';
+                if (s === 'tomorrow') return 'is-tomorrow';
+                if (s === 'tbd') return 'is-tbd';
+                return '';
+            }
+            function bktBadge(s, time) {
+                if (s === 'today') return '<span class="wbc-bkt-badge wbc-bkt-badge-live">HOY' + (time ? ' · ' + time : '') + '</span>';
+                if (s === 'tomorrow') return '<span class="wbc-bkt-badge wbc-bkt-badge-tomorrow">MAÑANA' + (time ? ' · ' + time : '') + '</span>';
+                if (s === 'tbd') return '<span class="wbc-bkt-badge wbc-bkt-badge-tbd">POR DEFINIR' + (time ? ' · ' + time : '') + '</span>';
+                return '';
+            }
+            function bktTeamRow(name, seed, score, isWinner, isLoser, status) {
+                let cls = 'wbc-bkt-team';
+                if (isWinner) cls += ' is-winner';
+                if (isLoser) cls += ' is-loser';
+                const scoreDisplay = (status === 'completed' && score !== null)
+                    ? score
+                    : '<span class="wbc-bkt-score-dash">–</span>';
+                const seedHtml = seed ? '<span class="wbc-bkt-seed">' + seed + '</span>' : '';
+                return '<div class="' + cls + '">' +
+                    '<span class="wbc-bkt-flag">' + bktFlag(name) + '</span>' +
+                    '<span class="wbc-bkt-name">' + name + '</span>' +
+                    seedHtml +
+                    '<span class="wbc-bkt-score">' + scoreDisplay + '</span>' +
+                    '</div>';
+            }
+            function bktMatchCard(g, extra) {
+                const sc = bktStatusClass(g.status);
+                const fc = extra || '';
+                const w1 = g.winner === g.team1;
+                const w2 = g.winner === g.team2;
+                const done = g.status === 'completed';
+                return '<div class="wbc-bkt-match ' + sc + ' ' + fc + '">' +
+                    '<div class="wbc-bkt-header"><span>' + g.id + ' · ' + g.date + ' · ' + g.venue + (g.note ? ' · ' + g.note : '') + '</span>' + bktBadge(g.status, g.time) + '</div>' +
+                    bktTeamRow(g.team1, g.seed1, g.score1, w1, done && !w1, g.status) +
+                    bktTeamRow(g.team2, g.seed2, g.score2, w2, done && !w2, g.status) +
+                    '</div>';
+            }
+
+            return '<div class="wbc-bracket-section">' +
+                '<h3>🏆 Fase Eliminatoria</h3>' +
+                '<div class="wbc-bracket-sponsor">Cobertura presentada por <img src="' + ciLogoUrl + '" alt="Caja Inmaculada" loading="lazy"></div>' +
+                '<div class="wbc-bkt-round-labels">' +
+                    '<span class="wbc-bkt-round-label">Cuartos de Final</span><span class="wbc-bkt-round-spacer"></span>' +
+                    '<span class="wbc-bkt-round-label">Semifinales</span><span class="wbc-bkt-round-spacer"></span>' +
+                    '<span class="wbc-bkt-round-label">Final</span>' +
+                '</div>' +
+                '<div class="wbc-bkt-grid">' +
+                    '<div class="wbc-bkt-mobile-round">Cuartos de Final</div>' +
+                    '<div class="wbc-bkt-qf1">' + bktMatchCard(bracketData.qf[0]) + '</div>' +
+                    '<div class="wbc-bkt-qf2">' + bktMatchCard(bracketData.qf[1]) + '</div>' +
+                    '<div class="wbc-bkt-qf3">' + bktMatchCard(bracketData.qf[2]) + '</div>' +
+                    '<div class="wbc-bkt-qf4">' + bktMatchCard(bracketData.qf[3]) + '</div>' +
+                    '<div class="wbc-bkt-conn1 wbc-bkt-connector"></div>' +
+                    '<div class="wbc-bkt-conn2 wbc-bkt-connector"></div>' +
+                    '<div class="wbc-bkt-mobile-round">Semifinales</div>' +
+                    '<div class="wbc-bkt-sf1">' + bktMatchCard(bracketData.sf[0]) + '</div>' +
+                    '<div class="wbc-bkt-sf2">' + bktMatchCard(bracketData.sf[1]) + '</div>' +
+                    '<div class="wbc-bkt-conn3 wbc-bkt-connector-final"></div>' +
+                    '<div class="wbc-bkt-mobile-round">Final · 17 de marzo</div>' +
+                    '<div class="wbc-bkt-final">' + bktMatchCard(bracketData.final, 'is-final') + '</div>' +
+                '</div>' +
+                '<div class="wbc-bracket-mexico-note">' +
+                    '🇲🇽 México fue eliminado en fase de grupos (Grupo B, Houston) con récord 2-2. ' +
+                    'Italia venció a México 9-1 el 11 de marzo, asegurando el primer lugar del grupo. ' +
+                    'Estados Unidos avanzó como segundo lugar.' +
+                '</div>' +
+            '</div>';
         }
 
         // ── Generar slider de calendario ─────────────────────────────
@@ -2906,6 +3304,9 @@ const Pages = {
                         </div>
                     </div>
                 </div>
+
+                <!-- Bracket eliminatorio -->
+                ${renderWBCBracket()}
 
                 <!-- Featured article -->
                 ${articles.length > 0 ? `
