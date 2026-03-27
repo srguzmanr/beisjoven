@@ -879,6 +879,49 @@ const Pages = {
             url: `https://beisjoven.com/articulo/${article.slug}`,
             type: 'article'
         });
+
+        // Inject JSON-LD NewsArticle structured data (Ticket 11)
+        (function() {
+            // Remove previous article JSON-LD if navigating between articles
+            var prev = document.getElementById('bj-article-jsonld');
+            if (prev) prev.remove();
+
+            var jsonLd = {
+                "@context": "https://schema.org",
+                "@type": "NewsArticle",
+                "headline": article.title,
+                "description": article.excerpt || '',
+                "image": article.image ? [article.image] : [],
+                "datePublished": articulo.fecha || articulo.created_at,
+                "dateModified": articulo.updated_at || articulo.fecha || articulo.created_at,
+                "author": {
+                    "@type": "Person",
+                    "name": article.author.name,
+                    "url": "https://beisjoven.com/autor/" + article.author.slug
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": "Beisjoven",
+                    "logo": {
+                        "@type": "ImageObject",
+                        "url": "https://beisjoven.com/BJ-Logo-H2-WEB.png"
+                    }
+                },
+                "mainEntityOfPage": {
+                    "@type": "WebPage",
+                    "@id": "https://beisjoven.com/articulo/" + article.slug
+                },
+                "url": "https://beisjoven.com/articulo/" + article.slug,
+                "articleSection": article.category.name,
+                "inLanguage": "es-MX"
+            };
+
+            var script = document.createElement('script');
+            script.type = 'application/ld+json';
+            script.id = 'bj-article-jsonld';
+            script.textContent = JSON.stringify(jsonLd);
+            document.head.appendChild(script);
+        })();
         
         // Cargar metadatos de imagen principal (pie de foto + crédito)
         (async function() {

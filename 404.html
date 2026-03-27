@@ -79,7 +79,47 @@
         }
       }(window.location))
     </script>
-    
+
+    <!-- Legacy Wix URL redirect handler (Ticket 8) -->
+    <script>
+      (function() {
+        var path = window.location.pathname;
+
+        // Detect legacy Wix URL patterns: /post/*, /noticias/*, /beisjoven/*
+        var legacyPatterns = [
+          /^\/post\/(.+)/,
+          /^\/noticias\/(.+)/,
+          /^\/beisjoven\/(.+)/
+        ];
+
+        var match = null;
+        for (var i = 0; i < legacyPatterns.length; i++) {
+          match = path.match(legacyPatterns[i]);
+          if (match) break;
+        }
+
+        if (match) {
+          // Extract the slug from the legacy URL
+          // Wix slugs often look like: titulo-del-articulo or titulo-del-articulo/more-stuff
+          var rawSlug = match[1].replace(/\/$/, '').toLowerCase();
+
+          // Remove common Wix suffixes and clean up the slug
+          rawSlug = rawSlug.split('/')[0]; // Take only the first segment
+          rawSlug = rawSlug.replace(/[^a-z0-9\-áéíóúñü]/g, ''); // Keep only valid slug chars
+
+          if (rawSlug) {
+            // Try to find the article by slug — redirect to /articulo/slug
+            // The SPA router will handle showing 404 if the article doesn't exist
+            window.location.replace('/articulo/' + rawSlug);
+          } else {
+            // No usable slug found, redirect to homepage
+            window.location.replace('/');
+          }
+          return; // Stop further script execution
+        }
+      })();
+    </script>
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
