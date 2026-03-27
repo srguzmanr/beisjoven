@@ -1,12 +1,14 @@
 import { defineConfig } from 'astro/config';
-import tailwind from '@astrojs/tailwind';
+import tailwindcss from '@tailwindcss/vite';
 import vercel from '@astrojs/vercel';
 
 export default defineConfig({
   site: 'https://beisjoven.com',
   output: 'hybrid',
   adapter: vercel(),
-  integrations: [tailwind()],
+  vite: {
+    plugins: [tailwindcss()],
+  },
   redirects: {
     '/post/[...slug]': '/articulo/[...slug]',
     '/noticias/[...slug]': '/articulo/[...slug]',
