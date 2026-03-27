@@ -45,19 +45,19 @@ const latest = articulos.slice(0, 6);
   <!-- Quick Hits Ticker -->
   <div class="bg-navy text-white overflow-hidden">
     <div class="max-w-7xl mx-auto px-4 flex items-center">
-      <span class="bg-rojo text-white text-xs font-bold uppercase px-3 py-2 flex-shrink-0 tracking-wide">
+      <span class="bg-rojo/90 text-white text-[10px] font-bold uppercase px-2.5 py-1.5 flex-shrink-0 tracking-wider rounded-sm">
         Últimas
       </span>
       <div class="overflow-hidden flex-1 py-2 ml-3">
         <div class="ticker-animate flex gap-12 whitespace-nowrap">
           {latest.map((a) => (
-            <a href={`/articulo/${a.slug}`} class="text-sm hover:text-white/80 transition-colors">
+            <a href={`/articulo/${a.slug}`} class="text-sm text-white/80 hover:text-white transition-colors">
               {a.titulo}
             </a>
           ))}
           {/* Duplicate for seamless loop */}
           {latest.map((a) => (
-            <a href={`/articulo/${a.slug}`} class="text-sm hover:text-white/80 transition-colors">
+            <a href={`/articulo/${a.slug}`} class="text-sm text-white/80 hover:text-white transition-colors">
               {a.titulo}
             </a>
           ))}
@@ -66,22 +66,25 @@ const latest = articulos.slice(0, 6);
     </div>
   </div>
 
+  <!-- Hero Section -->
   <div class="max-w-7xl mx-auto px-4 py-6">
-    <!-- Hero Section -->
-    <section class="mb-10">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <!-- Main Hero -->
-        <div class="lg:col-span-2">
+    <section class="mb-8">
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <!-- Main Hero (60%) -->
+        <div class="lg:col-span-3">
           {hero && <HeroArticle article={hero} />}
         </div>
-        <!-- Secondary -->
-        <div class="flex flex-col gap-4">
+        <!-- Secondary (40%) -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
           {secondary.map((a) => (
-            <article class="group relative rounded-lg overflow-hidden flex-1 min-h-[180px]">
+            <article class="group relative rounded-xl overflow-hidden flex-1 min-h-[200px] shadow-sm hover:shadow-md transition-shadow duration-300">
               <a href={`/articulo/${a.slug}`} class="block h-full">
                 <img src={a.imagen_url} alt={a.titulo} loading="eager" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
                 <div class="absolute bottom-0 left-0 right-0 p-4">
+                  {a.categoria && (
+                    <span class="inline-block text-[10px] font-bold uppercase tracking-wider text-white/90 mb-1">{a.categoria.nombre}</span>
+                  )}
                   <h3 class="text-white text-sm md:text-base font-bold line-clamp-2 leading-snug">
                     {a.titulo}
                   </h3>
@@ -92,15 +95,18 @@ const latest = articulos.slice(0, 6);
         </div>
       </div>
     </section>
+  </div>
 
+  <!-- Category Sections + Sidebar -->
+  <div class="max-w-7xl mx-auto px-4 pb-8">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Main Content -->
-      <div class="lg:col-span-2 space-y-10">
-        <!-- Liga Mexicana -->
+      <div class="lg:col-span-2 space-y-0">
+        <!-- Liga Mexicana — white bg -->
         {ligaMex.length > 0 && (
-          <section>
-            <SectionTitle title="Ligas Mexicanas" href="/categoria/liga-mexicana" />
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <section class="py-8">
+            <SectionTitle title="Ligas Mexicanas" href="/categoria/liga-mexicana" color="#dc2626" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {ligaMex.map((a, i) => (
                 <ArticleCard article={a} eager={i < 2} />
               ))}
@@ -108,10 +114,10 @@ const latest = articulos.slice(0, 6);
           </section>
         )}
 
-        <!-- MLB -->
+        <!-- MLB — alt bg -->
         {mlb.length > 0 && (
-          <section>
-            <SectionTitle title="MLB" href="/categoria/mlb" />
+          <section class="py-8 -mx-4 px-4 bg-gris-bg rounded-lg">
+            <SectionTitle title="MLB" href="/categoria/mlb" color="#1e40af" />
             <div class="space-y-4">
               {mlb.slice(0, 2).map((a) => (
                 <ArticleCard article={a} size="horizontal" />
@@ -120,11 +126,11 @@ const latest = articulos.slice(0, 6);
           </section>
         )}
 
-        <!-- Selección -->
+        <!-- Selección — white bg -->
         {seleccion.length > 0 && (
-          <section>
-            <SectionTitle title="Selección" href="/categoria/seleccion" />
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <section class="py-8">
+            <SectionTitle title="Selección" href="/categoria/seleccion" color="#15803d" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {seleccion.map((a) => (
                 <ArticleCard article={a} />
               ))}
@@ -132,11 +138,11 @@ const latest = articulos.slice(0, 6);
           </section>
         )}
 
-        <!-- Softbol -->
+        <!-- Softbol — alt bg -->
         {softbol.length > 0 && (
-          <section>
-            <SectionTitle title="Softbol" href="/categoria/softbol" />
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <section class="py-8 -mx-4 px-4 bg-gris-bg rounded-lg">
+            <SectionTitle title="Softbol" href="/categoria/softbol" color="#7c3aed" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {softbol.map((a) => (
                 <ArticleCard article={a} />
               ))}
@@ -144,11 +150,11 @@ const latest = articulos.slice(0, 6);
           </section>
         )}
 
-        <!-- Juvenil -->
+        <!-- Juvenil — white bg -->
         {juvenil.length > 0 && (
-          <section>
-            <SectionTitle title="Juvenil" href="/categoria/juvenil" />
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <section class="py-8">
+            <SectionTitle title="Juvenil" href="/categoria/juvenil" color="#ea580c" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {juvenil.map((a) => (
                 <ArticleCard article={a} />
               ))}

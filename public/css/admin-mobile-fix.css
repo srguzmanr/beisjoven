@@ -1,0 +1,480 @@
+/* ==================== ADMIN MOBILE FIX ==================== */
+/* Fixes: layout order, overflow, touch targets, sticky publish, light mode */
+
+@media (max-width: 768px) {
+
+    /* ── 1. OVERFLOW HORIZONTAL ─────────────────────────────── */
+    .admin-layout,
+    .admin-main,
+    .admin-content,
+    .article-form,
+    .form-grid,
+    .form-main,
+    .form-sidebar {
+        max-width: 100vw;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+
+    /* ── 2. FORM LAYOUT — una columna en orden editorial ──────
+       Orden móvil: Título → Extracto → Categoría/Autor → Contenido → Imagen/Pie/Crédito → Checks → Publicar
+    */
+    .article-form .form-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        padding-bottom: 80px; /* espacio para botón sticky */
+    }
+
+    /* Main content primero */
+    .form-main { order: 1; }
+
+    /* Sidebar después, pero reordenamos sus elementos internos */
+    .form-sidebar { order: 2; }
+
+    /* Dentro del sidebar: Categoría/Autor arriba del contenido principal */
+    /* Usamos un wrapper invisible — ver nota abajo */
+    .form-sidebar .form-card { margin-bottom: 0; box-shadow: none; border-radius: 0; border-bottom: 1px solid #e5e7eb; padding: 16px; }
+    .form-sidebar .form-card:last-child { border-bottom: none; }
+
+    /* ── 3. BOTÓN PUBLICAR STICKY AL FONDO ───────────────────── */
+    .form-actions {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        background: white;
+        padding: 12px 16px;
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+    }
+    .form-actions .btn:first-child {
+        flex: 2; /* Publicar más grande */
+    }
+    .form-actions .btn:not(:first-child) {
+        flex: 1;
+        font-size: 0.85rem;
+    }
+    /* Ocultar el texto "Auto-guardado" en la barra sticky — está en otro lugar */
+    .form-actions small { display: none; }
+
+    /* ── 4. TOUCH TARGETS MÍNIMOS 44px ───────────────────────── */
+    .btn-media-picker,
+    .form-actions .btn,
+    .btn-block {
+        min-height: 48px;
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .checkbox-label,
+    .form-card label {
+        cursor: pointer;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── 5. FONT-SIZE 16px — evita zoom automático en iOS ─────── */
+    .form-main input,
+    .form-main textarea,
+    .form-main select,
+    .form-card input[type="text"],
+    .form-card select {
+        font-size: 16px !important;
+        min-height: 44px;
+    }
+
+    /* ── 6. RTE TOOLBAR — scroll horizontal, no wrap ─────────── */
+    .rte-toolbar {
+        overflow-x: auto;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .rte-toolbar::-webkit-scrollbar { display: none; }
+    .rte-btn {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 16px !important;
+        flex-shrink: 0;
+    }
+
+    /* ── 7. ADMIN HEADER ─────────────────────────────────────── */
+    .admin-content { padding: 16px; }
+    .admin-header { padding: 12px 16px; }
+    .admin-header h1 { font-size: 1.2rem; }
+}
+
+
+/* ==================== ADMIN FORZAR LIGHT MODE ==================== */
+/* color-scheme: light fuerza al navegador a renderizar controles nativos
+   (inputs, selects, checkboxes) en modo claro sin importar la preferencia del sistema */
+.admin-layout,
+.login-page,
+#media-library-modal {
+    color-scheme: light;
+}
+
+/* Force native controls light — checkboxes, selects, etc. */
+.admin-layout input[type="checkbox"],
+.admin-layout select,
+.form-grid-new input[type="checkbox"] {
+    color-scheme: light !important;
+}
+
+/* Forzar inputs claro en admin — color-scheme solo no es suficiente en todos los browsers */
+.admin-layout input,
+.admin-layout input[type="text"],
+.admin-layout input[type="url"],
+.admin-layout input[type="email"],
+.admin-layout input[type="password"],
+.admin-layout textarea,
+.admin-layout select,
+.login-page input,
+.login-page input[type="password"] {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    border-color: #e5e7eb !important;
+    -webkit-text-fill-color: #111827 !important;
+}
+.admin-layout input::placeholder,
+.admin-layout textarea::placeholder {
+    color: #9ca3af !important;
+    -webkit-text-fill-color: #9ca3af !important;
+    opacity: 1 !important;
+}
+/* Autofill de iOS también */
+.admin-layout input:-webkit-autofill,
+.admin-layout input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 100px #ffffff inset !important;
+    -webkit-text-fill-color: #111827 !important;
+}
+/* El dark-mode.css aplica a todo el body. El admin siempre debe ser claro. */
+@media (prefers-color-scheme: dark) {
+    .admin-layout,
+    .admin-layout .admin-main,
+    .admin-layout .admin-content,
+    .admin-layout .form-card,
+    .admin-layout .admin-section,
+    .admin-layout .admin-header,
+    .admin-layout .articles-table,
+    .admin-layout .article-form {
+        background: #f5f5f5 !important;
+        color: #111827 !important;
+    }
+    .admin-layout .form-card,
+    .admin-layout .admin-section,
+    .admin-layout .articles-table,
+    .admin-layout .admin-header,
+    .admin-layout .stat-card {
+        background: #ffffff !important;
+        color: #111827 !important;
+    }
+    .admin-layout .form-main input,
+    .admin-layout .form-main textarea,
+    .admin-layout .form-main select,
+    .admin-layout .form-card input,
+    .admin-layout .form-card select,
+    .admin-layout .rte-editor,
+    .admin-layout .rte-toolbar {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border-color: #e5e7eb !important;
+    }
+    .admin-layout .form-main input::placeholder,
+    .admin-layout .form-main textarea::placeholder {
+        color: #9ca3af !important;
+    }
+    .admin-layout .admin-header h1,
+    .admin-layout .form-main label,
+    .admin-layout .form-card label,
+    .admin-layout .form-card h4,
+    .admin-layout .content-header h2 {
+        color: #111827 !important;
+    }
+    .admin-layout .articles-table th {
+        background: #f9fafb !important;
+        color: #374151 !important;
+    }
+    .admin-layout .articles-table td {
+        color: #374151 !important;
+        border-color: #f3f4f6 !important;
+    }
+    /* Sticky publish bar */
+    .form-actions {
+        background: #ffffff !important;
+    }
+    /* Login page */
+    .login-container {
+        background: #ffffff !important;
+        color: #111827 !important;
+    }
+    .login-page input {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border-color: #e5e7eb !important;
+    }
+    /* ── Media Library Modal — force light mode ────────────── */
+    #media-library-modal .ml-container {
+        background: #ffffff !important;
+        color: #111827 !important;
+    }
+    #media-library-modal .ml-header {
+        border-bottom-color: #e5e7eb !important;
+    }
+    #media-library-modal .ml-header .ml-close {
+        color: #6b7280 !important;
+    }
+    #media-library-modal .ml-toolbar,
+    #media-library-modal .ml-footer,
+    #media-library-modal #ml-meta-panel {
+        background: #f8fafc !important;
+        border-color: #e5e7eb !important;
+    }
+    #media-library-modal .ml-search {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border-color: #d1d5db !important;
+    }
+    #media-library-modal .ml-search::placeholder {
+        color: #9ca3af !important;
+    }
+    #media-library-modal .ml-filter-btn {
+        background: #ffffff !important;
+        color: #6b7280 !important;
+        border-color: #d1d5db !important;
+    }
+    #media-library-modal .ml-filter-btn.active {
+        background: #c41e3a !important;
+        color: #ffffff !important;
+        border-color: #c41e3a !important;
+    }
+    #media-library-modal .ml-body {
+        background: #ffffff !important;
+    }
+    #media-library-modal #ml-count {
+        color: #6b7280 !important;
+    }
+    #media-library-modal .ml-cancel {
+        background: #e5e7eb !important;
+        color: #374151 !important;
+    }
+    #media-library-modal .ml-loading,
+    #media-library-modal .ml-empty {
+        color: #6b7280 !important;
+    }
+    #media-library-modal #ml-meta-panel p,
+    #media-library-modal #ml-meta-panel label {
+        color: #374151 !important;
+    }
+    #media-library-modal #ml-meta-panel input,
+    #media-library-modal #ml-meta-panel select {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border-color: #d1d5db !important;
+    }
+    #media-library-modal small {
+        color: #6b7280 !important;
+    }
+}
+
+/* ==================== FORM GRID NUEVO ==================== */
+/* Desktop: 2 columnas clásicas. Móvil: 1 columna en orden editorial */
+
+.form-grid-new {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    grid-template-areas:
+        "titulo    imagen"
+        "extracto  imagen"
+        "meta      checks"
+        "contenido acciones";
+    gap: 0 24px;
+    max-width: 100%;
+}
+
+/* Asignación de áreas en desktop */
+.fg-titulo    { grid-area: titulo;    padding-bottom: 20px; }
+.fg-extracto  { grid-area: extracto;  padding-bottom: 20px; }
+.fg-meta      { grid-area: meta;      padding-bottom: 20px; }
+.fg-contenido { grid-area: contenido; padding-bottom: 20px; }
+.fg-imagen    { grid-area: imagen;    background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
+.fg-checks    { grid-area: checks;    background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
+.fg-acciones  { grid-area: acciones;  background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+/* Labels en el nuevo grid */
+.form-grid-new label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.95rem;
+}
+.form-grid-new input[type="text"],
+.form-grid-new input[type="url"],
+.form-grid-new textarea,
+.form-grid-new select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+.form-grid-new input:focus,
+.form-grid-new textarea:focus,
+.form-grid-new select:focus {
+    outline: none;
+    border-color: #c4122e;
+}
+
+/* Categoría + Autor en fila */
+.fg-meta-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* Checkbox labels */
+.form-grid-new .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    cursor: pointer;
+    min-height: 44px;
+    border-bottom: 1px solid #f3f4f6;
+}
+.form-grid-new .checkbox-label:last-child { border-bottom: none; }
+.form-grid-new .checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    cursor: pointer;
+    accent-color: #c4122e;
+}
+.wbc-check-label {
+    background: #fef3c7;
+    border: 1px solid #f59e0b !important;
+    border-radius: 8px;
+    padding: 10px 12px !important;
+    margin-top: 4px;
+}
+.wbc-check-label small { font-size: 0.75rem; color: #92400e; display: block; }
+
+/* Botones de acción */
+.fg-acciones .btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    text-align: center;
+    display: block;
+    text-decoration: none;
+    border: none;
+    font-family: inherit;
+    font-weight: 600;
+}
+.fg-acciones .btn-primary { background: #c4122e; color: white; }
+.fg-acciones .btn-secondary { background: #f3f4f6; color: #374151; }
+
+/* ── MÓVIL: 1 columna en orden editorial ─────────────────── */
+@media (max-width: 768px) {
+    .form-grid-new {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        padding-bottom: 80px; /* espacio para sticky bar */
+        overflow: hidden;
+        max-width: 100%;
+    }
+
+    /* Orden editorial explícito */
+    .fg-titulo    { order: 1; padding: 16px 16px 0; }
+    .fg-extracto  { order: 2; padding: 12px 16px 0; }
+    .fg-meta      { order: 3; padding: 12px 16px 0; }
+    .fg-contenido { order: 4; padding: 12px 16px 0; }
+    .fg-imagen    { order: 5; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
+    .fg-checks    { order: 6; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
+    .fg-acciones  { order: 7; display: none; } /* oculto — reemplazado por sticky bar abajo */
+
+    /* Categoría + Autor apilados en móvil */
+    .fg-meta-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    /* Inputs 16px para evitar zoom iOS */
+    .form-grid-new input,
+    .form-grid-new textarea,
+    .form-grid-new select {
+        font-size: 16px !important;
+        min-height: 44px;
+    }
+
+    /* Sticky publish bar */
+    .admin-sticky-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        background: white;
+        padding: 10px 16px;
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    .admin-sticky-bar .btn-publish {
+        flex: 2;
+        padding: 14px;
+        background: #c4122e;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: inherit;
+        touch-action: manipulation;
+    }
+    .admin-sticky-bar .btn-cancel {
+        flex: 1;
+        padding: 14px;
+        background: #f3f4f6;
+        color: #374151;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        text-decoration: none;
+        text-align: center;
+        touch-action: manipulation;
+    }
+    .admin-sticky-bar .autosave-txt {
+        font-size: 0.72rem;
+        color: #9ca3af;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    /* Overflow fix global */
+    .admin-main, .admin-content, .admin-layout {
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+}

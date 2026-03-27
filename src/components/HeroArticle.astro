@@ -12,34 +12,34 @@ const href = `/articulo/${article.slug}`;
 const date = article.fecha ? timeAgo(article.fecha) : '';
 ---
 
-<article class="group relative rounded-xl overflow-hidden">
+<article class="group relative rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300">
   <a href={href} class="block">
-    <div class="aspect-[16/9] md:aspect-[2/1]">
+    <div class="aspect-[4/3] md:aspect-[16/9]">
       <img
         src={article.imagen_url}
         alt={article.titulo}
         loading="eager"
-        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
       />
     </div>
-    <!-- Gradient overlay -->
-    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+    <!-- Gradient overlay — more dramatic -->
+    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
 
     <!-- Content overlay -->
     <div class="absolute bottom-0 left-0 right-0 p-5 md:p-8">
       {article.categoria && (
         <CategoryPill name={article.categoria.nombre} slug={article.categoria.slug} size="md" />
       )}
-      <h2 class="text-white text-xl md:text-3xl font-bold mt-2 mb-2 line-clamp-3 leading-tight">
+      <h2 class="text-white text-xl md:text-3xl lg:text-4xl font-extrabold mt-2 mb-2 line-clamp-3 leading-tight" style="letter-spacing: -0.02em;">
         {article.titulo}
       </h2>
       {article.extracto && (
-        <p class="text-white/80 text-sm md:text-base line-clamp-2 mb-2 hidden md:block max-w-2xl">
+        <p class="text-white/80 text-sm md:text-base line-clamp-2 mb-3 max-w-2xl">
           {article.extracto}
         </p>
       )}
-      <div class="flex items-center gap-2 text-xs md:text-sm text-white/70">
-        {article.autor && <span>{article.autor.nombre}</span>}
+      <div class="flex items-center gap-2 text-xs md:text-sm text-white/60">
+        {article.autor && <span class="font-medium text-white/80">{article.autor.nombre}</span>}
         <span>&middot;</span>
         <span>{date}</span>
       </div>

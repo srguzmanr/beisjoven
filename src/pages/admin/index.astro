@@ -49,6 +49,11 @@ export const prerender = false;
     <script is:inline src="/js/rich-text-editor.js"></script>
     <script is:inline src="/js/article-preview.js"></script>
     <script is:inline src="/js/admin.js"></script>
+    <script is:inline>
+        // Vercel Deploy Hook — replace with your actual deploy hook URL from
+        // Vercel > Settings > Git > Deploy Hooks (name: "Admin publish", branch: main)
+        window.VERCEL_DEPLOY_HOOK_URL = '';
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Register admin routes only

@@ -3,15 +3,19 @@ interface Props {
   title: string;
   href?: string;
   linkText?: string;
+  color?: string;
 }
 
-const { title, href, linkText = 'Ver más' } = Astro.props;
+const { title, href, linkText = 'Ver más', color } = Astro.props;
 ---
 
-<div class="flex items-center justify-between mb-4 border-b-2 border-navy pb-2">
-  <h2 class="text-lg md:text-xl font-bold uppercase tracking-wide text-navy">{title}</h2>
+<div class="flex items-center justify-between mb-5 pb-3 border-b border-gris-border">
+  <h2 class="text-lg md:text-xl font-extrabold uppercase tracking-wide text-navy flex items-center gap-2">
+    {color && <span class="w-1 h-5 rounded-full inline-block" style={`background-color: ${color}`}></span>}
+    {title}
+  </h2>
   {href && (
-    <a href={href} class="text-sm font-semibold text-steel-blue hover:text-navy transition-colors">
+    <a href={href} class="text-sm font-semibold text-rojo hover:text-rojo-dark transition-colors">
       {linkText} &rarr;
     </a>
   )}

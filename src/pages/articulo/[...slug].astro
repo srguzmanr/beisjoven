@@ -32,7 +32,7 @@ const [relacionados, masLeidos] = await Promise.all([
   getMasLeidos(5),
 ]);
 
-const related = relacionados.filter((a) => a.id !== articulo.id).slice(0, 5);
+const related = relacionados.filter((a) => a.id !== articulo.id).slice(0, 4);
 const articleUrl = `https://beisjoven.com/articulo/${articulo.slug}`;
 const renderedBody = renderContent(articulo.contenido);
 const formattedDate = formatDate(articulo.fecha);
@@ -91,35 +91,32 @@ const articleJsonLd = {
       {articulo.categoria && (
         <CategoryPill name={articulo.categoria.nombre} slug={articulo.categoria.slug} size="md" />
       )}
-      <h1 class="text-2xl md:text-4xl font-bold text-navy mt-3 mb-4 leading-tight">
+      <h1 class="text-2xl md:text-4xl font-extrabold text-navy mt-3 mb-4 leading-tight" style="letter-spacing: -0.02em;">
         {articulo.titulo}
       </h1>
-      <div class="flex flex-wrap items-center gap-3 text-sm text-gris-text">
+      <div class="flex flex-wrap items-center gap-3 text-sm">
         {articulo.autor && (
-          <a href={`/autor/${articulo.autor.slug}`} class="flex items-center gap-2 font-medium text-navy hover:text-steel-blue transition-colors">
-            {articulo.autor.avatar_url && (
-              <img src={articulo.autor.avatar_url} alt={articulo.autor.nombre} class="w-8 h-8 rounded-full object-cover" />
-            )}
+          <a href={`/autor/${articulo.autor.slug}`} class="font-medium text-navy hover:text-steel-blue transition-colors">
             {articulo.autor.nombre}
           </a>
         )}
         <span class="text-gris-muted">&middot;</span>
-        <time datetime={articulo.fecha}>{formattedDate}</time>
+        <time datetime={articulo.fecha} class="text-gris-muted">{formattedDate}</time>
         <span class="text-gris-muted">&middot;</span>
-        <span>{readingTime}</span>
+        <span class="text-gris-muted">{readingTime}</span>
       </div>
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Article Body -->
       <div class="lg:col-span-2">
-        <!-- Hero Image -->
-        <figure class="mb-6">
+        <!-- Hero Image — full-width on mobile -->
+        <figure class="mb-6 -mx-4 md:mx-0">
           <img
             src={articulo.imagen_url}
             alt={articulo.titulo}
             loading="eager"
-            class="w-full rounded-lg"
+            class="w-full md:rounded-lg"
           />
         </figure>
 
@@ -129,31 +126,12 @@ const articleJsonLd = {
         <!-- Share -->
         <ShareButtons url={articleUrl} title={articulo.titulo} />
 
-        <!-- Next Article -->
-        {related.length > 0 && (
-          <a
-            href={`/articulo/${related[0].slug}`}
-            class="block mt-6 p-4 bg-gris-bg rounded-lg group hover:bg-gray-100 transition-colors"
-          >
-            <span class="text-xs font-bold uppercase text-gris-muted">Sigue leyendo</span>
-            <div class="flex gap-3 mt-2">
-              <img src={related[0].imagen_url} alt={related[0].titulo} class="w-20 h-16 object-cover rounded flex-shrink-0" loading="lazy" />
-              <div>
-                {related[0].categoria && (
-                  <span class="text-[10px] font-bold uppercase text-steel-blue">{related[0].categoria.nombre}</span>
-                )}
-                <h3 class="text-sm font-bold text-navy line-clamp-2 group-hover:text-steel-blue transition-colors">{related[0].titulo}</h3>
-              </div>
-            </div>
-          </a>
-        )}
-
         <!-- Related Articles -->
-        {related.length > 1 && (
+        {related.length > 0 && (
           <section class="mt-10">
             <SectionTitle title="Artículos relacionados" />
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {related.slice(1).map((a) => (
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {related.map((a) => (
                 <ArticleCard article={a} />
               ))}
             </div>
