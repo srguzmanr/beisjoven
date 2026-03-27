@@ -1,0 +1,36 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+---
+
+<BaseLayout
+  title="Contacto - Beisjoven"
+  description="Contáctanos para colaboraciones, notas de prensa, correcciones o cualquier consulta sobre béisbol y softbol mexicano."
+>
+  <Breadcrumb items={[
+    { text: 'Inicio', href: '/' },
+    { text: 'Contacto' },
+  ]} />
+
+  <div class="max-w-2xl mx-auto px-4 py-12">
+    <h1 class="text-3xl font-bold text-navy mb-4">Contacto</h1>
+    <p class="text-gris-text mb-8">
+      ¿Tienes una nota de prensa, quieres colaborar con Beisjoven, o necesitas reportar una corrección? Escríbenos.
+    </p>
+
+    <div class="bg-gris-bg rounded-lg p-6 space-y-4">
+      <div>
+        <h3 class="font-semibold text-navy">Email</h3>
+        <a href="mailto:contacto@beisjoven.com" class="text-steel-blue hover:underline">contacto@beisjoven.com</a>
+      </div>
+      <div>
+        <h3 class="font-semibold text-navy">Redes sociales</h3>
+        <div class="flex gap-4 mt-2">
+          <a href="https://facebook.com/beisjoven" target="_blank" rel="noopener" class="text-steel-blue hover:text-navy transition-colors">Facebook</a>
+          <a href="https://instagram.com/beisjoven" target="_blank" rel="noopener" class="text-steel-blue hover:text-navy transition-colors">Instagram</a>
+          <a href="https://x.com/beisjoven" target="_blank" rel="noopener" class="text-steel-blue hover:text-navy transition-colors">X (Twitter)</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

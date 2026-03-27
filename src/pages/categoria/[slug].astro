@@ -1,0 +1,105 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+import ArticleCard from '@/components/ArticleCard.astro';
+import SectionTitle from '@/components/SectionTitle.astro';
+import MostReadWidget from '@/components/MostReadWidget.astro';
+import {
+  getCategorias,
+  getCategoriaBySlug,
+  getArticulosByCategoriaPaginados,
+  getMasLeidos,
+} from '@/lib/supabase';
+
+export async function getStaticPaths() {
+  const categorias = await getCategorias();
+  return categorias.map((cat) => ({ params: { slug: cat.slug } }));
+}
+
+const { slug } = Astro.params;
+const categoria = await getCategoriaBySlug(slug!);
+
+if (!categoria) {
+  return Astro.redirect('/404');
+}
+
+const page = Number(Astro.url.searchParams.get('page')) || 1;
+const perPage = 20;
+const offset = (page - 1) * perPage;
+
+const [{ articulos, total }, masLeidos] = await Promise.all([
+  getArticulosByCategoriaPaginados(slug!, perPage, offset),
+  getMasLeidos(5),
+]);
+
+const totalPages = Math.ceil(total / perPage);
+const categoryUrl = `https://beisjoven.com/categoria/${slug}`;
+
+const categoryDescriptions: Record<string, string> = {
+  'mlb': 'Mexicanos en Grandes Ligas, estadísticas, trades y más del béisbol de las mayores.',
+  'liga-mexicana': 'Cobertura completa de la Liga Mexicana de Béisbol, Liga Mexicana del Pacífico y ligas profesionales.',
+  'seleccion': 'Selección Mexicana de béisbol y softbol. Clásico Mundial, Premier12, WBSC y más.',
+  'softbol': 'Softbol mexicano. Liga Nacional, selección femenil, torneos internacionales.',
+  'juvenil': 'Béisbol y softbol juvenil. Prospectos, ligas menores, desarrollo deportivo.',
+  'opinion': 'Columnas de opinión y análisis sobre el béisbol y softbol mexicano.',
+};
+
+const description = categoryDescriptions[slug!] || `Noticias y artículos de ${categoria.nombre} en Beisjoven.`;
+---
+
+<BaseLayout
+  title={`${categoria.nombre} - Beisjoven`}
+  description={description}
+  url={categoryUrl}
+>
+  <Breadcrumb items={[
+    { text: 'Inicio', href: '/' },
+    { text: categoria.nombre },
+  ]} />
+
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <header class="mb-6">
+      <h1 class="text-2xl md:text-3xl font-bold text-navy uppercase tracking-wide">{categoria.nombre}</h1>
+      <p class="text-gris-text mt-1">{description}</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Articles Grid -->
+      <div class="lg:col-span-2">
+        {articulos.length > 0 ? (
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {articulos.map((a, i) => (
+              <ArticleCard article={a} eager={i < 4} />
+            ))}
+          </div>
+        ) : (
+          <p class="text-gris-text py-8 text-center">No hay artículos en esta categoría todavía.</p>
+        )}
+
+        <!-- Pagination -->
+        {totalPages > 1 && (
+          <nav class="flex justify-center gap-2 mt-8" aria-label="Paginación">
+            {page > 1 && (
+              <a href={`/categoria/${slug}?page=${page - 1}`} class="px-4 py-2 text-sm font-medium rounded-lg bg-gris-bg text-navy hover:bg-gray-200 transition-colors">
+                &larr; Anterior
+              </a>
+            )}
+            <span class="px-4 py-2 text-sm text-gris-muted">
+              Página {page} de {totalPages}
+            </span>
+            {page < totalPages && (
+              <a href={`/categoria/${slug}?page=${page + 1}`} class="px-4 py-2 text-sm font-medium rounded-lg bg-gris-bg text-navy hover:bg-gray-200 transition-colors">
+                Siguiente &rarr;
+              </a>
+            )}
+          </nav>
+        )}
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="space-y-6">
+        <MostReadWidget articles={masLeidos} />
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

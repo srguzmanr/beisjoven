@@ -1,0 +1,43 @@
+---
+interface BreadcrumbItem {
+  text: string;
+  href?: string;
+}
+
+interface Props {
+  items: BreadcrumbItem[];
+}
+
+const { items } = Astro.props;
+
+// JSON-LD for breadcrumbs
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": items.map((item, i) => ({
+    "@type": "ListItem",
+    "position": i + 1,
+    "name": item.text,
+    ...(item.href ? { "item": `https://beisjoven.com${item.href}` } : {}),
+  })),
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+<nav aria-label="Breadcrumb" class="bg-gris-bg border-b border-gris-border">
+  <div class="max-w-7xl mx-auto px-4 py-2">
+    <ol class="flex items-center gap-1.5 text-xs text-gris-muted overflow-x-auto">
+      {items.map((item, i) => (
+        <li class="flex items-center gap-1.5 whitespace-nowrap">
+          {i > 0 && <span class="text-gray-300">/</span>}
+          {item.href && i < items.length - 1 ? (
+            <a href={item.href} class="hover:text-navy transition-colors">{item.text}</a>
+          ) : (
+            <span class="text-gris-text font-medium truncate max-w-[200px]">{item.text}</span>
+          )}
+        </li>
+      ))}
+    </ol>
+  </div>
+</nav>

@@ -1,0 +1,98 @@
+---
+import CategoryPill from './CategoryPill.astro';
+import { timeAgo } from '@/lib/content';
+import type { Articulo } from '@/lib/supabase';
+
+interface Props {
+  article: Articulo;
+  size?: 'default' | 'small' | 'horizontal';
+  showExcerpt?: boolean;
+  eager?: boolean;
+}
+
+const { article, size = 'default', showExcerpt = true, eager = false } = Astro.props;
+
+const href = `/articulo/${article.slug}`;
+const imgAlt = article.titulo;
+const date = article.fecha ? timeAgo(article.fecha) : '';
+---
+
+{size === 'horizontal' ? (
+  <!-- Horizontal Card -->
+  <article class="group flex gap-4 bg-white rounded-lg overflow-hidden border border-gray-100 hover:shadow-md transition-shadow">
+    <a href={href} class="block w-2/5 flex-shrink-0">
+      <img
+        src={article.imagen_url}
+        alt={imgAlt}
+        loading={eager ? 'eager' : 'lazy'}
+        class="w-full h-full object-cover aspect-[4/3]"
+      />
+    </a>
+    <div class="flex-1 py-3 pr-4">
+      {article.categoria && (
+        <CategoryPill name={article.categoria.nombre} slug={article.categoria.slug} />
+      )}
+      <a href={href}>
+        <h3 class="font-bold text-navy mt-1.5 mb-1 line-clamp-2 group-hover:text-steel-blue transition-colors">
+          {article.titulo}
+        </h3>
+      </a>
+      {showExcerpt && article.extracto && (
+        <p class="text-sm text-gris-text line-clamp-2 mb-2">{article.extracto}</p>
+      )}
+      <span class="text-xs text-gris-muted">{date}</span>
+    </div>
+  </article>
+) : size === 'small' ? (
+  <!-- Small Card (sidebar) -->
+  <article class="group flex gap-3">
+    <a href={href} class="block w-20 h-20 flex-shrink-0">
+      <img
+        src={article.imagen_url}
+        alt={imgAlt}
+        loading="lazy"
+        class="w-full h-full object-cover rounded"
+      />
+    </a>
+    <div class="flex-1 min-w-0">
+      <a href={href}>
+        <h4 class="text-sm font-bold text-navy line-clamp-2 group-hover:text-steel-blue transition-colors">
+          {article.titulo}
+        </h4>
+      </a>
+      <span class="text-xs text-gris-muted mt-1 block">{date}</span>
+    </div>
+  </article>
+) : (
+  <!-- Default Card -->
+  <article class="group bg-white rounded-lg overflow-hidden border border-gray-100 hover:shadow-md transition-all hover:-translate-y-0.5">
+    <a href={href} class="block">
+      <div class="aspect-[16/10] overflow-hidden">
+        <img
+          src={article.imagen_url}
+          alt={imgAlt}
+          loading={eager ? 'eager' : 'lazy'}
+          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+      </div>
+    </a>
+    <div class="p-4">
+      {article.categoria && (
+        <CategoryPill name={article.categoria.nombre} slug={article.categoria.slug} />
+      )}
+      <a href={href}>
+        <h3 class="font-bold text-navy mt-2 mb-1.5 line-clamp-2 group-hover:text-steel-blue transition-colors leading-snug">
+          {article.titulo}
+        </h3>
+      </a>
+      {showExcerpt && article.extracto && (
+        <p class="text-sm text-gris-text line-clamp-2 mb-2">{article.extracto}</p>
+      )}
+      <div class="flex items-center gap-2 text-xs text-gris-muted">
+        {article.autor && <span>{article.autor.nombre}</span>}
+        {article.autor && <span>&middot;</span>}
+        <span>{date}</span>
+      </div>
+    </div>
+  </article>
+)}

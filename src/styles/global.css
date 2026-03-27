@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* ==================== BRAND TOKENS ==================== */
+@theme {
+  --color-navy: #1b3557;
+  --color-navy-dark: #122440;
+  --color-navy-light: #2a4a73;
+  --color-rojo: #e83646;
+  --color-rojo-dark: #c42d3b;
+  --color-rojo-light: #ff4d5e;
+  --color-steel-blue: #487699;
+  --color-steel-blue-light: #5a8bb3;
+  --color-gris-bg: #f4f5f7;
+  --color-gris-border: #e5e7eb;
+  --color-gris-text: #4a5568;
+  --color-gris-muted: #9ca3af;
+
+  --font-headline: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ==================== BASE ==================== */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-body);
+  color: #1a1a2e;
+  background: #ffffff;
+}
+
+/* ==================== TYPOGRAPHY ==================== */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* ==================== ARTICLE PROSE ==================== */
+.prose h2 {
+  @apply text-2xl font-bold mt-10 mb-4 text-navy;
+}
+.prose h3 {
+  @apply text-xl font-bold mt-8 mb-3 text-navy;
+}
+.prose p {
+  @apply mb-4 leading-relaxed text-gris-text;
+}
+.prose a {
+  @apply text-steel-blue hover:underline;
+}
+.prose strong {
+  @apply font-semibold text-navy;
+}
+.prose figure {
+  @apply my-6;
+}
+.prose figure img {
+  @apply rounded-lg w-full;
+}
+.prose figure figcaption {
+  @apply text-sm text-gris-muted mt-2 text-center;
+}
+.prose blockquote {
+  @apply border-l-4 border-rojo pl-4 my-6 italic text-gris-text;
+}
+.prose ul {
+  @apply list-disc pl-6 mb-4 space-y-1 text-gris-text;
+}
+.prose ol {
+  @apply list-decimal pl-6 mb-4 space-y-1 text-gris-text;
+}
+
+/* ==================== CATEGORY COLORS ==================== */
+.cat-mlb { --cat-color: #002D72; }
+.cat-liga-mexicana { --cat-color: #1b3557; }
+.cat-seleccion { --cat-color: #006847; }
+.cat-softbol { --cat-color: #8B4513; }
+.cat-juvenil { --cat-color: #e83646; }
+.cat-opinion { --cat-color: #487699; }
+
+/* ==================== ANIMATIONS ==================== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ==================== TICKER ==================== */
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-animate {
+  animation: ticker-scroll 30s linear infinite;
+}

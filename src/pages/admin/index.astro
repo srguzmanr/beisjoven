@@ -1,0 +1,71 @@
+---
+/**
+ * Admin panel — served as a standalone page.
+ * During migration, the existing vanilla JS admin is embedded directly.
+ * The admin JS/CSS files remain in the repo root and are served from /public in the Astro build.
+ *
+ * Post-migration (Phase 2), this can be rebuilt as a proper Astro island with React/Preact.
+ */
+export const prerender = false;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin - Beisjoven</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Admin Styles -->
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/admin-mobile-fix.css">
+</head>
+<body>
+    <main id="main-content">
+        <div style="text-align:center;padding:4rem;">
+            <p>Cargando admin...</p>
+        </div>
+    </main>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Admin Scripts -->
+    <script src="/js/supabase.js"></script>
+    <script src="/data/database.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/components.js"></script>
+    <script src="/js/pages.js"></script>
+    <script src="/js/router.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/media-library.js"></script>
+    <script src="/js/rich-text-editor.js"></script>
+    <script src="/js/article-preview.js"></script>
+    <script src="/js/admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Register admin routes only
+            Router.register('/login', AdminPages.login);
+            Router.register('/admin', AdminPages.dashboard);
+            Router.register('/admin/articulos', AdminPages.articles);
+            Router.register('/admin/nuevo', AdminPages.editor);
+            Router.register('/admin/editar/:id', AdminPages.editor);
+            Router.register('/admin/medios', AdminPages.medios);
+            Router.register('/admin/videos', AdminPages.videosList);
+            Router.register('/admin/videos/nuevo', AdminPages.videoEditor);
+            Router.register('/admin/videos/editar/:id', AdminPages.videoEditor);
+
+            Auth.init().then(() => {
+                Router.init();
+            });
+        });
+    </script>
+</body>
+</html>

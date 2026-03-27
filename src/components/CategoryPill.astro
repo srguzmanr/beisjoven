@@ -1,0 +1,28 @@
+---
+interface Props {
+  name: string;
+  slug: string;
+  size?: 'sm' | 'md';
+}
+
+const { name, slug, size = 'sm' } = Astro.props;
+
+const colorMap: Record<string, string> = {
+  'mlb': 'bg-[#002D72] text-white',
+  'liga-mexicana': 'bg-navy text-white',
+  'seleccion': 'bg-[#006847] text-white',
+  'softbol': 'bg-[#8B4513] text-white',
+  'juvenil': 'bg-rojo text-white',
+  'opinion': 'bg-steel-blue text-white',
+};
+
+const colors = colorMap[slug] || 'bg-navy text-white';
+const sizeClasses = size === 'sm' ? 'text-[10px] px-2 py-0.5' : 'text-xs px-2.5 py-1';
+---
+
+<a
+  href={`/categoria/${slug}`}
+  class:list={['inline-block font-bold uppercase tracking-wider rounded-sm transition-opacity hover:opacity-80', colors, sizeClasses]}
+>
+  {name}
+</a>

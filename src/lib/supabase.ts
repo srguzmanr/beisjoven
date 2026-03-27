@@ -1,0 +1,251 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.SUPABASE_URL || 'https://yulkbjpotfmwqkzzfegg.supabase.co';
+const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY;
+const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Public client (for client-side and SSR with anon key)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Server client (for build-time fetches with service role key — bypasses RLS)
+export const supabaseServer = supabaseServiceKey
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : supabase;
+
+// ==================== TYPES ====================
+
+export interface Categoria {
+  id: number;
+  nombre: string;
+  slug: string;
+  color: string;
+}
+
+export interface Autor {
+  id: number;
+  nombre: string;
+  slug: string;
+  avatar_url: string | null;
+  bio: string | null;
+}
+
+export interface Articulo {
+  id: number;
+  titulo: string;
+  slug: string;
+  extracto: string;
+  contenido: string;
+  imagen_url: string;
+  fecha: string;
+  created_at: string;
+  updated_at: string | null;
+  publicado: boolean;
+  destacado: boolean;
+  es_wbc2026: boolean;
+  vistas: number;
+  categoria_id: number;
+  autor_id: number;
+  categoria: Categoria;
+  autor: Autor;
+}
+
+export interface Video {
+  id: number;
+  titulo: string;
+  slug: string;
+  descripcion: string;
+  youtube_id: string;
+  thumbnail_url: string | null;
+  fecha: string;
+  publicado: boolean;
+  destacado: boolean;
+  categoria_id: number;
+  categoria: Categoria;
+}
+
+// ==================== QUERIES ====================
+
+const ARTICLE_SELECT = `*, categoria:categorias(*), autor:autores(*)`;
+
+export async function getArticulos(limite = 10) {
+  const { data } = await supabaseServer
+    .from('articulos')
+    .select(ARTICLE_SELECT)
+    .eq('publicado', true)
+    .order('fecha', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limite);
+  return (data as Articulo[]) || [];
+}
+
+export async function getArticuloBySlug(slug: string) {
+  const { data } = await supabaseServer
+    .from('articulos')
+    .select(ARTICLE_SELECT)
+    .eq('slug', slug)
+    .single();
+  return data as Articulo | null;
+}
+
+export async function getAllArticuloSlugs() {
+  const { data } = await supabaseServer
+    .from('articulos')
+    .select('slug')
+    .eq('publicado', true);
+  return (data || []).map((a: { slug: string }) => a.slug);
+}
+
+export async function getArticulosByCategoria(categoriaSlug: string, limite = 10) {
+  const cat = await getCategoriaBySlug(categoriaSlug);
+  if (!cat) return [];
+  const { data } = await supabaseServer
+    .from('articulos')
+    .select(ARTICLE_SELECT)
+    .eq('categoria_id', cat.id)
+    .eq('publicado', true)
+    .order('fecha', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limite);
+  return (data as Articulo[]) || [];
+}
+
+export async function getArticulosByCategoriaPaginados(categoriaSlug: string, limite = 20, offset = 0) {
+  const cat = await getCategoriaBySlug(categoriaSlug);
+  if (!cat) return { articulos: [] as Articulo[], total: 0 };
+
+  const [{ data }, { count }] = await Promise.all([
+    supabaseServer
+      .from('articulos')
+      .select(ARTICLE_SELECT)
+      .eq('categoria_id', cat.id)
+      .eq('publicado', true)
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limite - 1),
+    supabaseServer
+      .from('articulos')
+      .select('id', { count: 'exact', head: true })
+      .eq('categoria_id', cat.id)
+      .eq('publicado', true),
+  ]);
+  return { articulos: (data as Articulo[]) || [], total: count || 0 };
+}
+
+export async function getArticulosDestacados(limite = 5) {
+  const { data } = await supabaseServer
+    .from('articulos')
+    .select(ARTICLE_SELECT)
+    .eq('publicado', true)
+    .eq('destacado', true)
+    .order('fecha', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limite);
+  return (data as Articulo[]) || [];
+}
+
+export async function getMasLeidos(limite = 5) {
+  const { data } = await supabaseServer
+    .from('articulos')
+    .select(ARTICLE_SELECT)
+    .eq('publicado', true)
+    .order('vistas', { ascending: false })
+    .order('fecha', { ascending: false })
+    .limit(limite);
+  return (data as Articulo[]) || [];
+}
+
+export async function getArticulosByAutor(autorSlug: string, limite = 20) {
+  const autor = await getAutorBySlug(autorSlug);
+  if (!autor) return [];
+  const { data } = await supabaseServer
+    .from('articulos')
+    .select(ARTICLE_SELECT)
+    .eq('autor_id', autor.id)
+    .eq('publicado', true)
+    .order('fecha', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limite);
+  return (data as Articulo[]) || [];
+}
+
+export async function buscarArticulos(query: string, limite = 20) {
+  const { data } = await supabase
+    .from('articulos')
+    .select(ARTICLE_SELECT)
+    .eq('publicado', true)
+    .or(`titulo.ilike.%${query}%,extracto.ilike.%${query}%`)
+    .order('fecha', { ascending: false })
+    .limit(limite);
+  return (data as Articulo[]) || [];
+}
+
+export async function incrementVistas(articuloId: number) {
+  await supabase.rpc('increment_vistas', { articulo_id: articuloId });
+}
+
+// ==================== CATEGORÍAS ====================
+
+export async function getCategorias() {
+  const { data } = await supabaseServer
+    .from('categorias')
+    .select('*')
+    .order('id');
+  return (data as Categoria[]) || [];
+}
+
+export async function getCategoriaBySlug(slug: string) {
+  const { data } = await supabaseServer
+    .from('categorias')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+  return data as Categoria | null;
+}
+
+// ==================== AUTORES ====================
+
+export async function getAutores() {
+  const { data } = await supabaseServer
+    .from('autores')
+    .select('*');
+  return (data as Autor[]) || [];
+}
+
+export async function getAutorBySlug(slug: string) {
+  const { data } = await supabaseServer
+    .from('autores')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+  return data as Autor | null;
+}
+
+export async function getAllAutorSlugs() {
+  const { data } = await supabaseServer
+    .from('autores')
+    .select('slug');
+  return (data || []).map((a: { slug: string }) => a.slug);
+}
+
+// ==================== VIDEOS ====================
+
+export async function getVideos(limite = 10) {
+  const { data } = await supabaseServer
+    .from('videos')
+    .select('*, categoria:categorias(*)')
+    .eq('publicado', true)
+    .order('fecha', { ascending: false })
+    .limit(limite);
+  return (data as Video[]) || [];
+}
+
+export async function getVideosDestacados(limite = 4) {
+  const { data } = await supabaseServer
+    .from('videos')
+    .select('*, categoria:categorias(*)')
+    .eq('publicado', true)
+    .eq('destacado', true)
+    .order('fecha', { ascending: false })
+    .limit(limite);
+  return (data as Video[]) || [];
+}

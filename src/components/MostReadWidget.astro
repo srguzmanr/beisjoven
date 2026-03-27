@@ -1,0 +1,25 @@
+---
+import type { Articulo } from '@/lib/supabase';
+
+interface Props {
+  articles: Articulo[];
+}
+
+const { articles } = Astro.props;
+---
+
+<aside class="bg-gris-bg rounded-lg p-4">
+  <h3 class="text-sm font-bold uppercase tracking-wider text-navy mb-3 pb-2 border-b border-gris-border">
+    Más leídos
+  </h3>
+  <ol class="space-y-3">
+    {articles.map((a, i) => (
+      <li class="flex gap-3 group">
+        <span class="text-2xl font-black text-rojo/30 leading-none w-6 flex-shrink-0">{i + 1}</span>
+        <a href={`/articulo/${a.slug}`} class="text-sm font-medium text-navy leading-snug line-clamp-2 group-hover:text-steel-blue transition-colors">
+          {a.titulo}
+        </a>
+      </li>
+    ))}
+  </ol>
+</aside>
