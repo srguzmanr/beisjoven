@@ -1,0 +1,160 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+import CategoryPill from '@/components/CategoryPill.astro';
+import ArticleCard from '@/components/ArticleCard.astro';
+import ShareButtons from '@/components/ShareButtons.astro';
+import MostReadWidget from '@/components/MostReadWidget.astro';
+import SectionTitle from '@/components/SectionTitle.astro';
+import {
+  getAllArticuloSlugs,
+  getArticuloBySlug,
+  getArticulosByCategoria,
+  getMasLeidos,
+  incrementVistas,
+} from '@/lib/supabase';
+import { renderContent, formatDate, readTime } from '@/lib/content';
+
+export async function getStaticPaths() {
+  const slugs = await getAllArticuloSlugs();
+  return slugs.map((slug: string) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+const articulo = await getArticuloBySlug(slug!);
+
+if (!articulo) {
+  return Astro.redirect('/404');
+}
+
+const [relacionados, masLeidos] = await Promise.all([
+  articulo.categoria ? getArticulosByCategoria(articulo.categoria.slug, 7) : Promise.resolve([]),
+  getMasLeidos(5),
+]);
+
+const related = relacionados.filter((a) => a.id !== articulo.id).slice(0, 4);
+const articleUrl = `https://beisjoven.com/articulo/${articulo.slug}`;
+const renderedBody = renderContent(articulo.contenido);
+const formattedDate = formatDate(articulo.fecha);
+const readingTime = readTime(articulo.contenido);
+
+// JSON-LD for this article
+const articleJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "NewsArticle",
+  "headline": articulo.titulo,
+  "description": articulo.extracto || '',
+  "image": articulo.imagen_url ? [articulo.imagen_url] : [],
+  "datePublished": articulo.fecha || articulo.created_at,
+  "dateModified": articulo.updated_at || articulo.fecha || articulo.created_at,
+  "author": {
+    "@type": "Person",
+    "name": articulo.autor?.nombre || 'Redacción Beisjoven',
+    "url": `https://beisjoven.com/autor/${articulo.autor?.slug || 'redaccion'}`,
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Beisjoven",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://beisjoven.com/BJ-Logo-H2-WEB.png",
+    },
+  },
+  "mainEntityOfPage": { "@type": "WebPage", "@id": articleUrl },
+  "url": articleUrl,
+  "articleSection": articulo.categoria?.nombre || 'Noticias',
+  "inLanguage": "es-MX",
+};
+---
+
+<BaseLayout
+  title={`${articulo.titulo} - Beisjoven`}
+  description={articulo.extracto || ''}
+  image={articulo.imagen_url}
+  url={articleUrl}
+  type="article"
+  publishedTime={articulo.fecha || articulo.created_at}
+  modifiedTime={articulo.updated_at || articulo.fecha}
+  section={articulo.categoria?.nombre}
+  author={articulo.autor?.nombre}
+  jsonLd={articleJsonLd}
+>
+  <Breadcrumb items={[
+    { text: 'Inicio', href: '/' },
+    { text: articulo.categoria?.nombre || 'Noticias', href: `/categoria/${articulo.categoria?.slug || ''}` },
+    { text: articulo.titulo },
+  ]} />
+
+  <article class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Article Header -->
+    <header class="max-w-3xl mx-auto mb-6 lg:mx-0">
+      {articulo.categoria && (
+        <CategoryPill name={articulo.categoria.nombre} slug={articulo.categoria.slug} size="md" />
+      )}
+      <h1 class="text-2xl md:text-4xl font-extrabold text-navy mt-3 mb-4 leading-tight" style="letter-spacing: -0.02em;">
+        {articulo.titulo}
+      </h1>
+      <div class="flex flex-wrap items-center gap-3 text-sm">
+        {articulo.autor && (
+          <a href={`/autor/${articulo.autor.slug}`} class="font-medium text-navy hover:text-steel-blue transition-colors">
+            {articulo.autor.nombre}
+          </a>
+        )}
+        <span class="text-gris-muted">&middot;</span>
+        <time datetime={articulo.fecha} class="text-gris-muted">{formattedDate}</time>
+        <span class="text-gris-muted">&middot;</span>
+        <span class="text-gris-muted">{readingTime}</span>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Article Body -->
+      <div class="lg:col-span-2">
+        <!-- Hero Image — full-width on mobile -->
+        <figure class="mb-6 -mx-4 md:mx-0">
+          <img
+            src={articulo.imagen_url}
+            alt={articulo.titulo}
+            loading="eager"
+            class="w-full md:rounded-lg"
+          />
+        </figure>
+
+        <!-- Content -->
+        <div class="prose max-w-none" set:html={renderedBody} />
+
+        <!-- Share -->
+        <ShareButtons url={articleUrl} title={articulo.titulo} />
+
+        <!-- Related Articles -->
+        {related.length > 0 && (
+          <section class="mt-10">
+            <SectionTitle title="Artículos relacionados" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {related.map((a) => (
+                <ArticleCard article={a} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="space-y-6">
+        <MostReadWidget articles={masLeidos} />
+      </aside>
+    </div>
+  </article>
+
+  <!-- Increment views client-side (fire-and-forget) -->
+  <script define:vars={{ articuloId: articulo.id, supabaseUrl: 'https://yulkbjpotfmwqkzzfegg.supabase.co' }}>
+    fetch(`${supabaseUrl}/rest/v1/rpc/increment_vistas`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': document.querySelector('meta[name="supabase-anon-key"]')?.content || '',
+      },
+      body: JSON.stringify({ articulo_id: articuloId }),
+    }).catch(() => {});
+  </script>
+</BaseLayout>

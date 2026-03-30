@@ -1,0 +1,118 @@
+---
+import Nav from '@/components/Nav.astro';
+import Footer from '@/components/Footer.astro';
+import '@/styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  url?: string;
+  type?: string;
+  publishedTime?: string;
+  modifiedTime?: string;
+  section?: string;
+  author?: string;
+  jsonLd?: Record<string, unknown>;
+  noIndex?: boolean;
+}
+
+const {
+  title = 'Beisjoven - La Revista Digital de Béisbol y Softbol Mexicano',
+  description = 'Cobertura editorial del béisbol y softbol mexicano. MLB, LMB, LMP, Selección México, Softbol y más.',
+  image = 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-image.jpg',
+  url = Astro.url.href,
+  type = 'website',
+  publishedTime,
+  modifiedTime,
+  section,
+  author,
+  jsonLd,
+  noIndex = false,
+} = Astro.props;
+
+const canonicalUrl = url.replace(/\/$/, '') || 'https://beisjoven.com';
+
+// Organization JSON-LD (always present)
+const orgJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "NewsMediaOrganization",
+  "name": "Beisjoven",
+  "url": "https://beisjoven.com",
+  "description": "La revista digital de referencia para el béisbol y softbol mexicano.",
+  "logo": "https://beisjoven.com/BJ-Logo-H2-WEB.png",
+  "sameAs": [
+    "https://facebook.com/beisjoven",
+    "https://instagram.com/beisjoven",
+    "https://twitter.com/beisjoven"
+  ]
+};
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO -->
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <meta name="author" content={author || 'Beisjoven'} />
+  <link rel="canonical" href={canonicalUrl} />
+  {noIndex && <meta name="robots" content="noindex, nofollow" />}
+
+  <!-- Open Graph -->
+  <meta property="og:type" content={type} />
+  <meta property="og:url" content={canonicalUrl} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={image} />
+  <meta property="og:site_name" content="Beisjoven" />
+  <meta property="og:locale" content="es_MX" />
+  {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+  {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+  {section && <meta property="article:section" content={section} />}
+  {author && <meta property="article:author" content={author} />}
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={image} />
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+  <!-- Structured Data -->
+  <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
+  {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1RE839J27Q"></script>
+  <script is:inline>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1RE839J27Q');
+  </script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body class="min-h-screen flex flex-col bg-white text-gray-900">
+  <Nav />
+
+  <main class="flex-1">
+    <slot />
+  </main>
+
+  <Footer />
+</body>
+</html>

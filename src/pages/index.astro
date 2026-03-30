@@ -1,0 +1,198 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import HeroArticle from '@/components/HeroArticle.astro';
+import ArticleCard from '@/components/ArticleCard.astro';
+import SectionTitle from '@/components/SectionTitle.astro';
+import MostReadWidget from '@/components/MostReadWidget.astro';
+import {
+  getArticulos,
+  getArticulosDestacados,
+  getMasLeidos,
+  getArticulosByCategoria,
+  getVideosDestacados,
+} from '@/lib/supabase';
+
+// Fetch all data in parallel at build time
+const [
+  articulos,
+  destacados,
+  masLeidos,
+  ligaMex,
+  mlb,
+  seleccion,
+  softbol,
+  juvenil,
+  videos,
+] = await Promise.all([
+  getArticulos(12),
+  getArticulosDestacados(3),
+  getMasLeidos(5),
+  getArticulosByCategoria('liga-mexicana', 4),
+  getArticulosByCategoria('mlb', 4),
+  getArticulosByCategoria('seleccion', 4),
+  getArticulosByCategoria('softbol', 4),
+  getArticulosByCategoria('juvenil', 4),
+  getVideosDestacados(4),
+]);
+
+const featured = destacados.length > 0 ? destacados : articulos.slice(0, 3);
+const hero = featured[0];
+const secondary = featured.slice(1, 3);
+const latest = articulos.slice(0, 6);
+---
+
+<BaseLayout>
+  <!-- Quick Hits Ticker -->
+  <div class="bg-navy text-white overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 flex items-center">
+      <span class="bg-rojo/90 text-white text-[10px] font-bold uppercase px-2.5 py-1.5 flex-shrink-0 tracking-wider rounded-sm">
+        Últimas
+      </span>
+      <div class="overflow-hidden flex-1 py-2 ml-3">
+        <div class="ticker-animate flex gap-12 whitespace-nowrap">
+          {latest.map((a) => (
+            <a href={`/articulo/${a.slug}`} class="text-sm text-white/80 hover:text-white transition-colors">
+              {a.titulo}
+            </a>
+          ))}
+          {/* Duplicate for seamless loop */}
+          {latest.map((a) => (
+            <a href={`/articulo/${a.slug}`} class="text-sm text-white/80 hover:text-white transition-colors">
+              {a.titulo}
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero Section -->
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <section class="mb-8">
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:grid-rows-1">
+        <!-- Main Hero (60%) -->
+        <div class="lg:col-span-3 h-full">
+          {hero && <HeroArticle article={hero} />}
+        </div>
+        <!-- Secondary (40%) -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
+          {secondary.map((a) => (
+            <article class="group relative rounded-xl overflow-hidden flex-1 min-h-[200px] shadow-sm hover:shadow-md transition-shadow duration-300">
+              <a href={`/articulo/${a.slug}`} class="block h-full">
+                <img src={a.imagen_url} alt={a.titulo} loading="eager" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
+                <div class="absolute bottom-0 left-0 right-0 p-4">
+                  {a.categoria && (
+                    <span class="inline-block text-[10px] font-bold uppercase tracking-wider text-white/90 mb-1">{a.categoria.nombre}</span>
+                  )}
+                  <h3 class="text-white text-sm md:text-base font-bold line-clamp-2 leading-snug">
+                    {a.titulo}
+                  </h3>
+                </div>
+              </a>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Category Sections + Sidebar -->
+  <div class="max-w-7xl mx-auto px-4 pb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Main Content -->
+      <div class="lg:col-span-2 space-y-0">
+        <!-- Liga Mexicana — white bg -->
+        {ligaMex.length > 0 && (
+          <section class="py-8">
+            <SectionTitle title="Ligas Mexicanas" href="/categoria/liga-mexicana" color="#dc2626" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {ligaMex.map((a, i) => (
+                <ArticleCard article={a} eager={i < 2} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <!-- MLB — alt bg -->
+        {mlb.length > 0 && (
+          <section class="py-8 -mx-4 px-4 bg-gris-bg rounded-lg">
+            <SectionTitle title="MLB" href="/categoria/mlb" color="#1e40af" />
+            <div class="space-y-4">
+              {mlb.slice(0, 2).map((a) => (
+                <ArticleCard article={a} size="horizontal" />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <!-- Selección — white bg -->
+        {seleccion.length > 0 && (
+          <section class="py-8">
+            <SectionTitle title="Selección" href="/categoria/seleccion" color="#15803d" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {seleccion.map((a) => (
+                <ArticleCard article={a} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <!-- Softbol — alt bg -->
+        {softbol.length > 0 && (
+          <section class="py-8 -mx-4 px-4 bg-gris-bg rounded-lg">
+            <SectionTitle title="Softbol" href="/categoria/softbol" color="#7c3aed" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {softbol.map((a) => (
+                <ArticleCard article={a} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <!-- Juvenil — white bg -->
+        {juvenil.length > 0 && (
+          <section class="py-8">
+            <SectionTitle title="Juvenil" href="/categoria/juvenil" color="#ea580c" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {juvenil.map((a) => (
+                <ArticleCard article={a} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="space-y-6">
+        <MostReadWidget articles={masLeidos} />
+
+        {/* Videos section */}
+        {videos.length > 0 && (
+          <div class="bg-gris-bg rounded-lg p-4">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-navy mb-3 pb-2 border-b border-gris-border">
+              Videos
+            </h3>
+            <div class="space-y-3">
+              {videos.map((v) => (
+                <a href={`/video/${v.slug}`} class="flex gap-3 group">
+                  <img
+                    src={v.thumbnail_url || `https://img.youtube.com/vi/${v.youtube_id}/mqdefault.jpg`}
+                    alt={v.titulo}
+                    loading="lazy"
+                    class="w-24 h-16 object-cover rounded flex-shrink-0"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <h4 class="text-sm font-medium text-navy line-clamp-2 group-hover:text-steel-blue transition-colors">
+                      {v.titulo}
+                    </h4>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

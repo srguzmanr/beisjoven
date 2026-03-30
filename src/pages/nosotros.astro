@@ -1,0 +1,38 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+---
+
+<BaseLayout
+  title="Nosotros - Beisjoven"
+  description="Beisjoven es la revista digital de referencia para el béisbol y softbol mexicano. Conoce nuestra misión y equipo editorial."
+>
+  <Breadcrumb items={[
+    { text: 'Inicio', href: '/' },
+    { text: 'Nosotros' },
+  ]} />
+
+  <div class="max-w-2xl mx-auto px-4 py-12">
+    <h1 class="text-3xl font-bold text-navy mb-6">Nosotros</h1>
+
+    <div class="prose max-w-none">
+      <p class="text-lg text-gris-text leading-relaxed mb-6">
+        <strong class="text-navy">Beisjoven</strong> es la revista digital de referencia para el béisbol y softbol mexicano. Cubrimos las Ligas Mexicanas de Béisbol (LMB y LMP), mexicanos en Grandes Ligas (MLB), selecciones nacionales, softbol y el béisbol juvenil.
+      </p>
+
+      <h2 class="text-xl font-bold text-navy mt-8 mb-3">Nuestra misión</h2>
+      <p class="text-gris-text leading-relaxed mb-6">
+        Dar cobertura editorial profunda, profesional y accesible al béisbol y softbol mexicano. Creemos que estos deportes merecen la misma calidad periodística que cualquier otro deporte profesional en México.
+      </p>
+
+      <h2 class="text-xl font-bold text-navy mt-8 mb-3">Lo que cubrimos</h2>
+      <ul class="text-gris-text space-y-2 mb-6">
+        <li><strong>Ligas Mexicanas</strong> — LMB, LMP y circuitos profesionales</li>
+        <li><strong>MLB</strong> — Mexicanos en Grandes Ligas</li>
+        <li><strong>Selección</strong> — Clásico Mundial, Premier12, WBSC</li>
+        <li><strong>Softbol</strong> — Liga Nacional, selección femenil, torneos internacionales</li>
+        <li><strong>Juvenil</strong> — Prospectos, desarrollo, ligas menores</li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

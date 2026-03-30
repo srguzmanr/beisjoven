@@ -1,0 +1,90 @@
+---
+/**
+ * Admin panel — served as a standalone page.
+ * During migration, the existing vanilla JS admin is embedded directly.
+ * The admin JS/CSS files remain in the repo root and are served from /public in the Astro build.
+ *
+ * Post-migration (Phase 2), this can be rebuilt as a proper Astro island with React/Preact.
+ */
+export const prerender = false;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin - Beisjoven</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Admin Styles -->
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/admin-mobile-fix.css">
+</head>
+<body>
+    <main id="main-content">
+        <div style="text-align:center;padding:4rem;">
+            <p>Cargando admin...</p>
+        </div>
+    </main>
+
+    <!-- Supabase -->
+    <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Admin Scripts -->
+    <script is:inline src="/js/supabase.js"></script>
+    <script is:inline src="/data/database.js"></script>
+    <script is:inline src="/js/api.js"></script>
+    <script is:inline src="/js/components.js"></script>
+    <script is:inline src="/js/pages.js"></script>
+    <script is:inline src="/js/router.js"></script>
+    <script is:inline src="/js/auth.js"></script>
+    <script is:inline src="/js/media-library.js"></script>
+    <script is:inline src="/js/rich-text-editor.js"></script>
+    <script is:inline src="/js/article-preview.js"></script>
+    <script is:inline src="/js/admin.js"></script>
+    <script is:inline>
+        // =============================================================
+        // VERCEL DEPLOY HOOK — Setup instructions for Sergio:
+        //
+        // 1. Go to https://vercel.com → select "beisjoven" project
+        // 2. Settings → Git → scroll down to "Deploy Hooks"
+        // 3. Click "Create Hook"
+        //    - Name: "Admin publish"
+        //    - Branch: "claude/audit-beisjoven-repo-QhMjj"
+        // 4. Copy the generated URL (looks like:
+        //    https://api.vercel.com/v1/integrations/deploy/prj_XXXXX/YYYYY)
+        // 5. Paste it below between the quotes
+        //
+        // After this, every time you publish or edit an article in the
+        // admin panel, a Vercel rebuild will be triggered automatically
+        // and the site will update in ~2 minutes.
+        // =============================================================
+        window.VERCEL_DEPLOY_HOOK_URL = 'https://api.vercel.com/v1/integrations/deploy/prj_ob8ybhWH6MjsAf4obOwWEQVS7Fb1/QXZkH99noO';
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Register admin routes only
+            Router.register('/login', AdminPages.login);
+            Router.register('/admin', AdminPages.dashboard);
+            Router.register('/admin/articulos', AdminPages.articles);
+            Router.register('/admin/nuevo', AdminPages.editor);
+            Router.register('/admin/editar/:id', AdminPages.editor);
+            Router.register('/admin/medios', AdminPages.medios);
+            Router.register('/admin/videos', AdminPages.videosList);
+            Router.register('/admin/videos/nuevo', AdminPages.videoEditor);
+            Router.register('/admin/videos/editar/:id', AdminPages.videoEditor);
+
+            Auth.init().then(() => {
+                Router.init();
+            });
+        });
+    </script>
+</body>
+</html>

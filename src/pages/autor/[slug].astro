@@ -1,0 +1,55 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+import ArticleCard from '@/components/ArticleCard.astro';
+import { getAllAutorSlugs, getAutorBySlug, getArticulosByAutor } from '@/lib/supabase';
+
+export async function getStaticPaths() {
+  const slugs = await getAllAutorSlugs();
+  return slugs.map((slug: string) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+const autor = await getAutorBySlug(slug!);
+
+if (!autor) {
+  return Astro.redirect('/404');
+}
+
+const articulos = await getArticulosByAutor(slug!, 50);
+---
+
+<BaseLayout
+  title={`${autor.nombre} - Beisjoven`}
+  description={autor.bio || `Artículos de ${autor.nombre} en Beisjoven.`}
+>
+  <Breadcrumb items={[
+    { text: 'Inicio', href: '/' },
+    { text: autor.nombre },
+  ]} />
+
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Author Header -->
+    <header class="flex items-center gap-4 mb-8 pb-6 border-b border-gris-border">
+      {autor.avatar_url && (
+        <img src={autor.avatar_url} alt={autor.nombre} class="w-20 h-20 rounded-full object-cover" />
+      )}
+      <div>
+        <h1 class="text-2xl font-bold text-navy">{autor.nombre}</h1>
+        {autor.bio && <p class="text-gris-text mt-1">{autor.bio}</p>}
+        <p class="text-sm text-gris-muted mt-1">{articulos.length} artículos publicados</p>
+      </div>
+    </header>
+
+    <!-- Articles -->
+    {articulos.length > 0 ? (
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {articulos.map((a) => (
+          <ArticleCard article={a} />
+        ))}
+      </div>
+    ) : (
+      <p class="text-gris-text text-center py-8">Este autor no tiene artículos publicados.</p>
+    )}
+  </div>
+</BaseLayout>

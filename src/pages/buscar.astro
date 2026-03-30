@@ -1,0 +1,50 @@
+---
+export const prerender = false;
+
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ArticleCard from '@/components/ArticleCard.astro';
+import { buscarArticulos } from '@/lib/supabase';
+
+const query = Astro.url.searchParams.get('q') || '';
+const articulos = query ? await buscarArticulos(query) : [];
+---
+
+<BaseLayout
+  title={query ? `"${query}" - Búsqueda - Beisjoven` : 'Buscar - Beisjoven'}
+  description={`Resultados de búsqueda para "${query}" en Beisjoven.`}
+  noIndex={true}
+>
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold text-navy mb-2">Buscar</h1>
+
+    <form action="/buscar" method="get" class="flex gap-2 mb-8">
+      <input
+        type="text"
+        name="q"
+        value={query}
+        placeholder="Buscar noticias..."
+        class="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-steel-blue text-sm"
+        autofocus
+      />
+      <button type="submit" class="px-6 py-2.5 bg-navy text-white font-medium text-sm rounded-lg hover:bg-navy-dark transition-colors">
+        Buscar
+      </button>
+    </form>
+
+    {query && (
+      <p class="text-sm text-gris-muted mb-6">
+        {articulos.length} resultado{articulos.length !== 1 && 's'} para "<strong class="text-navy">{query}</strong>"
+      </p>
+    )}
+
+    {articulos.length > 0 ? (
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {articulos.map((a) => (
+          <ArticleCard article={a} />
+        ))}
+      </div>
+    ) : query ? (
+      <p class="text-gris-text text-center py-8">No se encontraron artículos para esta búsqueda.</p>
+    ) : null}
+  </div>
+</BaseLayout>
