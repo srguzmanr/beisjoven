@@ -107,56 +107,56 @@ const categorySections = [
   </div>
 
   <!-- Category Sections + Sticky Sidebar -->
-  {categorySections.map((section) => (
-    section.data.length > 0 && (
-      <div class:list={[section.bg]}>
-        <div class="max-w-7xl mx-auto px-4">
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Main Content -->
-            <div class="lg:col-span-2 py-12">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
+      <!-- Left column: ALL category sections -->
+      <div>
+        {categorySections.map((section) => (
+          section.data.length > 0 && (
+            <section class:list={[section.bg, 'py-12 -mx-4 px-4']}>
               <SectionTitle title={section.title} href={section.href} color={section.color} />
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {section.data.map((a, i) => (
                   <ArticleCard article={a} eager={i < 2} />
                 ))}
               </div>
-            </div>
-
-            <!-- Sticky Sidebar — visible on lg+ -->
-            <aside class="hidden lg:block py-12">
-              <div class="sticky top-20 space-y-6">
-                <MostReadWidget articles={masLeidos} />
-                {videos.length > 0 && (
-                  <div class="bg-gris-bg rounded-lg p-4">
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-navy mb-3 pb-2 border-b border-gris-border">
-                      Videos
-                    </h3>
-                    <div class="space-y-3">
-                      {videos.map((v) => (
-                        <a href={`/video/${v.slug}`} class="flex gap-3 group">
-                          <img
-                            src={v.thumbnail_url || `https://img.youtube.com/vi/${v.youtube_id}/mqdefault.jpg`}
-                            alt={v.titulo}
-                            loading="lazy"
-                            class="w-24 h-16 object-cover rounded flex-shrink-0"
-                          />
-                          <div class="flex-1 min-w-0">
-                            <h4 class="text-sm font-medium text-navy line-clamp-2 group-hover:text-steel-blue transition-colors">
-                              {v.titulo}
-                            </h4>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </aside>
-          </div>
-        </div>
+            </section>
+          )
+        ))}
       </div>
-    )
-  ))}
+
+      <!-- Right column: ONE sticky sidebar (desktop only) -->
+      <aside class="hidden lg:block">
+        <div class="sticky top-20 space-y-6 py-12">
+          <MostReadWidget articles={masLeidos} />
+          {videos.length > 0 && (
+            <div class="bg-gris-bg rounded-lg p-4">
+              <h3 class="text-sm font-bold uppercase tracking-wider text-navy mb-3 pb-2 border-b border-gris-border">
+                Videos
+              </h3>
+              <div class="space-y-3">
+                {videos.map((v) => (
+                  <a href={`/video/${v.slug}`} class="flex gap-3 group">
+                    <img
+                      src={v.thumbnail_url || `https://img.youtube.com/vi/${v.youtube_id}/mqdefault.jpg`}
+                      alt={v.titulo}
+                      loading="lazy"
+                      class="w-24 h-16 object-cover rounded flex-shrink-0"
+                    />
+                    <div class="flex-1 min-w-0">
+                      <h4 class="text-sm font-medium text-navy line-clamp-2 group-hover:text-steel-blue transition-colors">
+                        {v.titulo}
+                      </h4>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
+    </div>
+  </div>
 
   <!-- Mobile Sidebar — only on mobile, after all sections -->
   <div class="lg:hidden max-w-7xl mx-auto px-4 py-8 space-y-6">

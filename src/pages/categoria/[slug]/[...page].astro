@@ -1,39 +1,41 @@
 ---
+import type { GetStaticPathsOptions } from 'astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Breadcrumb from '@/components/Breadcrumb.astro';
 import ArticleCard from '@/components/ArticleCard.astro';
-import SectionTitle from '@/components/SectionTitle.astro';
 import MostReadWidget from '@/components/MostReadWidget.astro';
 import {
   getCategorias,
   getCategoriaBySlug,
-  getArticulosByCategoriaPaginados,
+  getArticulosByCategoria,
   getMasLeidos,
 } from '@/lib/supabase';
 
-export async function getStaticPaths() {
+export async function getStaticPaths({ paginate }: GetStaticPathsOptions) {
   const categorias = await getCategorias();
-  return categorias.map((cat) => ({ params: { slug: cat.slug } }));
+  const allPaths = [];
+
+  for (const cat of categorias) {
+    const articulos = await getArticulosByCategoria(cat.slug, 200);
+    const pages = paginate(articulos, {
+      pageSize: 20,
+      params: { slug: cat.slug },
+    });
+    allPaths.push(...pages);
+  }
+
+  return allPaths;
 }
 
 const { slug } = Astro.params;
-const categoria = await getCategoriaBySlug(slug!);
+const { page } = Astro.props;
 
+const categoria = await getCategoriaBySlug(slug!);
 if (!categoria) {
   return Astro.redirect('/404');
 }
 
-const page = Number(Astro.url.searchParams.get('page')) || 1;
-const perPage = 20;
-const offset = (page - 1) * perPage;
-
-const [{ articulos, total }, masLeidos] = await Promise.all([
-  getArticulosByCategoriaPaginados(slug!, perPage, offset),
-  getMasLeidos(5),
-]);
-
-const totalPages = Math.ceil(total / perPage);
-const categoryUrl = `https://beisjoven.com/categoria/${slug}`;
+const masLeidos = await getMasLeidos(5);
 
 const categoryDescriptions: Record<string, string> = {
   'mlb': 'Mexicanos en Grandes Ligas, estadísticas, trades y más del béisbol de las mayores.',
@@ -45,10 +47,11 @@ const categoryDescriptions: Record<string, string> = {
 };
 
 const description = categoryDescriptions[slug!] || `Noticias y artículos de ${categoria.nombre} en Beisjoven.`;
+const categoryUrl = `https://beisjoven.com/categoria/${slug}`;
 ---
 
 <BaseLayout
-  title={`${categoria.nombre} - Beisjoven`}
+  title={`${categoria.nombre}${page.currentPage > 1 ? ` - Página ${page.currentPage}` : ''} - Beisjoven`}
   description={description}
   url={categoryUrl}
 >
@@ -66,9 +69,9 @@ const description = categoryDescriptions[slug!] || `Noticias y artículos de ${c
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Articles Grid -->
       <div class="lg:col-span-2">
-        {articulos.length > 0 ? (
+        {page.data.length > 0 ? (
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {articulos.map((a, i) => (
+            {page.data.map((a, i) => (
               <ArticleCard article={a} eager={i < 4} />
             ))}
           </div>
@@ -77,18 +80,18 @@ const description = categoryDescriptions[slug!] || `Noticias y artículos de ${c
         )}
 
         <!-- Pagination -->
-        {totalPages > 1 && (
+        {page.lastPage > 1 && (
           <nav class="flex justify-center gap-2 mt-8" aria-label="Paginación">
-            {page > 1 && (
-              <a href={`/categoria/${slug}?page=${page - 1}`} class="px-4 py-2 text-sm font-medium rounded-lg bg-gris-bg text-navy hover:bg-gray-200 transition-colors">
+            {page.url.prev && (
+              <a href={page.url.prev} class="px-4 py-2 text-sm font-medium rounded-lg bg-gris-bg text-navy hover:bg-gray-200 transition-colors">
                 &larr; Anterior
               </a>
             )}
             <span class="px-4 py-2 text-sm text-gris-muted">
-              Página {page} de {totalPages}
+              Página {page.currentPage} de {page.lastPage}
             </span>
-            {page < totalPages && (
-              <a href={`/categoria/${slug}?page=${page + 1}`} class="px-4 py-2 text-sm font-medium rounded-lg bg-gris-bg text-navy hover:bg-gray-200 transition-colors">
+            {page.url.next && (
+              <a href={page.url.next} class="px-4 py-2 text-sm font-medium rounded-lg bg-gris-bg text-navy hover:bg-gray-200 transition-colors">
                 Siguiente &rarr;
               </a>
             )}
