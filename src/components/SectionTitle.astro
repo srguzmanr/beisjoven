@@ -9,9 +9,9 @@ interface Props {
 const { title, href, linkText = 'Ver más', color } = Astro.props;
 ---
 
-<div class="flex items-center justify-between mb-5 pb-3 border-b border-gris-border">
-  <h2 class="text-lg md:text-xl font-extrabold uppercase tracking-wide text-navy flex items-center gap-2">
-    {color && <span class="w-1 h-5 rounded-full inline-block" style={`background-color: ${color}`}></span>}
+<div class="flex items-center justify-between mb-6 pb-3 border-b border-gris-border">
+  <h2 class="text-xl md:text-2xl font-extrabold uppercase tracking-wide text-navy flex items-center gap-2.5">
+    {color && <span class="w-1.5 h-6 rounded-full inline-block" style={`background-color: ${color}`}></span>}
     {title}
   </h2>
   {href && (

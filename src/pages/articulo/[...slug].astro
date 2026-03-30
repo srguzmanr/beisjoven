@@ -139,9 +139,11 @@ const articleJsonLd = {
         )}
       </div>
 
-      <!-- Sidebar -->
-      <aside class="space-y-6">
-        <MostReadWidget articles={masLeidos} />
+      <!-- Sticky Sidebar -->
+      <aside>
+        <div class="sticky top-20 space-y-6">
+          <MostReadWidget articles={masLeidos} />
+        </div>
       </aside>
     </div>
   </article>

@@ -19,13 +19,13 @@ const date = article.fecha ? timeAgo(article.fecha) : '';
 
 {size === 'horizontal' ? (
   <!-- Horizontal Card -->
-  <article class="group flex gap-4 bg-white rounded-lg overflow-hidden border border-gris-border/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+  <article class="group flex gap-4 bg-white rounded-lg overflow-hidden border border-gris-border/60 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer">
     <a href={href} class="block w-2/5 flex-shrink-0 overflow-hidden">
       <img
         src={article.imagen_url}
         alt={imgAlt}
         loading={eager ? 'eager' : 'lazy'}
-        class="w-full h-full object-cover aspect-[4/3] group-hover:scale-105 transition-transform duration-500"
+        class="w-full h-full object-cover aspect-[4/3] group-hover:scale-[1.03] transition-transform duration-300"
       />
     </a>
     <div class="flex-1 py-3 pr-4">
@@ -33,46 +33,50 @@ const date = article.fecha ? timeAgo(article.fecha) : '';
         <CategoryPill name={article.categoria.nombre} slug={article.categoria.slug} />
       )}
       <a href={href}>
-        <h3 class="font-bold text-navy mt-1.5 mb-1 line-clamp-2 group-hover:text-steel-blue transition-colors leading-snug">
+        <h3 class="font-bold text-[#111827] mt-1.5 mb-1 line-clamp-2 group-hover:text-rojo transition-colors duration-300 leading-snug">
           {article.titulo}
         </h3>
       </a>
       {showExcerpt && article.extracto && (
-        <p class="text-sm text-gris-text line-clamp-2 mb-2">{article.extracto}</p>
+        <p class="text-sm text-[#6b7280] line-clamp-2 mb-2">{article.extracto}</p>
       )}
-      <span class="text-xs text-gris-muted">{date}</span>
+      <div class="flex items-center gap-2 text-xs text-[#9ca3af]">
+        {article.autor && <span>{article.autor.nombre}</span>}
+        {article.autor && <span>&middot;</span>}
+        <span>{date}</span>
+      </div>
     </div>
   </article>
 ) : size === 'small' ? (
   <!-- Small Card (sidebar) -->
-  <article class="group flex gap-3">
+  <article class="group flex gap-3 cursor-pointer">
     <a href={href} class="block w-20 h-20 flex-shrink-0 overflow-hidden rounded">
       <img
         src={article.imagen_url}
         alt={imgAlt}
         loading="lazy"
-        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
       />
     </a>
     <div class="flex-1 min-w-0">
       <a href={href}>
-        <h4 class="text-sm font-bold text-navy line-clamp-2 group-hover:text-steel-blue transition-colors">
+        <h4 class="text-sm font-bold text-[#111827] line-clamp-2 group-hover:text-rojo transition-colors duration-300">
           {article.titulo}
         </h4>
       </a>
-      <span class="text-xs text-gris-muted mt-1 block">{date}</span>
+      <span class="text-xs text-[#9ca3af] mt-1 block">{date}</span>
     </div>
   </article>
 ) : (
   <!-- Default Card -->
-  <article class="group bg-white rounded-lg overflow-hidden border border-gris-border/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+  <article class="group bg-white rounded-lg overflow-hidden border border-gris-border/60 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer">
     <a href={href} class="block overflow-hidden">
       <div class="aspect-[16/9] overflow-hidden">
         <img
           src={article.imagen_url}
           alt={imgAlt}
           loading={eager ? 'eager' : 'lazy'}
-          class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+          class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
         />
       </div>
     </a>
@@ -81,14 +85,14 @@ const date = article.fecha ? timeAgo(article.fecha) : '';
         <CategoryPill name={article.categoria.nombre} slug={article.categoria.slug} />
       )}
       <a href={href}>
-        <h3 class="font-bold text-navy mt-2 mb-1.5 line-clamp-2 group-hover:text-steel-blue transition-colors leading-snug">
+        <h3 class="font-bold text-[#111827] mt-2 mb-1.5 line-clamp-2 group-hover:text-rojo transition-colors duration-300 leading-snug">
           {article.titulo}
         </h3>
       </a>
       {showExcerpt && article.extracto && (
-        <p class="text-sm text-gris-text line-clamp-2 mb-2">{article.extracto}</p>
+        <p class="text-sm text-[#6b7280] line-clamp-2 mb-2">{article.extracto}</p>
       )}
-      <div class="flex items-center gap-2 text-xs text-gris-muted">
+      <div class="flex items-center gap-2 text-xs text-[#9ca3af]">
         {article.autor && <span>{article.autor.nombre}</span>}
         {article.autor && <span>&middot;</span>}
         <span>{date}</span>
