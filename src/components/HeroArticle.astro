@@ -21,9 +21,9 @@ const catColorMap: Record<string, string> = {
 const catBg = article.categoria ? (catColorMap[article.categoria.slug] || 'bg-navy') : 'bg-navy';
 ---
 
-<article class="group relative rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300">
-  <a href={href} class="block relative">
-    <div class="aspect-[4/3] md:aspect-[16/9]">
+<article class="group relative rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300 h-full lg:min-h-[420px]">
+  <a href={href} class="block relative h-full">
+    <div class="aspect-[4/3] lg:aspect-auto lg:absolute lg:inset-0">
       <img
         src={article.imagen_url}
         alt={article.titulo}
