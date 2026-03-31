@@ -66,6 +66,27 @@ export interface Video {
 // ==================== QUERIES ====================
 
 const ARTICLE_SELECT = `*, categoria:categorias(*), autor:autores(*)`;
+const PAGE_SIZE = 1000;
+
+/**
+ * Fetch all rows from a query using pagination to bypass Supabase's 1000-row default limit.
+ */
+async function fetchAllPaginated<T>(
+  buildQuery: (from: number, to: number) => PromiseLike<{ data: T[] | null }>,
+): Promise<T[]> {
+  const allRows: T[] = [];
+  let page = 0;
+  while (true) {
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data } = await buildQuery(from, to);
+    if (!data || data.length === 0) break;
+    allRows.push(...data);
+    if (data.length < PAGE_SIZE) break;
+    page++;
+  }
+  return allRows;
+}
 
 export async function getArticulos(limite = 10) {
   const { data } = await supabaseServer
@@ -78,6 +99,19 @@ export async function getArticulos(limite = 10) {
   return (data as Articulo[]) || [];
 }
 
+/** Fetch ALL published articles (paginated, no limit). Used for builds/sitemaps. */
+export async function getAllArticulos() {
+  return fetchAllPaginated<Articulo>((from, to) =>
+    supabaseServer
+      .from('articulos')
+      .select(ARTICLE_SELECT)
+      .eq('publicado', true)
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(from, to),
+  );
+}
+
 export async function getArticuloBySlug(slug: string) {
   const { data } = await supabaseServer
     .from('articulos')
@@ -88,11 +122,13 @@ export async function getArticuloBySlug(slug: string) {
 }
 
 export async function getAllArticuloSlugs() {
-  const { data } = await supabaseServer
-    .from('articulos')
-    .select('slug')
-    .eq('publicado', true);
-  return (data || []).map((a: { slug: string }) => a.slug);
+  return (await fetchAllPaginated<{ slug: string }>((from, to) =>
+    supabaseServer
+      .from('articulos')
+      .select('slug')
+      .eq('publicado', true)
+      .range(from, to),
+  )).map((a) => a.slug);
 }
 
 export async function getArticulosByCategoria(categoriaSlug: string, limite = 10) {
