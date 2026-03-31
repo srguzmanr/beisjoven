@@ -221,8 +221,9 @@ export async function incrementVistas(articuloId: number) {
 
 // ==================== WBC 2026 ====================
 
-export async function getArticulosWbc2026Paginados(limite = 20, offset = 0) {
-  const [{ data }, { count }] = await Promise.all([
+/** Fetch ALL published WBC 2026 articles (paginated). Used by getStaticPaths + paginate(). */
+export async function getAllArticulosWbc2026() {
+  return fetchAllPaginated<Articulo>((from, to) =>
     supabaseServer
       .from('articulos')
       .select(ARTICLE_SELECT)
@@ -230,14 +231,8 @@ export async function getArticulosWbc2026Paginados(limite = 20, offset = 0) {
       .eq('es_wbc2026', true)
       .order('fecha', { ascending: false })
       .order('created_at', { ascending: false })
-      .range(offset, offset + limite - 1),
-    supabaseServer
-      .from('articulos')
-      .select('id', { count: 'exact', head: true })
-      .eq('publicado', true)
-      .eq('es_wbc2026', true),
-  ]);
-  return { articulos: (data as Articulo[]) || [], total: count || 0 };
+      .range(from, to),
+  );
 }
 
 // ==================== CATEGORÍAS ====================
