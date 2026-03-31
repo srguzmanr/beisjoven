@@ -219,6 +219,27 @@ export async function incrementVistas(articuloId: number) {
   await supabase.rpc('increment_vistas', { articulo_id: articuloId });
 }
 
+// ==================== WBC 2026 ====================
+
+export async function getArticulosWbc2026Paginados(limite = 20, offset = 0) {
+  const [{ data }, { count }] = await Promise.all([
+    supabaseServer
+      .from('articulos')
+      .select(ARTICLE_SELECT)
+      .eq('publicado', true)
+      .eq('es_wbc2026', true)
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limite - 1),
+    supabaseServer
+      .from('articulos')
+      .select('id', { count: 'exact', head: true })
+      .eq('publicado', true)
+      .eq('es_wbc2026', true),
+  ]);
+  return { articulos: (data as Articulo[]) || [], total: count || 0 };
+}
+
 // ==================== CATEGORÍAS ====================
 
 export async function getCategorias() {
