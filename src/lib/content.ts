@@ -41,8 +41,11 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
     name: 'twitter',
     test: (url) => /(?:x\.com|twitter\.com)\/\w+\/status\/\d+/.test(url),
     toHTML: (url) => {
+      const match = url.match(/status\/(\d+)/);
+      if (!match) return '';
+      const id = match[1];
       const clean = escapeHtml(url.split('?')[0]);
-      return `<div class="embed-container embed-twitter"><blockquote class="twitter-tweet" data-dnt="true"><a href="${clean}"></a></blockquote></div>`;
+      return `<div class="twitter-embed" data-tweet-id="${id}" data-tweet-url="${clean}"></div>`;
     },
   },
   {

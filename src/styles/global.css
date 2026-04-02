@@ -173,6 +173,21 @@ div[data-youtube-video] {
   width: 100%;
 }
 
+/* Twitter: createTweet API placeholder */
+.twitter-embed {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1.5rem auto;
+  max-width: 550px;
+}
+.twitter-embed:empty::before {
+  content: "Cargando tweet...";
+  color: #9CA3AF;
+  font-size: 0.875rem;
+}
+
 /* Twitter & Instagram: scripts handle sizing, we ensure centering */
 .embed-twitter,
 .embed-instagram {

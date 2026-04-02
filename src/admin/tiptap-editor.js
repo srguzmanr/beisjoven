@@ -35,30 +35,50 @@ const TwitterEmbed = Node.create({
 
   addAttributes() {
     return {
+      tweetId: { default: null },
       url: { default: null },
     };
   },
 
   parseHTML() {
     return [
+      // New format: <div class="twitter-embed" data-tweet-id="...">
+      {
+        tag: 'div.twitter-embed[data-tweet-id]',
+        getAttrs(dom) {
+          return {
+            tweetId: dom.getAttribute('data-tweet-id'),
+            url: dom.getAttribute('data-tweet-url') || null,
+          };
+        },
+      },
+      // Legacy format: <div class="embed-container embed-twitter"><blockquote>
       {
         tag: 'div.embed-container.embed-twitter',
         getAttrs(dom) {
           const a = dom.querySelector('a[href]');
-          return a ? { url: a.getAttribute('href') } : false;
+          if (!a) return false;
+          const url = a.getAttribute('href') || '';
+          const match = url.match(/status\/(\d+)/);
+          return {
+            tweetId: match ? match[1] : null,
+            url,
+          };
         },
       },
     ];
   },
 
-  renderHTML({ node, HTMLAttributes }) {
+  renderHTML({ node }) {
+    const tweetId = node.attrs.tweetId || '';
     const url = node.attrs.url || '';
     return [
       'div',
-      mergeAttributes(HTMLAttributes, { class: 'embed-container embed-twitter' }),
-      ['blockquote', { class: 'twitter-tweet', 'data-dnt': 'true' },
-        ['a', { href: url }, url],
-      ],
+      {
+        class: 'twitter-embed',
+        'data-tweet-id': tweetId,
+        'data-tweet-url': url,
+      },
     ];
   },
 
@@ -69,7 +89,7 @@ const TwitterEmbed = Node.create({
       dom.contentEditable = 'false';
       dom.innerHTML = `
         <div class="embed-badge">𝕏 Tweet</div>
-        <div class="embed-url">${node.attrs.url || ''}</div>
+        <div class="embed-url">${node.attrs.url || 'ID: ' + (node.attrs.tweetId || '')}</div>
       `;
       return { dom };
     };
@@ -286,9 +306,11 @@ function createAutoEmbedPlugin(editor) {
             if (pattern.name === 'youtube') {
               editor.chain().focus().deleteSelection().setYoutubeVideo({ src: text }).run();
             } else if (pattern.name === 'twitter') {
+              const tweetIdMatch = text.match(/status\/(\d+)/);
+              const cleanUrl = url.replace('twitter.com', 'x.com');
               editor.chain().focus().deleteSelection().insertContent({
                 type: 'twitterEmbed',
-                attrs: { url: url.replace('twitter.com', 'x.com') },
+                attrs: { tweetId: tweetIdMatch ? tweetIdMatch[1] : '', url: cleanUrl },
               }).run();
             } else if (pattern.name === 'instagram') {
               editor.chain().focus().deleteSelection().insertContent({
@@ -453,9 +475,10 @@ function handleTwitter(editor) {
   const url = prompt('URL del tweet (x.com o twitter.com):');
   if (url && /(?:x\.com|twitter\.com)\/\w+\/status\/\d+/.test(url)) {
     const clean = url.split('?')[0];
+    const tweetIdMatch = url.match(/status\/(\d+)/);
     editor.chain().focus().insertContent({
       type: 'twitterEmbed',
-      attrs: { url: clean },
+      attrs: { tweetId: tweetIdMatch ? tweetIdMatch[1] : '', url: clean },
     }).run();
   } else if (url) {
     alert('URL de Twitter/X no valida. Formato: https://x.com/usuario/status/123456');
