@@ -748,10 +748,11 @@ const AdminPages = {
             </div>
         `;
         
-        // Cargar categorías y autores
-        const [categorias, autores] = await Promise.all([
+        // Cargar categorías, autores y eventos
+        const [categorias, autores, eventos] = await Promise.all([
             SupabaseAPI.getCategorias(),
-            SupabaseAPI.getAutores()
+            SupabaseAPI.getAutores(),
+            SupabaseAPI.getEventos()
         ]);
         
         // Si es edición, cargar el artículo
@@ -831,6 +832,19 @@ const AdminPages = {
                                             </select>
                                         </div>
                                     </div>
+                                    ${eventos.length > 0 ? `
+                                    <div class="form-group" style="margin-top:12px;">
+                                        <label for="evento">Asociar a evento</label>
+                                        <select id="evento">
+                                            <option value="">Ninguno</option>
+                                            ${eventos.map(e => `
+                                                <option value="${e.id}" ${article?.evento_id === e.id ? 'selected' : (useDraft && draft && draft.evento_id == e.id ? 'selected' : '')}>
+                                                    ${e.nombre}
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+                                    ` : ''}
                                 </div>
 
                                 <div class="fg-contenido">
@@ -1015,7 +1029,8 @@ const AdminPages = {
         const pie_de_foto = (document.getElementById('foto-pie')?.value || '').trim();
         const foto_credito = (document.getElementById('foto-credito')?.value || '').trim();
         const es_wbc2026 = document.getElementById('es_wbc2026')?.checked || false;
-        
+        const evento_id = document.getElementById('evento')?.value ? parseInt(document.getElementById('evento').value) : null;
+
         // Get content from Rich Text Editor or fallback to textarea
         let contenidoRaw;
         if (contentEditor) {
@@ -1065,6 +1080,7 @@ const AdminPages = {
             pie_de_foto: pie_de_foto || null,
             foto_credito: foto_credito || null,
             es_wbc2026,
+            evento_id,
             destacado,
             publicado: true
         };

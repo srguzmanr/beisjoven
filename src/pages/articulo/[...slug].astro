@@ -43,6 +43,7 @@ const needsTwitterScript = renderedBody.includes('class="twitter-embed"')
   || renderedBody.includes('class="twitter-tweet"');
 const needsInstagramScript = renderedBody.includes('class="instagram-media"');
 const needsTikTokScript = renderedBody.includes('class="tiktok-embed"');
+const needsGalleryLightbox = renderedBody.includes('data-gallery="true"');
 
 // JSON-LD for this article
 const articleJsonLd = {
@@ -200,6 +201,114 @@ const articleJsonLd = {
   )}
   {needsTikTokScript && (
     <script async src="https://www.tiktok.com/embed.js" is:inline></script>
+  )}
+
+  {needsGalleryLightbox && (
+    <script is:inline>
+    (function() {
+      var galleries = document.querySelectorAll('.gallery[data-gallery]');
+      if (!galleries.length) return;
+
+      var overlay, imgWrap, captionEl, counterEl, images, current;
+
+      function createLightbox() {
+        overlay = document.createElement('div');
+        overlay.className = 'lightbox-overlay';
+        overlay.innerHTML =
+          '<button class="lightbox-close" aria-label="Cerrar">&times;</button>' +
+          '<div class="lightbox-counter"></div>' +
+          '<button class="lightbox-arrow lightbox-arrow--prev" aria-label="Anterior">&#8249;</button>' +
+          '<button class="lightbox-arrow lightbox-arrow--next" aria-label="Siguiente">&#8250;</button>' +
+          '<div class="lightbox-img-wrap"><img src="" alt="" /></div>' +
+          '<div class="lightbox-caption"></div>';
+        document.body.appendChild(overlay);
+
+        imgWrap = overlay.querySelector('.lightbox-img-wrap img');
+        captionEl = overlay.querySelector('.lightbox-caption');
+        counterEl = overlay.querySelector('.lightbox-counter');
+
+        overlay.querySelector('.lightbox-close').addEventListener('click', close);
+        overlay.querySelector('.lightbox-arrow--prev').addEventListener('click', function() { navigate(-1); });
+        overlay.querySelector('.lightbox-arrow--next').addEventListener('click', function() { navigate(1); });
+        overlay.addEventListener('click', function(e) {
+          if (e.target === overlay || e.target.classList.contains('lightbox-img-wrap')) close();
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+          if (!overlay.classList.contains('is-visible')) return;
+          if (e.key === 'Escape') close();
+          if (e.key === 'ArrowLeft') navigate(-1);
+          if (e.key === 'ArrowRight') navigate(1);
+        });
+
+        // Touch swipe
+        var touchStartX = 0, touchEndX = 0;
+        overlay.addEventListener('touchstart', function(e) {
+          touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        overlay.addEventListener('touchend', function(e) {
+          touchEndX = e.changedTouches[0].screenX;
+          var diff = touchStartX - touchEndX;
+          if (Math.abs(diff) > 50) {
+            navigate(diff > 0 ? 1 : -1);
+          }
+        }, { passive: true });
+      }
+
+      function open(galleryImages, index) {
+        if (!overlay) createLightbox();
+        images = galleryImages;
+        current = index;
+        show();
+        overlay.classList.add('is-visible');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function close() {
+        overlay.classList.remove('is-visible');
+        document.body.style.overflow = '';
+      }
+
+      function navigate(dir) {
+        current = (current + dir + images.length) % images.length;
+        show();
+      }
+
+      function show() {
+        var img = images[current];
+        imgWrap.src = img.src;
+        imgWrap.alt = img.caption || '';
+        var captionHtml = '';
+        if (img.caption) captionHtml += img.caption;
+        if (img.credit) captionHtml += ' <span>' + img.credit + '</span>';
+        captionEl.innerHTML = captionHtml;
+        captionEl.style.display = captionHtml ? '' : 'none';
+        counterEl.textContent = (current + 1) + '/' + images.length;
+      }
+
+      // Bind click events on gallery images
+      galleries.forEach(function(gallery) {
+        var figures = gallery.querySelectorAll('figure');
+        var galleryImages = Array.from(figures).map(function(fig) {
+          var imgEl = fig.querySelector('img');
+          var captionEl = fig.querySelector('figcaption');
+          var creditSpan = captionEl ? captionEl.querySelector('span') : null;
+          var captionText = captionEl ? (captionEl.childNodes[0]?.textContent || '').trim() : '';
+          return {
+            src: imgEl ? imgEl.src : '',
+            caption: captionText,
+            credit: creditSpan ? creditSpan.textContent.trim() : ''
+          };
+        });
+
+        figures.forEach(function(fig, i) {
+          fig.style.cursor = 'pointer';
+          fig.addEventListener('click', function() { open(galleryImages, i); });
+        });
+      });
+    })();
+    </script>
   )}
 
   <!-- Increment views client-side (fire-and-forget) -->

@@ -260,6 +260,100 @@ const Figure = Node.create({
 });
 
 
+/**
+ * Gallery node — a block of multiple images displayed as a grid.
+ * Stores images as a JSON attribute and renders gallery HTML.
+ */
+const Gallery = Node.create({
+  name: 'gallery',
+  group: 'block',
+  atom: true,
+
+  addAttributes() {
+    return {
+      images: {
+        default: [],
+        parseHTML(element) {
+          const figures = element.querySelectorAll('figure');
+          return Array.from(figures).map(fig => {
+            const img = fig.querySelector('img');
+            const caption = fig.querySelector('figcaption');
+            const creditSpan = caption?.querySelector('span');
+            const captionText = caption ? caption.childNodes[0]?.textContent?.trim() || '' : '';
+            return {
+              url: img?.getAttribute('src') || '',
+              alt: img?.getAttribute('alt') || '',
+              caption: captionText,
+              credit: creditSpan?.textContent?.trim() || '',
+            };
+          });
+        },
+        renderHTML(attributes) {
+          return {}; // handled in renderHTML below
+        },
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: 'div.gallery[data-gallery]',
+      },
+    ];
+  },
+
+  renderHTML({ node }) {
+    const images = node.attrs.images || [];
+    const children = images.flatMap(img => [
+      'figure', {},
+      ['img', { src: img.url, alt: img.caption || img.alt || '', loading: 'lazy' }],
+      ['figcaption', {},
+        ...(img.caption ? [img.caption + ' '] : []),
+        ...(img.credit ? [['span', {}, img.credit]] : []),
+      ],
+    ]);
+
+    // Build the nested array structure for Tiptap renderHTML
+    const figureNodes = images.map(img => {
+      const figcaptionContent = [];
+      if (img.caption) figcaptionContent.push(img.caption);
+      if (img.caption && img.credit) figcaptionContent.push(' ');
+      if (img.credit) figcaptionContent.push(['span', {}, img.credit]);
+
+      return ['figure', {},
+        ['img', { src: img.url, alt: img.caption || img.alt || '', loading: 'lazy' }],
+        ['figcaption', {}, ...figcaptionContent],
+      ];
+    });
+
+    return ['div', { class: 'gallery', 'data-gallery': 'true' }, ...figureNodes];
+  },
+
+  addNodeView() {
+    return ({ node }) => {
+      const dom = document.createElement('div');
+      dom.className = 'tiptap-gallery-preview';
+      dom.contentEditable = 'false';
+
+      const images = node.attrs.images || [];
+      dom.innerHTML = `
+        <div class="gallery-preview-header">🖼️ Galería · ${images.length} foto${images.length !== 1 ? 's' : ''}</div>
+        <div class="gallery-preview-grid">
+          ${images.map(img => `
+            <div class="gallery-preview-item">
+              <img src="${img.url}" alt="${img.caption || ''}" loading="lazy" />
+              ${img.caption ? `<span>${img.caption}</span>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `;
+      return { dom };
+    };
+  },
+});
+
+
 /* ================================================================
    AUTO-EMBED PASTE PLUGIN
    Detects pasted YouTube/Twitter/Instagram/TikTok URLs on empty
@@ -363,6 +457,7 @@ function createToolbar(editor, container) {
     [
       { label: '🔗', title: 'Insertar enlace', action: () => handleLink(editor), active: () => editor.isActive('link') },
       { label: '🖼️', title: 'Insertar imagen', action: () => handleImage(editor), active: () => false },
+      { label: '🖼️+', title: 'Insertar galería de fotos', action: () => handleGallery(editor), active: () => false },
       { label: '—', title: 'Separador horizontal', action: () => editor.chain().focus().setHorizontalRule().run(), active: () => false },
     ],
     // Embeds
@@ -495,6 +590,26 @@ function handleInstagram(editor) {
     }).run();
   } else if (url) {
     alert('URL de Instagram no valida. Formato: https://instagram.com/p/XXXXX');
+  }
+}
+
+function handleGallery(editor) {
+  if (typeof window.MediaLibrary !== 'undefined' && window.MediaLibrary.openMulti) {
+    window.MediaLibrary.openMulti((selected) => {
+      if (!selected || selected.length === 0) return;
+      const images = selected.map(img => ({
+        url: img.url,
+        alt: img.pieDeFoto || img.nombre || '',
+        caption: img.pieDeFoto || '',
+        credit: img.credito || '',
+      }));
+      editor.chain().focus().insertContent({
+        type: 'gallery',
+        attrs: { images },
+      }).run();
+    });
+  } else {
+    alert('La biblioteca de medios no está disponible. Recarga la página e intenta de nuevo.');
   }
 }
 
@@ -706,6 +821,53 @@ function injectStyles() {
     .tiptap-embed-instagram { border-color: #e1306c; background: #fff0f5; }
     .tiptap-embed-tiktok { border-color: #010101; background: #f5f5f5; }
 
+    /* Gallery preview in editor */
+    .tiptap-gallery-preview {
+      margin: 16px 0;
+      border: 2px dashed #487699;
+      border-radius: 8px;
+      background: #f0f7ff;
+      user-select: none;
+    }
+    .gallery-preview-header {
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 10px 14px;
+      border-bottom: 1px solid #d1e3f0;
+      color: #1b3557;
+    }
+    .gallery-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+      padding: 10px;
+    }
+    .gallery-preview-item {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .gallery-preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      margin: 0;
+    }
+    .gallery-preview-item span {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.7));
+      color: white;
+      font-size: 9px;
+      padding: 12px 5px 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     /* Mobile responsive */
     @media (max-width: 768px) {
       .tiptap-btn {
@@ -817,6 +979,7 @@ const TiptapEditor = {
         InstagramEmbed,
         TikTokEmbed,
         Figure,
+        Gallery,
       ],
       content: initialContent || '',
       editorProps: {

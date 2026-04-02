@@ -40,6 +40,21 @@ const SupabaseAPI = {
         return data;
     },
     
+    // ==================== EVENTOS ====================
+
+    async getEventos() {
+        const { data, error } = await supabaseClient
+            .from('eventos')
+            .select('*')
+            .order('fecha_inicio', { ascending: false });
+
+        if (error) {
+            console.error('Error cargando eventos:', error);
+            return [];
+        }
+        return data;
+    },
+
     // ==================== AUTORES ====================
     
     async getAutores() {

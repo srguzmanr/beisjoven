@@ -12,6 +12,8 @@ const MediaLibrary = {
     activeFilter: 'todas',
     _pendingUploads: [],  // queue of nombres to edit metadata
     _pendingIdx: 0,
+    _multiSelect: false,  // multi-select mode for gallery
+    _selected: [],        // selected images in multi-select mode
 
     // Etiquetas — agregar aquí cuando sea necesario
     TAGS: [
@@ -368,6 +370,8 @@ const MediaLibrary = {
     async open(callback) {
         this.init();
         this.onSelectCallback = callback;
+        this._multiSelect = false;
+        this._selected = [];
         this.isOpen = true;
         this._pendingUploads = [];
         this._pendingIdx = 0;
@@ -376,6 +380,7 @@ const MediaLibrary = {
         document.body.style.overflow = 'hidden';
         document.getElementById('ml-search').value = '';
         document.getElementById('ml-meta-panel').style.display = 'none';
+        this._updateMultiSelectUI();
         this.activeFilter = 'todas';
         document.querySelectorAll('.ml-filter-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.key === 'todas');
@@ -384,8 +389,90 @@ const MediaLibrary = {
         await this.loadImages();
     },
 
+    /**
+     * Open in multi-select mode for gallery.
+     * Callback receives an array of image objects.
+     */
+    async openMulti(callback) {
+        this.init();
+        this.onSelectCallback = callback;
+        this._multiSelect = true;
+        this._selected = [];
+        this.isOpen = true;
+        this._pendingUploads = [];
+        this._pendingIdx = 0;
+
+        document.getElementById('media-library-modal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        document.getElementById('ml-search').value = '';
+        document.getElementById('ml-meta-panel').style.display = 'none';
+        this._updateMultiSelectUI();
+        this.activeFilter = 'todas';
+        document.querySelectorAll('.ml-filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.key === 'todas');
+        });
+
+        await this.loadImages();
+    },
+
+    _updateMultiSelectUI() {
+        const footer = document.querySelector('.ml-footer');
+        if (!footer) return;
+        // Remove existing confirm button if any
+        const existing = document.getElementById('ml-confirm-multi');
+        if (existing) existing.remove();
+        if (this._multiSelect) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.id = 'ml-confirm-multi';
+            btn.style.cssText = 'padding:10px 20px;background:#c41e3a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;';
+            btn.textContent = 'Agregar 0 fotos';
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.onclick = () => MediaLibrary.confirmMultiSelect();
+            footer.appendChild(btn);
+        }
+    },
+
+    _updateMultiCount() {
+        const btn = document.getElementById('ml-confirm-multi');
+        if (!btn) return;
+        const n = this._selected.length;
+        btn.textContent = `Agregar ${n} foto${n !== 1 ? 's' : ''}`;
+        btn.disabled = n === 0;
+        btn.style.opacity = n === 0 ? '0.5' : '1';
+    },
+
+    _toggleMultiItem(url) {
+        const idx = this._selected.findIndex(s => s.url === url);
+        if (idx >= 0) {
+            this._selected.splice(idx, 1);
+        } else {
+            const img = this.allImages.find(i => i.url === url) || { url, nombre: '', pieDeFoto: '', credito: '' };
+            this._selected.push({ url: img.url, nombre: img.nombre, pieDeFoto: img.pieDeFoto, credito: img.credito });
+        }
+        // Update visual selection state
+        document.querySelectorAll('.ml-item').forEach(el => {
+            const itemUrl = el.getAttribute('data-url');
+            const isSelected = this._selected.some(s => s.url === itemUrl);
+            el.style.borderColor = isSelected ? '#c41e3a' : 'transparent';
+            const check = el.querySelector('.ml-multi-check');
+            if (check) check.style.display = isSelected ? 'flex' : 'none';
+        });
+        this._updateMultiCount();
+    },
+
+    confirmMultiSelect() {
+        if (this._selected.length > 0 && this.onSelectCallback) {
+            this.onSelectCallback([...this._selected]);
+        }
+        this.close();
+    },
+
     close() {
         this.isOpen = false;
+        this._multiSelect = false;
+        this._selected = [];
         document.getElementById('media-library-modal').style.display = 'none';
         document.body.style.overflow = '';
         this._pendingUploads = [];
@@ -480,10 +567,15 @@ const MediaLibrary = {
 
         grid.innerHTML = images.map(img => {
             const tagLabel = this.TAGS.find(t => t.key === img.categoria)?.label || '';
+            const clickAction = this._multiSelect
+                ? `MediaLibrary._toggleMultiItem('${img.url}')`
+                : `MediaLibrary.select('${img.url}', '${img.nombre}')`;
+            const isSelected = this._multiSelect && this._selected.some(s => s.url === img.url);
             return `
-                <div class="ml-item" onclick="MediaLibrary.select('${img.url}', '${img.nombre}')" title="${img.pieDeFoto || img.nombre}">
+                <div class="ml-item" data-url="${img.url}" onclick="${clickAction}" title="${img.pieDeFoto || img.nombre}" style="border-color:${isSelected ? '#c41e3a' : 'transparent'}">
                     <img src="${img.url}" alt="${img.nombre}" loading="lazy">
                     ${tagLabel ? `<div class="ml-item-badge">${tagLabel}</div>` : ''}
+                    ${this._multiSelect ? `<div class="ml-multi-check" style="display:${isSelected ? 'flex' : 'none'};position:absolute;top:5px;right:5px;width:24px;height:24px;background:#c41e3a;border-radius:50%;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:bold;">✓</div>` : ''}
                     <div class="ml-item-overlay">
                         <div class="ml-item-name">${img.pieDeFoto || img.nombre}</div>
                         ${img.credito ? `<div class="ml-item-meta">${img.credito}</div>` : ''}
@@ -527,8 +619,9 @@ const MediaLibrary = {
         this.renderImages(filtered);
     },
 
-    // ── Seleccionar imagen ───────────────────────────────────────
+    // ── Seleccionar imagen (single-select mode) ────────────────
     select(url, nombre) {
+        if (this._multiSelect) return; // handled by _toggleMultiItem
         const img = this.allImages.find(i => i.url === url) || { url, nombre, pieDeFoto: '', credito: '' };
 
         if (this.onSelectCallback) {
