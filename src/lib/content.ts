@@ -69,29 +69,41 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
  * Extract a standalone URL from a line that may be wrapped in HTML tags.
  * Returns the clean URL, or null if the line isn't a standalone URL.
  *
- * Handles all formats the WYSIWYG editor and markdown parser produce:
+ * Iteratively strips ANY wrapping HTML tag, so it handles all formats:
  *   https://example.com/...
  *   <p>https://example.com/...</p>
+ *   <h3>https://example.com/...</h3>
  *   <p><a href="https://...">https://...</a></p>
  *   <blockquote><a href="https://...">https://...</a></blockquote>
+ *   <h3><a href="https://..." ...>https://...</a></h3>
  */
 function extractStandaloneUrl(line: string): string | null {
-  let s = line;
+  let s = line.trim();
 
-  // Strip outer block-level tag: <p>, <blockquote>, <div>
-  const blockMatch = s.match(/^<(p|blockquote|div)[^>]*>([\s\S]*)<\/\1>$/i);
-  if (blockMatch) s = blockMatch[2].trim();
-
-  // If it's an <a> tag, extract the href — but only if the visible text
-  // is also a URL (auto-linked), not a named link like "click here"
-  const anchorMatch = s.match(/^<a\s[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>$/i);
-  if (anchorMatch) {
-    const href = anchorMatch[1].trim();
-    const text = anchorMatch[2].replace(/<[^>]*>/g, '').trim();
-    if (text.startsWith('http')) {
-      s = href;
-    } else {
-      return null; // Named link, not a standalone URL
+  // Iteratively strip any single wrapping HTML tag
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const tagMatch = s.match(/^<([a-z][a-z0-9]*)\b[^>]*>([\s\S]*)<\/\1>$/i);
+    if (tagMatch) {
+      const inner = tagMatch[2].trim();
+      // For <a> tags, prefer the href if the display text is also a URL
+      if (tagMatch[1].toLowerCase() === 'a') {
+        const hrefMatch = s.match(/^<a\s[^>]*href="([^"]+)"[^>]*>/i);
+        if (hrefMatch) {
+          const href = hrefMatch[1].trim();
+          const text = inner.replace(/<[^>]*>/g, '').trim();
+          if (text.startsWith('http')) {
+            s = href;
+            changed = true;
+            continue;
+          } else {
+            return null; // Named link like "click here", not a standalone URL
+          }
+        }
+      }
+      s = inner;
+      changed = true;
     }
   }
 
