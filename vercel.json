@@ -6,10 +6,6 @@
     {
       "source": "/admin/:path*",
       "destination": "/admin"
-    },
-    {
-      "source": "/login",
-      "destination": "/admin"
     }
   ]
 }

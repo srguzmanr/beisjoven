@@ -759,3 +759,6 @@ const MediaLibrary = {
         }
     }
 };
+
+// Expose globally so bundled scripts (Tiptap IIFE) can access it
+window.MediaLibrary = MediaLibrary;
