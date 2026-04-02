@@ -176,9 +176,26 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 0.5rem;
 }
 
+.embed-social .instagram-media {
+  margin: 0 auto !important;
+  max-width: 540px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
 .embed-social .tiktok-embed {
   margin: 0 auto !important;
   max-width: 100%;
+}
+
+/* Fallback styling while embed scripts load */
+.prose blockquote.twitter-tweet,
+.prose blockquote.instagram-media {
+  border-left: 3px solid var(--color-navy);
+  padding: 12px 16px;
+  background: var(--color-gris-bg);
+  border-radius: 0 8px 8px 0;
+  font-style: normal;
 }
 
 /* ==================== CATEGORY COLORS ==================== */

@@ -40,8 +40,9 @@ function renderInstagramEmbed(url: string): string {
   if (!/^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/[\w-]+/i.test(trimmed)) {
     return renderFallbackLink(url);
   }
-  const cleanUrl = trimmed.replace(/\/$/, '') + '/embed';
-  return `<div class="embed-container embed-social"><iframe src="${cleanUrl}" frameborder="0" scrolling="no" allowtransparency="true" loading="lazy" class="instagram-embed-iframe"></iframe></div>`;
+  // Use blockquote + embed.js approach (more reliable than iframe which gets blocked)
+  const permalink = trimmed.replace(/\?.*$/, '').replace(/\/$/, '') + '/';
+  return `<div class="embed-container embed-social"><blockquote class="instagram-media" data-instgrm-permalink="${escapeHtml(permalink)}" data-instgrm-version="14" style="max-width:540px; width:100%; margin: 0 auto;"><a href="${escapeHtml(permalink)}">${escapeHtml(trimmed)}</a></blockquote></div>`;
 }
 
 function renderTikTokEmbed(url: string): string {
@@ -77,13 +78,36 @@ function processShortcodes(content: string): string {
     (_, tag: string, inner: string) => `[${tag}]${stripHtmlTags(inner).trim()}[/${tag}]`
   );
 
-  return content.replace(
+  content = content.replace(
     /\[(youtube|tweet|instagram|tiktok)\]([\s\S]*?)\[\/\1\]/gi,
     (_, tag: string, url: string) => {
       const handler = shortcodeHandlers[tag.toLowerCase()];
       return handler ? handler(url) : renderFallbackLink(url);
     }
   );
+
+  // Detect raw URLs (not wrapped in shortcodes) and convert to embeds.
+  // Matches URLs that are the sole content of a line/paragraph (possibly wrapped in <p>/<a> tags).
+  // Twitter/X raw URLs
+  content = content.replace(
+    /(?:<p[^>]*>\s*)?(?:<a[^>]*>)?\s*(https?:\/\/(?:x\.com|twitter\.com)\/\w+\/status\/\d+[^\s<]*?)\s*(?:<\/a>)?(?:\s*<\/p>)?/gi,
+    (match, url) => {
+      // Skip if already inside a shortcode result (embed-container) or blockquote
+      if (match.includes('embed-container') || match.includes('twitter-tweet')) return match;
+      return renderTweetEmbed(url);
+    }
+  );
+
+  // Instagram raw URLs
+  content = content.replace(
+    /(?:<p[^>]*>\s*)?(?:<a[^>]*>)?\s*(https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[\w-]+\/?[^\s<]*?)\s*(?:<\/a>)?(?:\s*<\/p>)?/gi,
+    (match, url) => {
+      if (match.includes('embed-container') || match.includes('instagram-media')) return match;
+      return renderInstagramEmbed(url);
+    }
+  );
+
+  return content;
 }
 
 export function renderContent(content: string): string {
@@ -102,8 +126,26 @@ export function renderContent(content: string): string {
     );
   }
 
-  // Markdown content: process shortcodes first, then full parse
+  // Markdown content: process shortcodes first (includes raw URL detection), then full parse
   let html = processShortcodes(content);
+
+  // Detect raw URLs on their own line in Markdown (before paragraph wrapping).
+  // Twitter/X
+  html = html.replace(
+    /^(https?:\/\/(?:x\.com|twitter\.com)\/\w+\/status\/\d+[^\s]*)$/gm,
+    (match) => {
+      if (match.includes('embed-container')) return match;
+      return renderTweetEmbed(match);
+    }
+  );
+  // Instagram
+  html = html.replace(
+    /^(https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[\w-]+\/?[^\s]*)$/gm,
+    (match) => {
+      if (match.includes('embed-container')) return match;
+      return renderInstagramEmbed(match);
+    }
+  );
 
   // Images: ![caption||credit](url)
   html = html.replace(
