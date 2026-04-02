@@ -13,7 +13,7 @@ import {
   getMasLeidos,
   incrementVistas,
 } from '@/lib/supabase';
-import { renderContent, processEmbeds, formatDate, readTime } from '@/lib/content';
+import { renderContent, formatDate, readTime } from '@/lib/content';
 
 export async function getStaticPaths() {
   const slugs = await getAllArticuloSlugs();
