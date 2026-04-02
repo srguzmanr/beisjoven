@@ -66,77 +66,67 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
 ];
 
 /**
- * Extract a standalone URL from a line that may be wrapped in HTML tags.
- * Returns the clean URL, or null if the line isn't a standalone URL.
+ * Pre-process content: replace standalone URL occurrences with embed HTML.
+ * Runs BEFORE the main markdown→HTML conversion.
  *
- * Iteratively strips ANY wrapping HTML tag, so it handles all formats:
- *   https://example.com/...
- *   <p>https://example.com/...</p>
- *   <h3>https://example.com/...</h3>
- *   <p><a href="https://...">https://...</a></p>
- *   <blockquote><a href="https://...">https://...</a></blockquote>
- *   <h3><a href="https://..." ...>https://...</a></h3>
- */
-function extractStandaloneUrl(line: string): string | null {
-  let s = line.trim();
-
-  // Iteratively strip any single wrapping HTML tag
-  let changed = true;
-  while (changed) {
-    changed = false;
-    const tagMatch = s.match(/^<([a-z][a-z0-9]*)\b[^>]*>([\s\S]*)<\/\1>$/i);
-    if (tagMatch) {
-      const inner = tagMatch[2].trim();
-      // For <a> tags, prefer the href if the display text is also a URL
-      if (tagMatch[1].toLowerCase() === 'a') {
-        const hrefMatch = s.match(/^<a\s[^>]*href="([^"]+)"[^>]*>/i);
-        if (hrefMatch) {
-          const href = hrefMatch[1].trim();
-          const text = inner.replace(/<[^>]*>/g, '').trim();
-          if (text.startsWith('http')) {
-            s = href;
-            changed = true;
-            continue;
-          } else {
-            return null; // Named link like "click here", not a standalone URL
-          }
-        }
-      }
-      s = inner;
-      changed = true;
-    }
-  }
-
-  // Final check: must be a clean URL with no HTML or spaces remaining
-  if (s.startsWith('http') && !s.includes(' ') && !s.includes('<')) {
-    return s;
-  }
-
-  return null;
-}
-
-/**
- * Pre-process content: replace standalone URL lines with embed HTML.
- * Runs BEFORE markdown→HTML conversion so the parser leaves embed blocks intact.
- * Handles both raw markdown URLs and WYSIWYG HTML-wrapped URLs.
+ * Uses TWO approaches to handle all WYSIWYG and markdown formats:
+ *
+ * APPROACH 1 (HTML content — may have NO newlines):
+ *   Regex-replaces any block-level tag whose sole content is a URL.
+ *   Matches: <p>URL</p>, <h3>URL</h3>, <p><a href="URL">URL</a></p>, etc.
+ *   Works on the full string — doesn't depend on \n.
+ *
+ * APPROACH 2 (Raw markdown — newline-separated):
+ *   Falls back to line-by-line scan for bare URLs.
  */
 function preProcessEmbeds(raw: string): string {
-  const lines = raw.split('\n');
-  return lines.map((line) => {
+  let result = raw;
+
+  // APPROACH 1: HTML content — find <tag>URL</tag> patterns in the full string.
+  // Pattern A: <tag>https://...</tag>  (plain URL)
+  result = result.replace(
+    /<(p|h[1-6]|blockquote|div|li|span)\b[^>]*>\s*(https?:\/\/[^\s<]+?)\s*<\/\1>/gi,
+    (_match, _tag, url) => {
+      const clean = url.trim();
+      for (const provider of EMBED_PROVIDERS) {
+        if (provider.test(clean)) {
+          return provider.toHTML(clean) || _match;
+        }
+      }
+      return _match;
+    }
+  );
+
+  // Pattern B: <tag><a href="URL" ...>URL</a></tag>  (auto-linked URL)
+  result = result.replace(
+    /<(p|h[1-6]|blockquote|div|li|span)\b[^>]*>\s*<a\s[^>]*href="(https?:\/\/[^"]+)"[^>]*>\s*https?:\/\/[^\s<]+?\s*<\/a>\s*<\/\1>/gi,
+    (_match, _tag, hrefUrl) => {
+      const clean = hrefUrl.trim();
+      for (const provider of EMBED_PROVIDERS) {
+        if (provider.test(clean)) {
+          return provider.toHTML(clean) || _match;
+        }
+      }
+      return _match;
+    }
+  );
+
+  // APPROACH 2: Raw markdown — line by line for bare URLs with no HTML.
+  const lines = result.split('\n');
+  result = lines.map((line) => {
     const trimmed = line.trim();
-    if (!trimmed) return line;
-
-    const url = extractStandaloneUrl(trimmed);
-    if (!url) return line;
-
+    if (!trimmed.startsWith('http') || trimmed.includes(' ')) return line;
+    // Skip if this line already has HTML (already processed by Approach 1)
+    if (trimmed.includes('<')) return line;
     for (const provider of EMBED_PROVIDERS) {
-      if (provider.test(url)) {
-        const html = provider.toHTML(url);
-        return html || line;
+      if (provider.test(trimmed)) {
+        return provider.toHTML(trimmed) || line;
       }
     }
     return line;
   }).join('\n');
+
+  return result;
 }
 
 /* ==================== SHORTCODE EMBEDS ==================== */
