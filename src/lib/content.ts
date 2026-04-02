@@ -16,7 +16,7 @@ function escapeHtml(str: string): string {
 
 function extractYouTubeId(url: string): string | null {
   const match = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
   );
   return match ? match[1] : null;
 }
@@ -64,7 +64,19 @@ const shortcodeHandlers: Record<string, (url: string) => string> = {
   tiktok: renderTikTokEmbed,
 };
 
+function stripHtmlTags(str: string): string {
+  return str.replace(/<[^>]*>/g, '');
+}
+
 function processShortcodes(content: string): string {
+  // Normalize shortcodes that the WYSIWYG editor split across HTML tags/lines.
+  // Handles: <p>[youtube]</p><p><span style="...">URL</span></p><p>[/youtube]</p>
+  // Result:  [youtube]CLEAN_URL[/youtube]
+  content = content.replace(
+    /(?:<[^>]*>)*\s*\[(youtube|tweet|instagram|tiktok)\]\s*(?:<[^>]*>)*([\s\S]*?)(?:<[^>]*>)*\s*\[\/\1\]\s*(?:<[^>]*>)*/gi,
+    (_, tag: string, inner: string) => `[${tag}]${stripHtmlTags(inner).trim()}[/${tag}]`
+  );
+
   return content.replace(
     /\[(youtube|tweet|instagram|tiktok)\]([\s\S]*?)\[\/\1\]/gi,
     (_, tag: string, url: string) => {
