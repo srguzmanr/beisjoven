@@ -12,6 +12,68 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
+/* ==================== SHORTCODE EMBEDS ==================== */
+
+function extractYouTubeId(url: string): string | null {
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  );
+  return match ? match[1] : null;
+}
+
+function renderYouTubeEmbed(url: string): string {
+  const videoId = extractYouTubeId(url.trim());
+  if (!videoId) return renderFallbackLink(url);
+  return `<div class="embed-container embed-16-9"><iframe src="https://www.youtube-nocookie.com/embed/${videoId}" title="YouTube video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+}
+
+function renderTweetEmbed(url: string): string {
+  const trimmed = url.trim();
+  if (!/^https?:\/\/(twitter\.com|x\.com)\/.+\/status\/\d+/i.test(trimmed)) {
+    return renderFallbackLink(url);
+  }
+  return `<div class="embed-container embed-social"><blockquote class="twitter-tweet" data-lazy="true"><a href="${escapeHtml(trimmed)}">${escapeHtml(trimmed)}</a></blockquote></div>`;
+}
+
+function renderInstagramEmbed(url: string): string {
+  const trimmed = url.trim();
+  if (!/^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/[\w-]+/i.test(trimmed)) {
+    return renderFallbackLink(url);
+  }
+  const cleanUrl = trimmed.replace(/\/$/, '') + '/embed';
+  return `<div class="embed-container embed-social"><iframe src="${cleanUrl}" frameborder="0" scrolling="no" allowtransparency="true" loading="lazy" class="instagram-embed-iframe"></iframe></div>`;
+}
+
+function renderTikTokEmbed(url: string): string {
+  const trimmed = url.trim();
+  const match = trimmed.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/i);
+  if (!match) return renderFallbackLink(url);
+  const videoId = match[1];
+  return `<div class="embed-container embed-social"><blockquote class="tiktok-embed" cite="${escapeHtml(trimmed)}" data-video-id="${videoId}"><a href="${escapeHtml(trimmed)}">${escapeHtml(trimmed)}</a></blockquote></div>`;
+}
+
+function renderFallbackLink(url: string): string {
+  const trimmed = url.trim();
+  return `<p class="mb-4 leading-relaxed"><a href="${escapeHtml(trimmed)}" target="_blank" rel="noopener" class="text-steel-blue hover:underline">${escapeHtml(trimmed)}</a></p>`;
+}
+
+const shortcodeHandlers: Record<string, (url: string) => string> = {
+  youtube: renderYouTubeEmbed,
+  tweet: renderTweetEmbed,
+  instagram: renderInstagramEmbed,
+  tiktok: renderTikTokEmbed,
+};
+
+function processShortcodes(content: string): string {
+  return content.replace(
+    /\[(youtube|tweet|instagram|tiktok)\]([\s\S]*?)\[\/\1\]/gi,
+    (_, tag: string, url: string) => {
+      const handler = shortcodeHandlers[tag.toLowerCase()];
+      return handler ? handler(url) : renderFallbackLink(url);
+    }
+  );
+}
+
 export function renderContent(content: string): string {
   if (!content) return '';
 
@@ -19,16 +81,17 @@ export function renderContent(content: string): string {
   const isHTML = /<[a-zA-Z][^>]*>/m.test(content);
 
   if (isHTML) {
-    // HTML legacy: only process inline markdown images
-    return content.replace(
+    // HTML legacy: process shortcodes then inline markdown images
+    let result = processShortcodes(content);
+    return result.replace(
       /!\[([^\]]*)\]\(([^)]+)\)/g,
       (_, alt: string, url: string) =>
         `<figure class="my-6"><img src="${url}" alt="${escapeHtml(alt)}" loading="lazy" class="rounded-lg w-full"><figcaption class="text-sm text-gray-500 mt-2 text-center">${escapeHtml(alt)}</figcaption></figure>`
     );
   }
 
-  // Markdown content: full parse
-  let html = content;
+  // Markdown content: process shortcodes first, then full parse
+  let html = processShortcodes(content);
 
   // Images: ![caption||credit](url)
   html = html.replace(
@@ -65,7 +128,7 @@ export function renderContent(content: string): string {
     .map((block) => {
       block = block.trim();
       if (!block) return '';
-      if (/^<(h[1-6]|figure|ul|ol|li|blockquote|div)/i.test(block)) return block;
+      if (/^<(h[1-6]|figure|ul|ol|li|blockquote|div|p class)/i.test(block)) return block;
       block = block.replace(/\n/g, '<br>');
       return `<p class="mb-4 leading-relaxed">${block}</p>`;
     })

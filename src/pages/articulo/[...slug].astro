@@ -158,6 +158,27 @@ const articleJsonLd = {
     </div>
   </article>
 
+  <!-- Load embed scripts lazily when shortcodes are present -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Twitter/X embeds
+      if (document.querySelector('.twitter-tweet')) {
+        const s = document.createElement('script');
+        s.src = 'https://platform.twitter.com/widgets.js';
+        s.async = true;
+        s.charset = 'utf-8';
+        document.body.appendChild(s);
+      }
+      // TikTok embeds
+      if (document.querySelector('.tiktok-embed')) {
+        const s = document.createElement('script');
+        s.src = 'https://www.tiktok.com/embed.js';
+        s.async = true;
+        document.body.appendChild(s);
+      }
+    });
+  </script>
+
   <!-- Increment views client-side (fire-and-forget) -->
   <script define:vars={{ articuloId: articulo.id, supabaseUrl: 'https://yulkbjpotfmwqkzzfegg.supabase.co' }}>
     fetch(`${supabaseUrl}/rest/v1/rpc/increment_vistas`, {
