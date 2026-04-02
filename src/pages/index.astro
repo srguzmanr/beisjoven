@@ -10,6 +10,7 @@ import {
   getMasLeidos,
   getArticulosByCategoria,
   getVideosDestacados,
+  getEventosActivos,
 } from '@/lib/supabase';
 
 // Fetch all data in parallel at build time
@@ -23,6 +24,7 @@ const [
   softbol,
   juvenil,
   videos,
+  eventosActivos,
 ] = await Promise.all([
   getArticulos(12),
   getArticulosDestacados(3),
@@ -33,8 +35,10 @@ const [
   getArticulosByCategoria('softbol', 4),
   getArticulosByCategoria('juvenil', 4),
   getVideosDestacados(4),
+  getEventosActivos(),
 ]);
 
+const eventoActivo = eventosActivos[0] || null;
 const featured = destacados.length > 0 ? destacados : articulos.slice(0, 3);
 const hero = featured[0];
 const secondary = featured.slice(1, 3);
@@ -74,6 +78,30 @@ const categorySections = [
       </div>
     </div>
   </div>
+
+  {/* Active Event Banner */}
+  {eventoActivo && (
+    <a href={`/evento/${eventoActivo.slug}`} class="block bg-rojo hover:bg-rojo-dark transition-colors">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="bg-white/20 text-white text-[10px] font-bold uppercase px-2 py-1 rounded-sm tracking-wider flex-shrink-0">
+            Evento
+          </span>
+          <span class="text-white font-bold text-sm truncate">
+            {eventoActivo.nombre}
+          </span>
+          {eventoActivo.ciudad && (
+            <span class="text-white/70 text-xs hidden sm:inline flex-shrink-0">
+              {eventoActivo.ciudad}
+            </span>
+          )}
+        </div>
+        <span class="text-white/90 text-xs font-semibold flex-shrink-0 whitespace-nowrap">
+          Ver cobertura &rarr;
+        </span>
+      </div>
+    </a>
+  )}
 
   <!-- Hero Section -->
   <div class="max-w-7xl mx-auto px-4 py-8">

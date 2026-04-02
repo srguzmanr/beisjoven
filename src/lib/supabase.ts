@@ -45,10 +45,27 @@ export interface Articulo {
   vistas: number;
   categoria_id: number;
   autor_id: number;
+  evento_id: number | null;
   pie_de_foto: string | null;
   foto_credito: string | null;
   categoria: Categoria;
   autor: Autor;
+}
+
+export interface Evento {
+  id: number;
+  nombre: string;
+  slug: string;
+  descripcion: string | null;
+  imagen_url: string | null;
+  fecha_inicio: string;
+  fecha_fin: string | null;
+  sede: string | null;
+  ciudad: string | null;
+  categoria_id: number | null;
+  activo: boolean;
+  created_at: string;
+  categoria?: Categoria;
 }
 
 export interface Video {
@@ -317,4 +334,45 @@ export async function getVideosDestacados(limite = 4) {
     .order('fecha', { ascending: false })
     .limit(limite);
   return (data as Video[]) || [];
+}
+
+// ==================== EVENTOS ====================
+
+const EVENTO_SELECT = `*, categoria:categorias(*)`;
+
+export async function getEventoBySlug(slug: string) {
+  const { data } = await supabaseServer
+    .from('eventos')
+    .select(EVENTO_SELECT)
+    .eq('slug', slug)
+    .single();
+  return data as Evento | null;
+}
+
+export async function getAllEventoSlugs() {
+  const { data } = await supabaseServer
+    .from('eventos')
+    .select('slug');
+  return (data || []).map((e: { slug: string }) => e.slug);
+}
+
+export async function getEventosActivos() {
+  const { data } = await supabaseServer
+    .from('eventos')
+    .select(EVENTO_SELECT)
+    .eq('activo', true)
+    .order('fecha_inicio', { ascending: false });
+  return (data as Evento[]) || [];
+}
+
+export async function getArticulosByEvento(eventoId: number, limite = 50) {
+  const { data } = await supabaseServer
+    .from('articulos')
+    .select(ARTICLE_SELECT)
+    .eq('evento_id', eventoId)
+    .eq('publicado', true)
+    .order('fecha', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limite);
+  return (data as Articulo[]) || [];
 }
