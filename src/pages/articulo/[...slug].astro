@@ -159,24 +159,37 @@ const articleJsonLd = {
   </article>
 
   <!-- Load embed scripts lazily when shortcodes are present -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Twitter/X embeds
-      if (document.querySelector('.twitter-tweet')) {
-        const s = document.createElement('script');
-        s.src = 'https://platform.twitter.com/widgets.js';
+  <script is:inline>
+    (function () {
+      function loadScript(src, onload) {
+        var s = document.createElement('script');
+        s.src = src;
         s.async = true;
-        s.charset = 'utf-8';
+        if (onload) s.onload = onload;
         document.body.appendChild(s);
       }
-      // TikTok embeds
-      if (document.querySelector('.tiktok-embed')) {
-        const s = document.createElement('script');
-        s.src = 'https://www.tiktok.com/embed.js';
-        s.async = true;
-        document.body.appendChild(s);
+
+      function init() {
+        // Twitter/X embeds — must call twttr.widgets.load() after script loads
+        if (document.querySelector('.twitter-tweet')) {
+          loadScript('https://platform.twitter.com/widgets.js', function () {
+            if (window.twttr && window.twttr.widgets) {
+              window.twttr.widgets.load();
+            }
+          });
+        }
+        // TikTok embeds
+        if (document.querySelector('.tiktok-embed')) {
+          loadScript('https://www.tiktok.com/embed.js');
+        }
       }
-    });
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
   </script>
 
   <!-- Increment views client-side (fire-and-forget) -->
