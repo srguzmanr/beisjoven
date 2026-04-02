@@ -12,6 +12,7 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
   redirects: {
+    '/login': '/admin',
     '/post/[...slug]': '/articulo/[...slug]',
     '/noticias/[...slug]': '/articulo/[...slug]',
     '/beisjoven/[...slug]': '/articulo/[...slug]',
