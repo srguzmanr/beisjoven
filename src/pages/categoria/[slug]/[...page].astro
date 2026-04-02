@@ -39,8 +39,6 @@ if (!categoria) {
   return Astro.redirect('/404');
 }
 
-const categoryUrl = `https://beisjoven.com/categoria/${slug}`;
-
 const categoryDescriptions: Record<string, string> = {
   'mlb': 'Mexicanos en Grandes Ligas, estadísticas, trades y más del béisbol de las mayores.',
   'liga-mexicana': 'Cobertura completa de la Liga Mexicana de Béisbol, Liga Mexicana del Pacífico y ligas profesionales.',
@@ -51,10 +49,11 @@ const categoryDescriptions: Record<string, string> = {
 };
 
 const description = categoryDescriptions[slug!] || `Noticias y artículos de ${categoria.nombre} en Beisjoven.`;
+const categoryUrl = `https://beisjoven.com/categoria/${slug}`;
 ---
 
 <BaseLayout
-  title={`${categoria.nombre} - Beisjoven`}
+  title={`${categoria.nombre}${page.currentPage > 1 ? ` - Página ${page.currentPage}` : ''} - Beisjoven`}
   description={description}
   url={categoryUrl}
 >
