@@ -118,6 +118,16 @@ const articleJsonLd = {
             loading="eager"
             class="w-full md:rounded-lg"
           />
+          {(articulo.pie_de_foto || articulo.foto_credito) && (
+            <figcaption class="flex flex-wrap justify-between gap-x-3 gap-y-0.5 px-4 md:px-0 pt-1.5">
+              {articulo.pie_de_foto && (
+                <span class="text-sm text-gray-500 italic leading-snug">{articulo.pie_de_foto}</span>
+              )}
+              {articulo.foto_credito && (
+                <span class="text-xs text-gray-400 italic leading-snug flex-shrink-0">{articulo.foto_credito}</span>
+              )}
+            </figcaption>
+          )}
         </figure>
 
         <!-- Content -->
