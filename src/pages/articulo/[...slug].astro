@@ -13,7 +13,7 @@ import {
   getMasLeidos,
   incrementVistas,
 } from '@/lib/supabase';
-import { renderContent, formatDate, readTime } from '@/lib/content';
+import { renderContent, processEmbeds, formatDate, readTime } from '@/lib/content';
 
 export async function getStaticPaths() {
   const slugs = await getAllArticuloSlugs();
@@ -37,6 +37,11 @@ const articleUrl = `https://beisjoven.com/articulo/${articulo.slug}`;
 const renderedBody = renderContent(articulo.contenido);
 const formattedDate = formatDate(articulo.fecha);
 const readingTime = readTime(articulo.contenido);
+
+// Detect which embed scripts are needed at build time
+const needsTwitterScript = renderedBody.includes('class="twitter-tweet"');
+const needsInstagramScript = renderedBody.includes('class="instagram-media"');
+const needsTikTokScript = renderedBody.includes('class="tiktok-embed"');
 
 // JSON-LD for this article
 const articleJsonLd = {
@@ -158,47 +163,16 @@ const articleJsonLd = {
     </div>
   </article>
 
-  <!-- Load embed scripts lazily when shortcodes are present -->
-  <script is:inline>
-    (function () {
-      function loadScript(src, onload) {
-        var s = document.createElement('script');
-        s.src = src;
-        s.async = true;
-        if (onload) s.onload = onload;
-        document.body.appendChild(s);
-      }
-
-      function init() {
-        // Twitter/X embeds — must call twttr.widgets.load() after script loads
-        if (document.querySelector('.twitter-tweet')) {
-          loadScript('https://platform.twitter.com/widgets.js', function () {
-            if (window.twttr && window.twttr.widgets) {
-              window.twttr.widgets.load();
-            }
-          });
-        }
-        // Instagram embeds
-        if (document.querySelector('.instagram-media')) {
-          loadScript('//www.instagram.com/embed.js', function () {
-            if (window.instgrm && window.instgrm.Embeds) {
-              window.instgrm.Embeds.process();
-            }
-          });
-        }
-        // TikTok embeds
-        if (document.querySelector('.tiktok-embed')) {
-          loadScript('https://www.tiktok.com/embed.js');
-        }
-      }
-
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-      } else {
-        init();
-      }
-    })();
-  </script>
+  <!-- Embed scripts: only included when the article actually has that embed type -->
+  {needsTwitterScript && (
+    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8" is:inline></script>
+  )}
+  {needsInstagramScript && (
+    <script async src="https://www.instagram.com/embed.js" is:inline></script>
+  )}
+  {needsTikTokScript && (
+    <script async src="https://www.tiktok.com/embed.js" is:inline></script>
+  )}
 
   <!-- Increment views client-side (fire-and-forget) -->
   <script define:vars={{ articuloId: articulo.id, supabaseUrl: 'https://yulkbjpotfmwqkzzfegg.supabase.co' }}>
