@@ -82,12 +82,25 @@ const SupabaseAPI = {
             .order('fecha', { ascending: false })
             .order('created_at', { ascending: false })
             .limit(limite);
-        
+
         if (error) {
             console.error('Error cargando artículos:', error);
             return [];
         }
         return data;
+    },
+
+    async getArticulosCount() {
+        const { count, error } = await supabaseClient
+            .from('articulos')
+            .select('*', { count: 'exact', head: true })
+            .eq('publicado', true);
+
+        if (error) {
+            console.error('Error contando artículos:', error);
+            return null;
+        }
+        return count;
     },
     
     async getArticuloBySlug(slug) {

@@ -527,10 +527,11 @@ const AdminPages = {
         `;
         
         // Cargar datos de Supabase
-        const [articulos, videos, categorias] = await Promise.all([
+        const [articulos, videos, categorias, totalArticulos] = await Promise.all([
             SupabaseAPI.getArticulos(500),
             SupabaseAPI.getVideos(100),
-            SupabaseAPI.getCategorias()
+            SupabaseAPI.getCategorias(),
+            SupabaseAPI.getArticulosCount()
         ]);
 
         main.innerHTML = `
@@ -553,7 +554,7 @@ const AdminPages = {
                             <div class="stat-card">
                                 <div class="stat-icon">📝</div>
                                 <div class="stat-info">
-                                    <span class="stat-number">${articulos.length}</span>
+                                    <span class="stat-number">${totalArticulos !== null ? totalArticulos : articulos.length}</span>
                                     <span class="stat-label">Artículos</span>
                                 </div>
                             </div>
@@ -641,18 +642,21 @@ const AdminPages = {
         `;
         
         // Cargar artículos de Supabase
-        const articulos = await SupabaseAPI.getArticulos(500);
+        const [articulos, totalArticulos] = await Promise.all([
+            SupabaseAPI.getArticulos(500),
+            SupabaseAPI.getArticulosCount()
+        ]);
 
         main.innerHTML = `
             <div class="admin-layout">
                 ${AdminComponents.sidebar()}
-                
+
                 <div class="admin-main">
                     ${AdminComponents.header('Artículos')}
-                    
+
                     <div class="admin-content">
                         <div class="content-header">
-                            <p>Total: <span id="admin-article-count">${articulos.length}</span> artículos</p>
+                            <p>Total: <span id="admin-article-count">${totalArticulos !== null ? totalArticulos : articulos.length}</span> artículos</p>
                             <a href="/admin/nuevo" class="btn btn-primary">+ Nuevo Artículo</a>
                         </div>
                         <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
