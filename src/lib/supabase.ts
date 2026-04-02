@@ -235,6 +235,21 @@ export async function getAllArticulosWbc2026() {
   );
 }
 
+export async function getAllArticulosByCategoria(categoriaSlug: string) {
+  const cat = await getCategoriaBySlug(categoriaSlug);
+  if (!cat) return [];
+  return fetchAllPaginated<Articulo>((from, to) =>
+    supabaseServer
+      .from('articulos')
+      .select(ARTICLE_SELECT)
+      .eq('categoria_id', cat.id)
+      .eq('publicado', true)
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(from, to),
+  );
+}
+
 // ==================== CATEGORÍAS ====================
 
 export async function getCategorias() {
