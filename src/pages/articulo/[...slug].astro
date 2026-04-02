@@ -39,7 +39,8 @@ const formattedDate = formatDate(articulo.fecha);
 const readingTime = readTime(articulo.contenido);
 
 // Detect which embed scripts are needed at build time
-const needsTwitterScript = renderedBody.includes('class="twitter-tweet"');
+const needsTwitterScript = renderedBody.includes('class="twitter-embed"')
+  || renderedBody.includes('class="twitter-tweet"');
 const needsInstagramScript = renderedBody.includes('class="instagram-media"');
 const needsTikTokScript = renderedBody.includes('class="tiktok-embed"');
 
@@ -165,7 +166,34 @@ const articleJsonLd = {
 
   <!-- Embed scripts: only included when the article actually has that embed type -->
   {needsTwitterScript && (
-    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8" is:inline></script>
+    <script is:inline>
+      window.twttr = (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0],
+          t = window.twttr || {};
+        if (d.getElementById(id)) return t;
+        js = d.createElement(s);
+        js.id = id;
+        js.src = "https://platform.twitter.com/widgets.js";
+        fjs.parentNode.insertBefore(js, fjs);
+        t._e = [];
+        t.ready = function(f) { t._e.push(f); };
+        return t;
+      }(document, "script", "twitter-wjs"));
+
+      twttr.ready(function(twttr) {
+        // New format: div.twitter-embed[data-tweet-id]
+        document.querySelectorAll('.twitter-embed[data-tweet-id]').forEach(function(el) {
+          var id = el.getAttribute('data-tweet-id');
+          if (id) {
+            twttr.widgets.createTweet(id, el, {
+              dnt: true,
+              align: 'center'
+            });
+          }
+        });
+        // Legacy format: blockquote.twitter-tweet (auto-scanned by widgets.js)
+      });
+    </script>
   )}
   {needsInstagramScript && (
     <script async src="https://www.instagram.com/embed.js" is:inline></script>
