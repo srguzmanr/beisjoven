@@ -178,6 +178,14 @@ const articleJsonLd = {
             }
           });
         }
+        // Instagram embeds
+        if (document.querySelector('.instagram-media')) {
+          loadScript('//www.instagram.com/embed.js', function () {
+            if (window.instgrm && window.instgrm.Embeds) {
+              window.instgrm.Embeds.process();
+            }
+          });
+        }
         // TikTok embeds
         if (document.querySelector('.tiktok-embed')) {
           loadScript('https://www.tiktok.com/embed.js');
