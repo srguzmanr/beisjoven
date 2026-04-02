@@ -66,19 +66,60 @@ const EMBED_PROVIDERS: EmbedProvider[] = [
 ];
 
 /**
- * Pre-process raw content: replace standalone URL lines with embed HTML.
+ * Extract a standalone URL from a line that may be wrapped in HTML tags.
+ * Returns the clean URL, or null if the line isn't a standalone URL.
+ *
+ * Handles all formats the WYSIWYG editor and markdown parser produce:
+ *   https://example.com/...
+ *   <p>https://example.com/...</p>
+ *   <p><a href="https://...">https://...</a></p>
+ *   <blockquote><a href="https://...">https://...</a></blockquote>
+ */
+function extractStandaloneUrl(line: string): string | null {
+  let s = line;
+
+  // Strip outer block-level tag: <p>, <blockquote>, <div>
+  const blockMatch = s.match(/^<(p|blockquote|div)[^>]*>([\s\S]*)<\/\1>$/i);
+  if (blockMatch) s = blockMatch[2].trim();
+
+  // If it's an <a> tag, extract the href — but only if the visible text
+  // is also a URL (auto-linked), not a named link like "click here"
+  const anchorMatch = s.match(/^<a\s[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>$/i);
+  if (anchorMatch) {
+    const href = anchorMatch[1].trim();
+    const text = anchorMatch[2].replace(/<[^>]*>/g, '').trim();
+    if (text.startsWith('http')) {
+      s = href;
+    } else {
+      return null; // Named link, not a standalone URL
+    }
+  }
+
+  // Final check: must be a clean URL with no HTML or spaces remaining
+  if (s.startsWith('http') && !s.includes(' ') && !s.includes('<')) {
+    return s;
+  }
+
+  return null;
+}
+
+/**
+ * Pre-process content: replace standalone URL lines with embed HTML.
  * Runs BEFORE markdown→HTML conversion so the parser leaves embed blocks intact.
- * Only converts URLs that are alone on a line (not inline within text).
+ * Handles both raw markdown URLs and WYSIWYG HTML-wrapped URLs.
  */
 function preProcessEmbeds(raw: string): string {
   const lines = raw.split('\n');
   return lines.map((line) => {
     const trimmed = line.trim();
-    // Must start with http(s) and contain no spaces (just a URL)
-    if (!trimmed.startsWith('http') || trimmed.includes(' ')) return line;
+    if (!trimmed) return line;
+
+    const url = extractStandaloneUrl(trimmed);
+    if (!url) return line;
+
     for (const provider of EMBED_PROVIDERS) {
-      if (provider.test(trimmed)) {
-        const html = provider.toHTML(trimmed);
+      if (provider.test(url)) {
+        const html = provider.toHTML(url);
         return html || line;
       }
     }
