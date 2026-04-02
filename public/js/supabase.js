@@ -90,6 +90,19 @@ const SupabaseAPI = {
         return data;
     },
     
+    async getArticulosCount() {
+        const { count, error } = await supabaseClient
+            .from('articulos')
+            .select('*', { count: 'exact', head: true })
+            .eq('publicado', true);
+
+        if (error) {
+            console.error('Error contando artículos:', error);
+            return null;
+        }
+        return count;
+    },
+
     async getArticuloBySlug(slug) {
         const { data, error } = await supabaseClient
             .from('articulos')
