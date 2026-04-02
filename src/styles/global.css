@@ -136,51 +136,53 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ==================== EMBEDS ==================== */
+
+/* Base container for all embeds */
 .embed-container {
-  position: relative;
+  max-width: 540px;
+  margin: 2rem auto;
   width: 100%;
-  max-width: 100%;
-  margin: 1.5rem auto;
 }
 
-.embed-16-9 {
+/* YouTube: 16:9 responsive */
+.embed-youtube {
+  position: relative;
   padding-bottom: 56.25%;
   height: 0;
   overflow: hidden;
-  border-radius: 0.5rem;
+  max-width: 100%;
+  border-radius: 8px;
 }
 
-.embed-16-9 iframe {
+.embed-youtube iframe {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  border: 0;
+  border: none;
+  border-radius: 8px;
 }
 
+/* Twitter & Instagram: scripts handle sizing, we ensure centering */
+.embed-twitter,
+.embed-instagram {
+  display: flex;
+  justify-content: center;
+}
+
+.embed-twitter .twitter-tweet,
+.embed-instagram .instagram-media {
+  margin: 0 auto !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* TikTok */
 .embed-social {
   max-width: 550px;
   margin-left: auto;
   margin-right: auto;
-}
-
-.embed-social .twitter-tweet {
-  margin: 0 auto !important;
-}
-
-.embed-social .instagram-embed-iframe {
-  width: 100%;
-  min-height: 500px;
-  border: 1px solid var(--color-gris-border);
-  border-radius: 0.5rem;
-}
-
-.embed-social .instagram-media {
-  margin: 0 auto !important;
-  max-width: 540px !important;
-  width: 100% !important;
-  min-width: 0 !important;
 }
 
 .embed-social .tiktok-embed {
@@ -196,6 +198,14 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--color-gris-bg);
   border-radius: 0 8px 8px 0;
   font-style: normal;
+}
+
+/* Mobile: full width */
+@media (max-width: 600px) {
+  .embed-container {
+    max-width: 100%;
+    margin: 1.5rem 0;
+  }
 }
 
 /* ==================== CATEGORY COLORS ==================== */
