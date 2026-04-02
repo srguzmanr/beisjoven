@@ -725,7 +725,9 @@ const Pages = {
                 avatar: articulo.autor.avatar_url,
                 bio: articulo.autor.bio
             } : { name: 'Redacción', slug: 'redaccion' },
-            esWbc2026: !!articulo.es_wbc2026
+            esWbc2026: !!articulo.es_wbc2026,
+            pieDeFoto: articulo.pie_de_foto || '',
+            fotoCredito: articulo.foto_credito || ''
         };
         
         // Adaptar relacionados (excluyendo el actual)
@@ -782,7 +784,11 @@ const Pages = {
                     
                     <figure class="article-image">
                         <img src="${article.image}" alt="${article.title}">
-                        <div id="article-image-credit"></div>
+                        ${article.pieDeFoto || article.fotoCredito ? `
+                        <figcaption class="article-image-caption">
+                            ${article.pieDeFoto ? `<span class="foto-pie">${escapeHTML(article.pieDeFoto)}</span>` : ''}
+                            ${article.fotoCredito ? `<span class="foto-credito">${escapeHTML(article.fotoCredito)}</span>` : ''}
+                        </figcaption>` : ''}
                     </figure>
 
                     ${article.esWbc2026 ? `

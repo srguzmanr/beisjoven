@@ -45,6 +45,8 @@ export interface Articulo {
   vistas: number;
   categoria_id: number;
   autor_id: number;
+  pie_de_foto: string | null;
+  foto_credito: string | null;
   categoria: Categoria;
   autor: Autor;
 }
