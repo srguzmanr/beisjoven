@@ -961,15 +961,22 @@ const AdminPages = {
         // Initialize Rich Text Editor
         const initialContent = article?.contenido || (useDraft && draft ? draft.contenido : '') || '';
         
-        if (typeof RichTextEditor !== 'undefined') {
+        if (typeof TiptapEditor !== 'undefined') {
+            contentEditor = TiptapEditor.create(
+                'content-editor-container',
+                'content',
+                initialContent
+            );
+        } else if (typeof RichTextEditor !== 'undefined') {
+            // Legacy fallback
             contentEditor = RichTextEditor.create(
                 'content-editor-container',
                 'content',
                 initialContent
             );
-                        setTimeout(initMarkdownImport, 300);
+            setTimeout(initMarkdownImport, 300);
         } else {
-            // Fallback to plain textarea if RichTextEditor not loaded
+            // Fallback to plain textarea
             document.getElementById('content-editor-container').innerHTML = `
                 <textarea id="content" rows="15" placeholder="Escribe el contenido del artículo aquí..." required>${initialContent}</textarea>
                 <small>Puedes usar HTML básico: &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a&gt;</small>

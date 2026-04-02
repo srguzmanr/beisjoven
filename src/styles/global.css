@@ -145,7 +145,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* YouTube: 16:9 responsive */
-.embed-youtube {
+.embed-youtube,
+div[data-youtube-video] {
   position: relative;
   padding-bottom: 56.25%;
   height: 0;
@@ -154,7 +155,8 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 8px;
 }
 
-.embed-youtube iframe {
+.embed-youtube iframe,
+div[data-youtube-video] iframe {
   position: absolute;
   top: 0;
   left: 0;
@@ -162,6 +164,13 @@ h1, h2, h3, h4, h5, h6 {
   height: 100%;
   border: none;
   border-radius: 8px;
+}
+
+/* Tiptap YouTube wrapper — also needs embed-container centering */
+div[data-youtube-video] {
+  max-width: 540px;
+  margin: 2rem auto;
+  width: 100%;
 }
 
 /* Twitter & Instagram: scripts handle sizing, we ensure centering */
