@@ -12,7 +12,13 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
-/* ==================== SHORTCODE EMBEDS ==================== */
+/* ==================== EMBED PROVIDERS ==================== */
+
+interface EmbedProvider {
+  name: string;
+  test: (url: string) => boolean;
+  toHTML: (url: string) => string;
+}
 
 function extractYouTubeId(url: string): string | null {
   const match = url.match(
@@ -21,36 +27,66 @@ function extractYouTubeId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-function renderYouTubeEmbed(url: string): string {
-  const videoId = extractYouTubeId(url.trim());
-  if (!videoId) return renderFallbackLink(url);
-  return `<div class="embed-container embed-youtube"><iframe src="https://www.youtube-nocookie.com/embed/${videoId}" title="YouTube video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+const EMBED_PROVIDERS: EmbedProvider[] = [
+  {
+    name: 'youtube',
+    test: (url) => /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)/.test(url),
+    toHTML: (url) => {
+      const id = extractYouTubeId(url);
+      if (!id) return '';
+      return `<div class="embed-container embed-youtube"><iframe src="https://www.youtube-nocookie.com/embed/${id}" title="YouTube video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+    },
+  },
+  {
+    name: 'twitter',
+    test: (url) => /(?:x\.com|twitter\.com)\/\w+\/status\/\d+/.test(url),
+    toHTML: (url) => {
+      const clean = escapeHtml(url.split('?')[0]);
+      return `<div class="embed-container embed-twitter"><blockquote class="twitter-tweet" data-dnt="true"><a href="${clean}"></a></blockquote></div>`;
+    },
+  },
+  {
+    name: 'instagram',
+    test: (url) => /instagram\.com\/(p|reel)\/[\w-]+/.test(url),
+    toHTML: (url) => {
+      const clean = escapeHtml(url.split('?')[0].replace(/\/$/, '') + '/');
+      return `<div class="embed-container embed-instagram"><blockquote class="instagram-media" data-instgrm-permalink="${clean}" data-instgrm-version="14" style="max-width:540px; width:100%;"><a href="${clean}"></a></blockquote></div>`;
+    },
+  },
+  {
+    name: 'tiktok',
+    test: (url) => /tiktok\.com\/@[\w.-]+\/video\/\d+/.test(url),
+    toHTML: (url) => {
+      const match = url.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/);
+      if (!match) return '';
+      const clean = escapeHtml(url.split('?')[0]);
+      return `<div class="embed-container embed-social"><blockquote class="tiktok-embed" cite="${clean}" data-video-id="${match[1]}"><a href="${clean}"></a></blockquote></div>`;
+    },
+  },
+];
+
+/**
+ * Pre-process raw content: replace standalone URL lines with embed HTML.
+ * Runs BEFORE markdown→HTML conversion so the parser leaves embed blocks intact.
+ * Only converts URLs that are alone on a line (not inline within text).
+ */
+function preProcessEmbeds(raw: string): string {
+  const lines = raw.split('\n');
+  return lines.map((line) => {
+    const trimmed = line.trim();
+    // Must start with http(s) and contain no spaces (just a URL)
+    if (!trimmed.startsWith('http') || trimmed.includes(' ')) return line;
+    for (const provider of EMBED_PROVIDERS) {
+      if (provider.test(trimmed)) {
+        const html = provider.toHTML(trimmed);
+        return html || line;
+      }
+    }
+    return line;
+  }).join('\n');
 }
 
-function renderTweetEmbed(url: string): string {
-  const trimmed = url.trim().replace(/\?.*$/, ''); // strip query params
-  if (!/^https?:\/\/(twitter\.com|x\.com)\/.+\/status\/\d+/i.test(trimmed)) {
-    return renderFallbackLink(url);
-  }
-  return `<div class="embed-container embed-twitter"><blockquote class="twitter-tweet" data-dnt="true"><a href="${escapeHtml(trimmed)}"></a></blockquote></div>`;
-}
-
-function renderInstagramEmbed(url: string): string {
-  const trimmed = url.trim();
-  if (!/^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/[\w-]+/i.test(trimmed)) {
-    return renderFallbackLink(url);
-  }
-  const permalink = trimmed.replace(/\?.*$/, '').replace(/\/$/, '') + '/';
-  return `<div class="embed-container embed-instagram"><blockquote class="instagram-media" data-instgrm-permalink="${escapeHtml(permalink)}" data-instgrm-version="14" style="max-width:540px; width:100%;"><a href="${escapeHtml(permalink)}">${escapeHtml(trimmed)}</a></blockquote></div>`;
-}
-
-function renderTikTokEmbed(url: string): string {
-  const trimmed = url.trim();
-  const match = trimmed.match(/tiktok\.com\/@[\w.-]+\/video\/(\d+)/i);
-  if (!match) return renderFallbackLink(url);
-  const videoId = match[1];
-  return `<div class="embed-container embed-social"><blockquote class="tiktok-embed" cite="${escapeHtml(trimmed)}" data-video-id="${videoId}"><a href="${escapeHtml(trimmed)}">${escapeHtml(trimmed)}</a></blockquote></div>`;
-}
+/* ==================== SHORTCODE EMBEDS ==================== */
 
 function renderFallbackLink(url: string): string {
   const trimmed = url.trim();
@@ -58,10 +94,10 @@ function renderFallbackLink(url: string): string {
 }
 
 const shortcodeHandlers: Record<string, (url: string) => string> = {
-  youtube: renderYouTubeEmbed,
-  tweet: renderTweetEmbed,
-  instagram: renderInstagramEmbed,
-  tiktok: renderTikTokEmbed,
+  youtube: (url) => EMBED_PROVIDERS[0].toHTML(url.trim()) || renderFallbackLink(url),
+  tweet: (url) => EMBED_PROVIDERS[1].toHTML(url.trim()) || renderFallbackLink(url),
+  instagram: (url) => EMBED_PROVIDERS[2].toHTML(url.trim()) || renderFallbackLink(url),
+  tiktok: (url) => EMBED_PROVIDERS[3].toHTML(url.trim()) || renderFallbackLink(url),
 };
 
 function stripHtmlTags(str: string): string {
@@ -84,79 +120,32 @@ function processShortcodes(content: string): string {
   );
 }
 
-/* ==================== AUTO-EMBED (raw URLs) ==================== */
-
-interface EmbedProvider {
-  name: string;
-  pattern: RegExp;
-  toEmbed: (url: string) => string;
-}
-
-const embedProviders: EmbedProvider[] = [
-  {
-    name: 'youtube',
-    pattern: /https?:\/\/(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)[^\s<"]+/i,
-    toEmbed: renderYouTubeEmbed,
-  },
-  {
-    name: 'twitter',
-    pattern: /https?:\/\/(?:x\.com|twitter\.com)\/\w+\/status\/\d+[^\s<"]*/i,
-    toEmbed: renderTweetEmbed,
-  },
-  {
-    name: 'instagram',
-    pattern: /https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[\w-]+\/?[^\s<"]*/i,
-    toEmbed: renderInstagramEmbed,
-  },
-];
-
-/**
- * Post-process HTML to convert standalone URLs into rich embeds.
- * Matches URLs that are the sole meaningful content of a <p>, <blockquote>,
- * or <a> block. Does NOT touch URLs that are inline within text.
- */
-export function processEmbeds(html: string): string {
-  // Match blocks where a URL is the only content:
-  //   <p>URL</p>
-  //   <p><a href="URL">URL or text</a></p>
-  //   <blockquote><a href="URL">...</a></blockquote>
-  //   <blockquote><p><a href="URL">...</a></p></blockquote>
-  //   <p class="...">URL</p>
-  //   <p class="..."><a href="URL" ...>URL</a></p>
-  const blockPattern = /<(?:p|blockquote)[^>]*>\s*(?:<p[^>]*>\s*)?(?:<a[^>]*href="([^"]+)"[^>]*>[^<]*<\/a>|([^<]+?))\s*(?:<\/p>\s*)?<\/(?:p|blockquote)>/gi;
-
-  return html.replace(blockPattern, (match, hrefUrl, plainText) => {
-    const url = (hrefUrl || plainText || '').trim();
-    if (!url) return match;
-
-    for (const provider of embedProviders) {
-      if (provider.pattern.test(url)) {
-        return provider.toEmbed(url);
-      }
-    }
-    return match;
-  });
-}
+/* ==================== MAIN RENDER ==================== */
 
 export function renderContent(content: string): string {
   if (!content) return '';
 
-  // Detect HTML content (legacy from Wix)
+  // STEP 1: Replace standalone URL lines with embed HTML (raw text stage)
+  content = preProcessEmbeds(content);
+
+  // STEP 2: Process [shortcode] tags
+  content = processShortcodes(content);
+
+  // STEP 3: Detect HTML vs Markdown and parse accordingly
   const isHTML = /<[a-zA-Z][^>]*>/m.test(content);
 
   if (isHTML) {
-    // HTML legacy: process shortcodes then inline markdown images, then auto-embeds
-    let result = processShortcodes(content);
-    result = result.replace(
+    // HTML legacy (or content that already has embed divs from step 1):
+    // only process inline markdown images
+    return content.replace(
       /!\[([^\]]*)\]\(([^)]+)\)/g,
       (_, alt: string, url: string) =>
         `<figure class="my-6"><img src="${url}" alt="${escapeHtml(alt)}" loading="lazy" class="rounded-lg w-full"><figcaption class="text-sm text-gray-500 mt-2 text-center">${escapeHtml(alt)}</figcaption></figure>`
     );
-    return processEmbeds(result);
   }
 
-  // Markdown content: process shortcodes first, then full parse
-  let html = processShortcodes(content);
+  // Pure Markdown content (no HTML tags at all — rare after step 1 inserts embeds)
+  let html = content;
 
   // Images: ![caption||credit](url)
   html = html.replace(
@@ -199,8 +188,7 @@ export function renderContent(content: string): string {
     })
     .join('\n');
 
-  // Auto-embed: convert standalone URLs (now wrapped in <p>) to embeds
-  return processEmbeds(html);
+  return html;
 }
 
 /**
