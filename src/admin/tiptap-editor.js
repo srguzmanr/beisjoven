@@ -15,8 +15,10 @@ import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { DOMParser as ProseMirrorDOMParser } from '@tiptap/pm/model';
+import { marked } from 'marked';
 
 /* ================================================================
    CUSTOM EXTENSIONS — Twitter & Instagram embeds
@@ -909,6 +911,55 @@ function injectStyles() {
 
 
 /* ================================================================
+   CUSTOM EXTENSION — Markdown Paste
+   Intercepts paste events, detects markdown content, converts
+   it to HTML via `marked`, and inserts the HTML so Tiptap
+   parses it into rich-text nodes automatically.
+   ================================================================ */
+
+const MARKDOWN_PATTERN = /(^#{1,6}\s|^\*\s|^-\s|^\d+\.\s|\*\*|__|\[.*?\]\(.*?\)|^>\s)/m;
+
+const MarkdownPaste = Extension.create({
+  name: 'markdownPaste',
+
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey('markdownPaste'),
+        props: {
+          handlePaste(view, event) {
+            const clipboardData = event.clipboardData;
+            if (!clipboardData) return false;
+
+            // If the clipboard already has HTML, let Tiptap handle it natively
+            const html = clipboardData.getData('text/html');
+            if (html && html.trim().length > 0) return false;
+
+            const text = clipboardData.getData('text/plain');
+            if (!text || !MARKDOWN_PATTERN.test(text)) return false;
+
+            // Convert markdown to HTML
+            const converted = marked.parse(text, { breaks: true });
+
+            // Parse the HTML into ProseMirror nodes
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = converted;
+
+            const parser = ProseMirrorDOMParser.fromSchema(view.state.schema);
+            const slice = parser.parseSlice(tempDiv, { preserveWhitespace: false });
+
+            view.dispatch(view.state.tr.replaceSelection(slice));
+            event.preventDefault();
+            return true;
+          },
+        },
+      }),
+    ];
+  },
+});
+
+
+/* ================================================================
    MAIN: TiptapEditor.create()
    ================================================================ */
 
@@ -980,6 +1031,7 @@ const TiptapEditor = {
         TikTokEmbed,
         Figure,
         Gallery,
+        MarkdownPaste,
       ],
       content: initialContent || '',
       editorProps: {
