@@ -7,7 +7,17 @@ export default defineConfig({
   site: 'https://beisjoven.com',
   output: 'static',
   adapter: vercel(),
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      filter: (page) =>
+        !page.includes('/admin') &&
+        !page.includes('/login') &&
+        !page.includes('/buscar') &&
+        !page.includes('/post/') &&
+        !page.includes('/noticias/') &&
+        !page.includes('/beisjoven/'),
+    }),
+  ],
   vite: {
     plugins: [tailwindcss()],
   },

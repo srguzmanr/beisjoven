@@ -2,6 +2,23 @@
   "framework": "astro",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/post/:slug*",
+      "destination": "/articulo/:slug*",
+      "permanent": true
+    },
+    {
+      "source": "/noticias/:slug*",
+      "destination": "/articulo/:slug*",
+      "permanent": true
+    },
+    {
+      "source": "/beisjoven/:slug*",
+      "destination": "/articulo/:slug*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/admin/:path*",
