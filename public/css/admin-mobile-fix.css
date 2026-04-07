@@ -683,3 +683,155 @@
     cursor: pointer;
     font-family: inherit;
 }
+
+/* ==================== MOBILE CARD ACTION BUTTONS ==================== */
+.acm-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+.acm-btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    display: inline-block;
+    min-height: 36px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+.acm-btn-edit {
+    background: #1a1a2e;
+    color: #fff;
+}
+.acm-btn-url {
+    background: #e9ecef;
+    color: #1a1a2e;
+}
+.acm-btn-danger {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* ==================== BOTTOM TAB BAR ==================== */
+/* Only visible on mobile */
+.admin-bottom-tabs {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .admin-bottom-tabs {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 9000;
+        background: #fff;
+        border-top: 1px solid #e5e7eb;
+        padding: 4px 0 calc(4px + env(safe-area-inset-bottom));
+        justify-content: space-around;
+        align-items: center;
+        color-scheme: light;
+    }
+    .abt-tab {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 6px 4px 4px;
+        text-decoration: none;
+        color: #6c757d;
+        font-size: 0.65rem;
+        font-weight: 500;
+        border: none;
+        background: none;
+        cursor: pointer;
+        min-width: 56px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .abt-icon {
+        font-size: 1.25rem;
+        line-height: 1;
+    }
+    .abt-label {
+        font-size: 0.65rem;
+    }
+    .abt-tab.abt-active {
+        color: #e63946;
+    }
+    .abt-tab-new .abt-icon {
+        background: #e63946;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        margin-top: -12px;
+        box-shadow: 0 2px 8px rgba(230, 57, 70, 0.3);
+    }
+
+    /* "More" menu sheet */
+    .abt-more-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 9001;
+    }
+    .abt-more-sheet {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 9002;
+        background: #fff;
+        border-radius: 16px 16px 0 0;
+        padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+    }
+    .abt-more-sheet a {
+        display: block;
+        padding: 14px 24px;
+        color: #1a1a2e;
+        text-decoration: none;
+        font-size: 1rem;
+        font-weight: 500;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .abt-more-sheet a:last-child { border-bottom: none; }
+    .abt-more-sheet a:active { background: #f3f4f6; }
+
+    /* Hide sidebar completely on mobile — tab bar replaces it */
+    .admin-sidebar {
+        display: none !important;
+    }
+    .admin-sidebar.mobile-open {
+        display: flex !important;
+    }
+
+    /* Add bottom padding to admin content so it doesn't hide behind tab bar */
+    .admin-main {
+        padding-bottom: 70px;
+    }
+
+    /* Hide old hamburger toggle */
+    .mobile-menu-toggle {
+        display: none !important;
+    }
+
+    /* When editor sticky bar is visible, hide tab bar */
+    body:has(.admin-sticky-bar) .admin-bottom-tabs {
+        display: none;
+    }
+}

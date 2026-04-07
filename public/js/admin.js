@@ -361,19 +361,28 @@ addImportButton();
 // O si el editor se monta con delay:
 // setTimeout(initMarkdownImport, 500);
 // ==================== AUTOSAVE SYSTEM ====================
-// Saves to Supabase every 30s (debounced from last keystroke) + localStorage fallback
-// Visual indicator: "Guardando...", "Guardado ✓ HH:MM", "Sin guardar"
-// beforeunload warning if dirty
+// 8 RULES (from Admin 3.0 spec):
+// 1. ONLY activates inside the article editor. Never on other screens.
+// 2. Never saves if title AND content are both empty.
+// 3. NEW articles → create record with publicado:false on first save, reuse ID after.
+// 4. EXISTING articles → update the existing record. NEVER create a new one.
+//    Does NOT touch the 'publicado' field — preserves current publish state.
+// 5. Timer: 30 seconds of inactivity (resets on every keystroke).
+// 6. Indicator: "Sin guardar" (gray) / "Guardando..." (yellow) / "Guardado HH:MM" (green) / "Error" (red, retry 10s).
+// 7. beforeunload warning if dirty.
+// 8. Does NOT interfere with manual Publicar/Guardar — both use the same article ID.
 
 var Autosave = {
     STORAGE_KEY: 'bj_article_draft',
     INTERVAL_MS: 30000,
+    RETRY_MS: 10000,
     _timer: null,
     _dirty: false,
     _saving: false,
-    _editId: null,
-    _draftId: null,
+    _editId: null,      // ID of article being edited (null = new)
+    _draftId: null,      // ID of draft created by autosave (for new articles)
     _beforeUnloadHandler: null,
+    _active: false,      // true only when inside the editor
 
     // Gather current form data
     _gatherData: function() {
@@ -419,9 +428,9 @@ var Autosave = {
             error: '\u26A0 Error al guardar'
         };
         var colors = {
-            saving: '#6b7280',
+            saving: '#d97706',
             saved: '#16a34a',
-            unsaved: '#f59e0b',
+            unsaved: '#6b7280',
             error: '#dc2626'
         };
         var ids = ['autosave-indicator', 'autosave-indicator-sticky'];
@@ -436,9 +445,13 @@ var Autosave = {
 
     // Save to Supabase + localStorage
     save: async function() {
+        // Rule 1: only save when active (inside editor)
+        if (!this._active) return;
         if (this._saving) return;
 
         var data = this._gatherData();
+
+        // Rule 2: never save if title AND content are both empty
         if (!data.titulo.trim() && !data.contenido.trim()) return;
 
         this._saving = true;
@@ -448,7 +461,7 @@ var Autosave = {
             // Always save to localStorage as fallback
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
 
-            // Build Supabase payload (excluding savedAt)
+            // Build Supabase payload — content fields only
             var payload = {
                 titulo: data.titulo || 'Borrador sin titulo',
                 extracto: data.extracto,
@@ -463,21 +476,35 @@ var Autosave = {
             };
 
             if (this._editId) {
-                // Editing existing article — update in place
+                // Rule 4: EXISTING article — update in place.
+                // Crucially: do NOT include 'publicado' in the payload.
+                // This prevents autosave from overwriting a published article's status.
+                var slug = data.titulo.toLowerCase()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/(^-|-$)/g, '');
+                payload.slug = slug;
+
                 await supabaseClient
                     .from('articulos')
                     .update(payload)
                     .eq('id', this._editId);
             } else {
-                // New article — save as unpublished draft
+                // Rule 3: NEW article — create with publicado:false, reuse ID
                 payload.publicado = false;
                 if (this._draftId) {
+                    // Already have a draft — update it
                     await supabaseClient
                         .from('articulos')
                         .update(payload)
                         .eq('id', this._draftId);
                 } else {
+                    // First save — create the draft
                     payload.slug = 'borrador-' + Date.now();
+                    // Track ownership
+                    if (Auth.getUser()) {
+                        payload.user_id = Auth.getUser().id;
+                    }
                     var result = await supabaseClient
                         .from('articulos')
                         .insert([payload])
@@ -495,13 +522,18 @@ var Autosave = {
         } catch (e) {
             console.warn('Autosave failed:', e);
             this._updateIndicator('error');
+            // Rule 6: retry on error after 10 seconds
+            var self = this;
+            if (this._timer) clearTimeout(this._timer);
+            this._timer = setTimeout(function() { self.save(); }, this.RETRY_MS);
         } finally {
             this._saving = false;
         }
     },
 
-    // Mark content as changed — resets the debounce timer
+    // Rule 5: Mark content as changed — resets the 30s debounce timer
     markDirty: function() {
+        if (!this._active) return;
         this._dirty = true;
         this._updateIndicator('unsaved');
         this._resetTimer();
@@ -513,30 +545,39 @@ var Autosave = {
         this._timer = setTimeout(function() { self.save(); }, this.INTERVAL_MS);
     },
 
-    // Attach input/change listeners to the editor form
+    // Attach input/change listeners to the editor form + Tiptap
     _attachListeners: function() {
         var self = this;
         var form = document.getElementById('article-form');
         if (!form) return;
         form.addEventListener('input', function() { self.markDirty(); });
         form.addEventListener('change', function() { self.markDirty(); });
-        // Tiptap editor change events
+        // Tiptap editor change events (deferred — editor may init after start())
         if (contentEditor && contentEditor.editor) {
             contentEditor.editor.on('update', function() { self.markDirty(); });
         }
     },
 
-    // Start autosave — call after editor is initialized
+    // Connect to Tiptap after it's initialized (called from editor code)
+    connectEditor: function() {
+        if (!this._active) return;
+        var self = this;
+        if (contentEditor && contentEditor.editor) {
+            contentEditor.editor.on('update', function() { self.markDirty(); });
+        }
+    },
+
+    // Start autosave — call ONLY from within the article editor
     start: function(editId) {
         this.stop();
+        this._active = true;    // Rule 1
         this._editId = editId || null;
         this._draftId = null;
         this._dirty = false;
         this._saving = false;
-        this._resetTimer();
         this._attachListeners();
 
-        // beforeunload warning
+        // Rule 7: beforeunload warning
         var self = this;
         this._beforeUnloadHandler = function(e) {
             if (self._dirty) {
@@ -548,6 +589,7 @@ var Autosave = {
     },
 
     stop: function() {
+        this._active = false;
         if (this._timer) { clearTimeout(this._timer); this._timer = null; }
         if (this._beforeUnloadHandler) {
             window.removeEventListener('beforeunload', this._beforeUnloadHandler);
@@ -569,6 +611,7 @@ var Autosave = {
         this._draftId = null;
     },
 
+    // Rule 8: expose draft ID so manual save uses the same record
     getDraftId: function() { return this._draftId; },
     isDirty: function() { return this._dirty; }
 };
@@ -668,36 +711,57 @@ const AdminPages = {
             </div>
         `;
         
-        // Cargar datos de Supabase
-        const [articulos, videos, categorias, totalArticulos] = await Promise.all([
-            SupabaseAPI.getArticulos(500),
+        // Cargar datos de Supabase — use count:'exact' for real totals
+        const [articulos, videos, categorias, totalCount, draftCount, weekCount] = await Promise.all([
+            SupabaseAPI.getArticulos(10),
             SupabaseAPI.getVideos(100),
             SupabaseAPI.getCategorias(),
-            SupabaseAPI.getArticulosCount()
+            supabaseClient.from('articulos').select('*', { count: 'exact', head: true }),
+            supabaseClient.from('articulos').select('*', { count: 'exact', head: true }).eq('publicado', false),
+            supabaseClient.from('articulos').select('*', { count: 'exact', head: true })
+                .gte('fecha', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
         ]);
+
+        const totalArticulos = totalCount.count || 0;
+        const totalBorradores = draftCount.count || 0;
+        const totalSemana = weekCount.count || 0;
 
         main.innerHTML = `
             <div class="admin-layout">
                 ${AdminComponents.sidebar()}
-                
+
                 <div class="admin-main">
                     ${AdminComponents.header('Dashboard')}
-                    
+
                     <div class="admin-content">
                         <div style="background: linear-gradient(135deg, #c41e3a 0%, #9a1830 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
                             <div>
                                 <h2 style="font-family: Oswald, sans-serif; font-size: 1.8rem; margin: 0 0 5px 0;">Hola, ${user.name}!</h2>
                                 <p style="margin: 0; opacity: 0.9;">${user.role === 'admin' ? 'Administrador' : 'Editor'} — Panel de Beisjoven</p>
                             </div>
-                            <a href="#" onclick="Router.navigate('/admin/nuevo'); return false;" style="background: white; color: #c41e3a; padding: 12px 24px; border-radius: 25px; font-weight: 600; text-decoration: none; white-space: nowrap;">+ Nuevo Artículo</a>
+                            <a href="#" onclick="Router.navigate('/admin/nuevo'); return false;" style="background: white; color: #c41e3a; padding: 12px 24px; border-radius: 25px; font-weight: 600; text-decoration: none; white-space: nowrap;">+ Nuevo Articulo</a>
                         </div>
-                        
+
                         <div class="stats-grid">
                             <div class="stat-card">
                                 <div class="stat-icon">📝</div>
                                 <div class="stat-info">
-                                    <span class="stat-number">${totalArticulos !== null ? totalArticulos : articulos.length}</span>
-                                    <span class="stat-label">Artículos</span>
+                                    <span class="stat-number">${totalArticulos}</span>
+                                    <span class="stat-label">Articulos</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">📋</div>
+                                <div class="stat-info">
+                                    <span class="stat-number">${totalBorradores}</span>
+                                    <span class="stat-label">Borradores</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">📅</div>
+                                <div class="stat-info">
+                                    <span class="stat-number">${totalSemana}</span>
+                                    <span class="stat-label">Esta semana</span>
                                 </div>
                             </div>
                             <div class="stat-card">
@@ -705,13 +769,6 @@ const AdminPages = {
                                 <div class="stat-info">
                                     <span class="stat-number">${videos.length}</span>
                                     <span class="stat-label">Videos</span>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon">📁</div>
-                                <div class="stat-info">
-                                    <span class="stat-number">${categorias.length}</span>
-                                    <span class="stat-label">Categorías</span>
                                 </div>
                             </div>
                         </div>
@@ -789,22 +846,24 @@ const AdminPages = {
         `;
 
         // Admins see all articles (including drafts); editors see own + published
+        // Use count:'exact' for real total (not capped at limit)
         let articulos = [];
+        let totalArticulos = 0;
         if (isAdmin) {
-            const { data } = await supabaseClient
+            const { data, count } = await supabaseClient
                 .from('articulos')
-                .select('*, categoria:categorias(*), autor:autores(*)')
-                .order('created_at', { ascending: false })
-                .limit(500);
+                .select('*, categoria:categorias(*), autor:autores(*)', { count: 'exact' })
+                .order('created_at', { ascending: false });
             articulos = data || [];
+            totalArticulos = count || articulos.length;
         } else {
-            const { data } = await supabaseClient
+            const { data, count } = await supabaseClient
                 .from('articulos')
-                .select('*, categoria:categorias(*), autor:autores(*)')
+                .select('*, categoria:categorias(*), autor:autores(*)', { count: 'exact' })
                 .or('publicado.eq.true,user_id.eq.' + userId)
-                .order('created_at', { ascending: false })
-                .limit(500);
+                .order('created_at', { ascending: false });
             articulos = data || [];
+            totalArticulos = count || articulos.length;
         }
 
         // Helper: can current user edit this article?
@@ -821,8 +880,8 @@ const AdminPages = {
 
                     <div class="admin-content">
                         <div class="content-header">
-                            <p>Total: <span id="admin-article-count">${articulos.length}</span> artículos</p>
-                            <a href="/admin/nuevo" class="btn btn-primary">+ Nuevo Artículo</a>
+                            <p>Total: <span id="admin-article-count">${totalArticulos}</span> articulos</p>
+                            <a href="/admin/nuevo" class="btn btn-primary">+ Nuevo Articulo</a>
                         </div>
                         <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                             <select id="admin-cat-filter" onchange="AdminPages._filterArticles()" style="padding:6px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:0.85rem;background:#fff;cursor:pointer;">
@@ -879,7 +938,7 @@ const AdminPages = {
                             <!-- Mobile cards -->
                             <div class="articles-cards show-mobile">
                                 ${articulos.map(article => `
-                                    <a href="${canEditArticle(article) ? '/admin/editar/' + article.id : '/articulo/' + article.slug}" class="article-card-mobile" data-cat="${article.categoria?.nombre || ''}" data-wbc="${article.es_wbc2026 ? 'wbc' : 'no-wbc'}">
+                                    <div class="article-card-mobile" data-cat="${article.categoria?.nombre || ''}" data-wbc="${article.es_wbc2026 ? 'wbc' : 'no-wbc'}">
                                         <div class="acm-top">
                                             <span class="badge ${article.publicado ? 'badge-published' : 'badge-draft'}">${article.publicado ? 'Publicado' : 'Borrador'}</span>
                                             <span class="acm-date">${new Date(article.fecha || article.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</span>
@@ -889,7 +948,12 @@ const AdminPages = {
                                             <span class="badge">${article.categoria?.nombre || 'N/A'}</span>
                                             ${article.destacado ? '<span>⭐</span>' : ''}
                                         </div>
-                                    </a>
+                                        <div class="acm-actions">
+                                            ${canEditArticle(article) ? `<a href="/admin/editar/${article.id}" class="acm-btn acm-btn-edit">Editar</a>` : ''}
+                                            ${article.publicado ? `<button onclick="event.stopPropagation(); AdminPages.copyArticleUrl('${article.slug}', this)" class="acm-btn acm-btn-url">Copiar URL</button>` : ''}
+                                            ${isAdmin ? `<button onclick="event.stopPropagation(); AdminPages.deleteArticle(${article.id})" class="acm-btn acm-btn-danger">Eliminar</button>` : ''}
+                                        </div>
+                                    </div>
                                 `).join('')}
                             </div>
                         ` : `
@@ -1176,8 +1240,9 @@ const AdminPages = {
             MediaLibrary.init();
         }
         
-        // Start autosave (new articles save as draft, existing articles update in place)
+        // Start autosave AFTER editor is initialized so connectEditor works
         Autosave.start(isEdit ? parseInt(params.id) : null);
+        Autosave.connectEditor();
 
         // Manejar submit
         document.getElementById('article-form').addEventListener('submit', function(e) {
@@ -1273,36 +1338,35 @@ const AdminPages = {
         let result;
         
         if (editId) {
-            // Editar existente
+            // Editar existente — always update same record (Rule 4)
             result = await SupabaseAdmin.actualizarArticulo(editId, articulo);
             if (result.success) {
                 Autosave.stop();
                 Autosave.clear();
-                showToast('Articulo actualizado correctamente', 'success');
+                showToast('Articulo actualizado', 'success');
             } else {
                 showToast('Error: ' + result.error, 'error');
                 return;
             }
         } else if (Autosave.getDraftId()) {
-            // Publish existing draft (created by autosave)
+            // Rule 8: manual save uses same draft ID from autosave
             var draftId = Autosave.getDraftId();
-            articulo.publicado = true;
             result = await SupabaseAdmin.actualizarArticulo(draftId, articulo);
             if (result.success) {
                 Autosave.stop();
                 Autosave.clear();
-                showToast('Articulo publicado correctamente', 'success');
+                showToast(canPublish ? 'Articulo publicado' : 'Borrador guardado', 'success');
             } else {
                 showToast('Error: ' + result.error, 'error');
                 return;
             }
         } else {
-            // Crear nuevo
+            // No autosave draft exists — create new
             result = await SupabaseAdmin.crearArticulo(articulo);
             if (result.success) {
                 Autosave.stop();
                 Autosave.clear();
-                showToast('Articulo publicado correctamente', 'success');
+                showToast(canPublish ? 'Articulo publicado' : 'Borrador guardado', 'success');
             } else {
                 showToast('Error: ' + result.error, 'error');
                 return;
@@ -1331,21 +1395,23 @@ const AdminPages = {
             });
     },
 
-    // Filtrar artículos por categoría y WBC
+    // Filtrar artículos por categoría y WBC (works on both table rows + mobile cards)
     _filterArticles: function() {
         const cat = document.getElementById('admin-cat-filter').value;
         const wbc = document.getElementById('admin-wbc-filter').value;
-        const rows = document.querySelectorAll('.articles-table tbody tr');
+        // Filter both desktop rows and mobile cards
+        const items = document.querySelectorAll('.articles-table tbody tr, .article-card-mobile');
         let visible = 0;
-        rows.forEach(row => {
-            const matchCat = !cat || row.dataset.cat === cat;
-            const matchWbc = !wbc || row.dataset.wbc === wbc;
+        items.forEach(item => {
+            const matchCat = !cat || item.dataset.cat === cat;
+            const matchWbc = !wbc || item.dataset.wbc === wbc;
             const show = matchCat && matchWbc;
-            row.style.display = show ? '' : 'none';
+            item.style.display = show ? '' : 'none';
             if (show) visible++;
         });
+        // Divide by 2 since desktop + mobile both count
         const counter = document.getElementById('admin-article-count');
-        if (counter) counter.textContent = visible;
+        if (counter) counter.textContent = Math.ceil(visible / 2);
     },
 
     // Copiar URL del artículo al portapapeles
@@ -2130,7 +2196,6 @@ const AdminComponents = {
         return `
             <header class="admin-header">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <button class="mobile-menu-toggle" onclick="AdminComponents.toggleSidebar()">☰</button>
                     <h1>${title}</h1>
                 </div>
                 <div class="header-actions">
@@ -2138,6 +2203,67 @@ const AdminComponents = {
                 </div>
             </header>
         `;
+    },
+
+    // Bottom tab bar for mobile — replaces hamburger menu
+    bottomTabBar: function() {
+        var currentPath = window.location.pathname;
+        var isAdmin = Auth.isAdmin();
+        return '<nav class="admin-bottom-tabs" id="admin-bottom-tabs">' +
+            '<a href="/admin" class="abt-tab' + (currentPath === '/admin' ? ' abt-active' : '') + '">' +
+                '<span class="abt-icon">📊</span><span class="abt-label">Inicio</span>' +
+            '</a>' +
+            '<a href="/admin/articulos" class="abt-tab' + (currentPath.includes('/articulos') ? ' abt-active' : '') + '">' +
+                '<span class="abt-icon">📝</span><span class="abt-label">Notas</span>' +
+            '</a>' +
+            '<a href="/admin/nuevo" class="abt-tab abt-tab-new' + (currentPath === '/admin/nuevo' ? ' abt-active' : '') + '">' +
+                '<span class="abt-icon">➕</span><span class="abt-label">Nuevo</span>' +
+            '</a>' +
+            '<a href="/admin/medios" class="abt-tab' + (currentPath === '/admin/medios' ? ' abt-active' : '') + '">' +
+                '<span class="abt-icon">🖼</span><span class="abt-label">Medios</span>' +
+            '</a>' +
+            '<button class="abt-tab" onclick="AdminComponents.toggleMoreMenu()">' +
+                '<span class="abt-icon">☰</span><span class="abt-label">Mas</span>' +
+            '</button>' +
+        '</nav>' +
+        '<div class="abt-more-menu" id="abt-more-menu" style="display:none;">' +
+            '<div class="abt-more-overlay" onclick="AdminComponents.closeMoreMenu()"></div>' +
+            '<div class="abt-more-sheet">' +
+                (isAdmin ? '<a href="/admin/videos" onclick="AdminComponents.closeMoreMenu()">📹 Videos</a>' : '') +
+                (isAdmin ? '<a href="/admin/usuarios" onclick="AdminComponents.closeMoreMenu()">👥 Usuarios</a>' : '') +
+                '<a href="/" target="_blank">🌐 Ver sitio</a>' +
+                '<a href="#" onclick="AdminPages.logout(); return false;">🚪 Cerrar sesion</a>' +
+            '</div>' +
+        '</div>';
+    },
+
+    // Inject bottom tab bar into the page (called after each page render)
+    injectBottomTabs: function() {
+        // Only on mobile
+        if (window.innerWidth > 768) return;
+        // Don't show on login page
+        if (!Auth.isLoggedIn()) return;
+        // Remove existing
+        var existing = document.getElementById('admin-bottom-tabs');
+        if (existing) existing.remove();
+        var existingMore = document.getElementById('abt-more-menu');
+        if (existingMore) existingMore.remove();
+        // Inject
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = this.bottomTabBar();
+        while (wrapper.firstChild) {
+            document.body.appendChild(wrapper.firstChild);
+        }
+    },
+
+    toggleMoreMenu: function() {
+        var menu = document.getElementById('abt-more-menu');
+        if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    },
+
+    closeMoreMenu: function() {
+        var menu = document.getElementById('abt-more-menu');
+        if (menu) menu.style.display = 'none';
     },
     
     toggleSidebar: function() {

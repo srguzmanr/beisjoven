@@ -83,6 +83,13 @@ export const prerender = true;
             Router.register('/admin/usuarios', AdminPages.usuarios);
 
             Auth.init().then(() => {
+                // After each route change, inject bottom tab bar on mobile
+                var origHandleRoute = Router.handleRoute.bind(Router);
+                Router.handleRoute = function(fullPath) {
+                    origHandleRoute(fullPath);
+                    // Defer so the DOM has rendered
+                    setTimeout(function() { AdminComponents.injectBottomTabs(); }, 50);
+                };
                 Router.init();
             });
         });
