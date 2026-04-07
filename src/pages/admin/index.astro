@@ -83,9 +83,15 @@ export const prerender = true;
             Router.register('/admin/usuarios', AdminPages.usuarios);
 
             Auth.init().then(() => {
-                // After each route change, inject bottom tab bar on mobile
+                // After each route change: cleanup editor artifacts + inject bottom tabs
                 var origHandleRoute = Router.handleRoute.bind(Router);
                 Router.handleRoute = function(fullPath) {
+                    // Stop autosave timer + beforeunload when leaving any page
+                    Autosave.stop();
+                    // Remove editor sticky bar if lingering from editor page
+                    var stickyBar = document.getElementById('admin-sticky-bar');
+                    if (stickyBar) stickyBar.remove();
+
                     origHandleRoute(fullPath);
                     // Defer so the DOM has rendered
                     setTimeout(function() { AdminComponents.injectBottomTabs(); }, 50);

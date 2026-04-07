@@ -1291,7 +1291,7 @@ const AdminPages = {
         if (!imagen_url) {
             // Buscar primera imagen en el contenido
             const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = contenido;
+            tempDiv.innerHTML = contenidoRaw;
             const primeraImg = tempDiv.querySelector('img');
             imagen_url = primeraImg ? primeraImg.src : IMAGEN_DEFAULT_BJ;
         }
@@ -1312,7 +1312,7 @@ const AdminPages = {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)/g, '');
         
-        // Editors can only save as draft; admins publish directly
+        // Editors save as draft; admins publish directly (for new articles)
         const canPublish = Auth.isAdmin();
 
         const articulo = {
@@ -1326,19 +1326,19 @@ const AdminPages = {
             pie_de_foto: pie_de_foto || null,
             foto_credito: foto_credito || null,
             es_wbc2026,
-            destacado,
-            publicado: canPublish
+            destacado
         };
 
         // Track which auth user created the article
         if (!editId && Auth.getUser()) {
             articulo.user_id = Auth.getUser().id;
         }
-        
+
         let result;
-        
+
         if (editId) {
-            // Editar existente — always update same record (Rule 4)
+            // Editar existente — do NOT change publicado status
+            // (preserves publish state; prevents editors from unpublishing)
             result = await SupabaseAdmin.actualizarArticulo(editId, articulo);
             if (result.success) {
                 Autosave.stop();
@@ -1350,6 +1350,8 @@ const AdminPages = {
             }
         } else if (Autosave.getDraftId()) {
             // Rule 8: manual save uses same draft ID from autosave
+            // Set publish state for new articles
+            articulo.publicado = canPublish;
             var draftId = Autosave.getDraftId();
             result = await SupabaseAdmin.actualizarArticulo(draftId, articulo);
             if (result.success) {
@@ -1362,6 +1364,7 @@ const AdminPages = {
             }
         } else {
             // No autosave draft exists — create new
+            articulo.publicado = canPublish;
             result = await SupabaseAdmin.crearArticulo(articulo);
             if (result.success) {
                 Autosave.stop();
