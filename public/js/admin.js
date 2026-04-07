@@ -361,55 +361,201 @@ addImportButton();
 // O si el editor se monta con delay:
 // setTimeout(initMarkdownImport, 500);
 // ==================== AUTOSAVE SYSTEM ====================
-var autosaveInterval = null;
+// Saves to Supabase every 30s (debounced from last keystroke) + localStorage fallback
+// Visual indicator: "Guardando...", "Guardado ✓ HH:MM", "Sin guardar"
+// beforeunload warning if dirty
 
 var Autosave = {
     STORAGE_KEY: 'bj_article_draft',
     INTERVAL_MS: 30000,
-    
-    save: function() {
-        try {
-            var title = document.getElementById('title');
-            var excerpt = document.getElementById('excerpt');
-            var category = document.getElementById('category');
-            var author = document.getElementById('author');
-            var image = document.getElementById('image');
-            var featured = document.getElementById('featured');
-            
-            var content = '';
-            if (contentEditor) {
-                content = contentEditor.getValue();
-            } else {
-                var contentEl = document.getElementById('content');
-                if (contentEl) content = contentEl.value;
+    _timer: null,
+    _dirty: false,
+    _saving: false,
+    _editId: null,
+    _draftId: null,
+    _beforeUnloadHandler: null,
+
+    // Gather current form data
+    _gatherData: function() {
+        var title = document.getElementById('title');
+        var excerpt = document.getElementById('excerpt');
+        var category = document.getElementById('category');
+        var author = document.getElementById('author');
+        var image = document.getElementById('image');
+        var featured = document.getElementById('featured');
+        var pieFoto = document.getElementById('foto-pie');
+        var fotoCredito = document.getElementById('foto-credito');
+        var esWbc = document.getElementById('es_wbc2026');
+
+        var content = '';
+        if (contentEditor) {
+            content = contentEditor.getValue();
+        } else {
+            var contentEl = document.getElementById('content');
+            if (contentEl) content = contentEl.value;
+        }
+
+        return {
+            titulo: title ? title.value : '',
+            extracto: excerpt ? excerpt.value : '',
+            contenido: content || '',
+            categoria_id: category && category.value ? parseInt(category.value) : null,
+            autor_id: author && author.value ? parseInt(author.value) : null,
+            imagen_url: image ? image.value : '',
+            destacado: featured ? featured.checked : false,
+            pie_de_foto: pieFoto ? pieFoto.value : '',
+            foto_credito: fotoCredito ? fotoCredito.value : '',
+            es_wbc2026: esWbc ? esWbc.checked : false,
+            savedAt: new Date().toISOString()
+        };
+    },
+
+    // Update all autosave indicator elements
+    _updateIndicator: function(status, timestamp) {
+        var texts = {
+            saving: 'Guardando...',
+            saved: 'Guardado \u2713 ' + (timestamp || ''),
+            unsaved: '\u25CF Sin guardar',
+            error: '\u26A0 Error al guardar'
+        };
+        var colors = {
+            saving: '#6b7280',
+            saved: '#16a34a',
+            unsaved: '#f59e0b',
+            error: '#dc2626'
+        };
+        var ids = ['autosave-indicator', 'autosave-indicator-sticky'];
+        for (var i = 0; i < ids.length; i++) {
+            var el = document.getElementById(ids[i]);
+            if (el) {
+                el.textContent = texts[status] || '';
+                el.style.color = colors[status] || '#9ca3af';
             }
-            
-            if (!title?.value?.trim() && !content?.trim()) return;
-            
-            var draft = {
-                titulo: title?.value || '',
-                extracto: excerpt?.value || '',
-                contenido: content || '',
-                categoria_id: category?.value || '',
-                autor_id: author?.value || '',
-                imagen_url: image?.value || '',
-                destacado: featured?.checked || false,
-                savedAt: new Date().toISOString()
-            };
-            
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(draft));
-            
-            var indicator = document.getElementById('autosave-indicator');
-            if (indicator) {
-                var timeStr = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-                indicator.innerHTML = '✓ Borrador guardado ' + timeStr;
-                indicator.style.color = '#16a34a';
-            }
-        } catch (e) {
-            console.warn('Autosave failed:', e);
         }
     },
-    
+
+    // Save to Supabase + localStorage
+    save: async function() {
+        if (this._saving) return;
+
+        var data = this._gatherData();
+        if (!data.titulo.trim() && !data.contenido.trim()) return;
+
+        this._saving = true;
+        this._updateIndicator('saving');
+
+        try {
+            // Always save to localStorage as fallback
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+
+            // Build Supabase payload (excluding savedAt)
+            var payload = {
+                titulo: data.titulo || 'Borrador sin titulo',
+                extracto: data.extracto,
+                contenido: data.contenido,
+                categoria_id: data.categoria_id,
+                autor_id: data.autor_id,
+                imagen_url: data.imagen_url,
+                destacado: data.destacado,
+                pie_de_foto: data.pie_de_foto || null,
+                foto_credito: data.foto_credito || null,
+                es_wbc2026: data.es_wbc2026
+            };
+
+            if (this._editId) {
+                // Editing existing article — update in place
+                await supabaseClient
+                    .from('articulos')
+                    .update(payload)
+                    .eq('id', this._editId);
+            } else {
+                // New article — save as unpublished draft
+                payload.publicado = false;
+                if (this._draftId) {
+                    await supabaseClient
+                        .from('articulos')
+                        .update(payload)
+                        .eq('id', this._draftId);
+                } else {
+                    payload.slug = 'borrador-' + Date.now();
+                    var result = await supabaseClient
+                        .from('articulos')
+                        .insert([payload])
+                        .select('id')
+                        .single();
+                    if (result.data) {
+                        this._draftId = result.data.id;
+                    }
+                }
+            }
+
+            this._dirty = false;
+            var timeStr = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+            this._updateIndicator('saved', timeStr);
+        } catch (e) {
+            console.warn('Autosave failed:', e);
+            this._updateIndicator('error');
+        } finally {
+            this._saving = false;
+        }
+    },
+
+    // Mark content as changed — resets the debounce timer
+    markDirty: function() {
+        this._dirty = true;
+        this._updateIndicator('unsaved');
+        this._resetTimer();
+    },
+
+    _resetTimer: function() {
+        var self = this;
+        if (this._timer) clearTimeout(this._timer);
+        this._timer = setTimeout(function() { self.save(); }, this.INTERVAL_MS);
+    },
+
+    // Attach input/change listeners to the editor form
+    _attachListeners: function() {
+        var self = this;
+        var form = document.getElementById('article-form');
+        if (!form) return;
+        form.addEventListener('input', function() { self.markDirty(); });
+        form.addEventListener('change', function() { self.markDirty(); });
+        // Tiptap editor change events
+        if (contentEditor && contentEditor.editor) {
+            contentEditor.editor.on('update', function() { self.markDirty(); });
+        }
+    },
+
+    // Start autosave — call after editor is initialized
+    start: function(editId) {
+        this.stop();
+        this._editId = editId || null;
+        this._draftId = null;
+        this._dirty = false;
+        this._saving = false;
+        this._resetTimer();
+        this._attachListeners();
+
+        // beforeunload warning
+        var self = this;
+        this._beforeUnloadHandler = function(e) {
+            if (self._dirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', this._beforeUnloadHandler);
+    },
+
+    stop: function() {
+        if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+        if (this._beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', this._beforeUnloadHandler);
+            this._beforeUnloadHandler = null;
+        }
+        this._dirty = false;
+    },
+
     load: function() {
         try {
             var raw = localStorage.getItem(this.STORAGE_KEY);
@@ -417,18 +563,14 @@ var Autosave = {
             return JSON.parse(raw);
         } catch (e) { return null; }
     },
-    
-    clear: function() { localStorage.removeItem(this.STORAGE_KEY); },
-    
-    start: function() {
-        this.stop();
-        var self = this;
-        autosaveInterval = setInterval(function() { self.save(); }, this.INTERVAL_MS);
+
+    clear: function() {
+        localStorage.removeItem(this.STORAGE_KEY);
+        this._draftId = null;
     },
-    
-    stop: function() {
-        if (autosaveInterval) { clearInterval(autosaveInterval); autosaveInterval = null; }
-    }
+
+    getDraftId: function() { return this._draftId; },
+    isDirty: function() { return this._dirty; }
 };
 
 const AdminPages = {
@@ -544,8 +686,8 @@ const AdminPages = {
                     <div class="admin-content">
                         <div style="background: linear-gradient(135deg, #c41e3a 0%, #9a1830 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
                             <div>
-                                <h2 style="font-family: Oswald, sans-serif; font-size: 1.8rem; margin: 0 0 5px 0;">¡Hola, ${user.name}!</h2>
-                                <p style="margin: 0; opacity: 0.9;">Bienvenido al panel de administración de Beisjoven</p>
+                                <h2 style="font-family: Oswald, sans-serif; font-size: 1.8rem; margin: 0 0 5px 0;">Hola, ${user.name}!</h2>
+                                <p style="margin: 0; opacity: 0.9;">${user.role === 'admin' ? 'Administrador' : 'Editor'} — Panel de Beisjoven</p>
                             </div>
                             <a href="#" onclick="Router.navigate('/admin/nuevo'); return false;" style="background: white; color: #c41e3a; padding: 12px 24px; border-radius: 25px; font-weight: 600; text-decoration: none; white-space: nowrap;">+ Nuevo Artículo</a>
                         </div>
@@ -619,6 +761,9 @@ const AdminPages = {
         `;
 
         document.title = 'Dashboard - Beisjoven Admin';
+
+        // Show onboarding for new editors
+        Onboarding.checkAndShow();
     },
 
     // ==================== LISTA DE ARTÍCULOS ====================
@@ -629,7 +774,9 @@ const AdminPages = {
         }
 
         const main = document.getElementById('main-content');
-        
+        const isAdmin = Auth.isAdmin();
+        const userId = Auth.getUser()?.id;
+
         // Mostrar loading
         main.innerHTML = `
             <div class="admin-layout">
@@ -640,23 +787,41 @@ const AdminPages = {
                 </div>
             </div>
         `;
-        
-        // Cargar artículos de Supabase
-        const [articulos, totalArticulos] = await Promise.all([
-            SupabaseAPI.getArticulos(500),
-            SupabaseAPI.getArticulosCount()
-        ]);
+
+        // Admins see all articles (including drafts); editors see own + published
+        let articulos = [];
+        if (isAdmin) {
+            const { data } = await supabaseClient
+                .from('articulos')
+                .select('*, categoria:categorias(*), autor:autores(*)')
+                .order('created_at', { ascending: false })
+                .limit(500);
+            articulos = data || [];
+        } else {
+            const { data } = await supabaseClient
+                .from('articulos')
+                .select('*, categoria:categorias(*), autor:autores(*)')
+                .or('publicado.eq.true,user_id.eq.' + userId)
+                .order('created_at', { ascending: false })
+                .limit(500);
+            articulos = data || [];
+        }
+
+        // Helper: can current user edit this article?
+        function canEditArticle(article) {
+            return isAdmin || article.user_id === userId;
+        }
 
         main.innerHTML = `
             <div class="admin-layout">
                 ${AdminComponents.sidebar()}
-                
+
                 <div class="admin-main">
                     ${AdminComponents.header('Artículos')}
-                    
+
                     <div class="admin-content">
                         <div class="content-header">
-                            <p>Total: <span id="admin-article-count">${totalArticulos !== null ? totalArticulos : articulos.length}</span> artículos</p>
+                            <p>Total: <span id="admin-article-count">${articulos.length}</span> artículos</p>
                             <a href="/admin/nuevo" class="btn btn-primary">+ Nuevo Artículo</a>
                         </div>
                         <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -670,15 +835,16 @@ const AdminPages = {
                                 <option value="no-wbc">Sin WBC</option>
                             </select>
                         </div>
-                        
+
                         ${articulos.length > 0 ? `
-                            <div class="articles-table">
+                            <!-- Desktop table -->
+                            <div class="articles-table hide-mobile">
                                 <table>
                                     <thead>
                                         <tr>
                                             <th>Título</th>
                                             <th>Categoría</th>
-                                            <th>Destacado</th>
+                                            <th>Estado</th>
                                             <th>Fecha</th>
                                             <th>Acciones</th>
                                         </tr>
@@ -692,17 +858,39 @@ const AdminPages = {
                                                     </a>
                                                 </td>
                                                 <td><span class="badge">${article.categoria?.nombre || 'N/A'}</span></td>
-                                                <td>${article.destacado ? '⭐' : '-'}</td>
-                                                <td>${new Date(article.fecha).toLocaleDateString('es-MX')}</td>
+                                                <td>
+                                                    <span class="badge ${article.publicado ? 'badge-published' : 'badge-draft'}">
+                                                        ${article.publicado ? 'Publicado' : 'Borrador'}
+                                                    </span>
+                                                    ${article.destacado ? ' ⭐' : ''}
+                                                </td>
+                                                <td>${new Date(article.fecha || article.created_at).toLocaleDateString('es-MX')}</td>
                                                 <td class="actions-cell">
-                                                    <a href="/admin/editar/${article.id}" class="btn-small">Editar</a>
-                                                    <button onclick="AdminPages.copyArticleUrl('${article.slug}', this)" class="btn-small btn-url" title="Copiar URL">🔗 URL</button>
-                                                    <button onclick="AdminPages.deleteArticle(${article.id})" class="btn-small btn-danger">Eliminar</button>
+                                                    ${canEditArticle(article) ? `<a href="/admin/editar/${article.id}" class="btn-small">Editar</a>` : ''}
+                                                    ${article.publicado ? `<button onclick="AdminPages.copyArticleUrl('${article.slug}', this)" class="btn-small btn-url" title="Copiar URL">🔗 URL</button>` : ''}
+                                                    ${isAdmin ? `<button onclick="AdminPages.deleteArticle(${article.id})" class="btn-small btn-danger">Eliminar</button>` : ''}
                                                 </td>
                                             </tr>
                                         `).join('')}
                                     </tbody>
                                 </table>
+                            </div>
+
+                            <!-- Mobile cards -->
+                            <div class="articles-cards show-mobile">
+                                ${articulos.map(article => `
+                                    <a href="${canEditArticle(article) ? '/admin/editar/' + article.id : '/articulo/' + article.slug}" class="article-card-mobile" data-cat="${article.categoria?.nombre || ''}" data-wbc="${article.es_wbc2026 ? 'wbc' : 'no-wbc'}">
+                                        <div class="acm-top">
+                                            <span class="badge ${article.publicado ? 'badge-published' : 'badge-draft'}">${article.publicado ? 'Publicado' : 'Borrador'}</span>
+                                            <span class="acm-date">${new Date(article.fecha || article.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</span>
+                                        </div>
+                                        <h4 class="acm-title">${article.titulo}</h4>
+                                        <div class="acm-bottom">
+                                            <span class="badge">${article.categoria?.nombre || 'N/A'}</span>
+                                            ${article.destacado ? '<span>⭐</span>' : ''}
+                                        </div>
+                                    </a>
+                                `).join('')}
                             </div>
                         ` : `
                             <div class="empty-state">
@@ -872,11 +1060,11 @@ const AdminPages = {
 
                                 <div class="fg-acciones">
                                     <button type="submit" class="btn btn-primary btn-block">
-                                        ${isEdit ? 'Guardar Cambios' : 'Publicar Artículo'}
+                                        ${isEdit ? 'Guardar Cambios' : (Auth.isAdmin() ? 'Publicar Articulo' : 'Guardar Borrador')}
                                     </button>
                                     <a href="/admin/articulos" class="btn btn-secondary btn-block">Cancelar</a>
                                     <div id="autosave-indicator" style="text-align:center;font-size:0.8rem;color:#9ca3af;margin-top:8px;">
-                                        ${isEdit ? '' : 'Auto-guardado cada 30 segundos'}
+                                        Auto-guardado cada 30s
                                     </div>
                                 </div>
 
@@ -947,13 +1135,13 @@ const AdminPages = {
             stickyBar.className = 'admin-sticky-bar';
             stickyBar.innerHTML = `
                 <button type="button" class="btn-publish" onclick="document.getElementById('article-form').dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}))">
-                    ${isEdit ? 'Guardar Cambios' : 'Publicar'}
+                    ${isEdit ? 'Guardar' : (Auth.isAdmin() ? 'Publicar' : 'Borrador')}
                 </button>
                 <button type="button" class="btn-preview" onclick="ArticlePreview.openDraft()">
                     👁️
                 </button>
                 <a href="/admin/articulos" class="btn-cancel">Cancelar</a>
-                <span class="autosave-txt" id="autosave-indicator-sticky">${isEdit ? '' : 'Auto-guardado'}</span>
+                <span class="autosave-txt" id="autosave-indicator-sticky">Auto-guardado</span>
             `;
             document.body.appendChild(stickyBar);
         }
@@ -988,10 +1176,8 @@ const AdminPages = {
             MediaLibrary.init();
         }
         
-        // Start autosave for new articles
-        if (!isEdit) {
-            Autosave.start();
-        }
+        // Start autosave (new articles save as draft, existing articles update in place)
+        Autosave.start(isEdit ? parseInt(params.id) : null);
 
         // Manejar submit
         document.getElementById('article-form').addEventListener('submit', function(e) {
@@ -1061,6 +1247,9 @@ const AdminPages = {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)/g, '');
         
+        // Editors can only save as draft; admins publish directly
+        const canPublish = Auth.isAdmin();
+
         const articulo = {
             titulo: sanitizeHtmlBasic(titulo),
             slug,
@@ -1073,8 +1262,13 @@ const AdminPages = {
             foto_credito: foto_credito || null,
             es_wbc2026,
             destacado,
-            publicado: true
+            publicado: canPublish
         };
+
+        // Track which auth user created the article
+        if (!editId && Auth.getUser()) {
+            articulo.user_id = Auth.getUser().id;
+        }
         
         let result;
         
@@ -1082,7 +1276,22 @@ const AdminPages = {
             // Editar existente
             result = await SupabaseAdmin.actualizarArticulo(editId, articulo);
             if (result.success) {
-                showToast('✅ Artículo actualizado correctamente');
+                Autosave.stop();
+                Autosave.clear();
+                showToast('Articulo actualizado correctamente', 'success');
+            } else {
+                showToast('Error: ' + result.error, 'error');
+                return;
+            }
+        } else if (Autosave.getDraftId()) {
+            // Publish existing draft (created by autosave)
+            var draftId = Autosave.getDraftId();
+            articulo.publicado = true;
+            result = await SupabaseAdmin.actualizarArticulo(draftId, articulo);
+            if (result.success) {
+                Autosave.stop();
+                Autosave.clear();
+                showToast('Articulo publicado correctamente', 'success');
             } else {
                 showToast('Error: ' + result.error, 'error');
                 return;
@@ -1093,7 +1302,7 @@ const AdminPages = {
             if (result.success) {
                 Autosave.stop();
                 Autosave.clear();
-                showToast('✅ Artículo publicado correctamente');
+                showToast('Articulo publicado correctamente', 'success');
             } else {
                 showToast('Error: ' + result.error, 'error');
                 return;
@@ -1173,16 +1382,123 @@ const AdminPages = {
     },
 
     deleteArticle: async function(id) {
+        if (!Auth.isAdmin()) {
+            showToast('Solo administradores pueden eliminar articulos', 'error');
+            return;
+        }
         if (confirm('¿Estás seguro de eliminar este artículo? Esta acción no se puede deshacer.')) {
             const result = await SupabaseAdmin.eliminarArticulo(id);
-            
+
             if (result.success) {
-                showToast('✅ Artículo eliminado');
+                showToast('Articulo eliminado', 'success');
                 setTimeout(function() { Router.navigate('/admin/articulos'); }, 800);
             } else {
                 showToast('Error: ' + result.error, 'error');
             }
         }
+    },
+
+    // ==================== GESTIÓN DE USUARIOS (Admin only) ====================
+    usuarios: async function() {
+        if (!Auth.isLoggedIn()) { Router.navigate('/login'); return; }
+        if (!Auth.isAdmin()) { Router.navigate('/admin'); return; }
+
+        const main = document.getElementById('main-content');
+        main.innerHTML = `
+            <div class="admin-layout">
+                ${AdminComponents.sidebar()}
+                <div class="admin-main">
+                    ${AdminComponents.header('Gestión de Usuarios')}
+                    <div class="admin-content"><p>Cargando usuarios...</p></div>
+                </div>
+            </div>
+        `;
+
+        // Fetch users via Supabase auth admin (requires service_role or custom RPC)
+        // For now, list from a users view or user_metadata approach
+        let users = [];
+        try {
+            const { data } = await supabaseClient.rpc('get_admin_users');
+            users = data || [];
+        } catch (e) {
+            // Fallback: show current user info only
+            users = [];
+        }
+
+        main.innerHTML = `
+            <div class="admin-layout">
+                ${AdminComponents.sidebar()}
+                <div class="admin-main">
+                    ${AdminComponents.header('Gestión de Usuarios')}
+                    <div class="admin-content">
+                        <div class="content-header">
+                            <h2>Usuarios del sistema</h2>
+                            <button class="btn btn-primary" onclick="AdminPages._showCreateUserModal()">+ Nuevo Usuario</button>
+                        </div>
+
+                        <div class="admin-section">
+                            <p style="color:#6b7280;font-size:0.9rem;margin-bottom:16px;">
+                                Para crear usuarios, usa el panel de Supabase Authentication o la funcion <code>supabase.auth.admin.createUser()</code>.
+                                Asigna el rol en <code>user_metadata.role</code> ("admin" o "editor").
+                            </p>
+
+                            ${users.length > 0 ? `
+                            <div class="articles-table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Email</th>
+                                            <th>Rol</th>
+                                            <th>Registro</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${users.map(u => `
+                                            <tr>
+                                                <td>${u.name || u.email}</td>
+                                                <td>${u.email}</td>
+                                                <td><span class="badge ${u.role === 'admin' ? 'badge-published' : 'badge-draft'}">${u.role === 'admin' ? 'Admin' : 'Editor'}</span></td>
+                                                <td>${u.created_at ? new Date(u.created_at).toLocaleDateString('es-MX') : '-'}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            ` : `
+                            <div class="users-guide">
+                                <h4>Como crear un editor:</h4>
+                                <ol style="color:#374151;line-height:1.8;padding-left:20px;">
+                                    <li>Ve al <strong>Dashboard de Supabase</strong> → Authentication → Users</li>
+                                    <li>Click <strong>"Add User"</strong></li>
+                                    <li>Ingresa email y contrasena</li>
+                                    <li>En <strong>User Metadata</strong>, agrega:<br>
+                                        <code style="background:#f3f4f6;padding:4px 8px;border-radius:4px;font-size:0.85rem;">{ "role": "editor", "name": "Nombre" }</code>
+                                    </li>
+                                    <li>El nuevo editor podra crear articulos como borrador</li>
+                                </ol>
+                                <div style="margin-top:20px;padding:16px;background:#fef3c7;border-radius:8px;border:1px solid #f59e0b;">
+                                    <strong>Permisos de Editor:</strong>
+                                    <ul style="margin-top:8px;padding-left:20px;color:#92400e;">
+                                        <li>Crear articulos (solo como borrador)</li>
+                                        <li>Editar sus propios articulos</li>
+                                        <li>Subir imagenes a la biblioteca</li>
+                                        <li>NO puede publicar, eliminar ni editar articulos ajenos</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.title = 'Usuarios - Beisjoven Admin';
+    },
+
+    _showCreateUserModal: function() {
+        showToast('Usa el Dashboard de Supabase para crear usuarios', 'info');
     },
 
     logout: async function() {
@@ -1401,7 +1717,7 @@ const AdminPages = {
                     badge +
                     '<div style="position:absolute;top:6px;right:6px;display:flex;gap:4px;">' +
                         '<button class="ml-copy-btn" data-url="' + url.replace(/"/g, '&quot;') + '" style="background:white;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;" title="Copiar URL">📋</button>' +
-                        '<button class="ml-delete-btn" data-nombre="' + nombre.replace(/"/g, '&quot;') + '" style="background:#dc2626;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;color:white;" title="Eliminar">🗑️</button>' +
+                        (Auth.isAdmin() ? '<button class="ml-delete-btn" data-nombre="' + nombre.replace(/"/g, '&quot;') + '" style="background:#dc2626;border:none;border-radius:50%;width:32px;height:32px;font-size:0.9rem;cursor:pointer;color:white;" title="Eliminar">🗑️</button>' : '') +
                     '</div>' +
                 '</div>' +
                 '<div style="padding:10px;flex:1;">' +
@@ -1757,7 +2073,8 @@ const AdminComponents = {
     sidebar: function() {
         const user = Auth.getUser();
         const currentPath = window.location.pathname;
-        
+        const isAdmin = Auth.isAdmin();
+
         return `
             <aside class="admin-sidebar">
                 <div class="sidebar-header">
@@ -1766,7 +2083,7 @@ const AdminComponents = {
                         <span>Beisjoven</span>
                     </a>
                 </div>
-                
+
                 <div class="sidebar-user">
                     <div class="user-avatar">${user.avatar || '👤'}</div>
                     <div class="user-info">
@@ -1774,7 +2091,7 @@ const AdminComponents = {
                         <span class="user-role">${user.role === 'admin' ? 'Administrador' : 'Editor'}</span>
                     </div>
                 </div>
-                
+
                 <nav class="sidebar-nav">
                     <a href="/admin" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath === '/admin' ? 'active' : ''}">
                         📊 Dashboard
@@ -1785,12 +2102,18 @@ const AdminComponents = {
                     <a href="/admin/nuevo" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath === '/admin/nuevo' ? 'active' : ''}">
                         ➕ Nuevo Artículo
                     </a>
+                    ${isAdmin ? `
                     <a href="/admin/videos" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath.includes('/videos') ? 'active' : ''}">
                         📹 Videos
-                    </a>
+                    </a>` : ''}
                     <a href="/admin/medios" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath === '/admin/medios' ? 'active' : ''}">
                         🖼️ Medios
                     </a>
+                    ${isAdmin ? `
+                    <hr>
+                    <a href="/admin/usuarios" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath === '/admin/usuarios' ? 'active' : ''}">
+                        👥 Usuarios
+                    </a>` : ''}
                     <hr>
                     <a href="/" target="_blank">
                         🌐 Ver sitio
@@ -1846,8 +2169,87 @@ const AdminComponents = {
     }
 };
 
+// ==================== ONBOARDING SYSTEM ====================
+// Shows a welcome guide for new editors on their first login.
+// Completion is stored in localStorage keyed by user ID.
+
+var Onboarding = {
+    STORAGE_PREFIX: 'bj_onboarding_done_',
+
+    _isCompleted: function(userId) {
+        return localStorage.getItem(this.STORAGE_PREFIX + userId) === 'true';
+    },
+
+    _markCompleted: function(userId) {
+        localStorage.setItem(this.STORAGE_PREFIX + userId, 'true');
+    },
+
+    // Check and show onboarding if needed (call after dashboard renders)
+    checkAndShow: function() {
+        var user = Auth.getUser();
+        if (!user) return;
+        // Only show for editors, not admins
+        if (user.role === 'admin') return;
+        if (this._isCompleted(user.id)) return;
+
+        this._showModal(user);
+    },
+
+    _showModal: function(user) {
+        var self = this;
+        var overlay = document.createElement('div');
+        overlay.className = 'onboarding-overlay';
+        overlay.innerHTML =
+            '<div class="onboarding-panel">' +
+                '<h2>Bienvenido/a, ' + (user.name || 'Editor') + '!</h2>' +
+                '<p class="ob-subtitle">Te preparamos una guia rapida para empezar a publicar en Beisjoven.</p>' +
+                '<ul class="onboarding-steps">' +
+                    '<li>' +
+                        '<span class="ob-step-num">1</span>' +
+                        '<div class="ob-step-text">' +
+                            '<strong>Crea tu primer articulo</strong>' +
+                            '<span>Ve a "Nuevo Articulo" en el menu lateral y escribe tu primera nota.</span>' +
+                        '</div>' +
+                    '</li>' +
+                    '<li>' +
+                        '<span class="ob-step-num">2</span>' +
+                        '<div class="ob-step-text">' +
+                            '<strong>Sube una imagen</strong>' +
+                            '<span>Usa la Biblioteca de Medios para subir fotos. Las puedes insertar en tus articulos.</span>' +
+                        '</div>' +
+                    '</li>' +
+                    '<li>' +
+                        '<span class="ob-step-num">3</span>' +
+                        '<div class="ob-step-text">' +
+                            '<strong>Envia tu borrador</strong>' +
+                            '<span>Tu articulo se guardara como borrador. Un administrador lo revisara y publicara.</span>' +
+                        '</div>' +
+                    '</li>' +
+                '</ul>' +
+                '<a href="https://docs.google.com/document/d/1_beisjoven_guia_estilo" target="_blank" class="ob-guide-link" rel="noopener">📖 Guia de estilo editorial</a>' +
+                '<button class="ob-dismiss" id="ob-dismiss-btn">Empezar</button>' +
+            '</div>';
+
+        document.body.appendChild(overlay);
+
+        document.getElementById('ob-dismiss-btn').addEventListener('click', function() {
+            self._markCompleted(user.id);
+            overlay.remove();
+        });
+
+        // Also dismiss on overlay click
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                self._markCompleted(user.id);
+                overlay.remove();
+            }
+        });
+    }
+};
+
 // Exportar
 if (typeof window !== 'undefined') {
     window.AdminPages = AdminPages;
     window.AdminComponents = AdminComponents;
+    window.Onboarding = Onboarding;
 }
