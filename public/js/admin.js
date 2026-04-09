@@ -1590,7 +1590,8 @@ const AdminPages = {
             // Editar existente
             result = await SupabaseAdmin.actualizarArticulo(editId, articulo);
             if (result.success) {
-                await SupabaseAPI.syncArticuloTags(editId, AdminPages._getSelectedTagIds());
+                try { await SupabaseAPI.syncArticuloTags(editId, AdminPages._getSelectedTagIds()); }
+                catch (e) { console.error('Tag sync error (non-fatal):', e); }
                 Autosave.stop();
                 Autosave.clear();
                 showToast(toastMsg[action] || '✅ Artículo actualizado correctamente', 'success');
@@ -1603,7 +1604,8 @@ const AdminPages = {
             var draftId = Autosave.getDraftId();
             result = await SupabaseAdmin.actualizarArticulo(draftId, articulo);
             if (result.success) {
-                await SupabaseAPI.syncArticuloTags(draftId, AdminPages._getSelectedTagIds());
+                try { await SupabaseAPI.syncArticuloTags(draftId, AdminPages._getSelectedTagIds()); }
+                catch (e) { console.error('Tag sync error (non-fatal):', e); }
                 Autosave.stop();
                 Autosave.clear();
                 showToast(toastMsg[action] || '✅ Artículo guardado correctamente', 'success');
@@ -1612,10 +1614,11 @@ const AdminPages = {
                 return;
             }
         } else {
-            // No autosave draft exists — create new
+            // No autosave draft exists — create new article FIRST, then sync tags
             result = await SupabaseAdmin.crearArticulo(articulo);
             if (result.success) {
-                await SupabaseAPI.syncArticuloTags(result.data.id, AdminPages._getSelectedTagIds());
+                try { await SupabaseAPI.syncArticuloTags(result.data.id, AdminPages._getSelectedTagIds()); }
+                catch (e) { console.error('Tag sync error (non-fatal):', e); }
                 Autosave.stop();
                 Autosave.clear();
                 showToast(toastMsg[action] || '✅ Artículo guardado correctamente', 'success');
