@@ -1045,7 +1045,7 @@ const AdminPages = {
                     ${AdminComponents.header(isEdit ? 'Editar Artículo' : 'Nuevo Artículo')}
                     
                     <div class="admin-content">
-                        <form id="article-form" class="article-form">
+                        <form id="article-form" class="article-form" novalidate>
                             <!-- 
                                 FORM GRID: CSS Grid Areas
                                 Desktop: 2 columnas (main izq, sidebar der)
@@ -1056,12 +1056,12 @@ const AdminPages = {
 
                                 <div class="fg-titulo">
                                     <label for="title">Título *</label>
-                                    <input type="text" id="title" value="${article?.titulo || (useDraft && draft ? draft.titulo : '') || ''}" placeholder="Título de la noticia" required oninput="AdminPages.autoSlug()">
+                                    <input type="text" id="title" value="${article?.titulo || (useDraft && draft ? draft.titulo : '') || ''}" placeholder="Título de la noticia" oninput="AdminPages.autoSlug()">
                                 </div>
 
                                 <div class="fg-extracto">
                                     <label for="excerpt">Extracto *</label>
-                                    <textarea id="excerpt" rows="3" placeholder="Breve descripción (aparece en tarjetas)" required>${article?.extracto || (useDraft && draft ? draft.extracto : '') || ''}</textarea>
+                                    <textarea id="excerpt" rows="3" placeholder="Breve descripción (aparece en tarjetas)">${article?.extracto || (useDraft && draft ? draft.extracto : '') || ''}</textarea>
                                     <div style="margin-top:8px;">
                                         <label for="slug" style="font-size:0.82rem;color:#6b7280;font-weight:500;margin-bottom:4px;">URL / Slug</label>
                                         <div style="display:flex;gap:6px;align-items:center;">
@@ -1075,7 +1075,7 @@ const AdminPages = {
                                     <div class="fg-meta-row">
                                         <div class="form-group">
                                             <label for="category">Categoría *</label>
-                                            <select id="category" required>
+                                            <select id="category">
                                                 <option value="">Seleccionar...</option>
                                                 ${categorias.map(c => `
                                                     <option value="${c.id}" ${article?.categoria_id === c.id ? 'selected' : (useDraft && draft && draft.categoria_id == c.id ? 'selected' : '')}>
@@ -1086,7 +1086,7 @@ const AdminPages = {
                                         </div>
                                         <div class="form-group">
                                             <label for="author">Autor *</label>
-                                            <select id="author" required>
+                                            <select id="author">
                                                 ${autores.map(a => `
                                                     <option value="${a.id}" ${article?.autor_id === a.id ? 'selected' : (useDraft && draft && draft.autor_id == a.id ? 'selected' : '')}>
                                                         ${a.nombre}
@@ -1149,10 +1149,10 @@ const AdminPages = {
                                         const _isPublished = isEdit && article && article.publicado;
                                         let btns = '';
                                         if (_isPublished) {
-                                            btns += '<button type="submit" class="btn btn-primary btn-block" data-action="save">Guardar Cambios</button>';
+                                            btns += '<button type="button" class="btn btn-primary btn-block" data-action="save">Guardar Cambios</button>';
                                             if (_isAdmin) btns += '<button type="button" class="btn btn-outline btn-block" data-action="unpublish">Despublicar</button>';
                                         } else {
-                                            if (_isAdmin) btns += '<button type="submit" class="btn btn-primary btn-block" data-action="publish">Publicar</button>';
+                                            if (_isAdmin) btns += '<button type="button" class="btn btn-primary btn-block" data-action="publish">Publicar</button>';
                                             btns += '<button type="button" class="btn btn-secondary btn-block" data-action="draft">Guardar Borrador</button>';
                                         }
                                         return btns;
@@ -1517,10 +1517,25 @@ const AdminPages = {
 
         const titulo = document.getElementById('title').value.trim();
         const extracto = document.getElementById('excerpt').value.trim();
+        const categoriaVal = document.getElementById('category').value;
+        const autorVal = document.getElementById('author').value;
+
+        // JS validation — replaces native HTML required attributes
+        const errores = [];
+        if (!titulo) errores.push('Título es requerido');
+        if (!extracto) errores.push('Extracto es requerido');
+        if (!categoriaVal) errores.push('Selecciona una categoría');
+        if (!autorVal) errores.push('Selecciona un autor');
+        if (errores.length > 0) {
+            showToast(errores.join('. '), 'error');
+            Autosave.start(editId);
+            return;
+        }
+
         const pie_de_foto = (document.getElementById('foto-pie')?.value || '').trim();
         const foto_credito = (document.getElementById('foto-credito')?.value || '').trim();
         const es_wbc2026 = document.getElementById('es_wbc2026')?.checked || false;
-        
+
         // Get content from Rich Text Editor or fallback to textarea
         let contenidoRaw;
         if (contentEditor) {
@@ -1529,9 +1544,9 @@ const AdminPages = {
             const contentTextarea = document.getElementById('content');
             contenidoRaw = contentTextarea ? contentTextarea.value.trim() : '';
         }
-        
-        const categoria_id = parseInt(document.getElementById('category').value);
-        const autor_id = parseInt(document.getElementById('author').value);
+
+        const categoria_id = categoriaVal ? parseInt(categoriaVal) : null;
+        const autor_id = autorVal ? parseInt(autorVal) : null;
         // Imagen principal: (1) la que eligió el periodista, (2) primera img del cuerpo, (3) default BJ
         const IMAGEN_DEFAULT_BJ = 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-default.png';
         let imagen_url = document.getElementById('image').value.trim();
