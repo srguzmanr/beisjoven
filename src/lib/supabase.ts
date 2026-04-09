@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.SUPABASE_URL || 'https://yulkbjpotfmwqkzzfegg.supabase.co';
-const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY;
+const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY || 'build-placeholder';
 const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Public client (for client-side and SSR with anon key)

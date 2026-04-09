@@ -1511,6 +1511,10 @@ const AdminPages = {
     // UPDATED: Gets content from Rich Text Editor if available
     // action: 'publish' | 'draft' | 'save' | 'unpublish'
     saveArticle: async function(editId, action) {
+        // Stop autosave timer FIRST — prevents race where the 30s timer fires
+        // during the Supabase await and sends publicado:false, overwriting our save.
+        Autosave.stop();
+
         const titulo = document.getElementById('title').value.trim();
         const extracto = document.getElementById('excerpt').value.trim();
         const pie_de_foto = (document.getElementById('foto-pie')?.value || '').trim();
@@ -1585,45 +1589,52 @@ const AdminPages = {
         };
 
         let result;
+        let savedArticleId = null; // Captured on success; used for redirect
+
+        console.log('[saveArticle] action:', action, '| editId:', editId, '| draftId:', Autosave.getDraftId());
+        console.log('[saveArticle] payload:', JSON.stringify(articulo));
 
         if (editId) {
             // Editar existente
             result = await SupabaseAdmin.actualizarArticulo(editId, articulo);
+            console.log('[saveArticle] actualizarArticulo result:', result);
             if (result.success) {
                 try { await SupabaseAPI.syncArticuloTags(editId, AdminPages._getSelectedTagIds()); }
                 catch (e) { console.error('Tag sync error (non-fatal):', e); }
-                Autosave.stop();
                 Autosave.clear();
                 showToast(toastMsg[action] || '✅ Artículo actualizado correctamente', 'success');
             } else {
-                showToast('Error: ' + result.error, 'error');
+                showToast('Error al guardar: ' + result.error, 'error');
                 return;
             }
         } else if (Autosave.getDraftId()) {
             // Rule 8: manual save uses same draft ID from autosave
             var draftId = Autosave.getDraftId();
             result = await SupabaseAdmin.actualizarArticulo(draftId, articulo);
+            console.log('[saveArticle] actualizarArticulo (draft ' + draftId + ') result:', result);
             if (result.success) {
+                savedArticleId = draftId;
                 try { await SupabaseAPI.syncArticuloTags(draftId, AdminPages._getSelectedTagIds()); }
                 catch (e) { console.error('Tag sync error (non-fatal):', e); }
-                Autosave.stop();
                 Autosave.clear();
                 showToast(toastMsg[action] || '✅ Artículo guardado correctamente', 'success');
             } else {
-                showToast('Error: ' + result.error, 'error');
+                showToast('Error al guardar: ' + result.error, 'error');
                 return;
             }
         } else {
-            // No autosave draft exists — create new article FIRST, then sync tags
+            // No autosave draft exists — INSERT new article
+            console.log('[saveArticle] crearArticulo — no draft ID, doing INSERT');
             result = await SupabaseAdmin.crearArticulo(articulo);
+            console.log('[saveArticle] crearArticulo result:', result);
             if (result.success) {
+                savedArticleId = result.data.id;
                 try { await SupabaseAPI.syncArticuloTags(result.data.id, AdminPages._getSelectedTagIds()); }
                 catch (e) { console.error('Tag sync error (non-fatal):', e); }
-                Autosave.stop();
                 Autosave.clear();
                 showToast(toastMsg[action] || '✅ Artículo guardado correctamente', 'success');
             } else {
-                showToast('Error: ' + result.error, 'error');
+                showToast('Error al guardar: ' + result.error, 'error');
                 return;
             }
         }
@@ -1634,7 +1645,11 @@ const AdminPages = {
             AdminPages._triggerVercelRebuild();
         }
 
-        setTimeout(function() { Router.navigate('/admin/articulos'); }, 800);
+        // New articles: redirect to the editor of the saved article so the user
+        // can confirm content persisted and continue editing if needed.
+        // Existing articles: back to articles list (unchanged behavior).
+        var redirectPath = editId ? '/admin/articulos' : '/admin/editar/' + savedArticleId;
+        setTimeout(function() { Router.navigate(redirectPath); }, 800);
     },
 
     // Trigger a Vercel deploy so static pages regenerate with the new content
