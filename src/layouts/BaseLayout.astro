@@ -13,7 +13,7 @@ interface Props {
   modifiedTime?: string;
   section?: string;
   author?: string;
-  jsonLd?: Record<string, unknown>;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
   noIndex?: boolean;
 }
 
@@ -95,7 +95,10 @@ const orgJsonLd = {
 
   <!-- Structured Data -->
   <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
-  {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+  {jsonLd && (Array.isArray(jsonLd)
+    ? jsonLd.map((schema) => <script type="application/ld+json" set:html={JSON.stringify(schema)} />)
+    : <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  )}
 
   <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-1RE839J27Q"></script>
