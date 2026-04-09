@@ -1338,20 +1338,17 @@ const AdminPages = {
         // ==================== TAG INPUT LOGIC ====================
         AdminPages._initTagInput(allTags, articleTags);
 
-        // Manejar submit del formulario (botón primario type="submit")
+        // Safety net: prevent native form submission (all buttons are type="button"
+        // now, but a browser could still fire submit on Enter inside an input).
         document.getElementById('article-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            var primaryAction = (isEdit && article && article.publicado) ? 'save' : (Auth.isAdmin() ? 'publish' : 'draft');
-            AdminPages.saveArticle(isEdit ? parseInt(params.id) : null, primaryAction);
         });
 
-        // Manejar botones secundarios (type="button" con data-action)
+        // Manejar TODOS los botones con data-action (desktop form + mobile sticky bar)
         document.querySelectorAll('[data-action]').forEach(function(btn) {
-            if (btn.type === 'button') {
-                btn.addEventListener('click', function() {
-                    AdminPages.saveArticle(isEdit ? parseInt(params.id) : null, this.getAttribute('data-action'));
-                });
-            }
+            btn.addEventListener('click', function() {
+                AdminPages.saveArticle(isEdit ? parseInt(params.id) : null, this.getAttribute('data-action'));
+            });
         });
 
         document.title = (isEdit ? 'Editar' : 'Nuevo Artículo') + ' - Beisjoven Admin';
