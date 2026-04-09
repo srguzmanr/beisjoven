@@ -1278,78 +1278,81 @@ const AdminPages = {
             document.body.appendChild(stickyBar);
         }
 
-        // Initialize Rich Text Editor
-        const initialContent = article?.contenido || (useDraft && draft ? draft.contenido : '') || '';
-        
-        if (typeof TiptapEditor !== 'undefined') {
-            contentEditor = TiptapEditor.create(
-                'content-editor-container',
-                'content',
-                initialContent
-            );
-        } else if (typeof RichTextEditor !== 'undefined') {
-            // Legacy fallback
-            contentEditor = RichTextEditor.create(
-                'content-editor-container',
-                'content',
-                initialContent
-            );
-            setTimeout(initMarkdownImport, 300);
-        } else {
-            // Fallback to plain textarea
-            document.getElementById('content-editor-container').innerHTML = `
-                <textarea id="content" rows="15" placeholder="Escribe el contenido del artículo aquí..." required>${initialContent}</textarea>
-                <small>Puedes usar HTML básico: &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a&gt;</small>
-            `;
-        }
-        
-        // Reset slug manual flag so auto-slug works on new articles
-        AdminPages._slugManual = !!(article?.slug);
-
-        // Metadata accordion — mobile only
-        if (window.innerWidth <= 768) {
-            var formGrid = document.querySelector('.form-grid-new');
-            var tituloEl = document.querySelector('.fg-titulo');
-            if (formGrid && tituloEl) {
-                formGrid.classList.add('accordion-closed');
-                var accBtn = document.createElement('button');
-                accBtn.type = 'button';
-                accBtn.className = 'metadata-accordion-toggle';
-                accBtn.innerHTML = '<span>Metadatos &amp; Opciones</span><span class="acc-arrow">▼</span>';
-                accBtn.addEventListener('click', function() {
-                    var isOpen = formGrid.classList.toggle('accordion-closed');
-                    accBtn.classList.toggle('open', !formGrid.classList.contains('accordion-closed'));
-                    // Use !isOpen because toggle returns the new state of 'accordion-closed'
-                    accBtn.classList.toggle('open', !formGrid.classList.contains('accordion-closed'));
-                });
-                tituloEl.insertAdjacentElement('afterend', accBtn);
-            }
-        }
-
-        // Initialize Media Library
-        if (typeof MediaLibrary !== 'undefined') {
-            MediaLibrary.init();
-        }
-        
-        // Start autosave AFTER editor is initialized so connectEditor works
-        Autosave.start(isEdit ? parseInt(params.id) : null);
-        Autosave.connectEditor();
-
-        // ==================== TAG INPUT LOGIC ====================
-        AdminPages._initTagInput(allTags, articleTags);
-
-        // Safety net: prevent native form submission (all buttons are type="button"
-        // now, but a browser could still fire submit on Enter inside an input).
+        // ==================== BUTTON HANDLERS ====================
+        // Attached IMMEDIATELY after DOM is ready (before editor/library init)
+        // so a crash in TiptapEditor, MediaLibrary, or Autosave can never
+        // prevent the Publicar/Guardar buttons from working.
         document.getElementById('article-form').addEventListener('submit', function(e) {
             e.preventDefault();
         });
-
-        // Manejar TODOS los botones con data-action (desktop form + mobile sticky bar)
         document.querySelectorAll('[data-action]').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 AdminPages.saveArticle(isEdit ? parseInt(params.id) : null, this.getAttribute('data-action'));
             });
         });
+
+        // ==================== EDITOR & LIBRARY INIT ====================
+        // Wrapped in try/catch: a crash here must NEVER prevent the
+        // Publicar/Guardar buttons from working (handlers already attached above).
+        try {
+            // Initialize Rich Text Editor
+            const initialContent = article?.contenido || (useDraft && draft ? draft.contenido : '') || '';
+
+            if (typeof TiptapEditor !== 'undefined') {
+                contentEditor = TiptapEditor.create(
+                    'content-editor-container',
+                    'content',
+                    initialContent
+                );
+            } else if (typeof RichTextEditor !== 'undefined') {
+                contentEditor = RichTextEditor.create(
+                    'content-editor-container',
+                    'content',
+                    initialContent
+                );
+                setTimeout(initMarkdownImport, 300);
+            } else {
+                document.getElementById('content-editor-container').innerHTML = `
+                    <textarea id="content" rows="15" placeholder="Escribe el contenido del artículo aquí...">${initialContent}</textarea>
+                    <small>Puedes usar HTML básico: &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a&gt;</small>
+                `;
+            }
+
+            // Reset slug manual flag so auto-slug works on new articles
+            AdminPages._slugManual = !!(article?.slug);
+
+            // Metadata accordion — mobile only
+            if (window.innerWidth <= 768) {
+                var formGrid = document.querySelector('.form-grid-new');
+                var tituloEl = document.querySelector('.fg-titulo');
+                if (formGrid && tituloEl) {
+                    formGrid.classList.add('accordion-closed');
+                    var accBtn = document.createElement('button');
+                    accBtn.type = 'button';
+                    accBtn.className = 'metadata-accordion-toggle';
+                    accBtn.innerHTML = '<span>Metadatos &amp; Opciones</span><span class="acc-arrow">▼</span>';
+                    accBtn.addEventListener('click', function() {
+                        formGrid.classList.toggle('accordion-closed');
+                        accBtn.classList.toggle('open', !formGrid.classList.contains('accordion-closed'));
+                    });
+                    tituloEl.insertAdjacentElement('afterend', accBtn);
+                }
+            }
+
+            // Initialize Media Library
+            if (typeof MediaLibrary !== 'undefined') {
+                MediaLibrary.init();
+            }
+
+            // Start autosave AFTER editor is initialized so connectEditor works
+            Autosave.start(isEdit ? parseInt(params.id) : null);
+            Autosave.connectEditor();
+
+            // Tag input
+            AdminPages._initTagInput(allTags, articleTags);
+        } catch (initError) {
+            console.error('[editor] Initialization error (buttons still work):', initError);
+        }
 
         document.title = (isEdit ? 'Editar' : 'Nuevo Artículo') + ' - Beisjoven Admin';
     },
