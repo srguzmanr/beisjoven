@@ -911,13 +911,33 @@ function injectStyles() {
 
 
 /* ================================================================
-   CUSTOM EXTENSION — Markdown Paste
-   Intercepts paste events, detects markdown content, converts
-   it to HTML via `marked`, and inserts the HTML so Tiptap
-   parses it into rich-text nodes automatically.
+   CUSTOM EXTENSION — Markdown + HTML Paste
+   Intercepts paste events and handles:
+   1. Raw HTML pasted as text/plain (starts with < and has tags)
+      → strip inline styles, parse via DOMParser, insert as nodes
+   2. Markdown pasted as text/plain (# headings, **bold**, etc.)
+      → convert via `marked`, then insert as nodes
+   3. Everything else → falls through to Tiptap's default handler
+      (this preserves the Cmd+C from rendered HTML workflow)
    ================================================================ */
 
 const MARKDOWN_PATTERN = /(^#{1,6}\s|^\*\s|^-\s|^\d+\.\s|\*\*|__|\[.*?\]\(.*?\)|^>\s)/m;
+
+// Detect raw HTML: must start with < and contain at least one closing tag or self-closing tag
+function looksLikeHtml(text) {
+  const t = text.trim();
+  if (!t.startsWith('<')) return false;
+  return /<\/[a-z]/i.test(t) || /<[a-z][^>]*\/>/i.test(t);
+}
+
+// Strip inline styles from an HTML string, keeping semantic tags intact
+function stripInlineStyles(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  div.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
+  div.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'));
+  return div.innerHTML;
+}
 
 const MarkdownPaste = Extension.create({
   name: 'markdownPaste',
@@ -931,19 +951,29 @@ const MarkdownPaste = Extension.create({
             const clipboardData = event.clipboardData;
             if (!clipboardData) return false;
 
-            // If the clipboard already has HTML, let Tiptap handle it natively
-            const html = clipboardData.getData('text/html');
-            if (html && html.trim().length > 0) return false;
+            // If the clipboard already has rich text/html (e.g. Cmd+C from rendered HTML),
+            // let Tiptap handle it natively — this preserves the existing workflow.
+            const richHtml = clipboardData.getData('text/html');
+            if (richHtml && richHtml.trim().length > 0) return false;
 
             const text = clipboardData.getData('text/plain');
-            if (!text || !MARKDOWN_PATTERN.test(text)) return false;
+            if (!text || !text.trim()) return false;
 
-            // Convert markdown to HTML
-            const converted = marked.parse(text, { breaks: true });
+            let htmlToInsert = null;
+
+            if (looksLikeHtml(text)) {
+              // Case 1: raw HTML source pasted as plain text
+              htmlToInsert = stripInlineStyles(text.trim());
+            } else if (MARKDOWN_PATTERN.test(text)) {
+              // Case 2: raw markdown
+              htmlToInsert = marked.parse(text, { breaks: true });
+            }
+
+            if (!htmlToInsert) return false;
 
             // Parse the HTML into ProseMirror nodes
             const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = converted;
+            tempDiv.innerHTML = htmlToInsert;
 
             const parser = ProseMirrorDOMParser.fromSchema(view.state.schema);
             const slice = parser.parseSlice(tempDiv, { preserveWhitespace: false });
