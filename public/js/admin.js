@@ -1123,9 +1123,19 @@ const AdminPages = {
                                 </div>
 
                                 <div class="fg-acciones">
-                                    <button type="submit" class="btn btn-primary btn-block">
-                                        ${isEdit ? 'Guardar Cambios' : (Auth.isAdmin() ? 'Publicar Articulo' : 'Guardar Borrador')}
-                                    </button>
+                                    ${(() => {
+                                        const _isAdmin = Auth.isAdmin();
+                                        const _isPublished = isEdit && article && article.publicado;
+                                        let btns = '';
+                                        if (_isPublished) {
+                                            btns += '<button type="submit" class="btn btn-primary btn-block" data-action="save">Guardar Cambios</button>';
+                                            if (_isAdmin) btns += '<button type="button" class="btn btn-outline btn-block" data-action="unpublish">Despublicar</button>';
+                                        } else {
+                                            if (_isAdmin) btns += '<button type="submit" class="btn btn-primary btn-block" data-action="publish">Publicar</button>';
+                                            btns += '<button type="button" class="btn btn-secondary btn-block" data-action="draft">Guardar Borrador</button>';
+                                        }
+                                        return btns;
+                                    })()}
                                     <a href="/admin/articulos" class="btn btn-secondary btn-block">Cancelar</a>
                                     <div id="autosave-indicator" style="text-align:center;font-size:0.8rem;color:#9ca3af;margin-top:8px;">
                                         Auto-guardado cada 30s
@@ -1165,6 +1175,7 @@ const AdminPages = {
                 .fg-acciones .btn { width: 100%; padding: 14px; font-size: 1rem; border-radius: 8px; margin-bottom: 8px; cursor: pointer; text-align: center; display: block; text-decoration: none; border: none; font-family: inherit; font-weight: 600; }
                 .fg-acciones .btn-primary { background: #c4122e; color: white; }
                 .fg-acciones .btn-secondary { background: #f3f4f6; color: #374151; }
+                .fg-acciones .btn-outline { background: transparent; color: #6b7280; border: 2px solid #d1d5db !important; }
                 .btn-media-picker { padding: 10px 14px; background: #f3f4f6; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 0.9rem; white-space: nowrap; touch-action: manipulation; }
                 .form-grid-new .image-preview { width: 100%; height: 150px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 8px 0; overflow: hidden; color: #9ca3af; }
                 .form-grid-new .image-preview img { width: 100%; height: 100%; object-fit: cover; }
@@ -1185,6 +1196,8 @@ const AdminPages = {
                 .admin-sticky-bar .btn-publish { flex: 2; padding: 14px; background: #c4122e; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
                 .admin-sticky-bar .btn-cancel { flex: 1; padding: 14px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
                 .admin-sticky-bar .btn-preview { width: 48px; height: 48px; background: #1e3a5f; color: white; border: none; border-radius: 8px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+                .admin-sticky-bar .btn-draft { flex: 1; padding: 14px 8px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; touch-action: manipulation; }
+                .admin-sticky-bar .btn-unpublish { flex: 1; padding: 14px 8px; background: transparent; color: #6b7280; border: 2px solid #d1d5db; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; touch-action: manipulation; }
                 .admin-sticky-bar .autosave-txt { font-size: 0.72rem; color: #9ca3af; flex-shrink: 0; }
             `;
             document.head.appendChild(style);
@@ -1197,16 +1210,22 @@ const AdminPages = {
             const stickyBar = document.createElement('div');
             stickyBar.id = 'admin-sticky-bar';
             stickyBar.className = 'admin-sticky-bar';
-            stickyBar.innerHTML = `
-                <button type="button" class="btn-publish" onclick="document.getElementById('article-form').dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}))">
-                    ${isEdit ? 'Guardar' : (Auth.isAdmin() ? 'Publicar' : 'Borrador')}
-                </button>
-                <button type="button" class="btn-preview" onclick="ArticlePreview.openDraft()">
-                    👁️
-                </button>
-                <a href="/admin/articulos" class="btn-cancel">Cancelar</a>
-                <span class="autosave-txt" id="autosave-indicator-sticky">Auto-guardado</span>
-            `;
+            stickyBar.innerHTML = (() => {
+                const _isAdmin = Auth.isAdmin();
+                const _isPublished = isEdit && article && article.publicado;
+                let html = '';
+                if (_isPublished) {
+                    html += '<button type="button" class="btn-publish" data-action="save">Guardar</button>';
+                    if (_isAdmin) html += '<button type="button" class="btn-unpublish" data-action="unpublish">Despublicar</button>';
+                } else {
+                    if (_isAdmin) html += '<button type="button" class="btn-publish" data-action="publish">Publicar</button>';
+                    html += '<button type="button" class="btn-draft" data-action="draft">Borrador</button>';
+                }
+                html += '<button type="button" class="btn-preview" onclick="ArticlePreview.openDraft()">👁️</button>';
+                html += '<a href="/admin/articulos" class="btn-cancel">Cancelar</a>';
+                if (!isEdit) html += '<span class="autosave-txt" id="autosave-indicator-sticky">Auto-guardado</span>';
+                return html;
+            })();
             document.body.appendChild(stickyBar);
         }
 
@@ -1244,10 +1263,20 @@ const AdminPages = {
         Autosave.start(isEdit ? parseInt(params.id) : null);
         Autosave.connectEditor();
 
-        // Manejar submit
+        // Manejar submit del formulario (botón primario type="submit")
         document.getElementById('article-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            AdminPages.saveArticle(isEdit ? parseInt(params.id) : null);
+            var primaryAction = (isEdit && article && article.publicado) ? 'save' : (Auth.isAdmin() ? 'publish' : 'draft');
+            AdminPages.saveArticle(isEdit ? parseInt(params.id) : null, primaryAction);
+        });
+
+        // Manejar botones secundarios (type="button" con data-action)
+        document.querySelectorAll('[data-action]').forEach(function(btn) {
+            if (btn.type === 'button') {
+                btn.addEventListener('click', function() {
+                    AdminPages.saveArticle(isEdit ? parseInt(params.id) : null, this.getAttribute('data-action'));
+                });
+            }
         });
 
         document.title = (isEdit ? 'Editar' : 'Nuevo Artículo') + ' - Beisjoven Admin';
@@ -1267,7 +1296,8 @@ const AdminPages = {
     },
 
     // UPDATED: Gets content from Rich Text Editor if available
-    saveArticle: async function(editId) {
+    // action: 'publish' | 'draft' | 'save' | 'unpublish'
+    saveArticle: async function(editId, action) {
         const titulo = document.getElementById('title').value.trim();
         const extracto = document.getElementById('excerpt').value.trim();
         const pie_de_foto = (document.getElementById('foto-pie')?.value || '').trim();
@@ -1312,9 +1342,6 @@ const AdminPages = {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)/g, '');
         
-        // Editors save as draft; admins publish directly (for new articles)
-        const canPublish = Auth.isAdmin();
-
         const articulo = {
             titulo: sanitizeHtmlBasic(titulo),
             slug,
@@ -1326,58 +1353,65 @@ const AdminPages = {
             pie_de_foto: pie_de_foto || null,
             foto_credito: foto_credito || null,
             es_wbc2026,
-            destacado
+            destacado,
+            publicado: action === 'publish' || action === 'save'
         };
 
         // Track which auth user created the article
-        if (!editId && Auth.getUser()) {
+        if (!editId && !Autosave.getDraftId() && Auth.getUser()) {
             articulo.user_id = Auth.getUser().id;
         }
+
+        var toastMsg = {
+            publish: '✅ Artículo publicado correctamente',
+            draft: '✅ Borrador guardado correctamente',
+            save: '✅ Artículo actualizado correctamente',
+            unpublish: '✅ Artículo despublicado correctamente'
+        };
 
         let result;
 
         if (editId) {
-            // Editar existente — do NOT change publicado status
-            // (preserves publish state; prevents editors from unpublishing)
+            // Editar existente
             result = await SupabaseAdmin.actualizarArticulo(editId, articulo);
             if (result.success) {
                 Autosave.stop();
                 Autosave.clear();
-                showToast('Articulo actualizado', 'success');
+                showToast(toastMsg[action] || '✅ Artículo actualizado correctamente', 'success');
             } else {
                 showToast('Error: ' + result.error, 'error');
                 return;
             }
         } else if (Autosave.getDraftId()) {
             // Rule 8: manual save uses same draft ID from autosave
-            // Set publish state for new articles
-            articulo.publicado = canPublish;
             var draftId = Autosave.getDraftId();
             result = await SupabaseAdmin.actualizarArticulo(draftId, articulo);
             if (result.success) {
                 Autosave.stop();
                 Autosave.clear();
-                showToast(canPublish ? 'Articulo publicado' : 'Borrador guardado', 'success');
+                showToast(toastMsg[action] || '✅ Artículo guardado correctamente', 'success');
             } else {
                 showToast('Error: ' + result.error, 'error');
                 return;
             }
         } else {
             // No autosave draft exists — create new
-            articulo.publicado = canPublish;
             result = await SupabaseAdmin.crearArticulo(articulo);
             if (result.success) {
                 Autosave.stop();
                 Autosave.clear();
-                showToast(canPublish ? 'Articulo publicado' : 'Borrador guardado', 'success');
+                showToast(toastMsg[action] || '✅ Artículo guardado correctamente', 'success');
             } else {
                 showToast('Error: ' + result.error, 'error');
                 return;
             }
         }
 
-        // Trigger Vercel rebuild so the new/updated article goes live
-        AdminPages._triggerVercelRebuild();
+        // Trigger Vercel rebuild only for publish and save (already published)
+        // Drafts and unpublish do NOT trigger rebuild
+        if (action === 'publish' || action === 'save') {
+            AdminPages._triggerVercelRebuild();
+        }
 
         setTimeout(function() { Router.navigate('/admin/articulos'); }, 800);
     },
