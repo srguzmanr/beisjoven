@@ -223,6 +223,21 @@ export async function getArticulosByAutor(autorSlug: string, limite = 20) {
   return (data as Articulo[]) || [];
 }
 
+export async function getAllArticulosByAutor(autorSlug: string) {
+  const autor = await getAutorBySlug(autorSlug);
+  if (!autor) return [];
+  return fetchAllPaginated<Articulo>((from, to) =>
+    supabaseServer
+      .from('articulos')
+      .select(ARTICLE_SELECT)
+      .eq('autor_id', autor.id)
+      .eq('publicado', true)
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(from, to),
+  );
+}
+
 export async function buscarArticulos(query: string, limite = 20) {
   const { data } = await supabase
     .from('articulos')
