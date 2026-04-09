@@ -68,6 +68,13 @@ export interface Evento {
   categoria?: Categoria;
 }
 
+export interface Tag {
+  id: string;
+  nombre: string;
+  slug: string;
+  created_at: string;
+}
+
 export interface Video {
   id: number;
   titulo: string;
@@ -349,6 +356,69 @@ export async function getVideosDestacados(limite = 4) {
     .order('fecha', { ascending: false })
     .limit(limite);
   return (data as Video[]) || [];
+}
+
+// ==================== TAGS ====================
+
+export async function getTags() {
+  const { data } = await supabaseServer
+    .from('tags')
+    .select('*')
+    .order('nombre');
+  return (data as Tag[]) || [];
+}
+
+export async function getTagBySlug(slug: string) {
+  const { data } = await supabaseServer
+    .from('tags')
+    .select('*')
+    .eq('slug', slug)
+    .single();
+  return data as Tag | null;
+}
+
+export async function getAllTagSlugs() {
+  const { data } = await supabaseServer
+    .from('tags')
+    .select('slug');
+  return (data || []).map((t: { slug: string }) => t.slug);
+}
+
+export async function getArticulosByTag(tagSlug: string, limite = 20) {
+  const tag = await getTagBySlug(tagSlug);
+  if (!tag) return [];
+  const { data } = await supabaseServer
+    .from('articulos')
+    .select(`${ARTICLE_SELECT}, articulo_tags!inner(tag_id)`)
+    .eq('articulo_tags.tag_id', tag.id)
+    .eq('publicado', true)
+    .order('fecha', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limite);
+  return (data as Articulo[]) || [];
+}
+
+export async function getAllArticulosByTag(tagSlug: string) {
+  const tag = await getTagBySlug(tagSlug);
+  if (!tag) return [];
+  return fetchAllPaginated<Articulo>((from, to) =>
+    supabaseServer
+      .from('articulos')
+      .select(`${ARTICLE_SELECT}, articulo_tags!inner(tag_id)`)
+      .eq('articulo_tags.tag_id', tag.id)
+      .eq('publicado', true)
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(from, to),
+  );
+}
+
+export async function getTagsByArticuloId(articuloId: number) {
+  const { data } = await supabaseServer
+    .from('articulo_tags')
+    .select('tag:tags(*)')
+    .eq('articulo_id', articuloId);
+  return ((data || []).map((row: any) => row.tag).filter(Boolean)) as Tag[];
 }
 
 // ==================== EVENTOS ====================
