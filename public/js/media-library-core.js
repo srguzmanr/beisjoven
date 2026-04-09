@@ -41,6 +41,26 @@
     var _loadMoreEl = null;
     var _overlay    = null;   // modal overlay element (null in page mode)
 
+    // ── Filter state ──────────────────────────────────────────────
+    var _searchQuery      = '';
+    var _activeCategory   = 'Todas';
+    var _activeDateFilter = 'Todo';
+    var _searchTimer      = null;
+
+    // ── Filter constants ──────────────────────────────────────────
+    var _CATEGORIES   = ['Todas', 'WBC 2026', 'MLB', 'Selección', 'Softbol', 'Juvenil', 'Ligas MX'];
+    var _DATE_FILTERS = ['Todo', 'Este mes', 'Esta semana', 'Hoy'];
+
+    // Filename keyword fallback when categoria metadata field is absent
+    var _CAT_KEYWORDS = {
+        'WBC 2026':  ['wbc'],
+        'MLB':       ['mlb'],
+        'Selección': ['seleccion', 'selección', 'selecci\u00f3n'],
+        'Softbol':   ['softbol'],
+        'Juvenil':   ['juvenil'],
+        'Ligas MX':  ['ligas'],
+    };
+
     // ── Inject CSS once ───────────────────────────────────────────
     function _injectStyles() {
         if (document.getElementById('mlc-styles')) return;
@@ -105,8 +125,174 @@
             '@media(max-width:600px){',
             '.mlc-overlay{padding:0;align-items:flex-end}',
             '.mlc-modal{max-height:95vh;border-radius:12px 12px 0 0}}',
+            /* Filters section */
+            '.mlc-filters{padding:12px 16px;border-bottom:1px solid #e5e7eb;',
+            'display:flex;flex-direction:column;gap:10px;flex-shrink:0}',
+            /* Search bar */
+            '.mlc-search-wrap{position:relative;display:flex;align-items:center}',
+            '.mlc-search-input{width:100%;padding:8px 36px 8px 12px;border:1px solid #d1d5db;',
+            'border-radius:8px;font-size:.9rem;font-family:inherit;outline:none;',
+            'background:#fff;box-sizing:border-box}',
+            '.mlc-search-input:focus{border-color:#C8102E;',
+            'box-shadow:0 0 0 2px rgba(200,16,46,.1)}',
+            '.mlc-search-clear{position:absolute;right:8px;background:none;border:none;',
+            'cursor:pointer;color:#9ca3af;font-size:18px;line-height:1;padding:0;display:none}',
+            '.mlc-search-clear:hover{color:#374151}',
+            /* Pill rows — horizontal scroll on mobile */
+            '.mlc-pill-row{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;',
+            'scrollbar-width:none;padding-bottom:2px;flex-shrink:0}',
+            '.mlc-pill-row::-webkit-scrollbar{display:none}',
+            '.mlc-pill{white-space:nowrap;padding:5px 14px;border-radius:20px;',
+            'border:1px solid #d1d5db;background:#f3f4f6;color:#374151;',
+            'cursor:pointer;font-size:.8rem;font-weight:500;font-family:inherit;',
+            'transition:background .15s,color .15s,border-color .15s;flex-shrink:0}',
+            '.mlc-pill:hover{background:#e5e7eb}',
+            '.mlc-pill.mlc-active{background:#C8102E;color:#fff;border-color:#C8102E}',
         ].join('');
         document.head.appendChild(s);
+    }
+
+    // ── Strip diacritics for accent-insensitive comparison ────────
+    function _normalizeStr(s) {
+        return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    // ── Apply all active filters and re-render ────────────────────
+    function _applyFilters() {
+        var query = _searchQuery.trim().toLowerCase();
+        var now   = new Date();
+
+        var filtered = _allImages.filter(function (img) {
+            // 1. Search: filename / pie_de_foto / credito
+            if (query) {
+                var nombre    = (img.nombre    || '').toLowerCase();
+                var pieDeFoto = (img.pieDeFoto || '').toLowerCase();
+                var credito   = (img.credito   || '').toLowerCase();
+                if (nombre.indexOf(query)    < 0 &&
+                    pieDeFoto.indexOf(query) < 0 &&
+                    credito.indexOf(query)   < 0) {
+                    return false;
+                }
+            }
+
+            // 2. Category filter
+            if (_activeCategory !== 'Todas') {
+                var imgCat    = _normalizeStr(img.categoria);
+                var activeCat = _normalizeStr(_activeCategory);
+                if (imgCat) {
+                    if (imgCat !== activeCat) return false;
+                } else {
+                    // Fallback: keyword match in filename
+                    var keywords = _CAT_KEYWORDS[_activeCategory] || [activeCat];
+                    var nom = (img.nombre || '').toLowerCase();
+                    if (!keywords.some(function (kw) { return nom.indexOf(kw) >= 0; })) {
+                        return false;
+                    }
+                }
+            }
+
+            // 3. Date filter
+            if (_activeDateFilter !== 'Todo' && img.fechaSubida) {
+                var imgDate = new Date(img.fechaSubida);
+                if (!isNaN(imgDate.getTime())) {
+                    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    if (_activeDateFilter === 'Hoy') {
+                        if (imgDate < today) return false;
+                    } else if (_activeDateFilter === 'Esta semana') {
+                        var weekAgo = new Date(today);
+                        weekAgo.setDate(weekAgo.getDate() - 6);
+                        if (imgDate < weekAgo) return false;
+                    } else if (_activeDateFilter === 'Este mes') {
+                        var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                        if (imgDate < monthStart) return false;
+                    }
+                }
+            }
+
+            return true;
+        });
+
+        _render(filtered);
+    }
+
+    // ── Build search bar + category/date pill rows ────────────────
+    function _buildFilters(parent) {
+        var section = document.createElement('div');
+        section.className = 'mlc-filters';
+
+        // ── Search bar ──
+        var searchWrap = document.createElement('div');
+        searchWrap.className = 'mlc-search-wrap';
+
+        var searchInput = document.createElement('input');
+        searchInput.type        = 'text';
+        searchInput.className   = 'mlc-search-input';
+        searchInput.placeholder = 'Buscar por nombre, pie de foto o crédito…';
+
+        var clearBtn = document.createElement('button');
+        clearBtn.type      = 'button';
+        clearBtn.className = 'mlc-search-clear';
+        clearBtn.innerHTML = '&times;';
+        clearBtn.title     = 'Limpiar búsqueda';
+
+        searchInput.addEventListener('input', function () {
+            _searchQuery = searchInput.value;
+            clearBtn.style.display = _searchQuery ? 'block' : 'none';
+            clearTimeout(_searchTimer);
+            _searchTimer = setTimeout(_applyFilters, 300);
+        });
+
+        clearBtn.addEventListener('click', function () {
+            searchInput.value      = '';
+            _searchQuery           = '';
+            clearBtn.style.display = 'none';
+            clearTimeout(_searchTimer);
+            _applyFilters();
+        });
+
+        searchWrap.appendChild(searchInput);
+        searchWrap.appendChild(clearBtn);
+        section.appendChild(searchWrap);
+
+        // ── Category pills ──
+        var catRow = document.createElement('div');
+        catRow.className = 'mlc-pill-row';
+        _CATEGORIES.forEach(function (cat) {
+            var btn = document.createElement('button');
+            btn.type      = 'button';
+            btn.className = 'mlc-pill' + (cat === _activeCategory ? ' mlc-active' : '');
+            btn.textContent = cat;
+            btn.addEventListener('click', function () {
+                _activeCategory = cat;
+                catRow.querySelectorAll('.mlc-pill').forEach(function (p) {
+                    p.classList.toggle('mlc-active', p.textContent === cat);
+                });
+                _applyFilters();
+            });
+            catRow.appendChild(btn);
+        });
+        section.appendChild(catRow);
+
+        // ── Date pills ──
+        var dateRow = document.createElement('div');
+        dateRow.className = 'mlc-pill-row';
+        _DATE_FILTERS.forEach(function (df) {
+            var btn = document.createElement('button');
+            btn.type        = 'button';
+            btn.className   = 'mlc-pill' + (df === _activeDateFilter ? ' mlc-active' : '');
+            btn.textContent = df;
+            btn.addEventListener('click', function () {
+                _activeDateFilter = df;
+                dateRow.querySelectorAll('.mlc-pill').forEach(function (p) {
+                    p.classList.toggle('mlc-active', p.textContent === df);
+                });
+                _applyFilters();
+            });
+            dateRow.appendChild(btn);
+        });
+        section.appendChild(dateRow);
+
+        parent.appendChild(section);
     }
 
     // ── Skeleton placeholders HTML ────────────────────────────────
@@ -127,7 +313,11 @@
         var visible = _filteredImages.slice(0, _visibleCount);
 
         if (total === 0) {
-            _grid.innerHTML = '<div class="mlc-empty">No hay imágenes disponibles</div>';
+            var _hasFilters = _searchQuery || _activeCategory !== 'Todas' || _activeDateFilter !== 'Todo';
+            var _emptyMsg   = _hasFilters
+                ? 'No se encontraron imágenes con los filtros activos'
+                : 'No hay imágenes disponibles';
+            _grid.innerHTML = '<div class="mlc-empty">' + _emptyMsg + '</div>';
         } else {
             _grid.innerHTML = visible.map(function (img) {
                 return (
@@ -215,10 +405,12 @@
                 var nombre = img.nombre || (img.url && img.url.split('/').pop()) || '';
                 var meta   = metaMap[nombre] || {};
                 return {
-                    url:       img.url || img,
-                    nombre:    nombre,
-                    pieDeFoto: meta.pie_de_foto || '',
-                    credito:   meta.credito || '',
+                    url:         img.url || img,
+                    nombre:      nombre,
+                    pieDeFoto:   meta.pie_de_foto  || '',
+                    credito:     meta.credito_foto  || meta.credito || '',
+                    categoria:   meta.categoria     || '',
+                    fechaSubida: meta.created_at    || meta.fecha_subida || '',
                 };
             }).filter(function (img) {
                 if (!img.url || !img.nombre) return false;
@@ -226,7 +418,7 @@
                 return /\.(jpe?g|png|gif|webp|svg|bmp|avif)$/i.test(img.nombre);
             });
 
-            _render(_allImages);
+            _applyFilters();
 
         } catch (err) {
             console.error('[MediaLibraryCore] load error:', err);
@@ -246,6 +438,9 @@
 
     // ── Build shared body + footer, return button area div ────────
     function _buildBody(parent) {
+        // Filters: search bar + category pills + date pills
+        _buildFilters(parent);
+
         var body = document.createElement('div');
         body.className = 'mlc-body';
 
@@ -387,6 +582,12 @@
             _allImages   = [];
             _filteredImages = [];
             _visibleCount   = 50;
+
+            // Reset filter state on each open/init
+            _searchQuery      = '';
+            _activeCategory   = 'Todas';
+            _activeDateFilter = 'Todo';
+            clearTimeout(_searchTimer);
 
             _injectStyles();
 
