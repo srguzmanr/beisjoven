@@ -47,6 +47,22 @@ const needsInstagramScript = renderedBody.includes('class="instagram-media"');
 const needsTikTokScript = renderedBody.includes('class="tiktok-embed"');
 const needsGalleryLightbox = renderedBody.includes('data-gallery="true"');
 
+// JSON-LD BreadcrumbList for this article
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://beisjoven.com/" },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": articulo.categoria?.nombre || 'Noticias',
+      "item": `https://beisjoven.com/categoria/${articulo.categoria?.slug || ''}`,
+    },
+    { "@type": "ListItem", "position": 3, "name": articulo.titulo },
+  ],
+};
+
 // JSON-LD for this article
 const articleJsonLd = {
   "@context": "https://schema.org",
@@ -86,7 +102,7 @@ const articleJsonLd = {
   modifiedTime={articulo.updated_at || articulo.fecha}
   section={articulo.categoria?.nombre}
   author={articulo.autor?.nombre}
-  jsonLd={articleJsonLd}
+  jsonLd={[articleJsonLd, breadcrumbJsonLd]}
 >
   <Breadcrumb items={[
     { text: 'Inicio', href: '/' },
