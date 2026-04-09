@@ -34,12 +34,15 @@
     var _onSelect       = null;
     var _multiSelect    = false;
     var _selected       = [];
+    var _mobileMultiMode = false;
 
     // DOM refs — refreshed on each init()
-    var _grid       = null;
-    var _countEl    = null;
-    var _loadMoreEl = null;
-    var _overlay    = null;   // modal overlay element (null in page mode)
+    var _grid         = null;
+    var _countEl      = null;
+    var _loadMoreEl   = null;
+    var _overlay      = null;   // modal overlay element (null in page mode)
+    var _progressWrap = null;   // upload progress list container
+    var _uploadInput  = null;   // hidden file input
 
     // ── Detail panel state ────────────────────────────────────────
     var _detailImg  = null;
@@ -222,6 +225,51 @@
             '.mlc-dp-confirm-yes{flex:1;padding:8px;background:#dc2626;color:#fff;border:none;',
             'border-radius:7px;cursor:pointer;font-family:inherit;font-size:.85rem;font-weight:600}',
             '.mlc-dp-confirm-yes:disabled{opacity:.5;cursor:default}',
+            /* Upload zone (page mode only) */
+            '.mlc-upload-zone{border:2px dashed #d1d5db;border-radius:10px;padding:18px 16px;',
+            'margin-bottom:12px;text-align:center;transition:border-color .15s,background .15s;',
+            'flex-shrink:0;background:#fafafa}',
+            '.mlc-upload-zone.mlc-dz-hover{border-color:#C8102E;background:#fff5f5}',
+            '.mlc-upload-zone-inner{display:flex;flex-direction:column;align-items:center;gap:5px}',
+            '.mlc-upload-icon{font-size:1.8rem;color:#9ca3af;line-height:1}',
+            '.mlc-upload-label{margin:0;font-size:.88rem;color:#6b7280}',
+            '.mlc-upload-or{margin:0;font-size:.78rem;color:#9ca3af}',
+            /* Upload button */
+            '.mlc-btn-upload{padding:7px 18px;background:#fff;border:1px solid #C8102E;',
+            'border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600;',
+            'color:#C8102E;font-family:inherit;transition:background .15s,color .15s}',
+            '.mlc-btn-upload:hover{background:#C8102E;color:#fff}',
+            /* Gallery insert button */
+            '.mlc-btn-gallery{padding:10px 16px;background:#1d4ed8;color:#fff;border:none;',
+            'border-radius:8px;cursor:pointer;font-family:inherit;font-size:.85rem;font-weight:600}',
+            '.mlc-btn-gallery:hover{background:#1e40af}',
+            /* Mobile multi-select toggle */
+            '.mlc-btn-ms-toggle{padding:8px 12px;background:#f3f4f6;border:1px solid #d1d5db;',
+            'border-radius:8px;cursor:pointer;font-family:inherit;font-size:.82rem;color:#374151}',
+            '.mlc-btn-ms-toggle.mlc-ms-active{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8}',
+            '@media(min-width:601px){.mlc-btn-ms-toggle{display:none!important}}',
+            /* Upload progress list */
+            '.mlc-upload-progress-list{display:none;margin-top:10px;text-align:left;',
+            'max-height:150px;overflow-y:auto}',
+            '.mlc-upload-item{display:flex;flex-direction:column;gap:3px;',
+            'padding:5px 0;border-bottom:1px solid #f3f4f6}',
+            '.mlc-upload-item:last-child{border-bottom:none}',
+            '.mlc-upload-item-name{font-size:.76rem;color:#374151;white-space:nowrap;',
+            'overflow:hidden;text-overflow:ellipsis}',
+            '.mlc-upload-progress-bar{height:4px;background:#e5e7eb;border-radius:4px;overflow:hidden}',
+            '.mlc-upload-progress-fill{height:100%;width:0%;background:#22c55e;',
+            'border-radius:4px;transition:width .2s linear}',
+            '.mlc-upload-progress-fill.mlc-up-error{background:#ef4444}',
+            '.mlc-upload-item-status{font-size:.73rem}',
+            '.mlc-upload-error{color:#ef4444}',
+            '.mlc-upload-success{color:#22c55e}',
+            /* Checkmark overlay on selected thumbnail */
+            '.mlc-check{position:absolute;bottom:5px;left:5px;width:20px;height:20px;',
+            'border-radius:50%;background:#2563eb;color:#fff;font-size:13px;',
+            'display:none;align-items:center;justify-content:center;z-index:3;',
+            'box-shadow:0 2px 4px rgba(0,0,0,.35);pointer-events:none;line-height:1}',
+            '.mlc-thumb.mlc-selected .mlc-check{display:flex}',
+            '.mlc-thumb.mlc-selected{border-color:#2563eb!important}',
         ].join('');
         document.head.appendChild(s);
     }
@@ -400,14 +448,19 @@
                          'alt="' + _esc(img.pieDeFoto || img.nombre || '') + '" ' +
                          'loading="lazy">' +
                     '<button class="mlc-info-btn" type="button" title="Ver detalles">&#8505;</button>' +
+                    '<div class="mlc-check">&#10003;</div>' +
                     '</div>'
                 );
             }).join('');
 
             // Attach click + error handlers (no inline event attrs)
             _grid.querySelectorAll('.mlc-thumb').forEach(function (thumb) {
-                thumb.addEventListener('click', function () {
-                    _handleClick(thumb.dataset.url);
+                // Re-apply selection state from _selected array
+                if (_mode === 'modal' && _selected.some(function (s) { return s.url === thumb.dataset.url; })) {
+                    thumb.classList.add('mlc-selected');
+                }
+                thumb.addEventListener('click', function (e) {
+                    _handleClick(thumb.dataset.url, e);
                 });
                 // ℹ button opens detail panel
                 var infoBtn = thumb.querySelector('.mlc-info-btn');
@@ -435,37 +488,66 @@
         }
     }
 
-    // ── Thumbnail click: select (modal) or no-op (page) ──────────
-    function _handleClick(url) {
+    // ── Thumbnail click: select/deselect in modal ─────────────────
+    function _handleClick(url, event) {
         if (_mode !== 'modal') return;
 
         var img = _allImages.find(function (i) { return i.url === url; }) ||
                   { url: url, nombre: '', pieDeFoto: '', credito: '' };
 
-        if (_multiSelect) {
+        var useMulti = _multiSelect || _mobileMultiMode ||
+                       (event && (event.metaKey || event.ctrlKey));
+
+        if (useMulti) {
             var idx = _selected.findIndex(function (s) { return s.url === url; });
             if (idx >= 0) {
                 _selected.splice(idx, 1);
             } else {
                 _selected.push(img);
             }
+        } else {
+            // Single select: replace selection with this image
+            _selected = [img];
+        }
+
+        // Sync visual state of all visible thumbs
+        if (_grid) {
             _grid.querySelectorAll('.mlc-thumb').forEach(function (el) {
                 el.classList.toggle('mlc-selected',
                     _selected.some(function (s) { return s.url === el.dataset.url; }));
             });
-            _updateConfirmBtn();
-        } else {
-            if (_onSelect) _onSelect(img);
-            _close();
         }
+
+        _updateConfirmBtn();
     }
 
+    // ── Update modal action buttons based on current selection ─────
     function _updateConfirmBtn() {
-        var btn = document.getElementById('mlc-confirm-btn');
-        if (!btn) return;
         var n = _selected.length;
-        btn.textContent = 'Agregar ' + n + ' foto' + (n !== 1 ? 's' : '');
-        btn.disabled = n === 0;
+
+        // "Seleccionar" button
+        var selectBtn = document.getElementById('mlc-select-btn');
+        if (selectBtn) {
+            selectBtn.disabled = n === 0;
+            if (_multiSelect && n > 0) {
+                selectBtn.textContent = 'Seleccionar ' + n + ' foto' + (n !== 1 ? 's' : '');
+            } else {
+                selectBtn.textContent = 'Seleccionar';
+            }
+        }
+
+        // "Insertar como Galería" button (only in multi-select mode, 2+ items)
+        var galleryBtn = document.getElementById('mlc-gallery-btn');
+        if (galleryBtn) {
+            galleryBtn.style.display = (_multiSelect && n >= 2) ? 'inline-block' : 'none';
+        }
+
+        // Mobile multi-select toggle visual state
+        var toggleBtn = document.getElementById('mlc-ms-toggle');
+        if (toggleBtn) {
+            toggleBtn.classList.toggle('mlc-ms-active', _mobileMultiMode);
+            toggleBtn.textContent = _mobileMultiMode ? 'Multi ✓' : 'Multi';
+        }
     }
 
     // ── Load images from Supabase ─────────────────────────────────
@@ -526,8 +608,21 @@
         // Filters: search bar + category pills + date pills
         _buildFilters(parent);
 
+        // Page mode: full drag-and-drop upload zone
+        if (_mode === 'page') {
+            _buildUploadZone(parent);
+        }
+
         var body = document.createElement('div');
         body.className = 'mlc-body';
+
+        // Modal mode: progress list lives above the grid
+        if (_mode === 'modal') {
+            _progressWrap = document.createElement('div');
+            _progressWrap.className = 'mlc-upload-progress-list';
+            _progressWrap.style.display = 'none';
+            body.appendChild(_progressWrap);
+        }
 
         _grid = document.createElement('div');
         _grid.className = 'mlc-grid';
@@ -543,7 +638,7 @@
         footer.appendChild(_countEl);
 
         var btnArea = document.createElement('div');
-        btnArea.style.cssText = 'display:flex;gap:8px;align-items:center';
+        btnArea.style.cssText = 'display:flex;gap:8px;align-items:center;flex-wrap:wrap';
 
         _loadMoreEl = document.createElement('button');
         _loadMoreEl.type = 'button';
@@ -562,9 +657,11 @@
     // ── Close and tear down modal ─────────────────────────────────
     function _close() {
         if (_overlay) { _overlay.remove(); _overlay = null; }
+        if (_uploadInput) { _uploadInput.remove(); _uploadInput = null; }
         document.body.style.overflow = '';
-        _grid = _countEl = _loadMoreEl = null;
+        _grid = _countEl = _loadMoreEl = _progressWrap = null;
         _selected = [];
+        _mobileMultiMode = false;
     }
 
     // ── Page mode: build grid inside given container element ──────
@@ -611,6 +708,28 @@
         // Body, footer, load-more button
         var btnArea = _buildBody(modal);
 
+        // Upload button (modal mode) + hidden file input
+        var modalFileInput = document.createElement('input');
+        modalFileInput.type = 'file';
+        modalFileInput.accept = 'image/jpeg,image/png,image/gif,image/webp';
+        modalFileInput.multiple = true;
+        modalFileInput.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none';
+        modalFileInput.addEventListener('change', function () {
+            if (modalFileInput.files.length > 0) {
+                _uploadFiles(modalFileInput.files);
+                modalFileInput.value = '';
+            }
+        });
+        document.body.appendChild(modalFileInput);
+        _uploadInput = modalFileInput;
+
+        var uploadBtn = document.createElement('button');
+        uploadBtn.type = 'button';
+        uploadBtn.className = 'mlc-btn-upload';
+        uploadBtn.textContent = 'Subir';
+        uploadBtn.addEventListener('click', function () { modalFileInput.click(); });
+        btnArea.appendChild(uploadBtn);
+
         // Cancel button
         var cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
@@ -619,20 +738,53 @@
         cancelBtn.addEventListener('click', _close);
         btnArea.appendChild(cancelBtn);
 
-        // Multi-select confirm button
+        // Mobile multi-select toggle (multi-select mode only)
         if (_multiSelect) {
-            var confirmBtn = document.createElement('button');
-            confirmBtn.id = 'mlc-confirm-btn';
-            confirmBtn.type = 'button';
-            confirmBtn.className = 'mlc-btn-confirm';
-            confirmBtn.textContent = 'Agregar 0 fotos';
-            confirmBtn.disabled = true;
-            confirmBtn.addEventListener('click', function () {
-                if (_selected.length > 0 && _onSelect) _onSelect([].concat(_selected));
+            var toggleBtn = document.createElement('button');
+            toggleBtn.id = 'mlc-ms-toggle';
+            toggleBtn.type = 'button';
+            toggleBtn.className = 'mlc-btn-ms-toggle';
+            toggleBtn.textContent = 'Multi';
+            toggleBtn.title = 'Activar selección múltiple';
+            toggleBtn.addEventListener('click', function () {
+                _mobileMultiMode = !_mobileMultiMode;
+                _updateConfirmBtn();
+            });
+            btnArea.appendChild(toggleBtn);
+        }
+
+        // "Insertar como Galería" button (multi-select, 2+ images, hidden by default)
+        if (_multiSelect) {
+            var galleryBtn = document.createElement('button');
+            galleryBtn.id = 'mlc-gallery-btn';
+            galleryBtn.type = 'button';
+            galleryBtn.className = 'mlc-btn-gallery';
+            galleryBtn.textContent = 'Insertar como Galería';
+            galleryBtn.style.display = 'none';
+            galleryBtn.addEventListener('click', function () {
+                if (_selected.length >= 2 && _onSelect) _onSelect([].concat(_selected));
                 _close();
             });
-            btnArea.appendChild(confirmBtn);
+            btnArea.appendChild(galleryBtn);
         }
+
+        // "Seleccionar" button — primary confirm
+        var selectBtn = document.createElement('button');
+        selectBtn.id = 'mlc-select-btn';
+        selectBtn.type = 'button';
+        selectBtn.className = 'mlc-btn-confirm';
+        selectBtn.textContent = 'Seleccionar';
+        selectBtn.disabled = true;
+        selectBtn.addEventListener('click', function () {
+            if (_selected.length === 0 || !_onSelect) return;
+            if (_multiSelect) {
+                _onSelect([].concat(_selected));
+            } else {
+                _onSelect(_selected[0]);
+            }
+            _close();
+        });
+        btnArea.appendChild(selectBtn);
 
         document.body.style.overflow = 'hidden';
         document.body.appendChild(_overlay);
@@ -945,6 +1097,191 @@
         } catch (err) {
             console.error('[MediaLibraryCore] delete error:', err);
         }
+    }
+
+    // ── Build drag-and-drop upload zone (page mode) ───────────────
+    function _buildUploadZone(parent) {
+        var zone = document.createElement('div');
+        zone.className = 'mlc-upload-zone';
+
+        var inner = document.createElement('div');
+        inner.className = 'mlc-upload-zone-inner';
+        inner.innerHTML =
+            '<div class="mlc-upload-icon">&#8679;</div>' +
+            '<p class="mlc-upload-label">Arrastra imágenes aquí</p>' +
+            '<p class="mlc-upload-or">o</p>';
+
+        var fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/jpeg,image/png,image/gif,image/webp';
+        fileInput.multiple = true;
+        fileInput.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none';
+        fileInput.addEventListener('change', function () {
+            if (fileInput.files.length > 0) {
+                _uploadFiles(fileInput.files);
+                fileInput.value = '';
+            }
+        });
+
+        var uploadBtn = document.createElement('button');
+        uploadBtn.type = 'button';
+        uploadBtn.className = 'mlc-btn-upload';
+        uploadBtn.textContent = 'Subir imágenes';
+        uploadBtn.addEventListener('click', function () { fileInput.click(); });
+
+        inner.appendChild(uploadBtn);
+        inner.appendChild(fileInput);
+
+        // Progress list (lives inside the zone for page mode)
+        _progressWrap = document.createElement('div');
+        _progressWrap.className = 'mlc-upload-progress-list';
+        _progressWrap.style.display = 'none';
+
+        zone.appendChild(inner);
+        zone.appendChild(_progressWrap);
+
+        // Drag-and-drop events
+        zone.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            zone.classList.add('mlc-dz-hover');
+        });
+        zone.addEventListener('dragleave', function (e) {
+            if (!zone.contains(e.relatedTarget)) {
+                zone.classList.remove('mlc-dz-hover');
+            }
+        });
+        zone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            zone.classList.remove('mlc-dz-hover');
+            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+                _uploadFiles(e.dataTransfer.files);
+            }
+        });
+
+        parent.appendChild(zone);
+    }
+
+    // ── Validate and upload multiple files with progress ──────────
+    async function _uploadFiles(files) {
+        var ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        var MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+
+        if (!_progressWrap) return;
+        _progressWrap.style.display = 'block';
+        _progressWrap.innerHTML = '';
+
+        var queue = [];
+
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+
+            var item = document.createElement('div');
+            item.className = 'mlc-upload-item';
+
+            var nameEl = document.createElement('span');
+            nameEl.className = 'mlc-upload-item-name';
+            nameEl.textContent = file.name;
+
+            var barTrack = document.createElement('div');
+            barTrack.className = 'mlc-upload-progress-bar';
+            var fillEl = document.createElement('div');
+            fillEl.className = 'mlc-upload-progress-fill';
+            barTrack.appendChild(fillEl);
+
+            var statusEl = document.createElement('span');
+            statusEl.className = 'mlc-upload-item-status';
+
+            item.appendChild(nameEl);
+            item.appendChild(barTrack);
+            item.appendChild(statusEl);
+            _progressWrap.appendChild(item);
+
+            if (ACCEPTED_TYPES.indexOf(file.type) < 0) {
+                fillEl.classList.add('mlc-up-error');
+                fillEl.style.width = '100%';
+                statusEl.textContent = 'Tipo no permitido (JPG, PNG, GIF, WebP)';
+                statusEl.className = 'mlc-upload-item-status mlc-upload-error';
+                continue;
+            }
+
+            if (file.size > MAX_SIZE) {
+                fillEl.classList.add('mlc-up-error');
+                fillEl.style.width = '100%';
+                statusEl.textContent = 'Tamaño máximo 5 MB';
+                statusEl.className = 'mlc-upload-item-status mlc-upload-error';
+                continue;
+            }
+
+            queue.push({ file: file, fillEl: fillEl, statusEl: statusEl });
+        }
+
+        for (var j = 0; j < queue.length; j++) {
+            var q = queue[j];
+            await _uploadSingleFile(q.file, q.fillEl, q.statusEl);
+        }
+
+        // Auto-hide after 4 s (errors stay visible 4 s then also hide)
+        setTimeout(function () {
+            if (_progressWrap) {
+                _progressWrap.style.display = 'none';
+                _progressWrap.innerHTML = '';
+            }
+        }, 4000);
+    }
+
+    // ── Upload one file, animate progress bar ─────────────────────
+    async function _uploadSingleFile(file, fillEl, statusEl) {
+        fillEl.style.width = '10%';
+
+        // Animate progress while waiting for upload
+        var pct = 10;
+        var timer = setInterval(function () {
+            pct = Math.min(pct + 8, 85);
+            fillEl.style.width = pct + '%';
+        }, 150);
+
+        try {
+            var result = await SupabaseStorage.subirImagen(file);
+            clearInterval(timer);
+
+            if (!result || !result.success) {
+                fillEl.classList.add('mlc-up-error');
+                fillEl.style.width = '100%';
+                statusEl.textContent = 'Error: ' + ((result && result.error) || 'Error al subir');
+                statusEl.className = 'mlc-upload-item-status mlc-upload-error';
+                return;
+            }
+
+            fillEl.style.width = '100%';
+            statusEl.textContent = '¡Subida!';
+            statusEl.className = 'mlc-upload-item-status mlc-upload-success';
+
+            _addImageToTop({
+                url:         result.data.url,
+                nombre:      result.data.nombre,
+                pieDeFoto:   '',
+                credito:     '',
+                categoria:   '',
+                fechaSubida: new Date().toISOString(),
+                tamaño:      result.data.tamaño || file.size,
+            });
+
+        } catch (err) {
+            clearInterval(timer);
+            fillEl.classList.add('mlc-up-error');
+            fillEl.style.width = '100%';
+            statusEl.textContent = 'Error de conexión';
+            statusEl.className = 'mlc-upload-item-status mlc-upload-error';
+            console.error('[MediaLibraryCore] upload error:', err);
+        }
+    }
+
+    // ── Prepend new image to top of grid ─────────────────────────
+    function _addImageToTop(imgObj) {
+        _allImages.unshift(imgObj);
+        // Only prepend to _filteredImages if it passes current filters
+        // Simplest: re-run filters (new images always appear under 'Todas' / 'Todo')
+        _applyFilters();
     }
 
     // ── MediaLibraryCore (internal) ───────────────────────────────
