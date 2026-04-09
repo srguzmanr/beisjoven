@@ -16,6 +16,7 @@ const MediaLibrary = {
     _multiSelect: false,  // multi-select mode for gallery
     _selected: [],        // selected images in multi-select mode
     _visibleCount: 50,    // how many images are currently shown (pagination)
+    _pageMode: false,     // true when rendered inline on /admin/medios (not as modal)
 
     // Etiquetas — agregar aquí cuando sea necesario
     TAGS: [
@@ -436,6 +437,7 @@ const MediaLibrary = {
 
     // ── Abrir modal ──────────────────────────────────────────────
     async open(callback) {
+        this._pageMode = false;
         this.init();
         this.onSelectCallback = callback;
         this._multiSelect = false;
@@ -452,6 +454,7 @@ const MediaLibrary = {
      * Callback receives an array of image objects.
      */
     async openMulti(callback) {
+        this._pageMode = false;
         this.init();
         this.onSelectCallback = callback;
         this._multiSelect = true;
@@ -517,7 +520,134 @@ const MediaLibrary = {
         this.close();
     },
 
+    // ── Renderizar en modo página (sin modal overlay) ────────────
+    async renderPage(containerId) {
+        // Remove any existing modal to prevent duplicate IDs
+        document.getElementById('media-library-modal')?.remove();
+
+        this._pageMode = true;
+        this.isOpen = false;
+        this.onSelectCallback = null;
+        this._multiSelect = false;
+        this._selected = [];
+        this._pendingUploads = [];
+        this._pendingIdx = 0;
+        this.activeFilter = 'todas';
+        this.activeDateFilter = 'all';
+        this._visibleCount = 50;
+
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const categoriaOptions = this.TAGS
+            .filter(t => t.key !== 'todas')
+            .map(t => `<option value="${t.key}">${t.label}</option>`)
+            .join('');
+
+        container.innerHTML = `
+            <div id="media-library-modal" class="ml-page-mode">
+                <div class="ml-container">
+                    <div class="ml-toolbar">
+                        <input type="text" id="ml-search" class="ml-search" placeholder="Buscar imágenes..." oninput="MediaLibrary.filter(this.value)">
+                        <button type="button" class="ml-upload-btn" onclick="document.getElementById('ml-upload-input').click()">⬆️ Subir</button>
+                        <input type="file" id="ml-upload-input" accept="image/jpeg,image/png,image/gif,image/webp" multiple style="display:none" onchange="MediaLibrary.upload(event)">
+                    </div>
+                    <div style="padding:0 20px 6px;background:#f8fafc;border-bottom:1px solid #e5e7eb;">
+                        <small style="color:#6b7280;font-size:11px;">JPG, PNG, GIF, WebP · Máx 5 MB · Puedes seleccionar varias a la vez · Clic en ℹ para editar metadatos</small>
+                    </div>
+                    <div class="ml-filters" id="ml-filters">
+                        ${this.TAGS.map(t => `<button type="button" class="ml-filter-btn ${t.key === 'todas' ? 'active' : ''}" data-key="${t.key}" onclick="MediaLibrary.setFilter('${t.key}')">${t.label}</button>`).join('')}
+                        <span class="ml-filter-sep">|</span>
+                        <button type="button" class="ml-filter-btn ml-date-btn active" data-date="all" onclick="MediaLibrary.setDateFilter('all')">Todo</button>
+                        <button type="button" class="ml-filter-btn ml-date-btn" data-date="month" onclick="MediaLibrary.setDateFilter('month')">Este mes</button>
+                        <button type="button" class="ml-filter-btn ml-date-btn" data-date="week" onclick="MediaLibrary.setDateFilter('week')">Esta semana</button>
+                        <button type="button" class="ml-filter-btn ml-date-btn" data-date="today" onclick="MediaLibrary.setDateFilter('today')">Hoy</button>
+                    </div>
+                    <div class="ml-body">
+                        <div id="ml-loading" class="ml-loading"><div class="ml-spinner"></div><p>Cargando...</p></div>
+                        <div id="ml-grid" class="ml-grid"></div>
+                        <div id="ml-empty" class="ml-empty" style="display:none"><p>📁 No hay imágenes</p></div>
+                        <div id="ml-load-more" style="display:none;text-align:center;padding:12px 0;">
+                            <button type="button" onclick="MediaLibrary.loadMore()" style="padding:10px 28px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:500;color:#374151;font-family:inherit;">Cargar más ▼</button>
+                        </div>
+                    </div>
+                    <!-- Detail panel (bottom sheet) -->
+                    <div id="ml-detail-panel" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.55);z-index:10;border-radius:12px;" onclick="if(event.target===this)MediaLibrary.closeDetail()">
+                        <div id="ml-detail-sheet" style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:12px 12px 0 0;max-height:85%;overflow-y:auto;padding:20px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                                <h4 style="margin:0;color:#1e3a5f;font-size:1rem;">Detalle de imagen</h4>
+                                <button type="button" onclick="MediaLibrary.closeDetail()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#6b7280;line-height:1;">&times;</button>
+                            </div>
+                            <img id="ml-detail-img" src="" alt="" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;background:#f3f4f6;margin-bottom:14px;">
+                            <p id="ml-detail-nombre" style="font-size:0.78rem;color:#9ca3af;margin:0 0 4px;word-break:break-all;"></p>
+                            <p id="ml-detail-fecha" style="font-size:0.78rem;color:#9ca3af;margin:0 0 14px;"></p>
+                            <div style="margin-bottom:10px;">
+                                <label style="font-size:0.82rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Pie de foto</label>
+                                <input type="text" id="ml-detail-pie" placeholder="Descripción de la imagen" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:7px;font-size:0.9rem;box-sizing:border-box;font-family:inherit;">
+                            </div>
+                            <div style="margin-bottom:16px;">
+                                <label style="font-size:0.82rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Crédito fotográfico</label>
+                                <input type="text" id="ml-detail-credito" placeholder="Ej: Foto: Getty Images" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:7px;font-size:0.9rem;box-sizing:border-box;font-family:inherit;">
+                            </div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button type="button" id="ml-detail-save" onclick="MediaLibrary.saveDetail()" style="flex:2;padding:11px;background:#c41e3a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;font-size:0.9rem;">Guardar</button>
+                                <button type="button" id="ml-detail-copy" onclick="MediaLibrary.copyDetailUrl()" style="flex:1;padding:11px;background:#1e3a5f;color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:0.9rem;">🔗 Copiar URL</button>
+                                <button type="button" id="ml-detail-delete" onclick="MediaLibrary.deleteDetail()" style="flex:1;padding:11px;background:#f3f4f6;color:#ef4444;border:1px solid #fca5a5;border-radius:8px;cursor:pointer;font-family:inherit;font-size:0.9rem;">🗑️ Eliminar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Panel de metadatos al subir -->
+                    <div id="ml-meta-panel" style="display:none;padding:16px 20px;background:#f8fafc;border-top:1px solid #e5e7eb;">
+                        <p style="color:#1e293b;font-size:14px;font-weight:600;margin:0 0 4px;">✅ <span id="ml-meta-title">Imagen subida</span></p>
+                        <p style="color:#9ca3af;font-size:11px;margin:0 0 12px;" id="ml-meta-queue-info"></p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                            <div>
+                                <label style="color:#6b7280;font-size:12px;display:block;margin-bottom:4px;">Categoría</label>
+                                <select id="ml-meta-categoria" style="width:100%;padding:8px;border-radius:6px;background:#ffffff;color:#1e293b;border:1px solid #d1d5db;font-size:13px;">
+                                    <option value="">Sin categoría</option>
+                                    ${categoriaOptions}
+                                </select>
+                            </div>
+                            <div>
+                                <label style="color:#6b7280;font-size:12px;display:block;margin-bottom:4px;">Crédito fotográfico</label>
+                                <input type="text" id="ml-meta-credito" placeholder="Ej: Foto: Getty Images" style="width:100%;padding:8px;border-radius:6px;background:#ffffff;color:#1e293b;border:1px solid #d1d5db;font-size:13px;box-sizing:border-box;">
+                            </div>
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <label style="color:#6b7280;font-size:12px;display:block;margin-bottom:4px;">Pie de foto</label>
+                            <input type="text" id="ml-meta-pie" placeholder="Descripción de la imagen" style="width:100%;padding:8px;border-radius:6px;background:#ffffff;color:#1e293b;border:1px solid #d1d5db;font-size:13px;box-sizing:border-box;">
+                        </div>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;">
+                            <button type="button" onclick="MediaLibrary.skipMetadata()" style="padding:8px 16px;background:#e5e7eb;color:#374151;border:none;border-radius:6px;cursor:pointer;font-size:13px;">Omitir</button>
+                            <button type="button" id="ml-meta-save-btn" onclick="MediaLibrary.confirmMetadata()" style="padding:8px 16px;background:#c41e3a;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">Guardar y continuar</button>
+                        </div>
+                    </div>
+                    <div class="ml-footer">
+                        <span id="ml-count">0 imágenes</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        if (!document.getElementById('ml-page-styles')) {
+            const style = document.createElement('style');
+            style.id = 'ml-page-styles';
+            style.textContent = `
+                .ml-page-mode { display: flex !important; flex-direction: column; height: calc(100vh - 140px); min-height: 400px; }
+                .ml-page-mode .ml-container { max-width: 100%; max-height: 100%; height: 100%; box-shadow: none; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this._detailUrl) this.closeDetail();
+        });
+
+        await this.loadImages();
+    },
+
     close() {
+        if (this._pageMode) return; // no-op in page mode — navigation handles teardown
         this.isOpen = false;
         this._multiSelect = false;
         this._selected = [];
@@ -716,6 +846,7 @@ const MediaLibrary = {
     // ── Seleccionar imagen (single-select mode) ────────────────
     select(url, nombre) {
         if (this._multiSelect) return; // handled by _toggleMultiItem
+        if (this._pageMode) { this.openDetail(url); return; } // page mode: open detail instead
         const img = this.allImages.find(i => i.url === url) || { url, nombre, pieDeFoto: '', credito: '' };
 
         if (this.onSelectCallback) {
