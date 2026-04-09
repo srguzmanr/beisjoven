@@ -9,7 +9,7 @@ import SectionTitle from '@/components/SectionTitle.astro';
 import {
   getAllArticuloSlugs,
   getArticuloBySlug,
-  getArticulosByCategoria,
+  getRelatedArticulos,
   getMasLeidos,
   incrementVistas,
   getTagsByArticuloId,
@@ -28,13 +28,11 @@ if (!articulo) {
   return Astro.redirect('/404');
 }
 
-const [relacionados, masLeidos, tags] = await Promise.all([
-  articulo.categoria ? getArticulosByCategoria(articulo.categoria.slug, 7) : Promise.resolve([]),
+const [related, masLeidos, tags] = await Promise.all([
+  getRelatedArticulos(articulo.id, articulo.categoria_id),
   getMasLeidos(5),
   getTagsByArticuloId(articulo.id),
 ]);
-
-const related = relacionados.filter((a) => a.id !== articulo.id).slice(0, 4);
 const articleUrl = `https://beisjoven.com/articulo/${articulo.slug}`;
 const renderedBody = renderContent(articulo.contenido);
 const formattedDate = formatDate(articulo.fecha);
