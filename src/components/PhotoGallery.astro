@@ -1,0 +1,49 @@
+---
+/**
+ * PhotoGallery component — renders a grid of images with a fullscreen lightbox.
+ *
+ * Usage in Astro templates:
+ *   <PhotoGallery images={[
+ *     { src: "https://...", alt: "...", caption: "Pie de foto", credit: "Foto: Beisjoven" },
+ *   ]} />
+ *
+ * In articles written with the Tiptap editor the gallery is inserted as a
+ * `gallery` node and rendered directly as HTML by the editor's renderHTML()
+ * method, so this component is for direct Astro template use.
+ */
+
+interface GalleryImage {
+  src: string;
+  alt?: string;
+  caption?: string;
+  credit?: string;
+}
+
+interface Props {
+  images: GalleryImage[];
+  /** Accessible label for the gallery region */
+  label?: string;
+}
+
+const { images, label = 'Galería de fotos' } = Astro.props;
+---
+
+{images && images.length > 0 && (
+  <div class="gallery" data-gallery="true" role="region" aria-label={label}>
+    {images.map((img) => (
+      <figure>
+        <img
+          src={img.src}
+          alt={img.alt || img.caption || ''}
+          loading="lazy"
+        />
+        {(img.caption || img.credit) && (
+          <figcaption>
+            {img.caption && <>{img.caption}{img.credit ? ' ' : ''}</>}
+            {img.credit && <span>{img.credit}</span>}
+          </figcaption>
+        )}
+      </figure>
+    ))}
+  </div>
+)}

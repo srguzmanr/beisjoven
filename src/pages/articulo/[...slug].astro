@@ -242,16 +242,22 @@ const articleJsonLd = {
           if (e.key === 'ArrowRight') navigate(1);
         });
 
-        // Touch swipe
-        var touchStartX = 0, touchEndX = 0;
+        // Touch swipe (horizontal: navigate; vertical down: close)
+        var touchStartX = 0, touchEndX = 0, touchStartY = 0, touchEndY = 0;
         overlay.addEventListener('touchstart', function(e) {
           touchStartX = e.changedTouches[0].screenX;
+          touchStartY = e.changedTouches[0].screenY;
         }, { passive: true });
         overlay.addEventListener('touchend', function(e) {
           touchEndX = e.changedTouches[0].screenX;
-          var diff = touchStartX - touchEndX;
-          if (Math.abs(diff) > 50) {
-            navigate(diff > 0 ? 1 : -1);
+          touchEndY = e.changedTouches[0].screenY;
+          var diffX = touchStartX - touchEndX;
+          var diffY = touchStartY - touchEndY;
+          if (Math.abs(diffY) > Math.abs(diffX)) {
+            // Vertical swipe dominates — swipe down closes
+            if (diffY < -80) close();
+          } else if (Math.abs(diffX) > 50) {
+            navigate(diffX > 0 ? 1 : -1);
           }
         }, { passive: true });
       }
