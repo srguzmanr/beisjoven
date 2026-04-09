@@ -951,36 +951,44 @@ const MarkdownPaste = Extension.create({
             const clipboardData = event.clipboardData;
             if (!clipboardData) return false;
 
-            // If the clipboard already has rich text/html (e.g. Cmd+C from rendered HTML),
-            // let Tiptap handle it natively — this preserves the existing workflow.
-            const richHtml = clipboardData.getData('text/html');
-            if (richHtml && richHtml.trim().length > 0) return false;
-
             const text = clipboardData.getData('text/plain');
-            if (!text || !text.trim()) return false;
+            const richHtml = clipboardData.getData('text/html');
 
-            let htmlToInsert = null;
-
-            if (looksLikeHtml(text)) {
-              // Case 1: raw HTML source pasted as plain text
-              htmlToInsert = stripInlineStyles(text.trim());
-            } else if (MARKDOWN_PATTERN.test(text)) {
-              // Case 2: raw markdown
-              htmlToInsert = marked.parse(text, { breaks: true });
+            // Priority 1: text/plain looks like raw HTML source code.
+            // Check this BEFORE the text/html early-exit because virtually
+            // every copy from VS Code / Claude / text editors puts a styled
+            // text/html alongside the raw text/plain. We want the raw HTML
+            // in text/plain, not the styled wrapper in text/html.
+            if (text && looksLikeHtml(text.trim())) {
+              const htmlToInsert = stripInlineStyles(text.trim());
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = htmlToInsert;
+              const parser = ProseMirrorDOMParser.fromSchema(view.state.schema);
+              const slice = parser.parseSlice(tempDiv, { preserveWhitespace: false });
+              view.dispatch(view.state.tr.replaceSelection(slice));
+              event.preventDefault();
+              return true;
             }
 
-            if (!htmlToInsert) return false;
+            // Priority 2: text/plain looks like raw markdown.
+            // Again, check before the text/html bail-out for the same reason.
+            if (text && MARKDOWN_PATTERN.test(text)) {
+              const htmlToInsert = marked.parse(text, { breaks: true });
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = htmlToInsert;
+              const parser = ProseMirrorDOMParser.fromSchema(view.state.schema);
+              const slice = parser.parseSlice(tempDiv, { preserveWhitespace: false });
+              view.dispatch(view.state.tr.replaceSelection(slice));
+              event.preventDefault();
+              return true;
+            }
 
-            // Parse the HTML into ProseMirror nodes
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = htmlToInsert;
+            // Priority 3: clipboard has rich HTML (e.g. Cmd+C from a rendered
+            // browser page) — let Tiptap handle it natively.
+            if (richHtml && richHtml.trim().length > 0) return false;
 
-            const parser = ProseMirrorDOMParser.fromSchema(view.state.schema);
-            const slice = parser.parseSlice(tempDiv, { preserveWhitespace: false });
-
-            view.dispatch(view.state.tr.replaceSelection(slice));
-            event.preventDefault();
-            return true;
+            // Priority 4: plain text with no special markers — default behavior.
+            return false;
           },
         },
       }),
