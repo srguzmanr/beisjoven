@@ -912,31 +912,67 @@ function injectStyles() {
 
 /* ================================================================
    CUSTOM EXTENSION — Markdown + HTML Paste
-   Intercepts paste events and handles:
-   1. Raw HTML pasted as text/plain (starts with < and has tags)
-      → strip inline styles, parse via DOMParser, insert as nodes
-   2. Markdown pasted as text/plain (# headings, **bold**, etc.)
-      → convert via `marked`, then insert as nodes
-   3. Everything else → falls through to Tiptap's default handler
-      (this preserves the Cmd+C from rendered HTML workflow)
+   Intercepts ALL paste events so we own the full pipeline:
+
+   1. text/plain looks like raw HTML source  → DOMParser → ProseMirror
+   2. text/plain looks like markdown         → marked → ProseMirror
+   3. text/html present (Cmd+C from browser) → DOMParser → ProseMirror
+      We take over this path explicitly so that <h2> always becomes a
+      heading node — Tiptap's native handler can lose heading levels when
+      Chrome embeds computed font-weight styles on <h2> tags, causing them
+      to be treated as bold paragraphs instead.
+   4. plain text only → default behaviour (return false)
    ================================================================ */
 
 const MARKDOWN_PATTERN = /(^#{1,6}\s|^\*\s|^-\s|^\d+\.\s|\*\*|__|\[.*?\]\(.*?\)|^>\s)/m;
 
-// Detect raw HTML: must start with < and contain at least one closing tag or self-closing tag
+// Detect raw HTML source in text/plain: must start with < and have closing tag
 function looksLikeHtml(text) {
   const t = text.trim();
   if (!t.startsWith('<')) return false;
   return /<\/[a-z]/i.test(t) || /<[a-z][^>]*\/>/i.test(t);
 }
 
-// Strip inline styles from an HTML string, keeping semantic tags intact
-function stripInlineStyles(html) {
+// For raw HTML source (Priority 1): strip both inline styles AND class attrs
+// (removes Google Docs / Apple Notes cruft while preserving semantic tags)
+function sanitizeRawHtml(html) {
   const div = document.createElement('div');
   div.innerHTML = html;
   div.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
   div.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'));
   return div.innerHTML;
+}
+
+// For text/html clipboard (Priority 3): strip ONLY inline styles.
+// Keep class names — our embed nodes (twitter-embed, gallery, etc.) rely on
+// class-based parseHTML rules to survive copy-paste within the editor.
+function stripInlineStylesOnly(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  div.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
+  return div.innerHTML;
+}
+
+// Chrome wraps clipboard HTML in <!--StartFragment-->…<!--EndFragment-->.
+// Extract just that fragment; fall back to full HTML if markers are absent.
+function extractFragment(html) {
+  const S = '<!--StartFragment-->';
+  const E = '<!--EndFragment-->';
+  const s = html.indexOf(S);
+  const e = html.indexOf(E);
+  if (s !== -1 && e !== -1) return html.slice(s + S.length, e).trim();
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) return bodyMatch[1].trim();
+  return html;
+}
+
+// Shared: parse an HTML string into a ProseMirror Slice and dispatch it
+function insertHtml(view, html) {
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  const parser = ProseMirrorDOMParser.fromSchema(view.state.schema);
+  const slice = parser.parseSlice(tempDiv, { preserveWhitespace: false });
+  view.dispatch(view.state.tr.replaceSelection(slice));
 }
 
 const MarkdownPaste = Extension.create({
@@ -955,39 +991,37 @@ const MarkdownPaste = Extension.create({
             const richHtml = clipboardData.getData('text/html');
 
             // Priority 1: text/plain looks like raw HTML source code.
-            // Check this BEFORE the text/html early-exit because virtually
-            // every copy from VS Code / Claude / text editors puts a styled
-            // text/html alongside the raw text/plain. We want the raw HTML
-            // in text/plain, not the styled wrapper in text/html.
+            // Must check BEFORE the text/html branch — copying from VS Code /
+            // Claude output always puts both text/html (styled code view) AND
+            // text/plain (the raw source). We want text/plain here.
             if (text && looksLikeHtml(text.trim())) {
-              const htmlToInsert = stripInlineStyles(text.trim());
-              const tempDiv = document.createElement('div');
-              tempDiv.innerHTML = htmlToInsert;
-              const parser = ProseMirrorDOMParser.fromSchema(view.state.schema);
-              const slice = parser.parseSlice(tempDiv, { preserveWhitespace: false });
-              view.dispatch(view.state.tr.replaceSelection(slice));
               event.preventDefault();
+              insertHtml(view, sanitizeRawHtml(text.trim()));
               return true;
             }
 
             // Priority 2: text/plain looks like raw markdown.
-            // Again, check before the text/html bail-out for the same reason.
             if (text && MARKDOWN_PATTERN.test(text)) {
-              const htmlToInsert = marked.parse(text, { breaks: true });
-              const tempDiv = document.createElement('div');
-              tempDiv.innerHTML = htmlToInsert;
-              const parser = ProseMirrorDOMParser.fromSchema(view.state.schema);
-              const slice = parser.parseSlice(tempDiv, { preserveWhitespace: false });
-              view.dispatch(view.state.tr.replaceSelection(slice));
               event.preventDefault();
+              insertHtml(view, marked.parse(text, { breaks: true }));
               return true;
             }
 
-            // Priority 3: clipboard has rich HTML (e.g. Cmd+C from a rendered
-            // browser page) — let Tiptap handle it natively.
-            if (richHtml && richHtml.trim().length > 0) return false;
+            // Priority 3: rich text/html (Cmd+C from a rendered browser page,
+            // or copy-paste within the editor itself).
+            // We own this path rather than falling through to Tiptap's native
+            // handler, because Tiptap can misread <h2 style="font-weight:700">
+            // as a bold paragraph when Chrome embeds computed styles.
+            // ProseMirrorDOMParser maps by tag name from our registered schema,
+            // so <h2> always becomes a heading(2) node regardless of styles.
+            if (richHtml && richHtml.trim().length > 0) {
+              event.preventDefault();
+              const fragment = extractFragment(richHtml);
+              insertHtml(view, stripInlineStylesOnly(fragment));
+              return true;
+            }
 
-            // Priority 4: plain text with no special markers — default behavior.
+            // Priority 4: plain text only — default behaviour.
             return false;
           },
         },
