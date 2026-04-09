@@ -422,6 +422,25 @@ export async function getTagsByArticuloId(articuloId: number) {
 }
 
 /**
+ * Replace all tag associations for an article.
+ * Deletes existing rows then inserts the new set.
+ * Used by admin panel on article save/publish.
+ */
+export async function syncArticuloTags(articuloId: number, tagIds: string[]): Promise<void> {
+  const { error: delError } = await supabaseServer
+    .from('articulo_tags')
+    .delete()
+    .eq('articulo_id', articuloId);
+  if (delError) throw new Error(`[syncArticuloTags] delete failed: ${delError.message}`);
+  if (tagIds.length === 0) return;
+  const rows = tagIds.map((tag_id) => ({ articulo_id: articuloId, tag_id }));
+  const { error: insError } = await supabaseServer
+    .from('articulo_tags')
+    .insert(rows);
+  if (insError) throw new Error(`[syncArticuloTags] insert failed: ${insError.message}`);
+}
+
+/**
  * Three-tier related articles:
  * 1. Articles sharing the most tags (by overlap count, DESC)
  * 2. Same-category articles (by fecha DESC)
