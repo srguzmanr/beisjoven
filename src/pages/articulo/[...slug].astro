@@ -12,6 +12,7 @@ import {
   getArticulosByCategoria,
   getMasLeidos,
   incrementVistas,
+  getTagsByArticuloId,
 } from '@/lib/supabase';
 import { renderContent, formatDate, readTime } from '@/lib/content';
 
@@ -27,9 +28,10 @@ if (!articulo) {
   return Astro.redirect('/404');
 }
 
-const [relacionados, masLeidos] = await Promise.all([
+const [relacionados, masLeidos, tags] = await Promise.all([
   articulo.categoria ? getArticulosByCategoria(articulo.categoria.slug, 7) : Promise.resolve([]),
   getMasLeidos(5),
+  getTagsByArticuloId(articulo.id),
 ]);
 
 const related = relacionados.filter((a) => a.id !== articulo.id).slice(0, 4);
@@ -139,6 +141,20 @@ const articleJsonLd = {
 
         <!-- Content -->
         <div class="prose max-w-none" set:html={renderedBody} />
+
+        <!-- Tags -->
+        {tags.length > 0 && (
+          <div class="flex flex-wrap gap-2 mt-6">
+            {tags.map((tag) => (
+              <a
+                href={`/tag/${tag.slug}`}
+                class="inline-block text-xs font-semibold px-3 py-1 rounded-full border border-navy text-navy hover:bg-navy hover:text-white transition-colors"
+              >
+                {tag.nombre}
+              </a>
+            ))}
+          </div>
+        )}
 
         <!-- Share -->
         <ShareButtons url={articleUrl} title={articulo.titulo} />

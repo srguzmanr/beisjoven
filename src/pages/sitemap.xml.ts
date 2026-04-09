@@ -5,6 +5,8 @@ import {
   getAutores,
   getAllEventoSlugs,
   getAllArticulosWbc2026,
+  getTags,
+  getAllArticulosByTag,
 } from '@/lib/supabase';
 
 const SITE = 'https://beisjoven.com';
@@ -20,12 +22,13 @@ function escapeXml(str: string): string {
 }
 
 export const GET: APIRoute = async () => {
-  const [articles, categorias, autores, eventoSlugs, wbcArticles] = await Promise.all([
+  const [articles, categorias, autores, eventoSlugs, wbcArticles, tags] = await Promise.all([
     getAllArticulos(),
     getCategorias(),
     getAutores(),
     getAllEventoSlugs(),
     getAllArticulosWbc2026(),
+    getTags(),
   ]);
 
   const entries: string[] = [];
@@ -91,7 +94,17 @@ export const GET: APIRoute = async () => {
     }
   }
 
-  // 6. Article pages — only published articles fetched from Supabase (no stale/404/redirect URLs)
+  // 6. Tag pages (with pagination)
+  for (const tag of tags) {
+    const tagArticles = await getAllArticulosByTag(tag.slug);
+    const totalTagPages = Math.max(1, Math.ceil(tagArticles.length / PAGE_SIZE));
+    addUrl(`${SITE}/tag/${tag.slug}`, { priority: '0.7', changefreq: 'weekly' });
+    for (let p = 2; p <= totalTagPages; p++) {
+      addUrl(`${SITE}/tag/${tag.slug}/${p}`, { priority: '0.5', changefreq: 'weekly' });
+    }
+  }
+
+  // 7. Article pages — only published articles fetched from Supabase (no stale/404/redirect URLs)
   for (const article of articles) {
     const rawDate = article.updated_at ?? article.fecha ?? article.created_at;
     const lastmod = rawDate ? rawDate.split('T')[0] : undefined;

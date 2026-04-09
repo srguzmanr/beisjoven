@@ -1000,22 +1000,27 @@ const AdminPages = {
             </div>
         `;
         
-        // Cargar categorías y autores
-        const [categorias, autores] = await Promise.all([
+        // Cargar categorías, autores y tags
+        const [categorias, autores, allTags] = await Promise.all([
             SupabaseAPI.getCategorias(),
-            SupabaseAPI.getAutores()
+            SupabaseAPI.getAutores(),
+            SupabaseAPI.getTags()
         ]);
         
-        // Si es edición, cargar el artículo
+        // Si es edición, cargar el artículo y sus tags
         let article = null;
+        let articleTags = []; // array of tag objects already assigned to this article
         if (isEdit) {
             const { data, error } = await supabaseClient
                 .from('articulos')
                 .select('*')
                 .eq('id', params.id)
                 .single();
-            
-            if (data) article = data;
+
+            if (data) {
+                article = data;
+                articleTags = await SupabaseAPI.getTagsByArticuloId(parseInt(params.id));
+            }
         }
         
         // Check for saved draft (only for new articles)
@@ -1089,6 +1094,15 @@ const AdminPages = {
                                                 `).join('')}
                                             </select>
                                         </div>
+                                    </div>
+                                    <div class="form-group" style="margin-top:14px;">
+                                        <label>Etiquetas (Tags)</label>
+                                        <div id="tag-pill-container" class="tag-pill-container"></div>
+                                        <div style="position:relative;margin-top:6px;">
+                                            <input type="text" id="tag-search-input" placeholder="Escribir para buscar o crear tag…" autocomplete="off">
+                                            <div id="tag-suggestions" class="tag-suggestions" style="display:none;"></div>
+                                        </div>
+                                        <input type="hidden" id="selected-tag-ids" value="">
                                     </div>
                                 </div>
 
@@ -1225,6 +1239,15 @@ const AdminPages = {
                 .admin-sticky-bar .btn-draft { flex: 1; padding: 14px 8px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; touch-action: manipulation; }
                 .admin-sticky-bar .btn-unpublish { flex: 1; padding: 14px 8px; background: transparent; color: #6b7280; border: 2px solid #d1d5db; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; touch-action: manipulation; }
                 .admin-sticky-bar .autosave-txt { font-size: 0.72rem; color: #9ca3af; flex-shrink: 0; }
+                /* Tag pill input */
+                .tag-pill-container { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; }
+                .tag-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: #1B2A4A; color: white; border-radius: 9999px; font-size: 0.8rem; font-weight: 500; }
+                .tag-pill button { background: none; border: none; color: white; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 0 0 2px; opacity: 0.75; }
+                .tag-pill button:hover { opacity: 1; }
+                .tag-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; max-height: 200px; overflow-y: auto; margin-top: 2px; }
+                .tag-suggestion-item { padding: 10px 14px; cursor: pointer; font-size: 0.9rem; color: #111827; }
+                .tag-suggestion-item:hover, .tag-suggestion-item.active { background: #f3f4f6; }
+                .tag-suggestion-item.create { color: #c4122e; font-weight: 600; }
             `;
             document.head.appendChild(style);
         }
@@ -1312,6 +1335,9 @@ const AdminPages = {
         Autosave.start(isEdit ? parseInt(params.id) : null);
         Autosave.connectEditor();
 
+        // ==================== TAG INPUT LOGIC ====================
+        AdminPages._initTagInput(allTags, articleTags);
+
         // Manejar submit del formulario (botón primario type="submit")
         document.getElementById('article-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -1334,6 +1360,129 @@ const AdminPages = {
     // ==================== FUNCIONES AUXILIARES ====================
 
     _slugManual: false,
+
+    // ==================== TAG INPUT ====================
+
+    _initTagInput: function(allTags, initialTags) {
+        var self = this;
+        // selectedTags: array of {id, nombre, slug}
+        var selectedTags = initialTags ? initialTags.slice() : [];
+        var pillContainer = document.getElementById('tag-pill-container');
+        var searchInput = document.getElementById('tag-search-input');
+        var suggestionsBox = document.getElementById('tag-suggestions');
+        var hiddenInput = document.getElementById('selected-tag-ids');
+        if (!pillContainer || !searchInput || !suggestionsBox || !hiddenInput) return;
+
+        function makeSlug(str) {
+            return str.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[ñ]/g, 'n')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '');
+        }
+
+        function syncHidden() {
+            hiddenInput.value = selectedTags.map(t => t.id).join(',');
+        }
+
+        function renderPills() {
+            pillContainer.innerHTML = '';
+            selectedTags.forEach(function(tag) {
+                var pill = document.createElement('span');
+                pill.className = 'tag-pill';
+                pill.innerHTML = escapeHTML(tag.nombre) + '<button type="button" aria-label="Quitar tag">&times;</button>';
+                pill.querySelector('button').addEventListener('click', function() {
+                    selectedTags = selectedTags.filter(t => t.id !== tag.id);
+                    renderPills();
+                    syncHidden();
+                });
+                pillContainer.appendChild(pill);
+            });
+        }
+
+        function showSuggestions(query) {
+            var q = query.trim().toLowerCase();
+            suggestionsBox.innerHTML = '';
+            var filtered = allTags.filter(function(t) {
+                return t.nombre.toLowerCase().includes(q) && !selectedTags.find(s => s.id === t.id);
+            }).slice(0, 8);
+
+            filtered.forEach(function(tag) {
+                var item = document.createElement('div');
+                item.className = 'tag-suggestion-item';
+                item.textContent = tag.nombre;
+                item.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    addTag(tag);
+                });
+                suggestionsBox.appendChild(item);
+            });
+
+            // "Crear tag" option if query doesn't exactly match an existing tag
+            var exactMatch = allTags.find(t => t.nombre.toLowerCase() === q || t.slug === makeSlug(q));
+            if (q && !exactMatch) {
+                var createItem = document.createElement('div');
+                createItem.className = 'tag-suggestion-item create';
+                createItem.textContent = 'Crear tag "' + query.trim() + '"';
+                createItem.addEventListener('mousedown', async function(e) {
+                    e.preventDefault();
+                    var newTag = await SupabaseAPI.createTag(query.trim(), makeSlug(query.trim()));
+                    if (newTag) {
+                        allTags.push(newTag);
+                        addTag(newTag);
+                    }
+                });
+                suggestionsBox.appendChild(createItem);
+            }
+
+            suggestionsBox.style.display = suggestionsBox.children.length > 0 ? '' : 'none';
+        }
+
+        function addTag(tag) {
+            if (selectedTags.find(t => t.id === tag.id)) return;
+            selectedTags.push(tag);
+            renderPills();
+            syncHidden();
+            searchInput.value = '';
+            suggestionsBox.style.display = 'none';
+        }
+
+        searchInput.addEventListener('input', function() {
+            showSuggestions(this.value);
+        });
+
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Add first suggestion or create if none
+                var first = suggestionsBox.querySelector('.tag-suggestion-item');
+                if (first) first.dispatchEvent(new MouseEvent('mousedown'));
+            }
+            if (e.key === 'Escape') {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        searchInput.addEventListener('focus', function() {
+            if (this.value.trim()) showSuggestions(this.value);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!suggestionsBox.contains(e.target) && e.target !== searchInput) {
+                suggestionsBox.style.display = 'none';
+            }
+        });
+
+        // Expose getter for saveArticle
+        AdminPages._getSelectedTagIds = function() {
+            return selectedTags.map(t => t.id);
+        };
+
+        renderPills();
+        syncHidden();
+    },
+
+    _getSelectedTagIds: function() { return []; },
 
     autoSlug: function() {
         // Only auto-fill if the user hasn't manually edited the slug field
@@ -1441,6 +1590,7 @@ const AdminPages = {
             // Editar existente
             result = await SupabaseAdmin.actualizarArticulo(editId, articulo);
             if (result.success) {
+                await SupabaseAPI.syncArticuloTags(editId, AdminPages._getSelectedTagIds());
                 Autosave.stop();
                 Autosave.clear();
                 showToast(toastMsg[action] || '✅ Artículo actualizado correctamente', 'success');
@@ -1453,6 +1603,7 @@ const AdminPages = {
             var draftId = Autosave.getDraftId();
             result = await SupabaseAdmin.actualizarArticulo(draftId, articulo);
             if (result.success) {
+                await SupabaseAPI.syncArticuloTags(draftId, AdminPages._getSelectedTagIds());
                 Autosave.stop();
                 Autosave.clear();
                 showToast(toastMsg[action] || '✅ Artículo guardado correctamente', 'success');
@@ -1464,6 +1615,7 @@ const AdminPages = {
             // No autosave draft exists — create new
             result = await SupabaseAdmin.crearArticulo(articulo);
             if (result.success) {
+                await SupabaseAPI.syncArticuloTags(result.data.id, AdminPages._getSelectedTagIds());
                 Autosave.stop();
                 Autosave.clear();
                 showToast(toastMsg[action] || '✅ Artículo guardado correctamente', 'success');

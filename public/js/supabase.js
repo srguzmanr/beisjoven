@@ -68,8 +68,53 @@ const SupabaseAPI = {
         return data;
     },
     
+    // ==================== TAGS ====================
+
+    async getTags() {
+        const { data, error } = await supabaseClient
+            .from('tags')
+            .select('*')
+            .order('nombre');
+        if (error) { console.error('Error cargando tags:', error); return []; }
+        return data || [];
+    },
+
+    async getTagsByArticuloId(articuloId) {
+        const { data, error } = await supabaseClient
+            .from('articulo_tags')
+            .select('tag:tags(*)')
+            .eq('articulo_id', articuloId);
+        if (error) { console.error('Error cargando tags del artículo:', error); return []; }
+        return (data || []).map(row => row.tag).filter(Boolean);
+    },
+
+    async syncArticuloTags(articuloId, tagIds) {
+        // Delete all existing tag associations for this article, then re-insert
+        await supabaseClient
+            .from('articulo_tags')
+            .delete()
+            .eq('articulo_id', articuloId);
+        if (!tagIds || tagIds.length === 0) return { success: true };
+        const rows = tagIds.map(tag_id => ({ articulo_id: articuloId, tag_id }));
+        const { error } = await supabaseClient
+            .from('articulo_tags')
+            .insert(rows);
+        if (error) { console.error('Error sincronizando tags:', error); return { success: false, error: error.message }; }
+        return { success: true };
+    },
+
+    async createTag(nombre, slug) {
+        const { data, error } = await supabaseClient
+            .from('tags')
+            .insert([{ nombre, slug }])
+            .select()
+            .single();
+        if (error) { console.error('Error creando tag:', error); return null; }
+        return data;
+    },
+
     // ==================== ARTÍCULOS ====================
-    
+
     async getArticulos(limite = 10) {
         const { data, error } = await supabaseClient
             .from('articulos')
