@@ -62,9 +62,19 @@ export const GET: APIRoute = async () => {
     }
   }
 
-  // 3. Author pages
+  // 3. Author pages (with pagination)
+  const countByAutorId = new Map<number, number>();
+  for (const a of articles) {
+    countByAutorId.set(a.autor_id, (countByAutorId.get(a.autor_id) ?? 0) + 1);
+  }
+
   for (const autor of autores) {
+    const total = countByAutorId.get(autor.id) ?? 0;
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
     addUrl(`${SITE}/autor/${autor.slug}`, { priority: '0.6', changefreq: 'weekly' });
+    for (let p = 2; p <= totalPages; p++) {
+      addUrl(`${SITE}/autor/${autor.slug}/${p}`, { priority: '0.5', changefreq: 'weekly' });
+    }
   }
 
   // 4. Event pages (all, not just active)
