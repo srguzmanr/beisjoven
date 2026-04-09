@@ -421,6 +421,109 @@ export async function getTagsByArticuloId(articuloId: number) {
   return ((data || []).map((row: any) => row.tag).filter(Boolean)) as Tag[];
 }
 
+/**
+ * Three-tier related articles:
+ * 1. Articles sharing the most tags (by overlap count, DESC)
+ * 2. Same-category articles (by fecha DESC)
+ * 3. Most-recent articles (final fallback)
+ * Never includes the current article. Always returns up to `limite` articles.
+ */
+export async function getRelatedArticulos(
+  articuloId: number,
+  categoriaId: number,
+  limite = 4,
+): Promise<Articulo[]> {
+  const collected: Articulo[] = [];
+  const seenIds = new Set<number>([articuloId]);
+
+  // Tier 1: tag overlap
+  const { data: tagRows } = await supabaseServer
+    .from('articulo_tags')
+    .select('tag_id')
+    .eq('articulo_id', articuloId);
+
+  const tagIds = (tagRows || []).map((r: any) => r.tag_id as string);
+
+  if (tagIds.length > 0) {
+    const { data: sharedRows } = await supabaseServer
+      .from('articulo_tags')
+      .select('articulo_id')
+      .in('tag_id', tagIds)
+      .neq('articulo_id', articuloId);
+
+    // Count shared tags per candidate article
+    const countMap = new Map<number, number>();
+    for (const row of sharedRows || []) {
+      const id = row.articulo_id as number;
+      countMap.set(id, (countMap.get(id) || 0) + 1);
+    }
+
+    const sortedIds = [...countMap.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([id]) => id)
+      .slice(0, limite);
+
+    if (sortedIds.length > 0) {
+      const { data: tagArticulos } = await supabaseServer
+        .from('articulos')
+        .select(ARTICLE_SELECT)
+        .in('id', sortedIds)
+        .eq('publicado', true);
+
+      // Restore sort order from countMap ranking
+      const articuloMap = new Map(
+        (tagArticulos as Articulo[] || []).map((a) => [a.id, a]),
+      );
+      for (const id of sortedIds) {
+        const a = articuloMap.get(id);
+        if (a && !seenIds.has(a.id) && collected.length < limite) {
+          collected.push(a);
+          seenIds.add(a.id);
+        }
+      }
+    }
+  }
+
+  // Tier 2: same-category fill
+  if (collected.length < limite) {
+    const { data: catArticulos } = await supabaseServer
+      .from('articulos')
+      .select(ARTICLE_SELECT)
+      .eq('categoria_id', categoriaId)
+      .eq('publicado', true)
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(limite * 3);
+
+    for (const a of (catArticulos as Articulo[] || [])) {
+      if (!seenIds.has(a.id) && collected.length < limite) {
+        collected.push(a);
+        seenIds.add(a.id);
+      }
+    }
+  }
+
+  // Tier 3: most-recent fallback
+  if (collected.length < limite) {
+    const { data: recentArticulos } = await supabaseServer
+      .from('articulos')
+      .select(ARTICLE_SELECT)
+      .eq('publicado', true)
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(limite * 3);
+
+    for (const a of (recentArticulos as Articulo[] || [])) {
+      if (!seenIds.has(a.id) && collected.length < limite) {
+        collected.push(a);
+        seenIds.add(a.id);
+      }
+    }
+  }
+
+  return collected;
+}
+
 // ==================== EVENTOS ====================
 
 const EVENTO_SELECT = `*, categoria:categorias(*)`;
