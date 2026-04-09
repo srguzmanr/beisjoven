@@ -1051,12 +1051,19 @@ const AdminPages = {
 
                                 <div class="fg-titulo">
                                     <label for="title">Título *</label>
-                                    <input type="text" id="title" value="${article?.titulo || (useDraft && draft ? draft.titulo : '') || ''}" placeholder="Título de la noticia" required>
+                                    <input type="text" id="title" value="${article?.titulo || (useDraft && draft ? draft.titulo : '') || ''}" placeholder="Título de la noticia" required oninput="AdminPages.autoSlug()">
                                 </div>
 
                                 <div class="fg-extracto">
                                     <label for="excerpt">Extracto *</label>
                                     <textarea id="excerpt" rows="3" placeholder="Breve descripción (aparece en tarjetas)" required>${article?.extracto || (useDraft && draft ? draft.extracto : '') || ''}</textarea>
+                                    <div style="margin-top:8px;">
+                                        <label for="slug" style="font-size:0.82rem;color:#6b7280;font-weight:500;margin-bottom:4px;">URL / Slug</label>
+                                        <div style="display:flex;gap:6px;align-items:center;">
+                                            <span style="font-size:0.8rem;color:#9ca3af;flex-shrink:0;">/articulo/</span>
+                                            <input type="text" id="slug" value="${article?.slug || (useDraft && draft ? draft.slug : '') || ''}" placeholder="se-genera-del-titulo" style="flex:1;font-size:0.85rem !important;padding:8px 10px !important;min-height:auto !important;" oninput="AdminPages._slugManual=true">
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="fg-meta">
@@ -1192,6 +1199,25 @@ const AdminPages = {
                     .form-grid-new input, .form-grid-new textarea, .form-grid-new select { font-size: 16px !important; min-height: 44px; }
                     .admin-main, .admin-content, .admin-layout { max-width: 100vw; overflow-x: hidden; }
                 }
+                /* Metadata accordion — mobile only */
+                .metadata-accordion-toggle { display: none; }
+                @media (max-width: 768px) {
+                    .metadata-accordion-toggle {
+                        display: flex; align-items: center; justify-content: space-between;
+                        width: 100%; margin: 8px 16px 0; padding: 10px 14px;
+                        background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px;
+                        font-size: 0.9rem; font-weight: 600; color: #1e3a5f;
+                        cursor: pointer; box-sizing: border-box;
+                        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+                    }
+                    .metadata-accordion-toggle .acc-arrow { transition: transform 0.2s; font-size: 0.8rem; }
+                    .metadata-accordion-toggle.open .acc-arrow { transform: rotate(180deg); }
+                    .fg-extracto, .fg-meta, .fg-imagen, .fg-checks { overflow: hidden; }
+                    .form-grid-new.accordion-closed .fg-extracto,
+                    .form-grid-new.accordion-closed .fg-meta,
+                    .form-grid-new.accordion-closed .fg-imagen,
+                    .form-grid-new.accordion-closed .fg-checks { display: none; }
+                }
                 .admin-sticky-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; background: #ffffff; padding: 10px 16px; box-shadow: 0 -2px 12px rgba(0,0,0,0.15); display: flex; gap: 10px; align-items: center; color-scheme: light; }
                 .admin-sticky-bar .btn-publish { flex: 2; padding: 14px; background: #c4122e; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
                 .admin-sticky-bar .btn-cancel { flex: 1; padding: 14px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
@@ -1254,6 +1280,29 @@ const AdminPages = {
             `;
         }
         
+        // Reset slug manual flag so auto-slug works on new articles
+        AdminPages._slugManual = !!(article?.slug);
+
+        // Metadata accordion — mobile only
+        if (window.innerWidth <= 768) {
+            var formGrid = document.querySelector('.form-grid-new');
+            var tituloEl = document.querySelector('.fg-titulo');
+            if (formGrid && tituloEl) {
+                formGrid.classList.add('accordion-closed');
+                var accBtn = document.createElement('button');
+                accBtn.type = 'button';
+                accBtn.className = 'metadata-accordion-toggle';
+                accBtn.innerHTML = '<span>Metadatos &amp; Opciones</span><span class="acc-arrow">▼</span>';
+                accBtn.addEventListener('click', function() {
+                    var isOpen = formGrid.classList.toggle('accordion-closed');
+                    accBtn.classList.toggle('open', !formGrid.classList.contains('accordion-closed'));
+                    // Use !isOpen because toggle returns the new state of 'accordion-closed'
+                    accBtn.classList.toggle('open', !formGrid.classList.contains('accordion-closed'));
+                });
+                tituloEl.insertAdjacentElement('afterend', accBtn);
+            }
+        }
+
         // Initialize Media Library
         if (typeof MediaLibrary !== 'undefined') {
             MediaLibrary.init();
@@ -1283,6 +1332,21 @@ const AdminPages = {
     },
 
     // ==================== FUNCIONES AUXILIARES ====================
+
+    _slugManual: false,
+
+    autoSlug: function() {
+        // Only auto-fill if the user hasn't manually edited the slug field
+        if (this._slugManual) return;
+        const slugField = document.getElementById('slug');
+        if (!slugField) return;
+        const titleVal = document.getElementById('title').value;
+        slugField.value = titleVal.toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[ñ]/g, 'n')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+    },
 
     previewImage: function() {
         const url = document.getElementById('image').value;
@@ -1335,13 +1399,15 @@ const AdminPages = {
         
         // C) Sanitizar contenido para prevenir XSS
         const contenido = sanitizeHtmlBasic(contenidoRaw);
-        
-        // Crear slug
-        const slug = titulo.toLowerCase()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/(^-|-$)/g, '');
-        
+
+        // Crear slug — use the slug field if filled, otherwise derive from title
+        const slugFieldVal = (document.getElementById('slug')?.value || '').trim();
+        const slug = slugFieldVal ||
+            titulo.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '');
+
         const articulo = {
             titulo: sanitizeHtmlBasic(titulo),
             slug,

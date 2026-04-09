@@ -1,19 +1,21 @@
 /**
  * BEISJOVEN - Media Library Modal
  * ================================
- * v2.1 - Con metadatos (pie de foto, crédito, categoría)
- * Actualizado: Feb 2026
+ * v3.0 - Búsqueda, filtros de fecha, panel de detalles, paginación
+ * Actualizado: Abr 2026
  */
 
 const MediaLibrary = {
     isOpen: false,
     onSelectCallback: null,
-    allImages: [],       // [{url, nombre, categoria, pieDeFoto, credito}]
+    allImages: [],       // [{url, nombre, categoria, pieDeFoto, credito, creado}]
     activeFilter: 'todas',
+    activeDateFilter: 'all', // 'today' | 'week' | 'month' | 'all'
     _pendingUploads: [],  // queue of nombres to edit metadata
     _pendingIdx: 0,
     _multiSelect: false,  // multi-select mode for gallery
     _selected: [],        // selected images in multi-select mode
+    _visibleCount: 50,    // how many images are currently shown (pagination)
 
     // Etiquetas — agregar aquí cuando sea necesario
     TAGS: [
@@ -90,6 +92,11 @@ const MediaLibrary = {
 
                     <div class="ml-filters" id="ml-filters">
                         ${this.TAGS.map(t => `<button type="button" class="ml-filter-btn ${t.key === 'todas' ? 'active' : ''}" data-key="${t.key}" onclick="MediaLibrary.setFilter('${t.key}')">${t.label}</button>`).join('')}
+                        <span class="ml-filter-sep">|</span>
+                        <button type="button" class="ml-filter-btn ml-date-btn active" data-date="all" onclick="MediaLibrary.setDateFilter('all')">Todo</button>
+                        <button type="button" class="ml-filter-btn ml-date-btn" data-date="month" onclick="MediaLibrary.setDateFilter('month')">Este mes</button>
+                        <button type="button" class="ml-filter-btn ml-date-btn" data-date="week" onclick="MediaLibrary.setDateFilter('week')">Esta semana</button>
+                        <button type="button" class="ml-filter-btn ml-date-btn" data-date="today" onclick="MediaLibrary.setDateFilter('today')">Hoy</button>
                     </div>
 
                     <div class="ml-body">
@@ -100,6 +107,35 @@ const MediaLibrary = {
                         <div id="ml-grid" class="ml-grid"></div>
                         <div id="ml-empty" class="ml-empty" style="display:none">
                             <p>📁 No hay imágenes</p>
+                        </div>
+                        <div id="ml-load-more" style="display:none;text-align:center;padding:12px 0;">
+                            <button type="button" onclick="MediaLibrary.loadMore()" style="padding:10px 28px;background:#f3f4f6;border:1px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:500;color:#374151;font-family:inherit;">Cargar más ▼</button>
+                        </div>
+                    </div>
+
+                    <!-- Detail panel (bottom sheet) -->
+                    <div id="ml-detail-panel" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.55);z-index:10;border-radius:12px;" onclick="if(event.target===this)MediaLibrary.closeDetail()">
+                        <div id="ml-detail-sheet" style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:12px 12px 0 0;max-height:85%;overflow-y:auto;padding:20px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                                <h4 style="margin:0;color:#1e3a5f;font-size:1rem;">Detalle de imagen</h4>
+                                <button type="button" onclick="MediaLibrary.closeDetail()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#6b7280;line-height:1;">&times;</button>
+                            </div>
+                            <img id="ml-detail-img" src="" alt="" style="width:100%;max-height:200px;object-fit:contain;border-radius:8px;background:#f3f4f6;margin-bottom:14px;">
+                            <p id="ml-detail-nombre" style="font-size:0.78rem;color:#9ca3af;margin:0 0 4px;word-break:break-all;"></p>
+                            <p id="ml-detail-fecha" style="font-size:0.78rem;color:#9ca3af;margin:0 0 14px;"></p>
+                            <div style="margin-bottom:10px;">
+                                <label style="font-size:0.82rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Pie de foto</label>
+                                <input type="text" id="ml-detail-pie" placeholder="Descripción de la imagen" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:7px;font-size:0.9rem;box-sizing:border-box;font-family:inherit;">
+                            </div>
+                            <div style="margin-bottom:16px;">
+                                <label style="font-size:0.82rem;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Crédito fotográfico</label>
+                                <input type="text" id="ml-detail-credito" placeholder="Ej: Foto: Getty Images" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:7px;font-size:0.9rem;box-sizing:border-box;font-family:inherit;">
+                            </div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button type="button" id="ml-detail-save" onclick="MediaLibrary.saveDetail()" style="flex:2;padding:11px;background:#c41e3a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-family:inherit;font-size:0.9rem;">Guardar</button>
+                                <button type="button" id="ml-detail-copy" onclick="MediaLibrary.copyDetailUrl()" style="flex:1;padding:11px;background:#1e3a5f;color:white;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:0.9rem;">🔗 Copiar URL</button>
+                                <button type="button" id="ml-detail-delete" onclick="MediaLibrary.deleteDetail()" style="flex:1;padding:11px;background:#f3f4f6;color:#ef4444;border:1px solid #fca5a5;border-radius:8px;cursor:pointer;font-family:inherit;font-size:0.9rem;">🗑️ Eliminar</button>
+                            </div>
                         </div>
                     </div>
 
@@ -159,6 +195,7 @@ const MediaLibrary = {
                     flex-direction: column;
                     box-shadow: 0 20px 40px rgba(0,0,0,0.25);
                     overflow: hidden;
+                    position: relative;
                 }
                 .ml-header {
                     display: flex;
@@ -241,6 +278,8 @@ const MediaLibrary = {
                 }
                 .ml-filter-btn:hover { border-color: #c41e3a; color: #1e293b; }
                 .ml-filter-btn.active { background: #c41e3a; border-color: #c41e3a; color: white; font-weight: 600; }
+                .ml-date-btn.active { background: #1e3a5f; border-color: #1e3a5f; }
+                .ml-filter-sep { color: #d1d5db; padding: 0 4px; flex-shrink: 0; line-height: 28px; }
                 .ml-body {
                     flex: 1;
                     overflow-y: auto;
@@ -264,6 +303,17 @@ const MediaLibrary = {
                 }
                 .ml-item:hover { border-color: #c41e3a; transform: scale(1.03); }
                 .ml-item img { width: 100%; height: 100%; object-fit: cover; }
+                .ml-info-btn {
+                    position: absolute; top: 5px; right: 5px;
+                    width: 22px; height: 22px; border-radius: 50%;
+                    background: rgba(0,0,0,0.5); color: white;
+                    border: none; font-size: 12px; cursor: pointer;
+                    display: none; align-items: center; justify-content: center;
+                    line-height: 1; padding: 0; font-weight: bold;
+                    touch-action: manipulation;
+                }
+                .ml-item:hover .ml-info-btn { display: flex; }
+                @media (max-width: 600px) { .ml-info-btn { display: flex !important; } }
                 .ml-item-overlay {
                     position: absolute;
                     bottom: 0;
@@ -366,6 +416,24 @@ const MediaLibrary = {
         });
     },
 
+    // ── Shared modal reset helper ────────────────────────────────
+    _resetModal() {
+        document.getElementById('media-library-modal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        document.getElementById('ml-search').value = '';
+        document.getElementById('ml-meta-panel').style.display = 'none';
+        this.activeFilter = 'todas';
+        this.activeDateFilter = 'all';
+        this._visibleCount = 50;
+        this._updateMultiSelectUI();
+        document.querySelectorAll('.ml-filter-btn:not(.ml-date-btn)').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.key === 'todas');
+        });
+        document.querySelectorAll('.ml-date-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.date === 'all');
+        });
+    },
+
     // ── Abrir modal ──────────────────────────────────────────────
     async open(callback) {
         this.init();
@@ -375,17 +443,7 @@ const MediaLibrary = {
         this.isOpen = true;
         this._pendingUploads = [];
         this._pendingIdx = 0;
-
-        document.getElementById('media-library-modal').style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        document.getElementById('ml-search').value = '';
-        document.getElementById('ml-meta-panel').style.display = 'none';
-        this._updateMultiSelectUI();
-        this.activeFilter = 'todas';
-        document.querySelectorAll('.ml-filter-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.key === 'todas');
-        });
-
+        this._resetModal();
         await this.loadImages();
     },
 
@@ -401,17 +459,7 @@ const MediaLibrary = {
         this.isOpen = true;
         this._pendingUploads = [];
         this._pendingIdx = 0;
-
-        document.getElementById('media-library-modal').style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        document.getElementById('ml-search').value = '';
-        document.getElementById('ml-meta-panel').style.display = 'none';
-        this._updateMultiSelectUI();
-        this.activeFilter = 'todas';
-        document.querySelectorAll('.ml-filter-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.key === 'todas');
-        });
-
+        this._resetModal();
         await this.loadImages();
     },
 
@@ -518,7 +566,8 @@ const MediaLibrary = {
                     nombre,
                     categoria: meta.categoria || '',
                     pieDeFoto: meta.pie_de_foto || '',
-                    credito: meta.credito || ''
+                    credito: meta.credito || '',
+                    creado: img.creado || null,
                 };
             }).filter(img => {
                 if (!img.url || !img.nombre) return false;
@@ -540,42 +589,52 @@ const MediaLibrary = {
         }
     },
 
-    // ── Renderizar grid ──────────────────────────────────────────
-    renderImages(images) {
+    // ── Renderizar grid (with pagination) ───────────────────────
+    _filteredImages: [], // last filtered set, used for Load More
+
+    renderImages(images, resetPage = true) {
         const grid = document.getElementById('ml-grid');
         const empty = document.getElementById('ml-empty');
         const count = document.getElementById('ml-count');
+        const loadMoreBtn = document.getElementById('ml-load-more');
 
         // Filter out broken images (no valid URL, empty names, folders, placeholders)
         images = (images || []).filter(img => {
             if (!img.url || !img.nombre) return false;
             if (img.url.endsWith('/') || img.nombre.startsWith('.')) return false;
-            // Filter folder entries (no file extension)
             if (!/\.(jpe?g|png|gif|webp|svg|bmp|avif)$/i.test(img.nombre)) return false;
             return true;
         });
 
+        this._filteredImages = images;
+        if (resetPage) this._visibleCount = 50;
+
         if (!images || images.length === 0) {
             grid.innerHTML = '';
             empty.style.display = 'flex';
+            if (loadMoreBtn) loadMoreBtn.style.display = 'none';
             count.textContent = '0 imágenes';
             return;
         }
 
         empty.style.display = 'none';
+        const visible = images.slice(0, this._visibleCount);
         count.textContent = `${images.length} imagen${images.length !== 1 ? 'es' : ''}`;
 
-        grid.innerHTML = images.map(img => {
+        grid.innerHTML = visible.map(img => {
             const tagLabel = this.TAGS.find(t => t.key === img.categoria)?.label || '';
+            const escapedUrl = img.url.replace(/'/g, "\\'");
+            const escapedNombre = img.nombre.replace(/'/g, "\\'");
             const clickAction = this._multiSelect
-                ? `MediaLibrary._toggleMultiItem('${img.url}')`
-                : `MediaLibrary.select('${img.url}', '${img.nombre}')`;
+                ? `MediaLibrary._toggleMultiItem('${escapedUrl}')`
+                : `MediaLibrary.select('${escapedUrl}', '${escapedNombre}')`;
             const isSelected = this._multiSelect && this._selected.some(s => s.url === img.url);
             return `
                 <div class="ml-item" data-url="${img.url}" onclick="${clickAction}" title="${img.pieDeFoto || img.nombre}" style="border-color:${isSelected ? '#c41e3a' : 'transparent'}">
-                    <img src="${img.url}" alt="${img.nombre}" loading="lazy">
+                    <img src="${img.url}" alt="${img.nombre}" loading="lazy" onerror="this.style.opacity='0.3';this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖼</text></svg>'">
                     ${tagLabel ? `<div class="ml-item-badge">${tagLabel}</div>` : ''}
                     ${this._multiSelect ? `<div class="ml-multi-check" style="display:${isSelected ? 'flex' : 'none'};position:absolute;top:5px;right:5px;width:24px;height:24px;background:#c41e3a;border-radius:50%;align-items:center;justify-content:center;color:white;font-size:14px;font-weight:bold;">✓</div>` : ''}
+                    <button type="button" class="ml-info-btn" onclick="event.stopPropagation();MediaLibrary.openDetail('${escapedUrl}')" title="Ver detalles">ℹ</button>
                     <div class="ml-item-overlay">
                         <div class="ml-item-name">${img.pieDeFoto || img.nombre}</div>
                         ${img.credito ? `<div class="ml-item-meta">${img.credito}</div>` : ''}
@@ -583,13 +642,31 @@ const MediaLibrary = {
                 </div>
             `;
         }).join('');
+
+        if (loadMoreBtn) {
+            loadMoreBtn.style.display = images.length > this._visibleCount ? 'block' : 'none';
+        }
+    },
+
+    loadMore() {
+        this._visibleCount += 50;
+        this.renderImages(this._filteredImages, false);
     },
 
     // ── Filtros ──────────────────────────────────────────────────
     setFilter(key) {
         this.activeFilter = key;
-        document.querySelectorAll('.ml-filter-btn').forEach(btn => {
+        document.querySelectorAll('.ml-filter-btn:not(.ml-date-btn)').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.key === key);
+        });
+        const searchTerm = document.getElementById('ml-search').value;
+        this.filter(searchTerm);
+    },
+
+    setDateFilter(dateKey) {
+        this.activeDateFilter = dateKey;
+        document.querySelectorAll('.ml-date-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.date === dateKey);
         });
         const searchTerm = document.getElementById('ml-search').value;
         this.filter(searchTerm);
@@ -604,6 +681,23 @@ const MediaLibrary = {
                 if (img.categoria) return img.categoria === this.activeFilter;
                 return img.nombre.toLowerCase().includes(this.activeFilter);
             });
+        }
+
+        // Filtro por fecha de subida
+        if (this.activeDateFilter && this.activeDateFilter !== 'all') {
+            const now = new Date();
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            let cutoff;
+            if (this.activeDateFilter === 'today') {
+                cutoff = startOfDay;
+            } else if (this.activeDateFilter === 'week') {
+                cutoff = new Date(startOfDay.getTime() - 6 * 24 * 60 * 60 * 1000);
+            } else if (this.activeDateFilter === 'month') {
+                cutoff = new Date(now.getFullYear(), now.getMonth(), 1);
+            }
+            if (cutoff) {
+                filtered = filtered.filter(img => img.creado && new Date(img.creado) >= cutoff);
+            }
         }
 
         // Filtro por búsqueda de texto
@@ -756,6 +850,93 @@ const MediaLibrary = {
             this._pendingIdx = 0;
             document.getElementById('ml-meta-panel').style.display = 'none';
             this.filter(document.getElementById('ml-search').value);
+        }
+    },
+
+    // ── Detail panel ─────────────────────────────────────────────
+    _detailUrl: null,
+
+    openDetail(url) {
+        const panel = document.getElementById('ml-detail-panel');
+        if (!panel) return;
+
+        const img = this.allImages.find(i => i.url === url) || { url, nombre: url.split('/').pop(), pieDeFoto: '', credito: '', creado: null };
+        this._detailUrl = url;
+
+        document.getElementById('ml-detail-img').src = url;
+        document.getElementById('ml-detail-img').alt = img.nombre;
+        document.getElementById('ml-detail-nombre').textContent = img.nombre;
+        const fechaStr = img.creado
+            ? new Date(img.creado).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
+            : '';
+        document.getElementById('ml-detail-fecha').textContent = fechaStr ? 'Subida: ' + fechaStr : '';
+        document.getElementById('ml-detail-pie').value = img.pieDeFoto || '';
+        document.getElementById('ml-detail-credito').value = img.credito || '';
+
+        panel.style.display = 'block';
+    },
+
+    closeDetail() {
+        const panel = document.getElementById('ml-detail-panel');
+        if (panel) panel.style.display = 'none';
+        this._detailUrl = null;
+    },
+
+    async saveDetail() {
+        const url = this._detailUrl;
+        if (!url) return;
+        const img = this.allImages.find(i => i.url === url);
+        const nombre = img?.nombre || url.split('/').pop();
+        const pieDeFoto = document.getElementById('ml-detail-pie').value.trim();
+        const credito = document.getElementById('ml-detail-credito').value.trim();
+        const categoria = img?.categoria || '';
+
+        await this.saveMetadata(nombre, { categoria, pieDeFoto, credito });
+        if (img) { img.pieDeFoto = pieDeFoto; img.credito = credito; }
+        showToast('✅ Datos guardados', 'success', 1500);
+        this.closeDetail();
+        this.filter(document.getElementById('ml-search').value);
+    },
+
+    copyDetailUrl() {
+        const url = this._detailUrl;
+        if (!url) return;
+        try {
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('✅ URL copiada', 'success', 1500);
+            });
+        } catch (e) {
+            // Fallback
+            const ta = document.createElement('textarea');
+            ta.value = url;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('✅ URL copiada', 'success', 1500);
+        }
+    },
+
+    async deleteDetail() {
+        const url = this._detailUrl;
+        if (!url) return;
+        const img = this.allImages.find(i => i.url === url);
+        const nombre = img?.nombre || url.split('/').pop();
+        if (!confirm(`¿Eliminar "${nombre}"?\nEsta acción no se puede deshacer.`)) return;
+
+        try {
+            const result = await SupabaseStorage.eliminarImagen(nombre);
+            if (result.success) {
+                this._invalidateCache();
+                this.allImages = this.allImages.filter(i => i.url !== url);
+                showToast('✅ Imagen eliminada', 'success', 1500);
+                this.closeDetail();
+                this.filter(document.getElementById('ml-search').value);
+            } else {
+                showToast('Error al eliminar: ' + (result.error || ''), 'error');
+            }
+        } catch (e) {
+            showToast('Error al eliminar imagen', 'error');
         }
     }
 };
