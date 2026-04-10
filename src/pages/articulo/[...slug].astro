@@ -15,6 +15,7 @@ import {
   getTagsByArticuloId,
 } from '@/lib/supabase';
 import { renderContent, formatDate, readTime } from '@/lib/content';
+import { ensureOgImage } from '@/lib/og-image-generator';
 
 export async function getStaticPaths() {
   const slugs = await getAllArticuloSlugs();
@@ -28,10 +29,11 @@ if (!articulo) {
   return Astro.redirect('/404');
 }
 
-const [related, masLeidos, tags] = await Promise.all([
+const [related, masLeidos, tags, ogImageUrl] = await Promise.all([
   getRelatedArticulos(articulo.id, articulo.categoria_id),
   getMasLeidos(5),
   getTagsByArticuloId(articulo.id),
+  ensureOgImage(articulo.imagen_url),
 ]);
 const articleUrl = `https://beisjoven.com/articulo/${articulo.slug}`;
 const renderedBody = renderContent(articulo.contenido);
@@ -93,7 +95,7 @@ const articleJsonLd = {
 <BaseLayout
   title={`${articulo.titulo} - Beisjoven`}
   description={articulo.extracto || ''}
-  image={articulo.imagen_url}
+  image={ogImageUrl ?? articulo.imagen_url}
   url={articleUrl}
   type="article"
   publishedTime={articulo.fecha || articulo.created_at}
