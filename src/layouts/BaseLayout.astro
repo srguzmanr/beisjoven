@@ -37,7 +37,7 @@ const canonicalUrl = url.replace(/\/$/, '') || 'https://beisjoven.com';
 const rawOgImage = image.startsWith('http') ? image : `https://beisjoven.com${image}`;
 // Force 1200×630 landscape crop via Supabase image transforms (OG-01)
 const ogImage = rawOgImage.startsWith('https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/')
-  ? `${rawOgImage.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')}?width=1200&height=630&resize=cover`
+  ? `${rawOgImage.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')}?width=1200&height=630&resize=cover&format=jpeg`
   : rawOgImage;
 
 // Organization JSON-LD (always present)
