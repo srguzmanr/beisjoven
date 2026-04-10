@@ -52,22 +52,30 @@
 
     // ── Filter state ──────────────────────────────────────────────
     var _searchQuery      = '';
-    var _activeCategory   = 'Todas';
+    var _activeCategory   = 'todas';
     var _activeDateFilter = 'Todo';
     var _searchTimer      = null;
 
     // ── Filter constants ──────────────────────────────────────────
-    var _CATEGORIES   = ['Todas', 'WBC 2026', 'MLB', 'Selección', 'Softbol', 'Juvenil', 'Ligas MX'];
+    // Single source of truth for categories — used by filter pills AND detail panel dropdown.
+    var _CATEGORY_OPTIONS = [
+        { key: 'wbc',       label: 'WBC 2026' },
+        { key: 'mlb',       label: 'MLB' },
+        { key: 'seleccion', label: 'Selección' },
+        { key: 'softbol',   label: 'Softbol' },
+        { key: 'juvenil',   label: 'Juvenil' },
+        { key: 'ligas',     label: 'Ligas MX' },
+    ];
     var _DATE_FILTERS = ['Todo', 'Este mes', 'Esta semana', 'Hoy'];
 
-    // Filename keyword fallback when categoria metadata field is absent
+    // Filename keyword fallback when categoria metadata field is absent (indexed by key)
     var _CAT_KEYWORDS = {
-        'WBC 2026':  ['wbc'],
-        'MLB':       ['mlb'],
-        'Selección': ['seleccion', 'selección', 'selecci\u00f3n'],
-        'Softbol':   ['softbol'],
-        'Juvenil':   ['juvenil'],
-        'Ligas MX':  ['ligas'],
+        'wbc':       ['wbc'],
+        'mlb':       ['mlb'],
+        'seleccion': ['seleccion', 'selección', 'selecci\u00f3n'],
+        'softbol':   ['softbol'],
+        'juvenil':   ['juvenil'],
+        'ligas':     ['ligas'],
     };
 
     // ── Inject CSS once ───────────────────────────────────────────
@@ -200,10 +208,10 @@
             '.mlc-dp-fields{margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #e5e7eb}',
             '.mlc-dp-field{margin-bottom:12px}',
             '.mlc-dp-field label{display:block;font-size:.8rem;font-weight:600;color:#374151;margin-bottom:4px}',
-            '.mlc-dp-field input,.mlc-dp-field textarea{width:100%;padding:7px 10px;',
+            '.mlc-dp-field input,.mlc-dp-field textarea,.mlc-dp-field select{width:100%;padding:7px 10px;',
             'border:1px solid #d1d5db;border-radius:6px;font-size:.85rem;font-family:inherit;',
             'outline:none;box-sizing:border-box;background:#fff;color:#1e293b;resize:vertical}',
-            '.mlc-dp-field input:focus,.mlc-dp-field textarea:focus{border-color:#C8102E;',
+            '.mlc-dp-field input:focus,.mlc-dp-field textarea:focus,.mlc-dp-field select:focus{border-color:#C8102E;',
             'box-shadow:0 0 0 2px rgba(200,16,46,.1)}',
             '.mlc-dp-field textarea{min-height:72px}',
             '.mlc-dp-save-status{font-size:.75rem;color:#22c55e;margin-top:3px;min-height:1em;display:block}',
@@ -297,15 +305,14 @@
                 }
             }
 
-            // 2. Category filter
-            if (_activeCategory !== 'Todas') {
-                var imgCat    = _normalizeStr(img.categoria);
-                var activeCat = _normalizeStr(_activeCategory);
+            // 2. Category filter — compare stored key directly (e.g. 'wbc', 'mlb')
+            if (_activeCategory !== 'todas') {
+                var imgCat = img.categoria || '';
                 if (imgCat) {
-                    if (imgCat !== activeCat) return false;
+                    if (imgCat !== _activeCategory) return false;
                 } else {
                     // Fallback: keyword match in filename
-                    var keywords = _CAT_KEYWORDS[_activeCategory] || [activeCat];
+                    var keywords = _CAT_KEYWORDS[_activeCategory] || [_activeCategory];
                     var nom = (img.nombre || '').toLowerCase();
                     if (!keywords.some(function (kw) { return nom.indexOf(kw) >= 0; })) {
                         return false;
@@ -376,18 +383,18 @@
         searchWrap.appendChild(clearBtn);
         section.appendChild(searchWrap);
 
-        // ── Category pills ──
+        // ── Category pills — use _CATEGORY_OPTIONS (single source of truth) ──
         var catRow = document.createElement('div');
         catRow.className = 'mlc-pill-row';
-        _CATEGORIES.forEach(function (cat) {
+        [{ key: 'todas', label: 'Todas' }].concat(_CATEGORY_OPTIONS).forEach(function (opt) {
             var btn = document.createElement('button');
             btn.type      = 'button';
-            btn.className = 'mlc-pill' + (cat === _activeCategory ? ' mlc-active' : '');
-            btn.textContent = cat;
+            btn.className = 'mlc-pill' + (opt.key === _activeCategory ? ' mlc-active' : '');
+            btn.textContent = opt.label;
             btn.addEventListener('click', function () {
-                _activeCategory = cat;
+                _activeCategory = opt.key;
                 catRow.querySelectorAll('.mlc-pill').forEach(function (p) {
-                    p.classList.toggle('mlc-active', p.textContent === cat);
+                    p.classList.toggle('mlc-active', p.textContent === opt.label);
                 });
                 _applyFilters();
             });
@@ -916,9 +923,9 @@
         // Editable fields
         var fieldsSection = document.createElement('div');
         fieldsSection.className = 'mlc-dp-fields';
-        fieldsSection.appendChild(_editField(img, 'Pie de foto',  'pie_de_foto',  img.pieDeFoto, 'textarea'));
-        fieldsSection.appendChild(_editField(img, 'Crédito',      'credito_foto', img.credito,   'input'));
-        fieldsSection.appendChild(_editField(img, 'Categoría',    'categoria',    img.categoria, 'input'));
+        fieldsSection.appendChild(_editField(img, 'Pie de foto', 'pie_de_foto', img.pieDeFoto, 'textarea'));
+        fieldsSection.appendChild(_editField(img, 'Crédito',     'credito',     img.credito,   'input'));
+        fieldsSection.appendChild(_editField(img, 'Categoría',   'categoria',   img.categoria, 'select'));
         body.appendChild(fieldsSection);
 
         // Actions row
@@ -1014,27 +1021,56 @@
     }
 
     // ── Editable field helper ─────────────────────────────────────
+    // type: 'input' | 'textarea' | 'select'
+    // 'select' uses _CATEGORY_OPTIONS (single source of truth with filter pills)
+    // and saves immediately on change.
     function _editField(img, label, field, initialValue, type) {
         var wrap = document.createElement('div');
         wrap.className = 'mlc-dp-field';
         var lbl = document.createElement('label');
         lbl.textContent = label;
         wrap.appendChild(lbl);
-        var el = document.createElement(type === 'textarea' ? 'textarea' : 'input');
-        if (type !== 'textarea') el.type = 'text';
-        el.value = initialValue || '';
-        el.placeholder = label + '…';
+
+        var el;
+        if (type === 'select') {
+            el = document.createElement('select');
+            var placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Categoría…';
+            el.appendChild(placeholder);
+            _CATEGORY_OPTIONS.forEach(function (opt) {
+                var option = document.createElement('option');
+                option.value = opt.key;
+                option.textContent = opt.label;
+                if (opt.key === (initialValue || '')) option.selected = true;
+                el.appendChild(option);
+            });
+        } else {
+            el = document.createElement(type === 'textarea' ? 'textarea' : 'input');
+            if (type !== 'textarea') el.type = 'text';
+            el.value = initialValue || '';
+            el.placeholder = label + '…';
+        }
+
         wrap.appendChild(el);
         var status = document.createElement('span');
         status.className = 'mlc-dp-save-status';
         wrap.appendChild(status);
-        el.addEventListener('blur', function () {
-            var val = el.value;
-            clearTimeout(_saveTimers[field]);
-            _saveTimers[field] = setTimeout(function () {
-                _saveMetaField(img, field, val, status);
-            }, 300);
-        });
+
+        if (type === 'select') {
+            // Dropdowns save immediately on change (no blur delay needed)
+            el.addEventListener('change', function () {
+                _saveMetaField(img, field, el.value, status);
+            });
+        } else {
+            el.addEventListener('blur', function () {
+                var val = el.value;
+                clearTimeout(_saveTimers[field]);
+                _saveTimers[field] = setTimeout(function () {
+                    _saveMetaField(img, field, val, status);
+                }, 300);
+            });
+        }
         return wrap;
     }
 
@@ -1059,19 +1095,43 @@
     }
 
     // ── Save a single metadata field to Supabase ──────────────────
+    // Uses SELECT-then-UPDATE/INSERT to prevent duplicate rows regardless of
+    // whether a unique constraint exists on imagenes_metadata.nombre.
     async function _saveMetaField(img, field, value, statusEl) {
         if (statusEl) statusEl.textContent = 'Guardando…';
         try {
-            var payload = { nombre: img.nombre };
-            payload[field] = value;
-            var result = await supabaseClient
+            // Check if a row already exists for this image
+            var checkResult = await supabaseClient
                 .from('imagenes_metadata')
-                .upsert(payload, { onConflict: 'nombre' });
+                .select('nombre')
+                .eq('nombre', img.nombre)
+                .maybeSingle();
+
+            var payload = {};
+            payload[field] = value || null;
+
+            var result;
+            if (checkResult.data) {
+                // Row exists — UPDATE only the changed field, never INSERT a duplicate
+                result = await supabaseClient
+                    .from('imagenes_metadata')
+                    .update(payload)
+                    .eq('nombre', img.nombre);
+            } else {
+                // Row does not exist — INSERT new row
+                payload.nombre = img.nombre;
+                result = await supabaseClient
+                    .from('imagenes_metadata')
+                    .insert(payload);
+            }
+
             if (result.error) throw result.error;
+
             // Keep local copy in sync
-            if (field === 'pie_de_foto')  img.pieDeFoto = value;
-            else if (field === 'credito_foto') img.credito   = value;
-            else if (field === 'categoria')    img.categoria = value;
+            if (field === 'pie_de_foto') img.pieDeFoto = value;
+            else if (field === 'credito') img.credito   = value;
+            else if (field === 'categoria') img.categoria = value;
+
             if (statusEl) {
                 statusEl.textContent = 'Guardado ✓';
                 setTimeout(function () { statusEl.textContent = ''; }, 2000);
@@ -1305,7 +1365,7 @@
 
             // Reset filter state on each open/init
             _searchQuery      = '';
-            _activeCategory   = 'Todas';
+            _activeCategory   = 'todas';
             _activeDateFilter = 'Todo';
             clearTimeout(_searchTimer);
 
