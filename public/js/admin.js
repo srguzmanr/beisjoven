@@ -1373,6 +1373,9 @@ const AdminPages = {
         var hiddenInput = document.getElementById('selected-tag-ids');
         if (!pillContainer || !searchInput || !suggestionsBox || !hiddenInput) return;
 
+        var highlightIndex = -1; // keyboard navigation index
+        var debounceTimer = null;
+
         function makeSlug(str) {
             return str.toLowerCase()
                 .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -1400,9 +1403,23 @@ const AdminPages = {
             });
         }
 
+        function updateHighlight() {
+            var items = suggestionsBox.querySelectorAll('.tag-suggestion-item');
+            items.forEach(function(el, i) {
+                el.classList.toggle('active', i === highlightIndex);
+            });
+            // Scroll active item into view
+            if (highlightIndex >= 0 && items[highlightIndex]) {
+                items[highlightIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
         function showSuggestions(query) {
             var q = query.trim().toLowerCase();
             suggestionsBox.innerHTML = '';
+            highlightIndex = -1;
+            if (!q) { suggestionsBox.style.display = 'none'; return; }
+
             var filtered = allTags.filter(function(t) {
                 return t.nombre.toLowerCase().includes(q) && !selectedTags.find(s => s.id === t.id);
             }).slice(0, 8);
@@ -1418,12 +1435,12 @@ const AdminPages = {
                 suggestionsBox.appendChild(item);
             });
 
-            // "Crear tag" option if query doesn't exactly match an existing tag
+            // "Crear: [text]" option if query doesn't exactly match an existing tag
             var exactMatch = allTags.find(t => t.nombre.toLowerCase() === q || t.slug === makeSlug(q));
             if (q && !exactMatch) {
                 var createItem = document.createElement('div');
                 createItem.className = 'tag-suggestion-item create';
-                createItem.textContent = 'Crear tag "' + query.trim() + '"';
+                createItem.textContent = 'Crear: ' + query.trim();
                 createItem.addEventListener('mousedown', async function(e) {
                     e.preventDefault();
                     var newTag = await SupabaseAPI.createTag(query.trim(), makeSlug(query.trim()));
@@ -1445,21 +1462,77 @@ const AdminPages = {
             syncHidden();
             searchInput.value = '';
             suggestionsBox.style.display = 'none';
+            highlightIndex = -1;
         }
 
+        function confirmHighlightedOrFirst() {
+            var items = suggestionsBox.querySelectorAll('.tag-suggestion-item');
+            var target = (highlightIndex >= 0 && items[highlightIndex]) ? items[highlightIndex] : items[0];
+            if (target) target.dispatchEvent(new MouseEvent('mousedown'));
+        }
+
+        // Debounced input handler (200ms)
         searchInput.addEventListener('input', function() {
-            showSuggestions(this.value);
+            var val = this.value;
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() {
+                showSuggestions(val);
+            }, 200);
         });
 
         searchInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
+            var items = suggestionsBox.querySelectorAll('.tag-suggestion-item');
+            var visible = suggestionsBox.style.display !== 'none' && items.length > 0;
+
+            // Arrow down
+            if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                // Add first suggestion or create if none
-                var first = suggestionsBox.querySelector('.tag-suggestion-item');
-                if (first) first.dispatchEvent(new MouseEvent('mousedown'));
+                if (visible) {
+                    highlightIndex = (highlightIndex + 1) % items.length;
+                    updateHighlight();
+                }
+                return;
             }
+
+            // Arrow up
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (visible) {
+                    highlightIndex = highlightIndex <= 0 ? items.length - 1 : highlightIndex - 1;
+                    updateHighlight();
+                }
+                return;
+            }
+
+            // Enter or Comma confirms selection — MUST NOT bubble to Publicar button
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.key === ',') {
+                    // Remove trailing comma from input value
+                    searchInput.value = searchInput.value.replace(/,\s*$/, '');
+                }
+                if (visible) {
+                    confirmHighlightedOrFirst();
+                }
+                return;
+            }
+
+            // Escape closes dropdown
             if (e.key === 'Escape') {
                 suggestionsBox.style.display = 'none';
+                highlightIndex = -1;
+                return;
+            }
+
+            // Backspace on empty input removes last pill
+            if (e.key === 'Backspace' && !searchInput.value) {
+                if (selectedTags.length > 0) {
+                    selectedTags.pop();
+                    renderPills();
+                    syncHidden();
+                }
+                return;
             }
         });
 
@@ -1467,9 +1540,15 @@ const AdminPages = {
             if (this.value.trim()) showSuggestions(this.value);
         });
 
+        searchInput.addEventListener('blur', function() {
+            // Delay to allow mousedown on suggestion items to fire first
+            setTimeout(function() { suggestionsBox.style.display = 'none'; highlightIndex = -1; }, 150);
+        });
+
         document.addEventListener('click', function(e) {
             if (!suggestionsBox.contains(e.target) && e.target !== searchInput) {
                 suggestionsBox.style.display = 'none';
+                highlightIndex = -1;
             }
         });
 
@@ -1614,8 +1693,11 @@ const AdminPages = {
             result = await SupabaseAdmin.actualizarArticulo(editId, articulo);
             console.log('[saveArticle] actualizarArticulo result:', result);
             if (result.success) {
-                try { await SupabaseAPI.syncArticuloTags(editId, AdminPages._getSelectedTagIds()); }
-                catch (e) { console.error('Tag sync error (non-fatal):', e); }
+                try {
+                    var _tagIds = AdminPages._getSelectedTagIds();
+                    console.log('[Tags] Syncing:', _tagIds);
+                    await SupabaseAPI.syncArticuloTags(editId, _tagIds);
+                } catch (e) { console.error('[Tags] Sync error (non-fatal):', e); }
                 Autosave.clear();
                 showToast(toastMsg[action] || '✅ Artículo actualizado correctamente', 'success');
             } else {
@@ -1629,8 +1711,11 @@ const AdminPages = {
             console.log('[saveArticle] actualizarArticulo (draft ' + draftId + ') result:', result);
             if (result.success) {
                 savedArticleId = draftId;
-                try { await SupabaseAPI.syncArticuloTags(draftId, AdminPages._getSelectedTagIds()); }
-                catch (e) { console.error('Tag sync error (non-fatal):', e); }
+                try {
+                    var _tagIds2 = AdminPages._getSelectedTagIds();
+                    console.log('[Tags] Syncing:', _tagIds2);
+                    await SupabaseAPI.syncArticuloTags(draftId, _tagIds2);
+                } catch (e) { console.error('[Tags] Sync error (non-fatal):', e); }
                 Autosave.clear();
                 showToast(toastMsg[action] || '✅ Artículo guardado correctamente', 'success');
             } else {
@@ -1644,8 +1729,11 @@ const AdminPages = {
             console.log('[saveArticle] crearArticulo result:', result);
             if (result.success) {
                 savedArticleId = result.data.id;
-                try { await SupabaseAPI.syncArticuloTags(result.data.id, AdminPages._getSelectedTagIds()); }
-                catch (e) { console.error('Tag sync error (non-fatal):', e); }
+                try {
+                    var _tagIds3 = AdminPages._getSelectedTagIds();
+                    console.log('[Tags] Syncing:', _tagIds3);
+                    await SupabaseAPI.syncArticuloTags(result.data.id, _tagIds3);
+                } catch (e) { console.error('[Tags] Sync error (non-fatal):', e); }
                 Autosave.clear();
                 showToast(toastMsg[action] || '✅ Artículo guardado correctamente', 'success');
             } else {
