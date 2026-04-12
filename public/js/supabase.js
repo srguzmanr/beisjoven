@@ -71,11 +71,13 @@ const SupabaseAPI = {
     // ==================== TAGS ====================
 
     async getTags() {
+        console.log('[Tags] Fetching tags');
         const { data, error } = await supabaseClient
             .from('tags')
             .select('*')
             .order('nombre');
-        if (error) { console.error('Error cargando tags:', error); return []; }
+        if (error) { console.error('[Tags] Error cargando tags:', error); return []; }
+        console.log('[Tags] Fetched:', (data || []).length, 'tags');
         return data || [];
     },
 

@@ -1347,11 +1347,15 @@ const AdminPages = {
             // Start autosave AFTER editor is initialized so connectEditor works
             Autosave.start(isEdit ? parseInt(params.id) : null);
             Autosave.connectEditor();
-
-            // Tag input
-            AdminPages._initTagInput(allTags, articleTags);
         } catch (initError) {
             console.error('[editor] Initialization error (buttons still work):', initError);
+        }
+
+        // Tag input — separate try/catch so editor/library crashes never block it
+        try {
+            AdminPages._initTagInput(allTags, articleTags);
+        } catch (tagError) {
+            console.error('[Tags] Init error:', tagError);
         }
 
         document.title = (isEdit ? 'Editar' : 'Nuevo Artículo') + ' - Beisjoven Admin';
@@ -1364,6 +1368,7 @@ const AdminPages = {
     // ==================== TAG INPUT ====================
 
     _initTagInput: function(allTags, initialTags) {
+        console.log('[Tags] _initTagInput called, allTags:', allTags?.length, 'initialTags:', initialTags?.length);
         var self = this;
         // selectedTags: array of {id, nombre, slug}
         var selectedTags = initialTags ? initialTags.slice() : [];
@@ -1371,7 +1376,10 @@ const AdminPages = {
         var searchInput = document.getElementById('tag-search-input');
         var suggestionsBox = document.getElementById('tag-suggestions');
         var hiddenInput = document.getElementById('selected-tag-ids');
-        if (!pillContainer || !searchInput || !suggestionsBox || !hiddenInput) return;
+        if (!pillContainer || !searchInput || !suggestionsBox || !hiddenInput) {
+            console.error('[Tags] DOM elements missing:', { pillContainer: !!pillContainer, searchInput: !!searchInput, suggestionsBox: !!suggestionsBox, hiddenInput: !!hiddenInput });
+            return;
+        }
 
         var highlightIndex = -1; // keyboard navigation index
         var debounceTimer = null;
