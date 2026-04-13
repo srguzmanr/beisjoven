@@ -1339,10 +1339,8 @@ const AdminPages = {
                 }
             }
 
-            // Initialize Media Library
-            if (typeof MediaLibrary !== 'undefined') {
-                MediaLibrary.init();
-            }
+            // MediaLibrary modal is available on demand via openMediaPicker() →
+            // MediaLibrary.open(); no up-front init() call is needed.
 
             // Start autosave AFTER editor is initialized so connectEditor works
             Autosave.start(isEdit ? parseInt(params.id) : null);
@@ -2273,7 +2271,7 @@ const AdminPages = {
 const AdminComponents = {
     
     sidebar: function() {
-        const user = Auth.getUser();
+        const user = Auth.getUser() || {};
         const currentPath = window.location.pathname;
         const isAdmin = Auth.isAdmin();
 

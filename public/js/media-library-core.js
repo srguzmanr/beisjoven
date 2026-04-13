@@ -581,7 +581,7 @@
                     url:         img.url || img,
                     nombre:      nombre,
                     pieDeFoto:   meta.pie_de_foto  || '',
-                    credito:     meta.credito_foto  || meta.credito || '',
+                    credito:     meta.credito || '',
                     categoria:   meta.categoria     || '',
                     fechaSubida: meta.created_at    || meta.fecha_subida || img.creado || '',
                     tamaño:      img.tamaño         || 0,
@@ -1036,7 +1036,7 @@
             el = document.createElement('select');
             var placeholder = document.createElement('option');
             placeholder.value = '';
-            placeholder.textContent = 'Categoría…';
+            placeholder.textContent = 'Sin categoría';
             el.appendChild(placeholder);
             _CATEGORY_OPTIONS.forEach(function (opt) {
                 var option = document.createElement('option');
@@ -1095,35 +1095,18 @@
     }
 
     // ── Save a single metadata field to Supabase ──────────────────
-    // Uses SELECT-then-UPDATE/INSERT to prevent duplicate rows regardless of
-    // whether a unique constraint exists on imagenes_metadata.nombre.
+    // Uses upsert on PK (nombre) — creates a row if none exists, updates
+    // only the changed field otherwise.  Eliminates the old SELECT-then-
+    // INSERT/UPDATE race condition.
     async function _saveMetaField(img, field, value, statusEl) {
         if (statusEl) statusEl.textContent = 'Guardando…';
         try {
-            // Check if a row already exists for this image
-            var checkResult = await supabaseClient
-                .from('imagenes_metadata')
-                .select('nombre')
-                .eq('nombre', img.nombre)
-                .maybeSingle();
-
-            var payload = {};
+            var payload = { nombre: img.nombre };
             payload[field] = value || null;
 
-            var result;
-            if (checkResult.data) {
-                // Row exists — UPDATE only the changed field, never INSERT a duplicate
-                result = await supabaseClient
-                    .from('imagenes_metadata')
-                    .update(payload)
-                    .eq('nombre', img.nombre);
-            } else {
-                // Row does not exist — INSERT new row
-                payload.nombre = img.nombre;
-                result = await supabaseClient
-                    .from('imagenes_metadata')
-                    .insert(payload);
-            }
+            var result = await supabaseClient
+                .from('imagenes_metadata')
+                .upsert(payload, { onConflict: 'nombre' });
 
             if (result.error) throw result.error;
 
@@ -1338,6 +1321,8 @@
 
     // ── Prepend new image to top of grid ─────────────────────────
     function _addImageToTop(imgObj) {
+        // Prevent duplicate: remove any existing entry with the same nombre
+        _allImages = _allImages.filter(function (i) { return i.nombre !== imgObj.nombre; });
         _allImages.unshift(imgObj);
         // Only prepend to _filteredImages if it passes current filters
         // Simplest: re-run filters (new images always appear under 'Todas' / 'Todo')
