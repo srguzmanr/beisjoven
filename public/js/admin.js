@@ -1043,6 +1043,8 @@ const AdminPages = {
         // Map categoria_sugerida slug → categoria_id (if we have a seed)
         let historiaCategoriaId = null;
         let historiaContentHtml = '';
+        let historiaImagenUrl = '';
+        let historiaCreditoFoto = '';
         if (historiaSeed) {
             const matchCat = categorias.find(c => c.slug === historiaSeed.categoria_sugerida);
             if (matchCat) historiaCategoriaId = matchCat.id;
@@ -1054,6 +1056,14 @@ const AdminPages = {
                 .map(p => '<p>' + p.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') + '</p>')
                 .join('');
             historiaContentHtml = paragraphs || '<p></p>';
+            // First photo → imagen principal
+            if (historiaSeed.fotos && historiaSeed.fotos.length > 0) {
+                historiaImagenUrl = SupabaseHistorias.obtenerUrlFoto(historiaSeed.fotos[0]);
+            }
+            // Credit opt-in → crédito fotográfico
+            if (historiaSeed.permitir_credito && historiaSeed.nombre) {
+                historiaCreditoFoto = 'Cortesía ' + historiaSeed.nombre;
+            }
         }
 
         // Si es edición, cargar el artículo y sus tags
@@ -1164,11 +1174,11 @@ const AdminPages = {
                                     <div class="form-group">
                                         <label>Imagen principal</label>
                                         <div style="display:flex;gap:8px;margin-bottom:8px;">
-                                            <input type="url" id="image" value="${article?.imagen_url || (useDraft && draft ? draft.imagen_url : '') || ''}" placeholder="URL de la imagen..." style="flex:1;" readonly>
+                                            <input type="url" id="image" value="${article?.imagen_url || (useDraft && draft ? draft.imagen_url : '') || historiaImagenUrl || ''}" placeholder="URL de la imagen..." style="flex:1;" readonly>
                                             <button type="button" class="btn-media-picker" onclick="openMediaPicker()">📷 Seleccionar</button>
                                         </div>
                                         <div id="image-preview" class="image-preview">
-                                            ${(article?.imagen_url || (useDraft && draft?.imagen_url)) ? `<img src="${article?.imagen_url || draft.imagen_url}" alt="Preview">` : '<span>Sin imagen</span>'}
+                                            ${(() => { const pi = article?.imagen_url || (useDraft && draft?.imagen_url) || historiaImagenUrl; return pi ? `<img src="${pi}" alt="Preview">` : '<span>Sin imagen</span>'; })()}
                                         </div>
                                     </div>
                                     <div class="form-group">
@@ -1177,7 +1187,7 @@ const AdminPages = {
                                     </div>
                                     <div class="form-group">
                                         <label for="foto-credito">Crédito fotográfico</label>
-                                        <input type="text" id="foto-credito" value="${article?.foto_credito || (useDraft && draft ? draft.foto_credito : '') || ''}" placeholder="Ej: Foto: Getty Images">
+                                        <input type="text" id="foto-credito" value="${article?.foto_credito || (useDraft && draft ? draft.foto_credito : '') || historiaCreditoFoto || ''}" placeholder="Ej: Foto: Getty Images">
                                     </div>
                                 </div>
 
@@ -2451,10 +2461,9 @@ const AdminPages = {
         var pillsHtml = this._historiasEstados.map(function(e) {
             var count = e.key === 'todas' ? total : (counts[e.key] || 0);
             var isActive = state.estado === e.key;
-            var badge = (e.key === 'nueva' && count > 0) ? ' (' + count + ')' : '';
             return '<button type="button" class="hist-pill' + (isActive ? ' hist-pill-active' : '') +
                 '" onclick="AdminPages._setHistoriaFilter(\'' + e.key + '\')">' +
-                e.label + badge +
+                e.label + ' (' + count + ')' +
                 '</button>';
         }).join('');
 
@@ -2628,7 +2637,7 @@ const AdminPages = {
             whatsappBtn = '<a href="https://wa.me/' + encodeURIComponent(waNum) + '" target="_blank" rel="noopener" class="btn btn-secondary hist-btn-wa">📱 Contactar por WhatsApp</a>';
         }
         var crearArticuloBtn = canCrearArticulo
-            ? '<a href="/admin/nuevo?historia=' + encodeURIComponent(h.id) + '" target="_blank" rel="noopener" class="btn btn-primary">✍️ Crear artículo</a>'
+            ? '<button type="button" id="hist-crear-btn" class="btn btn-primary hist-btn-crear" disabled onclick="if(!this.disabled)window.open(\'/admin/nuevo?historia=' + encodeURIComponent(h.id) + '\',\'_blank\')">✍️ Crear artículo</button>'
             : '';
 
         panel.innerHTML =
@@ -2705,6 +2714,17 @@ const AdminPages = {
         document.body.classList.add('hist-detail-open');
         // Scroll panel to top
         panel.scrollTop = 0;
+
+        // Wire checklist to gate "Crear artículo" button
+        var crearBtn = document.getElementById('hist-crear-btn');
+        if (crearBtn) {
+            var checkboxes = panel.querySelectorAll('.hist-checklist input[type="checkbox"]');
+            function _updateCrearBtn() {
+                var allChecked = Array.from(checkboxes).every(function(c) { return c.checked; });
+                crearBtn.disabled = !allChecked;
+            }
+            checkboxes.forEach(function(cb) { cb.addEventListener('change', _updateCrearBtn); });
+        }
     },
 
     _guardarNotasHistoria: async function(id) {
@@ -3032,6 +3052,7 @@ const AdminComponents = {
             '.hist-actions .btn{width:100%;padding:12px;font-size:0.95rem;font-weight:600;border-radius:8px;text-align:center;text-decoration:none;display:block;border:none;font-family:inherit;cursor:pointer;}',
             '.hist-actions .btn-primary{background:#C8102E;color:#fff;}',
             '.hist-actions .btn-secondary{background:#f3f4f6;color:#374151;}',
+            '.hist-btn-crear:disabled{opacity:0.45;cursor:not-allowed;}',
             '.hist-btn-wa{background:#25D366 !important;color:#fff !important;}',
             'body.hist-detail-open{overflow:hidden;}',
             '@media (max-width: 768px){',

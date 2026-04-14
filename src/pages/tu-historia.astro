@@ -235,6 +235,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             class="sr-only"
           />
           <label
+            id="th-fotos-label"
             for="th-fotos"
             class="inline-flex items-center justify-center gap-2 w-full min-h-[44px] px-4 py-2.5 bg-white border-2 border-dashed border-steel-blue/50 text-steel-blue font-medium rounded-md cursor-pointer hover:bg-steel-blue/5 transition-colors"
           >
@@ -306,6 +307,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
           <button
             type="submit"
             id="th-submit"
+            disabled
             class="w-full min-h-[52px] px-6 py-3 bg-rojo hover:bg-rojo-dark text-white font-bold text-base rounded-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             <span id="th-submit-label">Enviar mi historia</span>
@@ -327,8 +329,11 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         <h2 class="text-2xl md:text-3xl font-bold text-navy mb-3" style="font-family: 'Plus Jakarta Sans', sans-serif;">
           ¡Gracias por compartir tu historia!
         </h2>
-        <p id="th-success-subtext" class="text-gris-text leading-relaxed mb-6 max-w-md mx-auto">
+        <p id="th-success-subtext" class="text-gris-text leading-relaxed mb-3 max-w-md mx-auto">
           Nuestro equipo editorial la revisará. Si tu historia se publica, aparecerá en beisjoven.com con tu crédito como colaborador.
+        </p>
+        <p class="text-sm text-gris-muted mb-6 max-w-md mx-auto">
+          Si necesitamos más detalles, te contactaremos por WhatsApp o email.
         </p>
         <button
           type="button"
