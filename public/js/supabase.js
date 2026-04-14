@@ -703,18 +703,20 @@ const SupabaseHistorias = {
 
     BUCKET: 'tu-historia',
 
-    // Submit a community story. `data` must match historias_enviadas columns.
-    // Caller generates the id client-side, so we don't need RETURNING
-    // (anon has INSERT only — no SELECT policy by design).
+    // Submit a community story via SECURITY DEFINER RPC.
+    // Direct INSERT from anon is blocked because PostgREST issues
+    // INSERT...RETURNING by default and there is no anon SELECT policy
+    // on historias_enviadas (privacy by design), which surfaces as
+    // 42501 "new row violates row-level security policy". The RPC runs
+    // as the function owner, validates the payload, and writes the row.
     async enviarHistoria(data) {
-        const { error } = await supabaseClient
-            .from('historias_enviadas')
-            .insert([data]);
+        const { data: newId, error } = await supabaseClient
+            .rpc('enviar_historia', { payload: data });
         if (error) {
             console.error('[enviarHistoria] Failed:', error);
             throw error;
         }
-        return { id: data.id };
+        return { id: newId || data.id };
     },
 
     // Upload one photo attached to a submission.
