@@ -834,6 +834,9 @@ const AdminPages = {
 
         // Show onboarding for new editors
         Onboarding.checkAndShow();
+
+        // Update historias badge now that the final sidebar is in the DOM
+        AdminComponents.updateHistoriasBadge();
     },
 
     // ==================== LISTA DE ARTÍCULOS ====================

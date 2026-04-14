@@ -97,9 +97,7 @@ const Router = {
         document.querySelectorAll('nav a').forEach(link => {
             link.classList.remove('active');
             const href = link.getAttribute('href');
-            if (href === path || (path.startsWith(href) && href !== '/')) {
-                link.classList.add('active');
-            } else if (path === '/' && href === '/') {
+            if (href === path) {
                 link.classList.add('active');
             }
         });
