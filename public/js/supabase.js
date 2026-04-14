@@ -704,18 +704,17 @@ const SupabaseHistorias = {
     BUCKET: 'tu-historia',
 
     // Submit a community story. `data` must match historias_enviadas columns.
-    // Returns the inserted row id on success, throws on failure.
+    // Caller generates the id client-side, so we don't need RETURNING
+    // (anon has INSERT only — no SELECT policy by design).
     async enviarHistoria(data) {
-        const { data: result, error } = await supabaseClient
+        const { error } = await supabaseClient
             .from('historias_enviadas')
-            .insert([data])
-            .select('id')
-            .single();
+            .insert([data]);
         if (error) {
             console.error('[enviarHistoria] Failed:', error);
             throw error;
         }
-        return result;
+        return { id: data.id };
     },
 
     // Upload one photo attached to a submission.
