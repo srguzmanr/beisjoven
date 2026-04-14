@@ -696,3 +696,105 @@ const SupabaseStorage = {
 };
 
 window.SupabaseStorage = SupabaseStorage;
+
+// ==================== TU HISTORIA — COMMUNITY SUBMISSIONS ====================
+
+const SupabaseHistorias = {
+
+    BUCKET: 'tu-historia',
+
+    // Submit a community story. `data` must match historias_enviadas columns.
+    // Returns the inserted row id on success, throws on failure.
+    async enviarHistoria(data) {
+        const { data: result, error } = await supabaseClient
+            .from('historias_enviadas')
+            .insert([data])
+            .select('id')
+            .single();
+        if (error) {
+            console.error('[enviarHistoria] Failed:', error);
+            throw error;
+        }
+        return result;
+    },
+
+    // Upload one photo attached to a submission.
+    // Returns the storage path relative to the bucket.
+    async subirFotoHistoria(submissionId, file) {
+        // Sanitize filename: remove anything that isn't alnum, dot, dash, underscore.
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `${submissionId}/${Date.now()}-${safeName}`;
+        const { data, error } = await supabaseClient.storage
+            .from(this.BUCKET)
+            .upload(path, file, {
+                upsert: false,
+                contentType: file.type,
+            });
+        if (error) {
+            console.error('[subirFotoHistoria] Failed:', error);
+            throw error;
+        }
+        return data.path;
+    },
+
+    // Public URL for a stored photo path.
+    obtenerUrlFoto(path) {
+        const { data } = supabaseClient.storage
+            .from(this.BUCKET)
+            .getPublicUrl(path);
+        return data.publicUrl;
+    },
+
+    // Admin: list submissions, optionally filtered by estado.
+    async listarHistorias(estado = null, page = 0, limit = 20) {
+        let query = supabaseClient
+            .from('historias_enviadas')
+            .select('*', { count: 'exact' })
+            .order('created_at', { ascending: false })
+            .range(page * limit, (page + 1) * limit - 1);
+
+        if (estado && estado !== 'todas') {
+            query = query.eq('estado', estado);
+        }
+
+        const { data, error, count } = await query;
+        if (error) {
+            console.error('[listarHistorias] Failed:', error);
+            throw error;
+        }
+        return { data: data || [], count: count || 0 };
+    },
+
+    // Admin: count submissions per estado (for filter-pill badges).
+    async contarHistoriasPorEstado() {
+        const { data, error } = await supabaseClient
+            .from('historias_enviadas')
+            .select('estado');
+        if (error) {
+            console.error('[contarHistoriasPorEstado] Failed:', error);
+            return {};
+        }
+        const counts = {};
+        for (const row of data || []) {
+            counts[row.estado] = (counts[row.estado] || 0) + 1;
+        }
+        return counts;
+    },
+
+    // Admin: update a submission.
+    async actualizarHistoria(id, updates) {
+        const { data, error } = await supabaseClient
+            .from('historias_enviadas')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+        if (error) {
+            console.error('[actualizarHistoria] Failed:', error);
+            throw error;
+        }
+        return data;
+    },
+};
+
+window.SupabaseHistorias = SupabaseHistorias;
