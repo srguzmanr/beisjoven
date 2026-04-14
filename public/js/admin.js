@@ -1021,6 +1021,16 @@ const AdminPages = {
         // Reset any previous seed; we only want to mark the submission as
         // publicada when THIS editor session came from a historia link.
         this._currentHistoriaSourceId = null;
+        // Read the historia ID directly from the URL. We do this BEFORE the
+        // seed fetch (and independent of its success) so the auto-transition
+        // to publicada still fires even if loading the seed data fails, and
+        // so that opening /admin/nuevo?historia=UUID in a fresh tab works —
+        // the in-memory variable from the origin tab is gone at that point.
+        const _urlParams = new URLSearchParams(window.location.search);
+        const _urlHistoriaId = _urlParams.get('historia');
+        if (!isEdit && _urlHistoriaId) {
+            this._currentHistoriaSourceId = _urlHistoriaId;
+        }
         if (!isEdit && query && query.get && query.get('historia')) {
             const historiaId = query.get('historia');
             try {
@@ -1031,7 +1041,6 @@ const AdminPages = {
                     .single();
                 if (!error && data) {
                     historiaSeed = data;
-                    this._currentHistoriaSourceId = data.id;
                 } else if (error) {
                     console.error('[editor] Failed to load historia seed:', error);
                 }
