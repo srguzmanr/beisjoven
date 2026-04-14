@@ -6,6 +6,7 @@ import ArticleCard from '@/components/ArticleCard.astro';
 import ShareButtons from '@/components/ShareButtons.astro';
 import MostReadWidget from '@/components/MostReadWidget.astro';
 import SectionTitle from '@/components/SectionTitle.astro';
+import TuHistoriaCTA from '@/components/TuHistoriaCTA.astro';
 import {
   getAllArticuloSlugs,
   getArticuloBySlug,
@@ -174,6 +175,9 @@ const articleJsonLd = {
 
         <!-- Share -->
         <ShareButtons url={articleUrl} title={articulo.titulo} />
+
+        <!-- Tu Historia CTA -->
+        <TuHistoriaCTA />
 
         <!-- Related Articles -->
         {related.length > 0 && (
