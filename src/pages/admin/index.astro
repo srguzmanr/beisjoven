@@ -77,6 +77,7 @@ export const prerender = true;
             Router.register('/admin/nuevo', AdminPages.editor);
             Router.register('/admin/editar/:id', AdminPages.editor);
             Router.register('/admin/medios', AdminPages.medios);
+            Router.register('/admin/historias', AdminPages.historias);
             Router.register('/admin/videos', AdminPages.videosList);
             Router.register('/admin/videos/nuevo', AdminPages.videoEditor);
             Router.register('/admin/videos/editar/:id', AdminPages.videoEditor);
@@ -94,7 +95,10 @@ export const prerender = true;
 
                     origHandleRoute(fullPath);
                     // Defer so the DOM has rendered
-                    setTimeout(function() { AdminComponents.injectBottomTabs(); }, 50);
+                    setTimeout(function() {
+                        AdminComponents.injectBottomTabs();
+                        if (AdminComponents.updateHistoriasBadge) AdminComponents.updateHistoriasBadge();
+                    }, 50);
                 };
                 Router.init();
             });

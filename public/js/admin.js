@@ -974,7 +974,7 @@ const AdminPages = {
 
     // ==================== CREAR/EDITAR ARTÍCULO ====================
     // UPDATED: Now uses Media Library picker + Rich Text Editor
-    editor: async function({ params }) {
+    editor: async function({ params, query }) {
         if (!Auth.isLoggedIn()) {
             Router.navigate('/login');
             return;
@@ -982,13 +982,13 @@ const AdminPages = {
 
         const isEdit = params && params.id;
         const main = document.getElementById('main-content');
-        
+
         // Stop any existing autosave
         Autosave.stop();
-        
+
         // Reset editor reference
         contentEditor = null;
-        
+
         // Mostrar loading
         main.innerHTML = `
             <div class="admin-layout">
@@ -999,14 +999,47 @@ const AdminPages = {
                 </div>
             </div>
         `;
-        
+
+        // ?historia=<uuid> — prefill new articles from a Tu Historia submission
+        let historiaSeed = null;
+        if (!isEdit && query && query.get && query.get('historia')) {
+            const historiaId = query.get('historia');
+            try {
+                const { data, error } = await supabaseClient
+                    .from('historias_enviadas')
+                    .select('*')
+                    .eq('id', historiaId)
+                    .single();
+                if (!error && data) historiaSeed = data;
+                else if (error) console.error('[editor] Failed to load historia seed:', error);
+            } catch (e) {
+                console.error('[editor] Failed to load historia seed:', e);
+            }
+        }
+
         // Cargar categorías, autores y tags
         const [categorias, autores, allTags] = await Promise.all([
             SupabaseAPI.getCategorias(),
             SupabaseAPI.getAutores(),
             SupabaseAPI.getTags()
         ]);
-        
+
+        // Map categoria_sugerida slug → categoria_id (if we have a seed)
+        let historiaCategoriaId = null;
+        let historiaContentHtml = '';
+        if (historiaSeed) {
+            const matchCat = categorias.find(c => c.slug === historiaSeed.categoria_sugerida);
+            if (matchCat) historiaCategoriaId = matchCat.id;
+            // Wrap descripcion text in paragraphs, preserving blank-line breaks
+            const paragraphs = String(historiaSeed.descripcion || '')
+                .split(/\n{2,}/)
+                .map(p => p.trim())
+                .filter(Boolean)
+                .map(p => '<p>' + p.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') + '</p>')
+                .join('');
+            historiaContentHtml = paragraphs || '<p></p>';
+        }
+
         // Si es edición, cargar el artículo y sus tags
         let article = null;
         let articleTags = []; // array of tag objects already assigned to this article
@@ -1056,7 +1089,7 @@ const AdminPages = {
 
                                 <div class="fg-titulo">
                                     <label for="title">Título *</label>
-                                    <input type="text" id="title" value="${article?.titulo || (useDraft && draft ? draft.titulo : '') || ''}" placeholder="Título de la noticia" oninput="AdminPages.autoSlug()">
+                                    <input type="text" id="title" value="${article?.titulo || (useDraft && draft ? draft.titulo : '') || (historiaSeed ? (historiaSeed.titulo || '').replace(/"/g, '&quot;') : '') || ''}" placeholder="Título de la noticia" oninput="AdminPages.autoSlug()">
                                 </div>
 
                                 <div class="fg-extracto">
@@ -1078,7 +1111,7 @@ const AdminPages = {
                                             <select id="category">
                                                 <option value="">Seleccionar...</option>
                                                 ${categorias.map(c => `
-                                                    <option value="${c.id}" ${article?.categoria_id === c.id ? 'selected' : (useDraft && draft && draft.categoria_id == c.id ? 'selected' : '')}>
+                                                    <option value="${c.id}" ${article?.categoria_id === c.id ? 'selected' : (useDraft && draft && draft.categoria_id == c.id ? 'selected' : (historiaCategoriaId === c.id ? 'selected' : ''))}>
                                                         ${c.nombre}
                                                     </option>
                                                 `).join('')}
@@ -1296,7 +1329,7 @@ const AdminPages = {
         // Publicar/Guardar buttons from working (handlers already attached above).
         try {
             // Initialize Rich Text Editor
-            const initialContent = article?.contenido || (useDraft && draft ? draft.contenido : '') || '';
+            const initialContent = article?.contenido || (useDraft && draft ? draft.contenido : '') || historiaContentHtml || '';
 
             if (typeof TiptapEditor !== 'undefined') {
                 contentEditor = TiptapEditor.create(
@@ -2252,17 +2285,465 @@ const AdminPages = {
     // Eliminar video
     deleteVideo: async function(id) {
         if (!confirm('¿Eliminar este video?')) return;
-        
+
         const { error } = await supabaseClient
             .from('videos')
             .delete()
             .eq('id', id);
-        
+
         if (error) {
             showToast('Error: ' + error.message, 'error');
         } else {
             showToast('✅ Video eliminado');
             setTimeout(function() { Router.navigate('/admin/videos'); }, 800);
+        }
+    },
+
+    // ==================== TU HISTORIA — ADMIN REVIEW PANEL ====================
+
+    _historiasState: {
+        estado: 'nueva',
+        page: 0,
+        limit: 20,
+        items: [],
+        count: 0,
+        counts: {},
+        selectedId: null
+    },
+
+    _historiasEstados: [
+        { key: 'todas',       label: 'Todas',        color: '#6B7280' },
+        { key: 'nueva',       label: 'Nuevas',       color: '#D4A843' },
+        { key: 'en_revision', label: 'En revisión',  color: '#2563EB' },
+        { key: 'verificada',  label: 'Verificadas',  color: '#059669' },
+        { key: 'publicada',   label: 'Publicadas',   color: '#1B2A4A' },
+        { key: 'descartada',  label: 'Descartadas',  color: '#6B7280' }
+    ],
+
+    _historiasRelacionLabels: {
+        entrenador: 'Entrenador/a',
+        jugador: 'Jugador/a',
+        padre_madre: 'Padre / Madre de familia',
+        directivo_liga: 'Directivo/a de liga',
+        periodista: 'Periodista',
+        aficionado: 'Aficionado/a',
+        otro: 'Otro'
+    },
+
+    _historiasCategoriaLabels: {
+        juvenil: 'Juvenil',
+        softbol: 'Softbol',
+        'liga-mexicana': 'Ligas Mexicanas',
+        mlb: 'MLB',
+        seleccion: 'Selección',
+        opinion: 'Opinión'
+    },
+
+    _historiaEstadoBadge: function(estado) {
+        var cfg = this._historiasEstados.find(function(e) { return e.key === estado; });
+        var color = cfg ? cfg.color : '#6B7280';
+        var label = cfg ? cfg.label.replace(/s$/, '') : estado;
+        // Map back for singular labels
+        var map = { nueva: 'Nueva', en_revision: 'En revisión', verificada: 'Verificada', publicada: 'Publicada', descartada: 'Descartada' };
+        label = map[estado] || estado;
+        return '<span class="hist-estado-pill" style="background:' + color + ';">' + label + '</span>';
+    },
+
+    _relativeDate: function(iso) {
+        if (!iso) return '';
+        var d = new Date(iso);
+        var diff = Math.floor((Date.now() - d.getTime()) / 1000);
+        if (diff < 60) return 'hace ' + diff + 's';
+        if (diff < 3600) return 'hace ' + Math.floor(diff / 60) + ' min';
+        if (diff < 86400) return 'hace ' + Math.floor(diff / 3600) + ' h';
+        if (diff < 86400 * 7) return 'hace ' + Math.floor(diff / 86400) + ' d';
+        return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+    },
+
+    historias: async function(ctx) {
+        if (!Auth.isLoggedIn()) {
+            Router.navigate('/login');
+            return;
+        }
+
+        var query = (ctx && ctx.query) || new URLSearchParams();
+        var estadoParam = query.get('estado');
+        if (estadoParam) this._historiasState.estado = estadoParam;
+        this._historiasState.page = 0;
+
+        var main = document.getElementById('main-content');
+        main.innerHTML =
+            '<div class="admin-layout">' +
+                AdminComponents.sidebar() +
+                '<div class="admin-main">' +
+                    AdminComponents.header('Tu Historia — Envíos') +
+                    '<div class="admin-content" id="historias-page-container"><p>Cargando envíos...</p></div>' +
+                '</div>' +
+            '</div>';
+
+        AdminComponents.injectHistoriasStyles();
+        document.title = 'Tu Historia — Beisjoven Admin';
+
+        await this._renderHistoriasPage();
+        // Refresh sidebar/tabs badges
+        AdminComponents.updateHistoriasBadge();
+    },
+
+    _renderHistoriasPage: async function() {
+        var container = document.getElementById('historias-page-container');
+        if (!container) return;
+
+        var state = this._historiasState;
+
+        // Fetch counts + current page in parallel
+        var countsPromise = SupabaseHistorias.contarHistoriasPorEstado();
+        var estadoToQuery = state.estado === 'todas' ? null : state.estado;
+        var dataPromise = SupabaseHistorias.listarHistorias(estadoToQuery, 0, state.limit);
+
+        var counts, result;
+        try {
+            counts = await countsPromise;
+            result = await dataPromise;
+        } catch (e) {
+            console.error('[historias] Load failed:', e);
+            container.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Error al cargar envíos</h3><p>' + (e.message || 'Intenta recargar la página') + '</p></div>';
+            return;
+        }
+
+        state.counts = counts;
+        state.items = result.data;
+        state.count = result.count;
+        state.page = 0;
+
+        var total = Object.values(counts).reduce(function(a, b) { return a + b; }, 0);
+        var nuevasCount = counts.nueva || 0;
+
+        var pillsHtml = this._historiasEstados.map(function(e) {
+            var count = e.key === 'todas' ? total : (counts[e.key] || 0);
+            var isActive = state.estado === e.key;
+            var badge = (e.key === 'nueva' && count > 0) ? ' (' + count + ')' : '';
+            return '<button type="button" class="hist-pill' + (isActive ? ' hist-pill-active' : '') +
+                '" onclick="AdminPages._setHistoriaFilter(\'' + e.key + '\')">' +
+                e.label + badge +
+                '</button>';
+        }).join('');
+
+        container.innerHTML =
+            '<div class="historias-header">' +
+                '<div class="historias-total">Total: <strong>' + total + '</strong> envío' + (total === 1 ? '' : 's') + '</div>' +
+                '<div class="historias-pills">' + pillsHtml + '</div>' +
+            '</div>' +
+            '<div id="historias-list-wrap"></div>' +
+            '<div id="historias-detail-panel" class="hist-detail-panel" style="display:none;"></div>' +
+            '<div id="historias-detail-backdrop" class="hist-detail-backdrop" style="display:none;" onclick="AdminPages.cerrarDetalleHistoria()"></div>';
+
+        this._renderHistoriasList();
+    },
+
+    _setHistoriaFilter: function(key) {
+        this._historiasState.estado = key;
+        this._renderHistoriasPage();
+    },
+
+    _renderHistoriasList: function() {
+        var wrap = document.getElementById('historias-list-wrap');
+        if (!wrap) return;
+
+        var state = this._historiasState;
+        var items = state.items;
+        var self = this;
+
+        if (!items.length) {
+            var msg = state.estado === 'nueva'
+                ? 'No hay historias nuevas. ¡Buen trabajo!'
+                : state.estado === 'todas'
+                    ? 'Aún no hay envíos. Comparte beisjoven.com/tu-historia con la comunidad.'
+                    : 'No hay envíos con este estado.';
+            wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">📨</div><p>' + msg + '</p></div>';
+            return;
+        }
+
+        function esc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        // Desktop table
+        var tableRows = items.map(function(h) {
+            var fecha = new Date(h.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+            var catLabel = self._historiasCategoriaLabels[h.categoria_sugerida] || h.categoria_sugerida || '—';
+            var titulo = h.titulo ? (h.titulo.length > 60 ? h.titulo.substring(0, 60) + '…' : h.titulo) : '(sin título)';
+            return '<tr class="hist-row" onclick="AdminPages.abrirDetalleHistoria(\'' + h.id + '\')">' +
+                '<td>' + fecha + '</td>' +
+                '<td>' + esc(h.nombre) + '</td>' +
+                '<td><span class="badge">' + esc(catLabel) + '</span></td>' +
+                '<td>' + esc(titulo) + '</td>' +
+                '<td>' + esc(h.ciudad_estado || '—') + '</td>' +
+                '<td>' + self._historiaEstadoBadge(h.estado) + '</td>' +
+            '</tr>';
+        }).join('');
+
+        // Mobile cards
+        var cardsHtml = items.map(function(h) {
+            var catLabel = self._historiasCategoriaLabels[h.categoria_sugerida] || h.categoria_sugerida || '—';
+            return '<div class="hist-card" onclick="AdminPages.abrirDetalleHistoria(\'' + h.id + '\')">' +
+                '<div class="hist-card-top">' +
+                    self._historiaEstadoBadge(h.estado) +
+                    '<span class="hist-card-date">' + self._relativeDate(h.created_at) + '</span>' +
+                '</div>' +
+                '<h4 class="hist-card-title">' + esc(h.titulo || '(sin título)') + '</h4>' +
+                '<div class="hist-card-meta"><span>' + esc(h.nombre) + '</span><span class="badge">' + esc(catLabel) + '</span></div>' +
+                '<div class="hist-card-meta"><small>' + esc(h.ciudad_estado || '') + '</small></div>' +
+            '</div>';
+        }).join('');
+
+        var countDisplay = items.length + ' de ' + state.count;
+        var hasMore = state.count > items.length;
+
+        wrap.innerHTML =
+            '<div class="hist-count">Mostrando ' + countDisplay + ' envío' + (state.count === 1 ? '' : 's') + '</div>' +
+            '<div class="articles-table hide-mobile hist-table">' +
+                '<table>' +
+                    '<thead><tr>' +
+                        '<th>Fecha</th>' +
+                        '<th>Nombre</th>' +
+                        '<th>Categoría</th>' +
+                        '<th>Título</th>' +
+                        '<th>Ciudad</th>' +
+                        '<th>Estado</th>' +
+                    '</tr></thead>' +
+                    '<tbody>' + tableRows + '</tbody>' +
+                '</table>' +
+            '</div>' +
+            '<div class="hist-cards show-mobile">' + cardsHtml + '</div>' +
+            (hasMore ? '<div class="hist-load-more-wrap"><button type="button" class="btn btn-secondary" onclick="AdminPages._cargarMasHistorias()">Cargar más</button></div>' : '');
+    },
+
+    _cargarMasHistorias: async function() {
+        var state = this._historiasState;
+        state.page += 1;
+        var estadoToQuery = state.estado === 'todas' ? null : state.estado;
+        try {
+            var result = await SupabaseHistorias.listarHistorias(estadoToQuery, state.page, state.limit);
+            state.items = state.items.concat(result.data);
+            state.count = result.count;
+            this._renderHistoriasList();
+        } catch (e) {
+            console.error('[historias] Load more failed:', e);
+            showToast('Error al cargar más: ' + e.message, 'error');
+        }
+    },
+
+    abrirDetalleHistoria: function(id) {
+        var historia = this._historiasState.items.find(function(h) { return h.id === id; });
+        if (!historia) return;
+        this._historiasState.selectedId = id;
+        this._renderHistoriaDetalle(historia);
+    },
+
+    cerrarDetalleHistoria: function() {
+        this._historiasState.selectedId = null;
+        var panel = document.getElementById('historias-detail-panel');
+        var backdrop = document.getElementById('historias-detail-backdrop');
+        if (panel) panel.style.display = 'none';
+        if (backdrop) backdrop.style.display = 'none';
+        document.body.classList.remove('hist-detail-open');
+    },
+
+    _renderHistoriaDetalle: function(h) {
+        var panel = document.getElementById('historias-detail-panel');
+        var backdrop = document.getElementById('historias-detail-backdrop');
+        if (!panel) return;
+
+        var self = this;
+        function esc(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+        function escAttr(s) { return esc(s); }
+        function nl2br(s) { return esc(s).replace(/\n/g, '<br>'); }
+
+        var relacionLabel = this._historiasRelacionLabels[h.relacion] || h.relacion;
+        var catLabel = this._historiasCategoriaLabels[h.categoria_sugerida] || h.categoria_sugerida || '—';
+        var createdAt = new Date(h.created_at).toLocaleString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        var creditoTxt = h.permitir_credito ? 'Sí, desea ser mencionado/a' : 'No, envío anónimo';
+
+        var estadosOptions = this._historiasEstados
+            .filter(function(e) { return e.key !== 'todas'; })
+            .map(function(e) {
+                var map = { nueva: 'Nueva', en_revision: 'En revisión', verificada: 'Verificada', publicada: 'Publicada', descartada: 'Descartada' };
+                return '<option value="' + e.key + '"' + (h.estado === e.key ? ' selected' : '') + '>' + (map[e.key] || e.key) + '</option>';
+            }).join('');
+
+        var fotosHtml = '';
+        if (h.fotos && h.fotos.length) {
+            fotosHtml = '<div class="hist-fotos-grid">' +
+                h.fotos.map(function(path) {
+                    var url = SupabaseHistorias.obtenerUrlFoto(path);
+                    return '<a href="' + escAttr(url) + '" target="_blank" rel="noopener" class="hist-foto-thumb">' +
+                        '<img src="' + escAttr(url) + '" alt="Foto de la historia" loading="lazy">' +
+                    '</a>';
+                }).join('') +
+            '</div>';
+        } else {
+            fotosHtml = '<p class="hist-empty-foto">Sin fotos adjuntas</p>';
+        }
+
+        var canCrearArticulo = (h.estado === 'verificada' || h.estado === 'en_revision');
+        var whatsappBtn = '';
+        if (h.telefono) {
+            var waNum = String(h.telefono).replace(/[^0-9]/g, '');
+            whatsappBtn = '<a href="https://wa.me/' + encodeURIComponent(waNum) + '" target="_blank" rel="noopener" class="btn btn-secondary hist-btn-wa">📱 Contactar por WhatsApp</a>';
+        }
+        var crearArticuloBtn = canCrearArticulo
+            ? '<a href="/admin/nuevo?historia=' + encodeURIComponent(h.id) + '" target="_blank" rel="noopener" class="btn btn-primary">✍️ Crear artículo</a>'
+            : '';
+
+        panel.innerHTML =
+            '<div class="hist-detail-inner">' +
+                '<div class="hist-detail-header">' +
+                    '<div>' +
+                        '<h2 class="hist-detail-titulo">' + esc(h.titulo || '(sin título)') + '</h2>' +
+                        '<div class="hist-detail-subline">Enviado el ' + esc(createdAt) + '</div>' +
+                    '</div>' +
+                    '<button type="button" class="hist-close-btn" onclick="AdminPages.cerrarDetalleHistoria()" aria-label="Cerrar">✕</button>' +
+                '</div>' +
+
+                '<div class="hist-detail-estado-row">' +
+                    '<label>Estado:</label>' +
+                    '<select id="hist-estado-select" onchange="AdminPages.cambiarEstadoHistoria(\'' + h.id + '\', this.value)">' +
+                        estadosOptions +
+                    '</select>' +
+                    this._historiaEstadoBadge(h.estado) +
+                '</div>' +
+
+                '<section class="hist-section">' +
+                    '<h3>Datos del colaborador</h3>' +
+                    '<dl class="hist-dl">' +
+                        '<dt>Nombre</dt><dd>' + esc(h.nombre) + '</dd>' +
+                        '<dt>Email</dt><dd><a href="mailto:' + escAttr(h.email) + '">' + esc(h.email) + '</a></dd>' +
+                        (h.telefono ? '<dt>Teléfono</dt><dd><a href="tel:' + escAttr(h.telefono) + '">' + esc(h.telefono) + '</a></dd>' : '') +
+                        '<dt>Relación</dt><dd>' + esc(relacionLabel) + '</dd>' +
+                        '<dt>Crédito</dt><dd>' + esc(creditoTxt) + '</dd>' +
+                    '</dl>' +
+                '</section>' +
+
+                '<section class="hist-section">' +
+                    '<h3>La historia</h3>' +
+                    '<dl class="hist-dl">' +
+                        '<dt>Categoría sugerida</dt><dd><span class="badge">' + esc(catLabel) + '</span></dd>' +
+                        (h.liga_organizacion ? '<dt>Liga / Organización</dt><dd>' + esc(h.liga_organizacion) + '</dd>' : '') +
+                        '<dt>Ciudad y estado</dt><dd>' + esc(h.ciudad_estado) + '</dd>' +
+                    '</dl>' +
+                    '<div class="hist-descripcion"><h4>Descripción</h4><p>' + nl2br(h.descripcion) + '</p></div>' +
+                '</section>' +
+
+                '<section class="hist-section">' +
+                    '<h3>Fotos</h3>' +
+                    fotosHtml +
+                '</section>' +
+
+                '<section class="hist-section">' +
+                    '<h3>Checklist de verificación</h3>' +
+                    '<p class="hist-checklist-hint">Recordatorios visuales — no se guardan en la base de datos.</p>' +
+                    '<ul class="hist-checklist">' +
+                        '<li><label><input type="checkbox"> ¿La liga/organización existe?</label></li>' +
+                        '<li><label><input type="checkbox"> ¿Se confirmó con segunda fuente?</label></li>' +
+                        '<li><label><input type="checkbox"> ¿Las fotos corresponden al evento?</label></li>' +
+                        '<li><label><input type="checkbox"> ¿El remitente es contactable?</label></li>' +
+                        '<li><label><input type="checkbox"> ¿Información suficiente para un artículo?</label></li>' +
+                    '</ul>' +
+                '</section>' +
+
+                '<section class="hist-section">' +
+                    '<h3>Notas editoriales</h3>' +
+                    '<textarea id="hist-notas-' + h.id + '" class="hist-notas" placeholder="Notas internas del equipo editorial…" onblur="AdminPages._guardarNotasHistoria(\'' + h.id + '\')">' + esc(h.notas_editoriales || '') + '</textarea>' +
+                    '<div class="hist-notas-status" id="hist-notas-status-' + h.id + '"></div>' +
+                '</section>' +
+
+                '<div class="hist-actions">' +
+                    crearArticuloBtn +
+                    whatsappBtn +
+                    '<button type="button" class="btn btn-secondary" onclick="AdminPages.cerrarDetalleHistoria()">Cerrar</button>' +
+                '</div>' +
+            '</div>';
+
+        panel.style.display = 'block';
+        if (backdrop) backdrop.style.display = 'block';
+        document.body.classList.add('hist-detail-open');
+        // Scroll panel to top
+        panel.scrollTop = 0;
+    },
+
+    _guardarNotasHistoria: async function(id) {
+        var ta = document.getElementById('hist-notas-' + id);
+        var statusEl = document.getElementById('hist-notas-status-' + id);
+        if (!ta) return;
+        clearTimeout(this._notasDebounce);
+        var self = this;
+        this._notasDebounce = setTimeout(async function() {
+            try {
+                if (statusEl) statusEl.textContent = 'Guardando…';
+                await SupabaseHistorias.actualizarHistoria(id, { notas_editoriales: ta.value });
+                if (statusEl) {
+                    statusEl.textContent = '✓ Guardado';
+                    setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 2000);
+                }
+                // Update cached item
+                var item = self._historiasState.items.find(function(h) { return h.id === id; });
+                if (item) item.notas_editoriales = ta.value;
+            } catch (e) {
+                console.error('[historias] Save notas failed:', e);
+                if (statusEl) statusEl.textContent = '⚠️ Error al guardar';
+                showToast('Error al guardar notas: ' + e.message, 'error');
+            }
+        }, 500);
+    },
+
+    cambiarEstadoHistoria: async function(id, nuevoEstado) {
+        var self = this;
+        var item = this._historiasState.items.find(function(h) { return h.id === id; });
+        if (!item) return;
+        var estadoPrevio = item.estado;
+
+        // If changing to descartada: prompt for reason
+        var updates = { estado: nuevoEstado };
+        if (nuevoEstado === 'descartada') {
+            var razon = prompt('Motivo para descartar este envío (se guardará en notas editoriales):');
+            if (razon === null) {
+                // Cancelled — revert select
+                var sel = document.getElementById('hist-estado-select');
+                if (sel) sel.value = estadoPrevio;
+                return;
+            }
+            var notasActuales = item.notas_editoriales ? (item.notas_editoriales + '\n\n') : '';
+            updates.notas_editoriales = notasActuales + '[DESCARTADO] ' + razon;
+        }
+
+        try {
+            var updated = await SupabaseHistorias.actualizarHistoria(id, updates);
+            item.estado = updated.estado;
+            if (updates.notas_editoriales) item.notas_editoriales = updated.notas_editoriales;
+
+            showToast('✅ Estado actualizado');
+
+            if (nuevoEstado === 'publicada') {
+                showToast('¿Ya contactaste al remitente para confirmar datos?', 'info', 4500);
+            }
+
+            // Re-render list + detail
+            await this._renderHistoriasPage();
+            AdminComponents.updateHistoriasBadge();
+            // Re-open detail for the same item with fresh data
+            var refreshed = this._historiasState.items.find(function(h) { return h.id === id; });
+            if (refreshed) this._renderHistoriaDetalle(refreshed);
+        } catch (e) {
+            console.error('[historias] Status change failed:', e);
+            showToast('Error al cambiar estado: ' + e.message, 'error');
+            var sel2 = document.getElementById('hist-estado-select');
+            if (sel2) sel2.value = estadoPrevio;
         }
     }
 };
@@ -2308,6 +2789,10 @@ const AdminComponents = {
                     </a>` : ''}
                     <a href="/admin/medios" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath === '/admin/medios' ? 'active' : ''}">
                         🖼️ Medios
+                    </a>
+                    <a href="/admin/historias" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath.includes('/historias') ? 'active' : ''}">
+                        📨 Tu Historia
+                        <span class="nav-badge" id="nav-historias-badge-sidebar" style="display:none;"></span>
                     </a>
                     ${isAdmin ? `
                     <hr>
@@ -2363,6 +2848,7 @@ const AdminComponents = {
         '<div class="abt-more-menu" id="abt-more-menu" style="display:none;">' +
             '<div class="abt-more-overlay" onclick="AdminComponents.closeMoreMenu()"></div>' +
             '<div class="abt-more-sheet">' +
+                '<a href="/admin/historias" onclick="AdminComponents.closeMoreMenu()">📨 Tu Historia <span class="nav-badge" id="nav-historias-badge-more" style="display:none;"></span></a>' +
                 (isAdmin ? '<a href="/admin/videos" onclick="AdminComponents.closeMoreMenu()">📹 Videos</a>' : '') +
                 (isAdmin ? '<a href="/admin/usuarios" onclick="AdminComponents.closeMoreMenu()">👥 Usuarios</a>' : '') +
                 '<a href="/" target="_blank">🌐 Ver sitio</a>' +
@@ -2426,6 +2912,112 @@ const AdminComponents = {
             var overlay = document.querySelector('.sidebar-overlay');
             if (overlay) overlay.remove();
         }
+    },
+
+    // Fetch "nueva" submission count and update sidebar + more-menu badges
+    updateHistoriasBadge: async function() {
+        if (!Auth.isLoggedIn() || typeof SupabaseHistorias === 'undefined') return;
+        try {
+            var counts = await SupabaseHistorias.contarHistoriasPorEstado();
+            var n = counts.nueva || 0;
+            var els = [
+                document.getElementById('nav-historias-badge-sidebar'),
+                document.getElementById('nav-historias-badge-more')
+            ];
+            els.forEach(function(el) {
+                if (!el) return;
+                if (n > 0) {
+                    el.textContent = n;
+                    el.style.display = '';
+                } else {
+                    el.textContent = '';
+                    el.style.display = 'none';
+                }
+            });
+        } catch (e) {
+            // Silent — badge is non-critical
+            console.warn('[historias] Badge update failed:', e);
+        }
+    },
+
+    // Inject CSS for the historias review panel (idempotent)
+    injectHistoriasStyles: function() {
+        if (document.getElementById('bj-historias-styles')) return;
+        var style = document.createElement('style');
+        style.id = 'bj-historias-styles';
+        style.textContent = [
+            '.nav-badge{display:inline-block;min-width:20px;padding:2px 7px;margin-left:6px;background:#C8102E;color:#fff;border-radius:10px;font-size:0.72rem;font-weight:700;text-align:center;line-height:1.3;}',
+            '.historias-header{margin-bottom:16px;}',
+            '.historias-total{color:#374151;font-size:0.95rem;margin-bottom:10px;}',
+            '.historias-pills{display:flex;flex-wrap:wrap;gap:8px;}',
+            '.hist-pill{padding:8px 14px;border-radius:9999px;border:1px solid #e5e7eb;background:#fff;color:#374151;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:inherit;min-height:40px;}',
+            '.hist-pill:hover{background:#f3f4f6;}',
+            '.hist-pill-active{background:#C8102E;color:#fff;border-color:#C8102E;}',
+            '.hist-count{color:#6b7280;font-size:0.85rem;margin:14px 0 10px;}',
+            '.hist-estado-pill{display:inline-block;padding:3px 10px;border-radius:9999px;color:#fff;font-size:0.75rem;font-weight:600;line-height:1.4;white-space:nowrap;}',
+            '.hist-row{cursor:pointer;transition:background 0.15s;}',
+            '.hist-row:hover{background:#f9fafb;}',
+            '.hist-cards{display:none;flex-direction:column;gap:10px;}',
+            '.hist-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.04);}',
+            '.hist-card:active{background:#f9fafb;}',
+            '.hist-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}',
+            '.hist-card-date{color:#6b7280;font-size:0.78rem;}',
+            '.hist-card-title{font-size:1rem;font-weight:700;color:#1B2A4A;margin:0 0 8px;}',
+            '.hist-card-meta{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#374151;font-size:0.85rem;margin-top:4px;}',
+            '.hist-load-more-wrap{text-align:center;margin-top:20px;}',
+            '.hist-detail-backdrop{position:fixed;inset:0;background:rgba(17,24,39,0.45);z-index:9998;}',
+            '.hist-detail-panel{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:#fff;z-index:9999;box-shadow:-4px 0 20px rgba(0,0,0,0.15);overflow-y:auto;}',
+            '.hist-detail-inner{padding:20px 22px 120px;}',
+            '.hist-detail-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;}',
+            '.hist-detail-titulo{font-size:1.35rem;font-weight:700;color:#1B2A4A;margin:0 0 4px;line-height:1.25;}',
+            '.hist-detail-subline{color:#6b7280;font-size:0.82rem;}',
+            '.hist-close-btn{background:#f3f4f6;border:none;width:40px;height:40px;border-radius:50%;font-size:1.1rem;cursor:pointer;color:#374151;flex-shrink:0;}',
+            '.hist-detail-estado-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px;background:#f9fafb;border-radius:8px;margin-bottom:18px;}',
+            '.hist-detail-estado-row label{font-weight:600;color:#374151;font-size:0.9rem;}',
+            '.hist-detail-estado-row select{padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:0.9rem;min-height:40px;}',
+            '.hist-section{margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid #f3f4f6;}',
+            '.hist-section:last-of-type{border-bottom:none;}',
+            '.hist-section h3{font-size:0.95rem;font-weight:700;color:#1B2A4A;margin:0 0 10px;text-transform:uppercase;letter-spacing:0.03em;}',
+            '.hist-section h4{font-size:0.85rem;font-weight:600;color:#374151;margin:14px 0 6px;}',
+            '.hist-dl{display:grid;grid-template-columns:130px 1fr;gap:8px 14px;font-size:0.9rem;}',
+            '.hist-dl dt{color:#6b7280;font-weight:500;}',
+            '.hist-dl dd{margin:0;color:#111827;word-break:break-word;}',
+            '.hist-dl a{color:#C8102E;text-decoration:none;}',
+            '.hist-dl a:hover{text-decoration:underline;}',
+            '.hist-descripcion{margin-top:14px;padding:12px;background:#f9fafb;border-radius:8px;}',
+            '.hist-descripcion p{margin:0;color:#111827;font-size:0.92rem;line-height:1.55;white-space:pre-wrap;}',
+            '.hist-fotos-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}',
+            '.hist-foto-thumb{display:block;border-radius:6px;overflow:hidden;aspect-ratio:4/3;background:#f3f4f6;}',
+            '.hist-foto-thumb img{width:100%;height:100%;object-fit:cover;display:block;}',
+            '.hist-empty-foto{color:#9ca3af;font-style:italic;font-size:0.9rem;margin:0;}',
+            '.hist-checklist-hint{color:#6b7280;font-size:0.8rem;margin:0 0 8px;font-style:italic;}',
+            '.hist-checklist{list-style:none;padding:0;margin:0;}',
+            '.hist-checklist li{padding:6px 0;}',
+            '.hist-checklist label{display:flex;align-items:center;gap:10px;cursor:pointer;color:#374151;font-size:0.9rem;min-height:32px;}',
+            '.hist-checklist input[type="checkbox"]{width:18px;height:18px;accent-color:#C8102E;}',
+            '.hist-notas{width:100%;min-height:90px;padding:10px 12px;border:2px solid #e5e7eb;border-radius:8px;font-family:inherit;font-size:0.92rem;resize:vertical;background:#fff;color:#111827;box-sizing:border-box;}',
+            '.hist-notas:focus{outline:none;border-color:#C8102E;}',
+            '.hist-notas-status{font-size:0.78rem;color:#6b7280;margin-top:4px;min-height:16px;}',
+            '.hist-actions{display:flex;flex-direction:column;gap:8px;padding-top:8px;}',
+            '.hist-actions .btn{width:100%;padding:12px;font-size:0.95rem;font-weight:600;border-radius:8px;text-align:center;text-decoration:none;display:block;border:none;font-family:inherit;cursor:pointer;}',
+            '.hist-actions .btn-primary{background:#C8102E;color:#fff;}',
+            '.hist-actions .btn-secondary{background:#f3f4f6;color:#374151;}',
+            '.hist-btn-wa{background:#25D366 !important;color:#fff !important;}',
+            'body.hist-detail-open{overflow:hidden;}',
+            '@media (max-width: 768px){',
+                '.hist-table{display:none !important;}',
+                '.hist-cards{display:flex !important;}',
+                '.hist-detail-panel{width:100%;top:0;left:0;right:0;bottom:0;}',
+                '.hist-detail-inner{padding:16px 14px 140px;}',
+                '.hist-dl{grid-template-columns:110px 1fr;}',
+                '.historias-pills{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;-webkit-overflow-scrolling:touch;}',
+                '.hist-pill{flex-shrink:0;}',
+            '}',
+            '@media (min-width: 769px){',
+                '.hist-cards{display:none !important;}',
+            '}'
+        ].join('');
+        document.head.appendChild(style);
     }
 };
 
