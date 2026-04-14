@@ -1,0 +1,28 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+---
+
+<BaseLayout
+  title="Aviso de Privacidad - Beisjoven"
+  description="Aviso de Privacidad de Noboru S.A.S. de C.V. para el sitio beisjoven.com."
+  noIndex={true}
+>
+  <Breadcrumb items={[
+    { text: 'Inicio', href: '/' },
+    { text: 'Aviso de Privacidad' },
+  ]} />
+
+  <div class="max-w-[42rem] mx-auto px-4 py-12">
+    <h1 class="text-3xl font-bold text-navy mb-6">Aviso de Privacidad</h1>
+
+    <div class="prose max-w-none">
+      <p class="text-lg text-gris-text leading-relaxed mb-6">
+        <strong class="text-navy">Noboru S.A.S. de C.V.</strong> — Documento en preparación.
+      </p>
+      <p class="text-gris-text leading-relaxed mb-6">
+        Para consultas sobre datos personales, escríbenos a <a href="mailto:contacto@beisjoven.com" class="text-steel-blue hover:underline">contacto@beisjoven.com</a>.
+      </p>
+    </div>
+  </div>
+</BaseLayout>
