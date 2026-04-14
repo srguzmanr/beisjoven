@@ -1020,7 +1020,12 @@ const AdminPages = {
         let historiaSeed = null;
         // Reset any previous seed; we only want to mark the submission as
         // publicada when THIS editor session came from a historia link.
-        this._currentHistoriaSourceId = null;
+        // NOTE: the editor is registered with Router as a detached method
+        // (Router.register('/admin/nuevo', AdminPages.editor)), so `this`
+        // inside this function is NOT AdminPages. We must reference
+        // AdminPages directly — otherwise we write to window/undefined and
+        // saveArticle (which does use AdminPages.*) never sees the id.
+        AdminPages._currentHistoriaSourceId = null;
         // Read the historia ID directly from the URL. We do this BEFORE the
         // seed fetch (and independent of its success) so the auto-transition
         // to publicada still fires even if loading the seed data fails, and
@@ -1029,7 +1034,8 @@ const AdminPages = {
         const _urlParams = new URLSearchParams(window.location.search);
         const _urlHistoriaId = _urlParams.get('historia');
         if (!isEdit && _urlHistoriaId) {
-            this._currentHistoriaSourceId = _urlHistoriaId;
+            AdminPages._currentHistoriaSourceId = _urlHistoriaId;
+            console.log('[editor] Seeded from historia:', _urlHistoriaId);
         }
         if (!isEdit && query && query.get && query.get('historia')) {
             const historiaId = query.get('historia');
@@ -1846,14 +1852,16 @@ const AdminPages = {
         // If this editor session was seeded from a Tu Historia submission,
         // mark that submission as publicada and link it to the new article.
         // Non-fatal: a failure here must not block the save.
+        console.log('[saveArticle] historia check — editId:', editId, 'savedArticleId:', savedArticleId, 'sourceId:', AdminPages._currentHistoriaSourceId);
         if (!editId && savedArticleId && AdminPages._currentHistoriaSourceId) {
             var histId = AdminPages._currentHistoriaSourceId;
             AdminPages._currentHistoriaSourceId = null; // one-shot
             try {
-                await SupabaseHistorias.actualizarHistoria(histId, {
+                var histUpdated = await SupabaseHistorias.actualizarHistoria(histId, {
                     estado: 'publicada',
                     articulo_id: savedArticleId
                 });
+                console.log('[saveArticle] historia marked publicada:', histUpdated && histUpdated.id, 'estado:', histUpdated && histUpdated.estado);
             } catch (e) {
                 console.error('[saveArticle] Failed to mark historia as publicada:', e);
                 showToast('El artículo se guardó, pero no pude actualizar el estado del envío.', 'info', 4000);
