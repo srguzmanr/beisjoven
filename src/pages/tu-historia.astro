@@ -1,0 +1,348 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Tu Historia - Beisjoven"
+  description="¿Tienes una historia de béisbol o sóftbol que merece ser contada? Cuéntanos y nuestro equipo editorial la llevará a toda la comunidad."
+>
+  <!-- Hero -->
+  <section class="bg-navy text-white">
+    <div class="max-w-4xl mx-auto px-4 py-12 md:py-16">
+      <h1 class="text-4xl md:text-5xl font-extrabold mb-4" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+        Tu Historia
+      </h1>
+      <p class="text-lg md:text-xl text-white/90 leading-relaxed mb-6 max-w-2xl">
+        ¿Tienes una historia de béisbol o sóftbol que merece ser contada? Cuéntanos y nuestro equipo editorial la llevará a toda la comunidad.
+      </p>
+      <ul class="space-y-2 text-white/90 text-base">
+        <li class="flex items-start gap-3">
+          <span aria-hidden="true" style="color: #D4A843;" class="font-bold flex-shrink-0 mt-0.5">●</span>
+          <span>Ligas juveniles, torneos, logros de jugadores</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span aria-hidden="true" style="color: #D4A843;" class="font-bold flex-shrink-0 mt-0.5">●</span>
+          <span>Sóftbol, béisbol universitario, ligas municipales</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span aria-hidden="true" style="color: #D4A843;" class="font-bold flex-shrink-0 mt-0.5">●</span>
+          <span>Tú nos cuentas, nosotros escribimos la nota</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Form -->
+  <section class="bg-gris-bg py-10 md:py-14">
+    <div class="max-w-3xl mx-auto px-4">
+      <!-- Rate limit banner (hidden by default) -->
+      <div id="th-rate-limit" class="hidden mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 text-sm">
+        Has enviado varias historias recientemente. Por favor espera antes de enviar otra.
+      </div>
+
+      <!-- Error banner (hidden by default) -->
+      <div id="th-error" class="hidden mb-6 rounded-lg border border-rojo/30 bg-red-50 p-4 text-rojo-dark text-sm" role="alert">
+        Hubo un problema al enviar tu historia. Por favor intenta de nuevo.
+      </div>
+
+      <!-- Form card -->
+      <form id="th-form" class="bg-white rounded-xl shadow-sm p-6 md:p-8 space-y-10" novalidate>
+        <!-- Honeypot (hidden) -->
+        <div aria-hidden="true" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;opacity:0;overflow:hidden;">
+          <label for="th-website">Website</label>
+          <input type="text" id="th-website" name="website" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <!-- Section 1: Tus datos -->
+        <fieldset class="space-y-5">
+          <legend class="block w-full text-xl font-bold text-navy pb-2 border-b border-gris-border mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            Tus datos
+          </legend>
+
+          <div>
+            <label for="th-nombre" class="block text-sm font-medium text-navy mb-1.5">
+              Nombre completo <span class="text-rojo">*</span>
+            </label>
+            <input
+              type="text"
+              id="th-nombre"
+              name="nombre"
+              required
+              minlength="3"
+              autocomplete="name"
+              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
+            />
+            <p class="th-error-msg hidden mt-1 text-xs text-rojo" data-for="th-nombre"></p>
+          </div>
+
+          <div>
+            <label for="th-email" class="block text-sm font-medium text-navy mb-1.5">
+              Email <span class="text-rojo">*</span>
+            </label>
+            <input
+              type="email"
+              id="th-email"
+              name="email"
+              required
+              autocomplete="email"
+              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
+            />
+            <p class="th-error-msg hidden mt-1 text-xs text-rojo" data-for="th-email"></p>
+          </div>
+
+          <div>
+            <label for="th-telefono" class="block text-sm font-medium text-navy mb-1.5">
+              Teléfono / WhatsApp
+            </label>
+            <input
+              type="tel"
+              id="th-telefono"
+              name="telefono"
+              autocomplete="tel"
+              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
+            />
+          </div>
+
+          <div>
+            <label for="th-relacion" class="block text-sm font-medium text-navy mb-1.5">
+              Tu relación con la historia <span class="text-rojo">*</span>
+            </label>
+            <select
+              id="th-relacion"
+              name="relacion"
+              required
+              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
+            >
+              <option value="">Selecciona una opción</option>
+              <option value="entrenador">Entrenador/a</option>
+              <option value="jugador">Jugador/a</option>
+              <option value="padre_madre">Padre / Madre de familia</option>
+              <option value="directivo_liga">Directivo/a de liga</option>
+              <option value="periodista">Periodista</option>
+              <option value="aficionado">Aficionado/a</option>
+              <option value="otro">Otro</option>
+            </select>
+            <p class="th-error-msg hidden mt-1 text-xs text-rojo" data-for="th-relacion"></p>
+          </div>
+        </fieldset>
+
+        <!-- Section 2: La historia -->
+        <fieldset class="space-y-5">
+          <legend class="block w-full text-xl font-bold text-navy pb-2 border-b border-gris-border mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            La historia
+          </legend>
+
+          <div>
+            <label for="th-categoria" class="block text-sm font-medium text-navy mb-1.5">
+              Categoría sugerida <span class="text-rojo">*</span>
+            </label>
+            <select
+              id="th-categoria"
+              name="categoria_sugerida"
+              required
+              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
+            >
+              <option value="">Selecciona una categoría</option>
+              <option value="juvenil">Juvenil</option>
+              <option value="softbol">Softbol</option>
+              <option value="liga-mexicana">Ligas Mexicanas</option>
+              <option value="mlb">MLB</option>
+              <option value="seleccion">Selección</option>
+              <option value="opinion">Opinión</option>
+            </select>
+            <p class="th-error-msg hidden mt-1 text-xs text-rojo" data-for="th-categoria"></p>
+          </div>
+
+          <div>
+            <label for="th-titulo" class="block text-sm font-medium text-navy mb-1.5">
+              Título o tema <span class="text-rojo">*</span>
+            </label>
+            <input
+              type="text"
+              id="th-titulo"
+              name="titulo"
+              required
+              maxlength="200"
+              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
+            />
+            <div class="flex items-center justify-between mt-1">
+              <p class="th-error-msg hidden text-xs text-rojo" data-for="th-titulo"></p>
+              <span id="th-titulo-count" class="text-xs text-gris-muted ml-auto">0 / 200</span>
+            </div>
+          </div>
+
+          <div>
+            <label for="th-descripcion" class="block text-sm font-medium text-navy mb-1.5">
+              ¿Qué pasó? <span class="text-rojo">*</span>
+            </label>
+            <textarea
+              id="th-descripcion"
+              name="descripcion"
+              required
+              maxlength="3000"
+              rows="8"
+              placeholder="Cuéntanos los detalles: ¿Qué pasó? ¿Quiénes participaron? ¿Cuándo y dónde fue? ¿Por qué es importante? Entre más detalles nos des, mejor podremos contar la historia."
+              class="w-full px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
+            ></textarea>
+            <div class="flex items-center justify-between mt-1">
+              <p class="th-error-msg hidden text-xs text-rojo" data-for="th-descripcion"></p>
+              <span id="th-descripcion-count" class="text-xs text-gris-muted ml-auto">0 / 3000</span>
+            </div>
+          </div>
+
+          <div>
+            <label for="th-liga" class="block text-sm font-medium text-navy mb-1.5">
+              Liga / Organización
+            </label>
+            <input
+              type="text"
+              id="th-liga"
+              name="liga_organizacion"
+              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
+            />
+          </div>
+
+          <div>
+            <label for="th-ciudad" class="block text-sm font-medium text-navy mb-1.5">
+              Ciudad y Estado <span class="text-rojo">*</span>
+            </label>
+            <input
+              type="text"
+              id="th-ciudad"
+              name="ciudad_estado"
+              required
+              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
+            />
+            <p class="th-error-msg hidden mt-1 text-xs text-rojo" data-for="th-ciudad"></p>
+          </div>
+        </fieldset>
+
+        <!-- Section 3: Fotos -->
+        <fieldset class="space-y-4">
+          <legend class="block w-full text-xl font-bold text-navy pb-2 border-b border-gris-border mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            Fotos <span class="text-sm font-normal text-gris-muted">(opcional)</span>
+          </legend>
+          <p class="text-sm text-gris-text">
+            Agrega hasta 5 fotos en formato JPG, PNG o WebP. Tamaño máximo: 5MB por archivo.
+          </p>
+
+          <input
+            type="file"
+            id="th-fotos"
+            name="fotos"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            class="sr-only"
+          />
+          <label
+            for="th-fotos"
+            class="inline-flex items-center justify-center gap-2 w-full min-h-[44px] px-4 py-2.5 bg-white border-2 border-dashed border-steel-blue/50 text-steel-blue font-medium rounded-md cursor-pointer hover:bg-steel-blue/5 transition-colors"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Agregar fotos
+          </label>
+
+          <p id="th-fotos-error" class="hidden text-xs text-rojo"></p>
+
+          <div id="th-fotos-preview" class="hidden grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+        </fieldset>
+
+        <!-- Section 4: Autorización -->
+        <fieldset class="space-y-4">
+          <legend class="block w-full text-xl font-bold text-navy pb-2 border-b border-gris-border mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            Autorización
+          </legend>
+
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              id="th-auth-general"
+              name="autorizacion_general"
+              required
+              class="mt-1 h-5 w-5 flex-shrink-0 accent-rojo cursor-pointer"
+            />
+            <span class="text-sm text-gris-text leading-relaxed">
+              Autorizo a Beisjoven a utilizar la información y fotografías que envío con fines editoriales, incluyendo artículos, redes sociales y newsletters. Confirmo que tengo relación directa con el evento o las personas que aparecen en las fotografías y que he leído los
+              <a href="/tu-historia/terminos" target="_blank" rel="noopener" style="color: #B8892E;" class="hover:underline font-medium">Términos de Envío</a>. <span class="text-rojo">*</span>
+            </span>
+          </label>
+          <p class="th-error-msg hidden text-xs text-rojo ml-8" data-for="th-auth-general"></p>
+
+          <div id="th-menores-wrapper" class="hidden">
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                id="th-auth-menores"
+                name="autorizacion_menores"
+                class="mt-1 h-5 w-5 flex-shrink-0 accent-rojo cursor-pointer"
+              />
+              <span class="text-sm text-gris-text leading-relaxed">
+                Las fotografías incluyen menores de edad y confirmo que cuento con la autorización del padre, madre o tutor legal para su uso editorial.
+              </span>
+            </label>
+            <p id="th-menores-note" class="hidden mt-2 ml-8 text-xs text-gris-muted italic">
+              Si tus fotos incluyen menores de edad, necesitamos esta confirmación para poder usarlas.
+            </p>
+          </div>
+
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              id="th-credito"
+              name="permitir_credito"
+              checked
+              class="mt-1 h-5 w-5 flex-shrink-0 accent-rojo cursor-pointer"
+            />
+            <span class="text-sm text-gris-text leading-relaxed">
+              Deseo que mi nombre aparezca como colaborador si se publica una nota basada en mi envío.
+            </span>
+          </label>
+        </fieldset>
+
+        <!-- Submit -->
+        <div class="pt-2">
+          <button
+            type="submit"
+            id="th-submit"
+            class="w-full min-h-[52px] px-6 py-3 bg-rojo hover:bg-rojo-dark text-white font-bold text-base rounded-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <span id="th-submit-label">Enviar mi historia</span>
+            <svg id="th-submit-spinner" class="hidden animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+          </button>
+        </div>
+      </form>
+
+      <!-- Success panel (hidden by default) -->
+      <div id="th-success" class="hidden bg-white rounded-xl shadow-sm p-8 md:p-10 text-center">
+        <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-green-100 flex items-center justify-center">
+          <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-navy mb-3" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+          ¡Gracias por compartir tu historia!
+        </h2>
+        <p id="th-success-subtext" class="text-gris-text leading-relaxed mb-6 max-w-md mx-auto">
+          Nuestro equipo editorial la revisará. Si tu historia se publica, aparecerá en beisjoven.com con tu crédito como colaborador.
+        </p>
+        <button
+          type="button"
+          id="th-reset"
+          class="inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 bg-navy hover:bg-navy-dark text-white font-medium rounded-md transition-colors"
+        >
+          Enviar otra historia
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Supabase -->
+  <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script is:inline src="/js/supabase.js"></script>
+  <script is:inline src="/js/tu-historia.js"></script>
+</BaseLayout>

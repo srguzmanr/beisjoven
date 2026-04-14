@@ -1,0 +1,95 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+---
+
+<BaseLayout
+  title="Términos de Envío — Tu Historia - Beisjoven"
+  description="Términos de envío y aviso de privacidad simplificado para el formulario Tu Historia de Beisjoven."
+  noIndex={true}
+>
+  <Breadcrumb items={[
+    { text: 'Inicio', href: '/' },
+    { text: 'Tu Historia', href: '/tu-historia' },
+    { text: 'Términos de Envío' },
+  ]} />
+
+  <article class="max-w-[42rem] mx-auto px-4 py-12">
+    <h1 class="text-3xl md:text-4xl font-bold text-navy mb-8">Términos de Envío — Tu Historia</h1>
+
+    <div class="prose max-w-none text-gris-text leading-relaxed">
+      <p class="mb-8"><strong>Última actualización:</strong> 20 de abril de 2026</p>
+
+      <h2 class="text-xl font-bold text-navy mt-8 mb-3">1. Qué es Tu Historia</h2>
+      <p class="mb-6">
+        Tu Historia es un canal para enviar información a Beisjoven
+        (beisjoven.com), operado por Noboru S.A.S. de C.V. No es
+        una plataforma de publicación abierta. Todo lo que recibimos
+        pasa por nuestro equipo editorial, que decide qué, cómo y
+        cuándo se publica.
+      </p>
+
+      <h2 class="text-xl font-bold text-navy mt-8 mb-3">2. Uso de tu material</h2>
+      <p class="mb-6">
+        Al enviar información y fotos a través de este formulario,
+        nos autorizas a usarlas por tiempo indefinido en artículos,
+        redes sociales, newsletters y cualquier otro canal editorial
+        de Beisjoven, en cualquier formato o plataforma que
+        utilicemos actualmente o en el futuro. Esta autorización no
+        es exclusiva — tú conservas todos tus derechos sobre tu
+        material. Nos reservamos el derecho de editar, recortar o
+        no utilizar lo que recibamos.
+      </p>
+
+      <h2 class="text-xl font-bold text-navy mt-8 mb-3">3. Tu responsabilidad</h2>
+      <p class="mb-6">
+        Al enviar material, confirmas que tienes derecho a
+        compartirlo y que no infringe derechos de terceros. Si las
+        fotos incluyen menores de edad, confirmas que cuentas con
+        la autorización del padre, madre o tutor legal. Beisjoven
+        no se hace responsable por información falsa o material
+        enviado sin autorización.
+      </p>
+
+      <h2 class="text-xl font-bold text-navy mt-8 mb-3">4. Tus datos personales</h2>
+      <p class="mb-6">
+        Tu email y teléfono nunca se publican. Solo los usa nuestro
+        equipo editorial para contactarte si necesitamos más
+        información. Conservamos tus datos de contacto por 2 años;
+        después los eliminamos y conservamos solo el registro de la
+        historia de forma anónima.
+      </p>
+
+      <h2 class="text-xl font-bold text-navy mt-8 mb-3">5. Tus derechos (ARCO)</h2>
+      <p class="mb-6">
+        Puedes solicitar acceso, rectificación, cancelación u
+        oposición al tratamiento de tus datos personales
+        escribiendo a <a href="mailto:contacto@beisjoven.com" class="text-steel-blue hover:underline">contacto@beisjoven.com</a>. Respondemos en un
+        máximo de 20 días hábiles.
+      </p>
+
+      <p class="mb-6">
+        Para más detalles sobre cómo manejamos datos personales,
+        consulta nuestro Aviso de Privacidad en
+        <a href="/privacidad" class="text-steel-blue hover:underline">beisjoven.com/privacidad</a>.
+      </p>
+
+      <hr class="my-10 border-gris-border" />
+
+      <h2 class="text-2xl font-bold text-navy mt-8 mb-4">Aviso de Privacidad Simplificado — Tu Historia</h2>
+      <p class="mb-6">
+        Noboru S.A.S. de C.V., con domicilio en [dirección], es responsable del tratamiento de los datos
+        personales que nos proporciones a través del formulario Tu
+        Historia. Tus datos serán utilizados exclusivamente para
+        fines editoriales. Para consultar el Aviso de Privacidad
+        Integral, visita <a href="/privacidad" class="text-steel-blue hover:underline">beisjoven.com/privacidad</a>.
+      </p>
+
+      <div class="mt-10 pt-6 border-t border-gris-border">
+        <a href="/tu-historia" class="inline-flex items-center gap-2 text-steel-blue hover:underline font-medium">
+          ← Volver a Tu Historia
+        </a>
+      </div>
+    </div>
+  </article>
+</BaseLayout>
