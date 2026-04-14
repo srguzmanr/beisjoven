@@ -745,10 +745,12 @@ const SupabaseHistorias = {
     },
 
     // Admin: list submissions, optionally filtered by estado.
+    // Embeds the linked article's slug so the detail panel can build a
+    // public-facing link for publicada submissions.
     async listarHistorias(estado = null, page = 0, limit = 20) {
         let query = supabaseClient
             .from('historias_enviadas')
-            .select('*', { count: 'exact' })
+            .select('*, articulo:articulos(slug)', { count: 'exact' })
             .order('created_at', { ascending: false })
             .range(page * limit, (page + 1) * limit - 1);
 
@@ -761,7 +763,12 @@ const SupabaseHistorias = {
             console.error('[listarHistorias] Failed:', error);
             throw error;
         }
-        return { data: data || [], count: count || 0 };
+        // Flatten the embedded slug onto the row for easy access in UI code.
+        const rows = (data || []).map(r => ({
+            ...r,
+            articulo_slug: r.articulo ? r.articulo.slug : null
+        }));
+        return { data: rows, count: count || 0 };
     },
 
     // Admin: count submissions per estado (for filter-pill badges).

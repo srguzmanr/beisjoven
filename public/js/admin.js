@@ -1018,6 +1018,9 @@ const AdminPages = {
 
         // ?historia=<uuid> — prefill new articles from a Tu Historia submission
         let historiaSeed = null;
+        // Reset any previous seed; we only want to mark the submission as
+        // publicada when THIS editor session came from a historia link.
+        this._currentHistoriaSourceId = null;
         if (!isEdit && query && query.get && query.get('historia')) {
             const historiaId = query.get('historia');
             try {
@@ -1026,8 +1029,12 @@ const AdminPages = {
                     .select('*')
                     .eq('id', historiaId)
                     .single();
-                if (!error && data) historiaSeed = data;
-                else if (error) console.error('[editor] Failed to load historia seed:', error);
+                if (!error && data) {
+                    historiaSeed = data;
+                    this._currentHistoriaSourceId = data.id;
+                } else if (error) {
+                    console.error('[editor] Failed to load historia seed:', error);
+                }
             } catch (e) {
                 console.error('[editor] Failed to load historia seed:', e);
             }
@@ -1827,6 +1834,23 @@ const AdminPages = {
             AdminPages._triggerVercelRebuild();
         }
 
+        // If this editor session was seeded from a Tu Historia submission,
+        // mark that submission as publicada and link it to the new article.
+        // Non-fatal: a failure here must not block the save.
+        if (!editId && savedArticleId && AdminPages._currentHistoriaSourceId) {
+            var histId = AdminPages._currentHistoriaSourceId;
+            AdminPages._currentHistoriaSourceId = null; // one-shot
+            try {
+                await SupabaseHistorias.actualizarHistoria(histId, {
+                    estado: 'publicada',
+                    articulo_id: savedArticleId
+                });
+            } catch (e) {
+                console.error('[saveArticle] Failed to mark historia as publicada:', e);
+                showToast('El artículo se guardó, pero no pude actualizar el estado del envío.', 'info', 4000);
+            }
+        }
+
         // New articles: redirect to the editor of the saved article so the user
         // can confirm content persisted and continue editing if needed.
         // Existing articles: back to articles list (unchanged behavior).
@@ -2590,6 +2614,42 @@ const AdminPages = {
         document.body.classList.remove('hist-detail-open');
     },
 
+    // Checklist schema — kept in sync with the DB JSONB column.
+    // Order here drives render order in the detail panel.
+    _historiaChecklistItems: [
+        { key: 'org_exists',         label: '¿La liga/organización existe?' },
+        { key: 'second_source',      label: '¿Se confirmó con segunda fuente?' },
+        { key: 'photos_match',       label: '¿Las fotos corresponden al evento?' },
+        { key: 'sender_contactable', label: '¿El remitente es contactable?' },
+        { key: 'enough_info',        label: '¿Información suficiente para un artículo?' }
+    ],
+
+    // Status-based dropdown options. Keys are the CURRENT status; values
+    // are the set of statuses the admin may transition TO (including the
+    // current one so the <select> has a valid selected option).
+    _historiaAllowedTransitions: {
+        nueva:       ['nueva', 'en_revision', 'descartada'],
+        en_revision: ['nueva', 'en_revision', 'descartada'],
+        verificada:  ['en_revision', 'verificada', 'descartada'],
+        publicada:   ['publicada'],
+        descartada:  ['nueva', 'descartada']
+    },
+
+    _historiaDefaultChecklist: function() {
+        var out = {};
+        this._historiaChecklistItems.forEach(function(it) { out[it.key] = false; });
+        return out;
+    },
+
+    _normalizeChecklist: function(raw) {
+        var defaults = this._historiaDefaultChecklist();
+        if (!raw || typeof raw !== 'object') return defaults;
+        Object.keys(defaults).forEach(function(k) {
+            defaults[k] = raw[k] === true;
+        });
+        return defaults;
+    },
+
     _renderHistoriaDetalle: function(h) {
         var panel = document.getElementById('historias-detail-panel');
         var backdrop = document.getElementById('historias-detail-backdrop');
@@ -2609,12 +2669,20 @@ const AdminPages = {
         var createdAt = new Date(h.created_at).toLocaleString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         var creditoTxt = h.permitir_credito ? 'Sí, desea ser mencionado/a' : 'No, envío anónimo';
 
-        var estadosOptions = this._historiasEstados
-            .filter(function(e) { return e.key !== 'todas'; })
-            .map(function(e) {
-                var map = { nueva: 'Nueva', en_revision: 'En revisión', verificada: 'Verificada', publicada: 'Publicada', descartada: 'Descartada' };
-                return '<option value="' + e.key + '"' + (h.estado === e.key ? ' selected' : '') + '>' + (map[e.key] || e.key) + '</option>';
-            }).join('');
+        // Status-derived UI flags
+        var estado = h.estado;
+        var showChecklist = (estado === 'en_revision' || estado === 'verificada');
+        var checklistReadOnly = (estado === 'verificada');
+        var showCrearArticulo = (estado === 'verificada');
+        var isTerminal = (estado === 'publicada' || estado === 'descartada');
+        var selectDisabled = (estado === 'publicada');
+
+        // Build dropdown options limited to allowed transitions
+        var estadoMap = { nueva: 'Nueva', en_revision: 'En revisión', verificada: 'Verificada', publicada: 'Publicada', descartada: 'Descartada' };
+        var allowed = this._historiaAllowedTransitions[estado] || [estado];
+        var estadosOptions = allowed.map(function(key) {
+            return '<option value="' + key + '"' + (estado === key ? ' selected' : '') + '>' + (estadoMap[key] || key) + '</option>';
+        }).join('');
 
         var fotosHtml = '';
         if (h.fotos && h.fotos.length) {
@@ -2630,15 +2698,60 @@ const AdminPages = {
             fotosHtml = '<p class="hist-empty-foto">Sin fotos adjuntas</p>';
         }
 
-        var canCrearArticulo = (h.estado === 'verificada' || h.estado === 'en_revision');
+        // --- Checklist section ---
+        var checklistHtml = '';
+        if (showChecklist) {
+            var checklist = this._normalizeChecklist(h.checklist);
+            var itemsHtml = this._historiaChecklistItems.map(function(it) {
+                var checked = checklist[it.key] ? ' checked' : '';
+                var disabled = checklistReadOnly ? ' disabled' : '';
+                return '<li' + (checklistReadOnly ? ' class="hist-checklist-done"' : '') + '>' +
+                    '<label>' +
+                        '<input type="checkbox" data-key="' + it.key + '"' + checked + disabled + '>' +
+                        ' ' + esc(it.label) +
+                    '</label>' +
+                '</li>';
+            }).join('');
+            checklistHtml =
+                '<section class="hist-section">' +
+                    '<h3>Checklist de verificación</h3>' +
+                    '<ul class="hist-checklist' + (checklistReadOnly ? ' hist-checklist-readonly' : '') + '">' +
+                        itemsHtml +
+                    '</ul>' +
+                    '<div class="hist-checklist-status" id="hist-checklist-status-' + h.id + '"></div>' +
+                '</section>';
+        }
+
+        // --- Action buttons ---
         var whatsappBtn = '';
-        if (h.telefono) {
+        if (h.telefono && !isTerminal) {
             var waNum = String(h.telefono).replace(/[^0-9]/g, '');
             whatsappBtn = '<a href="https://wa.me/' + encodeURIComponent(waNum) + '" target="_blank" rel="noopener" class="btn btn-secondary hist-btn-wa">📱 Contactar por WhatsApp</a>';
         }
-        var crearArticuloBtn = canCrearArticulo
-            ? '<button type="button" id="hist-crear-btn" class="btn btn-primary hist-btn-crear" disabled onclick="if(!this.disabled)window.open(\'/admin/nuevo?historia=' + encodeURIComponent(h.id) + '\',\'_blank\')">✍️ Crear artículo</button>'
+        var crearArticuloBtn = showCrearArticulo
+            ? '<button type="button" id="hist-crear-btn" class="btn btn-primary hist-btn-crear" onclick="window.open(\'/admin/nuevo?historia=' + encodeURIComponent(h.id) + '\',\'_blank\')">✍️ Crear artículo</button>'
             : '';
+        var reabrirBtn = (estado === 'descartada')
+            ? '<button type="button" class="btn btn-secondary hist-btn-reabrir" onclick="AdminPages.cambiarEstadoHistoria(\'' + h.id + '\', \'nueva\')">↩️ Reabrir envío</button>'
+            : '';
+
+        // Link to the published article (only for publicada + articulo_id set)
+        var publicadaInfoHtml = '';
+        if (estado === 'publicada') {
+            if (h.articulo_slug) {
+                publicadaInfoHtml = '<div class="hist-publicada-info">' +
+                    '<strong>Artículo publicado:</strong> ' +
+                    '<a href="/articulo/' + encodeURIComponent(h.articulo_slug) + '" target="_blank" rel="noopener">Ver artículo →</a>' +
+                '</div>';
+            } else if (h.articulo_id) {
+                publicadaInfoHtml = '<div class="hist-publicada-info">' +
+                    '<strong>Artículo publicado:</strong> ' +
+                    '<a href="/admin/editar/' + encodeURIComponent(h.articulo_id) + '">Abrir en el editor →</a>' +
+                '</div>';
+            } else {
+                publicadaInfoHtml = '<div class="hist-publicada-info hist-publicada-info-muted">Este envío ya fue publicado.</div>';
+            }
+        }
 
         panel.innerHTML =
             '<div class="hist-detail-inner">' +
@@ -2652,11 +2765,13 @@ const AdminPages = {
 
                 '<div class="hist-detail-estado-row">' +
                     '<label>Estado:</label>' +
-                    '<select id="hist-estado-select" onchange="AdminPages.cambiarEstadoHistoria(\'' + h.id + '\', this.value)">' +
+                    '<select id="hist-estado-select"' + (selectDisabled ? ' disabled' : '') + ' onchange="AdminPages.cambiarEstadoHistoria(\'' + h.id + '\', this.value)">' +
                         estadosOptions +
                     '</select>' +
-                    this._historiaEstadoBadge(h.estado) +
+                    this._historiaEstadoBadge(estado) +
                 '</div>' +
+
+                publicadaInfoHtml +
 
                 '<section class="hist-section">' +
                     '<h3>Datos del colaborador</h3>' +
@@ -2684,17 +2799,7 @@ const AdminPages = {
                     fotosHtml +
                 '</section>' +
 
-                '<section class="hist-section">' +
-                    '<h3>Checklist de verificación</h3>' +
-                    '<p class="hist-checklist-hint">Recordatorios visuales — no se guardan en la base de datos.</p>' +
-                    '<ul class="hist-checklist">' +
-                        '<li><label><input type="checkbox"> ¿La liga/organización existe?</label></li>' +
-                        '<li><label><input type="checkbox"> ¿Se confirmó con segunda fuente?</label></li>' +
-                        '<li><label><input type="checkbox"> ¿Las fotos corresponden al evento?</label></li>' +
-                        '<li><label><input type="checkbox"> ¿El remitente es contactable?</label></li>' +
-                        '<li><label><input type="checkbox"> ¿Información suficiente para un artículo?</label></li>' +
-                    '</ul>' +
-                '</section>' +
+                checklistHtml +
 
                 '<section class="hist-section">' +
                     '<h3>Notas editoriales</h3>' +
@@ -2704,6 +2809,7 @@ const AdminPages = {
 
                 '<div class="hist-actions">' +
                     crearArticuloBtn +
+                    reabrirBtn +
                     whatsappBtn +
                     '<button type="button" class="btn btn-secondary" onclick="AdminPages.cerrarDetalleHistoria()">Cerrar</button>' +
                 '</div>' +
@@ -2715,15 +2821,86 @@ const AdminPages = {
         // Scroll panel to top
         panel.scrollTop = 0;
 
-        // Wire checklist to gate "Crear artículo" button
-        var crearBtn = document.getElementById('hist-crear-btn');
-        if (crearBtn) {
+        // --- Wire checklist behavior (en_revision only; verificada is read-only) ---
+        if (estado === 'en_revision') {
             var checkboxes = panel.querySelectorAll('.hist-checklist input[type="checkbox"]');
-            function _updateCrearBtn() {
-                var allChecked = Array.from(checkboxes).every(function(c) { return c.checked; });
-                crearBtn.disabled = !allChecked;
+            checkboxes.forEach(function(cb) {
+                cb.addEventListener('change', function() {
+                    self._guardarChecklistHistoria(h.id);
+                });
+            });
+
+            // On load: if all 5 are already checked (e.g. saved previously),
+            // auto-transition to verificada immediately.
+            var stored = self._normalizeChecklist(h.checklist);
+            var allAlreadyChecked = self._historiaChecklistItems.every(function(it) {
+                return stored[it.key] === true;
+            });
+            if (allAlreadyChecked) {
+                self._guardarChecklistHistoria(h.id);
             }
-            checkboxes.forEach(function(cb) { cb.addEventListener('change', _updateCrearBtn); });
+        }
+    },
+
+    // Persist checklist state for a submission in en_revision. Debounced 500ms.
+    // If all 5 items are checked, also transitions estado → verificada.
+    _guardarChecklistHistoria: function(id) {
+        clearTimeout(this._checklistDebounce);
+        var self = this;
+        this._checklistDebounce = setTimeout(function() {
+            self._flushChecklistSave(id);
+        }, 500);
+    },
+
+    _flushChecklistSave: async function(id) {
+        var panel = document.getElementById('historias-detail-panel');
+        if (!panel) return;
+        var item = this._historiasState.items.find(function(h) { return h.id === id; });
+        if (!item) return;
+
+        var statusEl = document.getElementById('hist-checklist-status-' + id);
+        var checklist = this._historiaDefaultChecklist();
+        var boxes = panel.querySelectorAll('.hist-checklist input[type="checkbox"]');
+        boxes.forEach(function(cb) {
+            var key = cb.getAttribute('data-key');
+            if (key && Object.prototype.hasOwnProperty.call(checklist, key)) {
+                checklist[key] = !!cb.checked;
+            }
+        });
+
+        var allChecked = this._historiaChecklistItems.every(function(it) {
+            return checklist[it.key] === true;
+        });
+        var updates = { checklist: checklist };
+        if (allChecked && item.estado === 'en_revision') {
+            updates.estado = 'verificada';
+        }
+
+        try {
+            if (statusEl) statusEl.textContent = 'Guardando…';
+            var updated = await SupabaseHistorias.actualizarHistoria(id, updates);
+            item.checklist = updated.checklist;
+            if (updates.estado) item.estado = updated.estado;
+            if (statusEl) {
+                statusEl.textContent = '✓ Guardado';
+                setTimeout(function() {
+                    var s = document.getElementById('hist-checklist-status-' + id);
+                    if (s) s.textContent = '';
+                }, 2000);
+            }
+
+            // If estado changed, re-render detail + list + badge.
+            if (updates.estado) {
+                showToast('✅ Checklist completo — envío movido a Verificada');
+                await this._renderHistoriasPage();
+                AdminComponents.updateHistoriasBadge();
+                var refreshed = this._historiasState.items.find(function(h) { return h.id === id; });
+                if (refreshed) this._renderHistoriaDetalle(refreshed);
+            }
+        } catch (e) {
+            console.error('[historias] Save checklist failed:', e);
+            if (statusEl) statusEl.textContent = '⚠️ Error al guardar';
+            showToast('Error al guardar checklist: ' + (e.message || e), 'error');
         }
     },
 
@@ -2753,17 +2930,28 @@ const AdminPages = {
     },
 
     cambiarEstadoHistoria: async function(id, nuevoEstado) {
-        var self = this;
         var item = this._historiasState.items.find(function(h) { return h.id === id; });
         if (!item) return;
         var estadoPrevio = item.estado;
+        if (nuevoEstado === estadoPrevio) return;
 
-        // If changing to descartada: prompt for reason
+        // Guardrails against invalid transitions (defence in depth — the
+        // dropdown is already filtered by _historiaAllowedTransitions, but
+        // callers like the Reabrir button bypass that).
+        var allowed = this._historiaAllowedTransitions[estadoPrevio] || [];
+        if (allowed.indexOf(nuevoEstado) === -1) {
+            console.warn('[historias] Invalid transition', estadoPrevio, '→', nuevoEstado);
+            var selX = document.getElementById('hist-estado-select');
+            if (selX) selX.value = estadoPrevio;
+            return;
+        }
+
         var updates = { estado: nuevoEstado };
+
+        // Descartada: prompt for reason and append to editorial notes.
         if (nuevoEstado === 'descartada') {
             var razon = prompt('Motivo para descartar este envío (se guardará en notas editoriales):');
             if (razon === null) {
-                // Cancelled — revert select
                 var sel = document.getElementById('hist-estado-select');
                 if (sel) sel.value = estadoPrevio;
                 return;
@@ -2772,26 +2960,34 @@ const AdminPages = {
             updates.notas_editoriales = notasActuales + '[DESCARTADO] ' + razon;
         }
 
+        // verificada → en_revision via dropdown: reset checklist so the admin
+        // has to re-verify. Otherwise the on-load auto-transition would kick
+        // the submission straight back to verificada.
+        if (estadoPrevio === 'verificada' && nuevoEstado === 'en_revision') {
+            updates.checklist = this._historiaDefaultChecklist();
+        }
+
+        // Reabrir (descartada → nueva): also reset checklist so a reopened
+        // submission starts fresh in triage.
+        if (estadoPrevio === 'descartada' && nuevoEstado === 'nueva') {
+            updates.checklist = this._historiaDefaultChecklist();
+        }
+
         try {
             var updated = await SupabaseHistorias.actualizarHistoria(id, updates);
             item.estado = updated.estado;
+            item.checklist = updated.checklist;
             if (updates.notas_editoriales) item.notas_editoriales = updated.notas_editoriales;
 
             showToast('✅ Estado actualizado');
 
-            if (nuevoEstado === 'publicada') {
-                showToast('¿Ya contactaste al remitente para confirmar datos?', 'info', 4500);
-            }
-
-            // Re-render list + detail
             await this._renderHistoriasPage();
             AdminComponents.updateHistoriasBadge();
-            // Re-open detail for the same item with fresh data
             var refreshed = this._historiasState.items.find(function(h) { return h.id === id; });
             if (refreshed) this._renderHistoriaDetalle(refreshed);
         } catch (e) {
             console.error('[historias] Status change failed:', e);
-            showToast('Error al cambiar estado: ' + e.message, 'error');
+            showToast('Error al cambiar estado: ' + (e.message || e), 'error');
             var sel2 = document.getElementById('hist-estado-select');
             if (sel2) sel2.value = estadoPrevio;
         }
@@ -2964,12 +3160,14 @@ const AdminComponents = {
         }
     },
 
-    // Fetch "nueva" submission count and update sidebar + more-menu badges
+    // Count actionable submissions (nueva + en_revision + verificada) and
+    // update sidebar + more-menu badges. Publicada and descartada are
+    // terminal, so they don't need admin attention and aren't counted.
     updateHistoriasBadge: async function() {
         if (!Auth.isLoggedIn() || typeof SupabaseHistorias === 'undefined') return;
         try {
             var counts = await SupabaseHistorias.contarHistoriasPorEstado();
-            var n = counts.nueva || 0;
+            var n = (counts.nueva || 0) + (counts.en_revision || 0) + (counts.verificada || 0);
             var els = [
                 document.getElementById('nav-historias-badge-sidebar'),
                 document.getElementById('nav-historias-badge-more')
@@ -3025,6 +3223,7 @@ const AdminComponents = {
             '.hist-detail-estado-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px;background:#f9fafb;border-radius:8px;margin-bottom:18px;}',
             '.hist-detail-estado-row label{font-weight:600;color:#374151;font-size:0.9rem;}',
             '.hist-detail-estado-row select{padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;font-size:0.9rem;min-height:40px;}',
+            '.hist-detail-estado-row select:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed;}',
             '.hist-section{margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid #f3f4f6;}',
             '.hist-section:last-of-type{border-bottom:none;}',
             '.hist-section h3{font-size:0.95rem;font-weight:700;color:#1B2A4A;margin:0 0 10px;text-transform:uppercase;letter-spacing:0.03em;}',
@@ -3040,11 +3239,19 @@ const AdminComponents = {
             '.hist-foto-thumb{display:block;border-radius:6px;overflow:hidden;aspect-ratio:4/3;background:#f3f4f6;}',
             '.hist-foto-thumb img{width:100%;height:100%;object-fit:cover;display:block;}',
             '.hist-empty-foto{color:#9ca3af;font-style:italic;font-size:0.9rem;margin:0;}',
-            '.hist-checklist-hint{color:#6b7280;font-size:0.8rem;margin:0 0 8px;font-style:italic;}',
             '.hist-checklist{list-style:none;padding:0;margin:0;}',
             '.hist-checklist li{padding:6px 0;}',
             '.hist-checklist label{display:flex;align-items:center;gap:10px;cursor:pointer;color:#374151;font-size:0.9rem;min-height:32px;}',
             '.hist-checklist input[type="checkbox"]{width:18px;height:18px;accent-color:#C8102E;}',
+            '.hist-checklist-readonly label{cursor:default;color:#065F46;font-weight:600;}',
+            '.hist-checklist-readonly input[type="checkbox"]{accent-color:#059669;opacity:1;}',
+            '.hist-checklist-readonly li.hist-checklist-done{background:#ECFDF5;border-left:3px solid #059669;padding-left:10px;border-radius:4px;margin-bottom:4px;}',
+            '.hist-checklist-status{font-size:0.78rem;color:#6b7280;margin-top:6px;min-height:16px;}',
+            '.hist-publicada-info{background:#ECFDF5;border:1px solid #A7F3D0;border-radius:8px;padding:12px 14px;margin-bottom:18px;color:#065F46;font-size:0.9rem;}',
+            '.hist-publicada-info a{color:#059669;font-weight:600;text-decoration:none;}',
+            '.hist-publicada-info a:hover{text-decoration:underline;}',
+            '.hist-publicada-info-muted{background:#F9FAFB;border-color:#E5E7EB;color:#6B7280;}',
+            '.hist-btn-reabrir{background:#D4A843 !important;color:#1B2A4A !important;font-weight:700 !important;}',
             '.hist-notas{width:100%;min-height:90px;padding:10px 12px;border:2px solid #e5e7eb;border-radius:8px;font-family:inherit;font-size:0.92rem;resize:vertical;background:#fff;color:#111827;box-sizing:border-box;}',
             '.hist-notas:focus{outline:none;border-color:#C8102E;}',
             '.hist-notas-status{font-size:0.78rem;color:#6b7280;margin-top:4px;min-height:16px;}',
