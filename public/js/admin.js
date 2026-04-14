@@ -454,6 +454,19 @@ var Autosave = {
         // Rule 2: never save if title AND content are both empty
         if (!data.titulo.trim() && !data.contenido.trim()) return;
 
+        // YOUTUBE-EDITOR-FIX: data-loss safety net.
+        // Never overwrite an existing article with empty editor content.
+        // If the editor failed to render (e.g. broken YouTube embed crashed
+        // ProseMirror), getValue() returns '' or '<p></p>' — which would
+        // wipe the good content already in Supabase.
+        var editorHtml = (data.contenido || '').trim();
+        var isEditorEmpty = !editorHtml || editorHtml === '<p></p>' || editorHtml === '<br>' || editorHtml === '<p><br></p>';
+        if (isEditorEmpty && (this._editId || this._draftId)) {
+            console.warn('[autosave] Skipped: editor empty but article exists (id=' + (this._editId || this._draftId) + ')');
+            this._updateIndicator('unsaved');
+            return;
+        }
+
         this._saving = true;
         this._updateIndicator('saving');
 
@@ -1678,11 +1691,25 @@ const AdminPages = {
         const destacado = document.getElementById('featured').checked;
         
         // Validate content
-        if (!contenidoRaw || contenidoRaw === '<br>' || contenidoRaw === '<p><br></p>') {
-            showToast('El contenido del artículo es requerido', 'error');
-            return;
+        const trimmedContenido = (contenidoRaw || '').trim();
+        const editorIsEmpty = !trimmedContenido || trimmedContenido === '<br>' || trimmedContenido === '<p></p>' || trimmedContenido === '<p><br></p>';
+        if (editorIsEmpty) {
+            // YOUTUBE-EDITOR-FIX: if we're editing an existing article and the editor
+            // is empty, this is almost certainly an editor-render failure (e.g. broken
+            // YouTube embed). Refuse to overwrite the saved content silently — make
+            // the user explicitly confirm.
+            if (editId) {
+                const ok = confirm('El editor está vacío. ¿Guardar de todos modos? (Esto eliminará el contenido existente del artículo).');
+                if (!ok) {
+                    Autosave.start(editId);
+                    return;
+                }
+            } else {
+                showToast('El contenido del artículo es requerido', 'error');
+                return;
+            }
         }
-        
+
         // C) Sanitizar contenido para prevenir XSS
         const contenido = sanitizeHtmlBasic(contenidoRaw);
 

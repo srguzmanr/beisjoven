@@ -10,7 +10,7 @@
 
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
-import Youtube from '@tiptap/extension-youtube';
+import Youtube, { getEmbedUrlFromYoutubeUrl, isValidYoutubeUrl } from '@tiptap/extension-youtube';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -210,6 +210,150 @@ const TikTokEmbed = Node.create({
       dom.innerHTML = `
         <div class="embed-badge">🎵 TikTok</div>
         <div class="embed-url">${node.attrs.url || ''}</div>
+      `;
+      return { dom };
+    };
+  },
+});
+
+/**
+ * SafeYoutube — extends the official @tiptap/extension-youtube with:
+ *   1. A null-safe renderHTML that won't crash the editor when an iframe
+ *      is missing its src attribute (legacy/corrupted save data).
+ *   2. A defensive parseHTML that recovers a URL from the wrapping
+ *      div[data-youtube-video] attribute when the iframe has no src.
+ *
+ * Without these guards, opening an article whose iframe was saved without
+ * a src (e.g. article 589) crashes the ProseMirror toDOM serializer
+ * (`isValidYoutubeUrl(null)` → `null.match(...)` TypeError) and the entire
+ * editor renders as empty — risking data loss via autosave.
+ */
+const SafeYoutube = Youtube.extend({
+  parseHTML() {
+    return [
+      {
+        tag: 'div[data-youtube-video] iframe',
+        getAttrs(dom) {
+          // Default src extraction
+          let src = dom.getAttribute('src') || '';
+          // Recover src from parent data attribute if iframe lost it
+          if (!src) {
+            const parent = dom.parentElement;
+            const dataUrl = parent ? parent.getAttribute('data-youtube-video') : '';
+            if (dataUrl) src = dataUrl;
+          }
+          const start = parseInt(dom.getAttribute('start'), 10);
+          const width = parseInt(dom.getAttribute('width'), 10);
+          const height = parseInt(dom.getAttribute('height'), 10);
+          return {
+            src: src || null,
+            start: Number.isFinite(start) ? start : 0,
+            width: Number.isFinite(width) ? width : null,
+            height: Number.isFinite(height) ? height : null,
+          };
+        },
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    const rawSrc = typeof HTMLAttributes.src === 'string' ? HTMLAttributes.src.trim() : '';
+    const isValid = !!rawSrc && !!isValidYoutubeUrl(rawSrc);
+
+    if (!isValid) {
+      // Render a benign placeholder block — preserves the node so the user
+      // can see "something is here" and delete + re-insert, without crashing
+      // toDOM. We mark it broken so a node view (and CSS) can style it.
+      console.warn('[SafeYoutube] rendering placeholder for invalid/missing src:', rawSrc);
+      return [
+        'div',
+        {
+          'data-youtube-video': '',
+          'data-youtube-broken': 'true',
+        },
+        [
+          'iframe',
+          mergeAttributes(this.options.HTMLAttributes, {
+            width: this.options.width,
+            height: this.options.height,
+          }),
+        ],
+      ];
+    }
+
+    const embedUrl = getEmbedUrlFromYoutubeUrl({
+      url: rawSrc,
+      allowFullscreen: this.options.allowFullscreen,
+      autoplay: this.options.autoplay,
+      ccLanguage: this.options.ccLanguage,
+      ccLoadPolicy: this.options.ccLoadPolicy,
+      controls: this.options.controls,
+      disableKBcontrols: this.options.disableKBcontrols,
+      enableIFrameApi: this.options.enableIFrameApi,
+      endTime: this.options.endTime,
+      interfaceLanguage: this.options.interfaceLanguage,
+      ivLoadPolicy: this.options.ivLoadPolicy,
+      loop: this.options.loop,
+      modestBranding: this.options.modestBranding,
+      nocookie: this.options.nocookie,
+      origin: this.options.origin,
+      playlist: this.options.playlist,
+      progressBarColor: this.options.progressBarColor,
+      startAt: HTMLAttributes.start || 0,
+      rel: this.options.rel,
+    });
+
+    HTMLAttributes.src = embedUrl;
+
+    return [
+      'div',
+      { 'data-youtube-video': '' },
+      [
+        'iframe',
+        mergeAttributes(
+          this.options.HTMLAttributes,
+          {
+            width: this.options.width,
+            height: this.options.height,
+            allowfullscreen: this.options.allowFullscreen,
+            autoplay: this.options.autoplay,
+            ccLanguage: this.options.ccLanguage,
+            ccLoadPolicy: this.options.ccLoadPolicy,
+            disableKBcontrols: this.options.disableKBcontrols,
+            enableIFrameApi: this.options.enableIFrameApi,
+            endTime: this.options.endTime,
+            interfaceLanguage: this.options.interfaceLanguage,
+            ivLoadPolicy: this.options.ivLoadPolicy,
+            loop: this.options.loop,
+            modestBranding: this.options.modestBranding,
+            origin: this.options.origin,
+            playlist: this.options.playlist,
+            progressBarColor: this.options.progressBarColor,
+            rel: this.options.rel,
+          },
+          HTMLAttributes,
+        ),
+      ],
+    ];
+  },
+
+  addNodeView() {
+    // Provide a node view ONLY for the broken state so the user sees a clear
+    // "missing URL" placeholder. Valid YouTube nodes fall back to renderHTML
+    // (the iframe loads normally inside the editor).
+    return ({ node }) => {
+      const src = typeof node.attrs.src === 'string' ? node.attrs.src.trim() : '';
+      const isValid = !!src && !!isValidYoutubeUrl(src);
+      if (isValid) return null; // use default renderHTML iframe
+
+      const dom = document.createElement('div');
+      dom.className = 'tiptap-embed-preview tiptap-embed-youtube-broken';
+      dom.contentEditable = 'false';
+      dom.setAttribute('data-youtube-video', '');
+      dom.setAttribute('data-youtube-broken', 'true');
+      dom.innerHTML = `
+        <div class="embed-badge">▶ YouTube</div>
+        <div class="embed-url">URL faltante — elimina este bloque y vuelve a insertar el video.</div>
       `;
       return { dom };
     };
@@ -822,6 +966,7 @@ function injectStyles() {
     .tiptap-embed-twitter { border-color: #1d9bf0; background: #f0f9ff; }
     .tiptap-embed-instagram { border-color: #e1306c; background: #fff0f5; }
     .tiptap-embed-tiktok { border-color: #010101; background: #f5f5f5; }
+    .tiptap-embed-youtube-broken { border-color: #C8102E; background: #fff5f5; color: #1B2A4A; }
 
     /* Gallery preview in editor */
     .tiptap-gallery-preview {
@@ -1078,7 +1223,7 @@ const TiptapEditor = {
           horizontalRule: false, // we use the standalone extension
         }),
         HorizontalRule,
-        Youtube.configure({
+        SafeYoutube.configure({
           controls: true,
           nocookie: true,
           modestBranding: true,
