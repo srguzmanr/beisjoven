@@ -10,7 +10,7 @@
 
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
-import Youtube, { getEmbedUrlFromYoutubeUrl, isValidYoutubeUrl } from '@tiptap/extension-youtube';
+import Youtube from '@tiptap/extension-youtube';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -222,13 +222,72 @@ const TikTokEmbed = Node.create({
  *      is missing its src attribute (legacy/corrupted save data).
  *   2. A defensive parseHTML that recovers a URL from the wrapping
  *      div[data-youtube-video] attribute when the iframe has no src.
+ *   3. Support for /live/ and /shorts/ URL formats, which the upstream
+ *      getEmbedUrlFromYoutubeUrl() does not recognise (it returns null and
+ *      the iframe renders as an invisible blank space).
  *
  * Without these guards, opening an article whose iframe was saved without
  * a src (e.g. article 589) crashes the ProseMirror toDOM serializer
  * (`isValidYoutubeUrl(null)` → `null.match(...)` TypeError) and the entire
  * editor renders as empty — risking data loss via autosave.
  */
+
+// Accept every YouTube video URL shape we care about:
+//   youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID,
+//   youtube-nocookie.com/embed/ID, youtube.com/shorts/ID, youtube.com/live/ID
+const YOUTUBE_ID_REGEX = /(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+
+function extractYoutubeId(url) {
+  if (!url || typeof url !== 'string') return null;
+  const match = url.match(YOUTUBE_ID_REGEX);
+  return match ? match[1] : null;
+}
+
+function buildYoutubeEmbedUrl(url, options, startAt) {
+  const id = extractYoutubeId(url);
+  if (!id) return null;
+  const base = options.nocookie
+    ? 'https://www.youtube-nocookie.com/embed/'
+    : 'https://www.youtube.com/embed/';
+  const params = [];
+  if (options.allowFullscreen === false) params.push('fs=0');
+  if (options.autoplay) params.push('autoplay=1');
+  if (options.ccLanguage) params.push(`cc_lang_pref=${options.ccLanguage}`);
+  if (options.ccLoadPolicy) params.push('cc_load_policy=1');
+  if (options.controls === false) params.push('controls=0');
+  if (options.disableKBcontrols) params.push('disablekb=1');
+  if (options.enableIFrameApi) params.push('enablejsapi=1');
+  if (options.endTime) params.push(`end=${options.endTime}`);
+  if (options.interfaceLanguage) params.push(`hl=${options.interfaceLanguage}`);
+  if (options.ivLoadPolicy) params.push(`iv_load_policy=${options.ivLoadPolicy}`);
+  if (options.loop) params.push('loop=1');
+  if (options.modestBranding) params.push('modestbranding=1');
+  if (options.origin) params.push(`origin=${options.origin}`);
+  if (options.playlist) params.push(`playlist=${options.playlist}`);
+  if (options.progressBarColor) params.push(`color=${options.progressBarColor}`);
+  if (startAt) params.push(`start=${startAt}`);
+  if (options.rel !== undefined) params.push(`rel=${options.rel}`);
+  return params.length ? `${base}${id}?${params.join('&')}` : `${base}${id}`;
+}
+
 const SafeYoutube = Youtube.extend({
+  addCommands() {
+    return {
+      // Override the upstream setYoutubeVideo: accept any URL we can extract
+      // a video ID from (including /live/ and /shorts/), not just the subset
+      // matched by isValidYoutubeUrl().
+      setYoutubeVideo: (options) => ({ commands }) => {
+        if (!extractYoutubeId(options.src)) {
+          return false;
+        }
+        return commands.insertContent({
+          type: this.name,
+          attrs: options,
+        });
+      },
+    };
+  },
+
   parseHTML() {
     return [
       {
@@ -258,9 +317,9 @@ const SafeYoutube = Youtube.extend({
 
   renderHTML({ HTMLAttributes }) {
     const rawSrc = typeof HTMLAttributes.src === 'string' ? HTMLAttributes.src.trim() : '';
-    const isValid = !!rawSrc && !!isValidYoutubeUrl(rawSrc);
+    const embedUrl = buildYoutubeEmbedUrl(rawSrc, this.options, HTMLAttributes.start || 0);
 
-    if (!isValid) {
+    if (!embedUrl) {
       // Render a benign placeholder block — preserves the node so the user
       // can see "something is here" and delete + re-insert, without crashing
       // toDOM. We mark it broken so a node view (and CSS) can style it.
@@ -280,28 +339,6 @@ const SafeYoutube = Youtube.extend({
         ],
       ];
     }
-
-    const embedUrl = getEmbedUrlFromYoutubeUrl({
-      url: rawSrc,
-      allowFullscreen: this.options.allowFullscreen,
-      autoplay: this.options.autoplay,
-      ccLanguage: this.options.ccLanguage,
-      ccLoadPolicy: this.options.ccLoadPolicy,
-      controls: this.options.controls,
-      disableKBcontrols: this.options.disableKBcontrols,
-      enableIFrameApi: this.options.enableIFrameApi,
-      endTime: this.options.endTime,
-      interfaceLanguage: this.options.interfaceLanguage,
-      ivLoadPolicy: this.options.ivLoadPolicy,
-      loop: this.options.loop,
-      modestBranding: this.options.modestBranding,
-      nocookie: this.options.nocookie,
-      origin: this.options.origin,
-      playlist: this.options.playlist,
-      progressBarColor: this.options.progressBarColor,
-      startAt: HTMLAttributes.start || 0,
-      rel: this.options.rel,
-    });
 
     HTMLAttributes.src = embedUrl;
 
@@ -343,17 +380,19 @@ const SafeYoutube = Youtube.extend({
     // (the iframe loads normally inside the editor).
     return ({ node }) => {
       const src = typeof node.attrs.src === 'string' ? node.attrs.src.trim() : '';
-      const isValid = !!src && !!isValidYoutubeUrl(src);
-      if (isValid) return null; // use default renderHTML iframe
+      if (extractYoutubeId(src)) return null; // use default renderHTML iframe
 
       const dom = document.createElement('div');
       dom.className = 'tiptap-embed-preview tiptap-embed-youtube-broken';
       dom.contentEditable = 'false';
       dom.setAttribute('data-youtube-video', '');
       dom.setAttribute('data-youtube-broken', 'true');
+      const detail = src
+        ? `URL no reconocida: ${src}`
+        : 'URL faltante — elimina este bloque y vuelve a insertar el video.';
       dom.innerHTML = `
         <div class="embed-badge">▶ YouTube</div>
-        <div class="embed-url">URL faltante — elimina este bloque y vuelve a insertar el video.</div>
+        <div class="embed-url">${detail}</div>
       `;
       return { dom };
     };
@@ -966,7 +1005,17 @@ function injectStyles() {
     .tiptap-embed-twitter { border-color: #1d9bf0; background: #f0f9ff; }
     .tiptap-embed-instagram { border-color: #e1306c; background: #fff0f5; }
     .tiptap-embed-tiktok { border-color: #010101; background: #f5f5f5; }
-    .tiptap-embed-youtube-broken { border-color: #C8102E; background: #fff5f5; color: #1B2A4A; }
+    .tiptap-embed-youtube-broken {
+      border-color: #C8102E;
+      border-style: solid;
+      background: #fff5f5;
+      color: #1B2A4A;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .tiptap-embed-youtube-broken .embed-badge { color: #C8102E; }
 
     /* Gallery preview in editor */
     .tiptap-gallery-preview {
