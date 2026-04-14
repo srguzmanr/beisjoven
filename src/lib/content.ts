@@ -22,7 +22,7 @@ interface EmbedProvider {
 
 function extractYouTubeId(url: string): string | null {
   const match = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+    /(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
   );
   return match ? match[1] : null;
 }
@@ -30,7 +30,7 @@ function extractYouTubeId(url: string): string | null {
 const EMBED_PROVIDERS: EmbedProvider[] = [
   {
     name: 'youtube',
-    test: (url) => /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)/.test(url),
+    test: (url) => /(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)/.test(url),
     toHTML: (url) => {
       const id = extractYouTubeId(url);
       if (!id) return '';
@@ -166,6 +166,49 @@ function processShortcodes(content: string): string {
   );
 }
 
+/* ==================== TIPTAP NODE TRANSFORM ==================== */
+
+/**
+ * Transform Tiptap-serialized embed nodes into standard responsive embed HTML.
+ *
+ * Tiptap's YouTube extension (v2/v3) serializes YouTube nodes as:
+ *   <div data-youtube-video=""><iframe src="EMBED_URL" width="640" height="480" ...></iframe></div>
+ *
+ * This step normalises that output into a responsive wrapper so the 16:9
+ * aspect-ratio CSS works reliably, regardless of which Tiptap version saved
+ * the article.  It also handles edge-cases where the URL ended up in the
+ * data attribute without an iframe (older serializers).
+ */
+function transformTiptapNodes(content: string): string {
+  // YouTube: <div data-youtube-video="[url]">[<iframe src="embed_url" .../>]</div>
+  return content.replace(
+    /<div\b[^>]*\bdata-youtube-video(?:="([^"]*)")?[^>]*>([\s\S]*?)<\/div>/gi,
+    (_match, urlAttr, inner) => {
+      // Case 1 — iframe already present: re-wrap with responsive container
+      const iframeMatch = inner.match(/<iframe\b[^>]+\bsrc="([^"]+)"[^>]*>/i);
+      if (iframeMatch) {
+        const src = iframeMatch[1];
+        if (/youtube(?:-nocookie)?\.com\/embed\//.test(src)) {
+          return `<div class="embed-container embed-youtube">${inner}</div>`;
+        }
+      }
+
+      // Case 2 — URL in the data attribute, no iframe: generate full embed
+      const url = (urlAttr || '').trim();
+      if (url) {
+        for (const provider of EMBED_PROVIDERS) {
+          if (provider.test(url)) {
+            return provider.toHTML(url) || '';
+          }
+        }
+      }
+
+      // Case 3 — nothing usable: remove the blank placeholder div
+      return '';
+    }
+  );
+}
+
 /* ==================== MAIN RENDER ==================== */
 
 export function renderContent(content: string): string {
@@ -177,7 +220,10 @@ export function renderContent(content: string): string {
   // STEP 2: Process [shortcode] tags
   content = processShortcodes(content);
 
-  // STEP 3: Detect HTML vs Markdown and parse accordingly
+  // STEP 3: Transform Tiptap embed nodes into standard responsive HTML
+  content = transformTiptapNodes(content);
+
+  // STEP 4: Detect HTML vs Markdown and parse accordingly
   const isHTML = /<[a-zA-Z][^>]*>/m.test(content);
 
   if (isHTML) {
