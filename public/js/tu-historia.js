@@ -440,6 +440,21 @@
       recordSubmission();
       if (isRateLimited()) rateLimitBanner.classList.remove('hidden');
 
+      // Fire-and-forget email notification. Failures must not block
+      // or surface an error to the user — the submission is saved.
+      fetch('/api/notify-historia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: payload.nombre,
+          titulo: payload.titulo,
+          categoria: payload.categoria_sugerida,
+          ciudad: payload.ciudad_estado,
+        }),
+      }).catch((err) => {
+        console.error('[notify-historia] Email request failed:', err);
+      });
+
       showSuccess(payload.permitir_credito);
     } catch (err) {
       console.error('[tu-historia] Submission failed:', err);
