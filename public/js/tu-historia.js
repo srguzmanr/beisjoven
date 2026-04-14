@@ -71,6 +71,42 @@
     update();
   }
 
+  // ==================== REAL-TIME SUBMIT GATING ====================
+
+  function isFormComplete() {
+    var nombre = form.elements.nombre.value.trim();
+    var email = form.elements.email.value.trim();
+    var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    var relacion = form.elements.relacion.value;
+    var categoria = form.elements.categoria_sugerida.value;
+    var titulo = form.elements.titulo.value.trim();
+    var descripcion = form.elements.descripcion.value.trim();
+    var ciudad = form.elements.ciudad_estado.value.trim();
+    var authGeneral = form.elements.autorizacion_general.checked;
+    return (
+      nombre.length >= 3 &&
+      emailRe.test(email) &&
+      relacion !== '' &&
+      categoria !== '' &&
+      titulo.length > 0 &&
+      descripcion.length > 0 &&
+      ciudad.length > 0 &&
+      authGeneral
+    );
+  }
+
+  function updateSubmitState() {
+    submitBtn.disabled = !isFormComplete();
+  }
+
+  ['th-nombre', 'th-email', 'th-relacion', 'th-categoria', 'th-titulo', 'th-descripcion', 'th-ciudad', 'th-auth-general'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', updateSubmitState);
+      el.addEventListener('change', updateSubmitState);
+    }
+  });
+
   // ==================== FILE HANDLING ====================
 
   fileInput.addEventListener('change', (e) => {
@@ -79,6 +115,31 @@
     // Reset the input so the same file can be re-selected if removed.
     fileInput.value = '';
   });
+
+  // ==================== DRAG AND DROP ====================
+
+  (function() {
+    var dndStyle = document.createElement('style');
+    dndStyle.textContent = '.th-dnd-over{border-style:solid!important;background-color:rgba(70,130,180,0.1)!important;border-color:#4682b4!important;}';
+    document.head.appendChild(dndStyle);
+  })();
+
+  var fotosLabel = document.getElementById('th-fotos-label');
+  if (fotosLabel) {
+    fotosLabel.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      fotosLabel.classList.add('th-dnd-over');
+    });
+    fotosLabel.addEventListener('dragleave', function() {
+      fotosLabel.classList.remove('th-dnd-over');
+    });
+    fotosLabel.addEventListener('drop', function(e) {
+      e.preventDefault();
+      fotosLabel.classList.remove('th-dnd-over');
+      var droppedFiles = Array.from(e.dataTransfer.files || []);
+      addFiles(droppedFiles);
+    });
+  }
 
   function addFiles(newFiles) {
     filesError.textContent = '';
@@ -441,6 +502,7 @@
     // Swap panels
     successPanel.classList.add('hidden');
     form.classList.remove('hidden');
+    updateSubmitState();
     form.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 })();
