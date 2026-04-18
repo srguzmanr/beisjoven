@@ -583,3 +583,26 @@ export async function getArticulosByEvento(eventoId: number, limite = 50) {
     .limit(limite);
   return (data as Articulo[]) || [];
 }
+
+// ==================== QUICK HITS ====================
+
+export interface QuickHit {
+  id: string;
+  texto: string;
+  url: string;
+  activo: boolean;
+  orden: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getQuickHitsActivos(limite = 3) {
+  const { data } = await supabaseServer
+    .from('quick_hits')
+    .select('*')
+    .eq('activo', true)
+    .order('orden', { ascending: true })
+    .order('created_at', { ascending: false })
+    .limit(limite);
+  return (data as QuickHit[]) || [];
+}

@@ -2380,6 +2380,245 @@ const AdminPages = {
         }
     },
 
+    // ==================== QUICK HITS — EDITABLE LIVE HEADLINES ====================
+
+    QUICK_HITS_MAX: 120,
+    _quickHitsState: { items: [], editingId: null },
+
+    quickHits: async function() {
+        if (!Auth.isLoggedIn()) {
+            Router.navigate('/login');
+            return;
+        }
+
+        const main = document.getElementById('main-content');
+        main.innerHTML =
+            '<div class="admin-layout">' +
+                AdminComponents.sidebar() +
+                '<div class="admin-main">' +
+                    AdminComponents.header('Quick Hits') +
+                    '<div class="admin-content" id="qh-container"><p>Cargando...</p></div>' +
+                '</div>' +
+            '</div>';
+
+        document.title = 'Quick Hits - Beisjoven Admin';
+        AdminPages._quickHitsState.editingId = null;
+        await AdminPages._loadQuickHits();
+    },
+
+    _loadQuickHits: async function() {
+        const { data, error } = await supabaseClient
+            .from('quick_hits')
+            .select('*')
+            .order('orden', { ascending: true })
+            .order('created_at', { ascending: false });
+        if (error) {
+            console.error('[quickHits] Load failed:', error);
+            const c = document.getElementById('qh-container');
+            if (c) c.innerHTML = '<p style="color:#dc2626;">Error cargando Quick Hits: ' + error.message + '</p>';
+            return;
+        }
+        AdminPages._quickHitsState.items = data || [];
+        AdminPages._renderQuickHits();
+    },
+
+    _renderQuickHits: function() {
+        const c = document.getElementById('qh-container');
+        if (!c) return;
+        const items = AdminPages._quickHitsState.items;
+        const activos = items.filter(function(h) { return h.activo; }).length;
+        const editingId = AdminPages._quickHitsState.editingId;
+        const isNew = editingId === 'new';
+        const editing = isNew ? null : items.find(function(h) { return h.id === editingId; });
+        const showForm = isNew || !!editing;
+
+        const warn = activos >= 4
+            ? '<div style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:0.9rem;">⚠️ Hay ' + activos + ' Quick Hits activos — solo los primeros 3 (por orden) se mostrarán en la portada.</div>'
+            : '';
+
+        const formHtml = showForm
+            ? AdminPages._quickHitsFormHtml(editing)
+            : '<button class="btn btn-primary" id="qh-new-btn">+ Nuevo Quick Hit</button>';
+
+        const listHtml = items.length > 0
+            ? AdminPages._quickHitsListHtml(items)
+            : '<div class="empty-state"><div class="empty-icon">⚡</div><h3>No hay Quick Hits</h3><p>Crea el primero para mostrarlo en la portada.</p></div>';
+
+        c.innerHTML =
+            warn +
+            '<div style="margin-bottom:18px;">' + formHtml + '</div>' +
+            '<div>' + listHtml + '</div>';
+
+        AdminPages._bindQuickHitsEvents();
+    },
+
+    _quickHitsFormHtml: function(hit) {
+        const isEdit = !!hit;
+        const texto = (hit && hit.texto) || '';
+        const url = (hit && hit.url) || '';
+        const activo = hit ? !!hit.activo : true;
+        const orden = hit ? hit.orden : 0;
+        const remaining = AdminPages.QUICK_HITS_MAX - texto.length;
+
+        return '' +
+            '<form id="qh-form" class="article-form" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px;">' +
+                '<h3 style="margin:0 0 12px;font-size:1rem;">' + (isEdit ? 'Editar Quick Hit' : 'Nuevo Quick Hit') + '</h3>' +
+                '<div class="form-group">' +
+                    '<label for="qh-texto">Texto * <span id="qh-counter" style="float:right;color:' + (remaining < 0 ? '#dc2626' : '#6b7280') + ';font-weight:500;">' + remaining + '</span></label>' +
+                    '<input type="text" id="qh-texto" maxlength="' + AdminPages.QUICK_HITS_MAX + '" value="' + texto.replace(/"/g, '&quot;') + '" placeholder="Ej: Marlins firman a prospecto mexicano" required>' +
+                '</div>' +
+                '<div class="form-group">' +
+                    '<label for="qh-url">URL *</label>' +
+                    '<input type="text" id="qh-url" value="' + url.replace(/"/g, '&quot;') + '" placeholder="/articulo/slug  o  https://..." required>' +
+                    '<small style="color:#6b7280;">Interna (empieza con <code>/</code>) o externa (empieza con <code>http</code>).</small>' +
+                    '<div id="qh-url-error" style="color:#dc2626;font-size:0.85rem;margin-top:4px;display:none;"></div>' +
+                '</div>' +
+                '<div class="form-group" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;">' +
+                    '<label class="checkbox-label" style="display:flex;align-items:center;gap:6px;margin:0;"><input type="checkbox" id="qh-activo"' + (activo ? ' checked' : '') + '> Activo</label>' +
+                    '<label style="display:flex;align-items:center;gap:6px;margin:0;">Orden <input type="number" id="qh-orden" value="' + orden + '" style="width:80px;"></label>' +
+                '</div>' +
+                '<div class="form-actions" style="display:flex;gap:8px;margin-top:12px;">' +
+                    '<button type="submit" class="btn btn-primary" id="qh-submit">' + (isEdit ? 'Guardar cambios' : 'Crear Quick Hit') + '</button>' +
+                    '<button type="button" class="btn btn-secondary" id="qh-cancel">Cancelar</button>' +
+                '</div>' +
+            '</form>';
+    },
+
+    _quickHitsListHtml: function(items) {
+        const rows = items.map(function(h) {
+            const textoCorto = (h.texto || '').length > 60 ? (h.texto.substring(0, 60) + '...') : (h.texto || '');
+            const urlCorto = (h.url || '').length > 50 ? (h.url.substring(0, 50) + '...') : (h.url || '');
+            const badge = h.activo
+                ? '<span style="background:#dcfce7;color:#166534;padding:3px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;">Activo</span>'
+                : '<span style="background:#e5e7eb;color:#6b7280;padding:3px 8px;border-radius:4px;font-size:0.75rem;font-weight:600;">Inactivo</span>';
+            const safeId = String(h.id).replace(/"/g, '&quot;');
+            return '' +
+                '<div class="qh-row" data-id="' + safeId + '" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px;border:1px solid #e5e7eb;border-radius:8px;background:white;margin-bottom:8px;">' +
+                    '<span style="background:#1B2A4A;color:white;width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">' + (h.orden || 0) + '</span>' +
+                    '<div style="flex:1;min-width:200px;">' +
+                        '<div style="font-weight:600;color:#1f2937;">' + textoCorto + '</div>' +
+                        '<div style="font-size:0.8rem;color:#6b7280;">' + urlCorto + '</div>' +
+                    '</div>' +
+                    badge +
+                    '<button class="btn-small qh-edit-btn" data-id="' + safeId + '" style="min-height:44px;">Editar</button>' +
+                    '<button class="btn-small btn-danger qh-delete-btn" data-id="' + safeId + '" style="min-height:44px;">Eliminar</button>' +
+                '</div>';
+        }).join('');
+        return '<div>' + rows + '</div>';
+    },
+
+    _bindQuickHitsEvents: function() {
+        const newBtn = document.getElementById('qh-new-btn');
+        if (newBtn) {
+            newBtn.addEventListener('click', function() {
+                AdminPages._quickHitsState.editingId = 'new';
+                AdminPages._renderQuickHits();
+            });
+        }
+
+        const form = document.getElementById('qh-form');
+        if (form) {
+            const texto = document.getElementById('qh-texto');
+            const counter = document.getElementById('qh-counter');
+            const submit = document.getElementById('qh-submit');
+
+            texto.addEventListener('input', function() {
+                const remaining = AdminPages.QUICK_HITS_MAX - texto.value.length;
+                counter.textContent = remaining;
+                counter.style.color = remaining < 0 ? '#dc2626' : '#6b7280';
+                submit.disabled = remaining < 0;
+            });
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                AdminPages._submitQuickHit();
+            });
+
+            const cancel = document.getElementById('qh-cancel');
+            if (cancel) {
+                cancel.addEventListener('click', function() {
+                    AdminPages._quickHitsState.editingId = null;
+                    AdminPages._renderQuickHits();
+                });
+            }
+        }
+
+        document.querySelectorAll('.qh-edit-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                AdminPages._quickHitsState.editingId = btn.dataset.id;
+                AdminPages._renderQuickHits();
+            });
+        });
+
+        document.querySelectorAll('.qh-delete-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                AdminPages._deleteQuickHit(btn.dataset.id);
+            });
+        });
+    },
+
+    _submitQuickHit: async function() {
+        const texto = document.getElementById('qh-texto').value.trim();
+        const url = document.getElementById('qh-url').value.trim();
+        const activo = document.getElementById('qh-activo').checked;
+        const orden = parseInt(document.getElementById('qh-orden').value, 10) || 0;
+        const errorEl = document.getElementById('qh-url-error');
+        errorEl.style.display = 'none';
+
+        if (!texto) { showToast('El texto es obligatorio', 'error'); return; }
+        if (texto.length > AdminPages.QUICK_HITS_MAX) {
+            showToast('El texto no puede pasar de ' + AdminPages.QUICK_HITS_MAX + ' caracteres', 'error');
+            return;
+        }
+        if (!/^(\/|https?:\/\/)/i.test(url)) {
+            errorEl.textContent = 'La URL debe comenzar con / o http(s)://';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        const editingId = AdminPages._quickHitsState.editingId;
+        const isNew = editingId === 'new';
+        const payload = { texto: texto, url: url, activo: activo, orden: orden };
+
+        if (isNew) {
+            const { error } = await supabaseClient.from('quick_hits').insert([payload]);
+            if (error) {
+                console.error('[quickHits] Insert failed:', error);
+                showToast('Error al crear: ' + error.message, 'error');
+                return;
+            }
+            showToast('✅ Quick Hit creado');
+        } else {
+            const { error } = await supabaseClient.from('quick_hits').update(payload).eq('id', editingId);
+            if (error) {
+                console.error('[quickHits] Update failed:', error);
+                showToast('Error al guardar: ' + error.message, 'error');
+                return;
+            }
+            showToast('✅ Quick Hit actualizado');
+        }
+
+        AdminPages._quickHitsState.editingId = null;
+        await AdminPages._loadQuickHits();
+        AdminPages._triggerVercelRebuild();
+    },
+
+    _deleteQuickHit: async function(id) {
+        if (!confirm('¿Eliminar este Quick Hit?')) return;
+        const { error } = await supabaseClient.from('quick_hits').delete().eq('id', id);
+        if (error) {
+            console.error('[quickHits] Delete failed:', error);
+            showToast('Error al eliminar: ' + error.message, 'error');
+            return;
+        }
+        showToast('✅ Quick Hit eliminado');
+        if (AdminPages._quickHitsState.editingId === id) {
+            AdminPages._quickHitsState.editingId = null;
+        }
+        await AdminPages._loadQuickHits();
+        AdminPages._triggerVercelRebuild();
+    },
+
     // ==================== TU HISTORIA — ADMIN REVIEW PANEL ====================
 
     _historiasState: {
@@ -3053,6 +3292,9 @@ const AdminComponents = {
                     <a href="/admin/medios" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath === '/admin/medios' ? 'active' : ''}">
                         🖼️ Medios
                     </a>
+                    <a href="/admin/quick-hits" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath.includes('/quick-hits') ? 'active' : ''}">
+                        ⚡ Quick Hits
+                    </a>
                     <a href="/admin/historias" onclick="AdminComponents.closeSidebarMobile()" class="${currentPath.includes('/historias') ? 'active' : ''}">
                         📨 Tu Historia
                         <span class="nav-badge" id="nav-historias-badge-sidebar" style="display:none;"></span>
@@ -3111,6 +3353,7 @@ const AdminComponents = {
         '<div class="abt-more-menu" id="abt-more-menu" style="display:none;">' +
             '<div class="abt-more-overlay" onclick="AdminComponents.closeMoreMenu()"></div>' +
             '<div class="abt-more-sheet">' +
+                '<a href="/admin/quick-hits" onclick="AdminComponents.closeMoreMenu()">⚡ Quick Hits</a>' +
                 '<a href="/admin/historias" onclick="AdminComponents.closeMoreMenu()">📨 Tu Historia <span class="nav-badge" id="nav-historias-badge-more" style="display:none;"></span></a>' +
                 (isAdmin ? '<a href="/admin/videos" onclick="AdminComponents.closeMoreMenu()">📹 Videos</a>' : '') +
                 (isAdmin ? '<a href="/admin/usuarios" onclick="AdminComponents.closeMoreMenu()">👥 Usuarios</a>' : '') +

@@ -82,6 +82,7 @@ export const prerender = true;
             Router.register('/admin/videos/nuevo', AdminPages.videoEditor);
             Router.register('/admin/videos/editar/:id', AdminPages.videoEditor);
             Router.register('/admin/usuarios', AdminPages.usuarios);
+            Router.register('/admin/quick-hits', AdminPages.quickHits);
 
             Auth.init().then(() => {
                 // After each route change: cleanup editor artifacts + inject bottom tabs

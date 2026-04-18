@@ -420,13 +420,3 @@ div[data-youtube-video] {
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
 }
-
-/* ==================== TICKER ==================== */
-@keyframes ticker-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.ticker-animate {
-  animation: ticker-scroll 30s linear infinite;
-}

@@ -1,0 +1,53 @@
+---
+import type { QuickHit } from '@/lib/supabase';
+
+interface Props {
+  hits: QuickHit[];
+}
+
+const { hits } = Astro.props;
+
+function isExternal(url: string) {
+  return /^https?:\/\//i.test(url);
+}
+---
+
+{hits.length > 0 && (
+  <div class="bg-navy text-white">
+    <div class="max-w-7xl mx-auto">
+      <ul
+        class="quick-hits-list flex md:justify-between items-stretch overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none"
+      >
+        {hits.map((hit) => {
+          const external = isExternal(hit.url);
+          return (
+            <li class="flex-shrink-0 md:flex-1 snap-start basis-[85vw] md:basis-auto">
+              <a
+                href={hit.url}
+                target={external ? '_blank' : undefined}
+                rel={external ? 'noopener noreferrer' : undefined}
+                class="flex items-center gap-2.5 px-4 min-h-[44px] py-2.5 text-[13px] md:text-sm font-medium text-white/90 hover:text-white hover:bg-white/5 transition-colors w-full"
+                style="font-family: var(--font-body);"
+              >
+                <span class="inline-flex items-center gap-1.5 flex-shrink-0">
+                  <span class="w-1.5 h-1.5 rounded-full bg-rojo animate-pulse" aria-hidden="true"></span>
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-rojo">Live</span>
+                </span>
+                <span class="truncate">{hit.texto}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  </div>
+)}
+
+<style>
+  .quick-hits-list {
+    scrollbar-width: none;
+  }
+  .quick-hits-list::-webkit-scrollbar {
+    display: none;
+  }
+</style>
