@@ -842,54 +842,22 @@ const AdminPages = {
         AdminComponents.updateHistoriasBadge();
     },
 
-    // ==================== LISTA DE ARTÍCULOS ====================
-    articles: async function() {
+    // ==================== LISTA DE ARTÍCULOS (ADMIN35-01b) ====================
+    // State-driven: parse URL -> load page 0 -> render rows. Filter changes
+    // mutate AdminPages._articulosState and call _reloadArticulos.
+    articles: async function(ctx) {
         if (!Auth.isLoggedIn()) {
             Router.navigate('/login');
             return;
         }
 
         const main = document.getElementById('main-content');
-        const isAdmin = Auth.isAdmin();
-        const userId = Auth.getUser()?.id;
 
-        // Mostrar loading
-        main.innerHTML = `
-            <div class="admin-layout">
-                ${AdminComponents.sidebar()}
-                <div class="admin-main">
-                    ${AdminComponents.header('Artículos')}
-                    <div class="admin-content"><p>Cargando artículos...</p></div>
-                </div>
-            </div>
-        `;
+        // Parse state from URL query (ctx.query from Router, else window.location)
+        const query = (ctx && ctx.query) || new URLSearchParams(window.location.search);
+        AdminPages._articulosState = AdminPages._parseStateFromQuery(query);
 
-        // Admins see all articles (including drafts); editors see own + published
-        // Use count:'exact' for real total (not capped at limit)
-        let articulos = [];
-        let totalArticulos = 0;
-        if (isAdmin) {
-            const { data, count } = await supabaseClient
-                .from('articulos')
-                .select('*, categoria:categorias(*), autor:autores(*)', { count: 'exact' })
-                .order('created_at', { ascending: false });
-            articulos = data || [];
-            totalArticulos = count || articulos.length;
-        } else {
-            const { data, count } = await supabaseClient
-                .from('articulos')
-                .select('*, categoria:categorias(*), autor:autores(*)', { count: 'exact' })
-                .or('publicado.eq.true,user_id.eq.' + userId)
-                .order('created_at', { ascending: false });
-            articulos = data || [];
-            totalArticulos = count || articulos.length;
-        }
-
-        // Helper: can current user edit this article?
-        function canEditArticle(article) {
-            return isAdmin || article.user_id === userId;
-        }
-
+        // Render shell + filter bar + loading placeholder
         main.innerHTML = `
             <div class="admin-layout">
                 ${AdminComponents.sidebar()}
@@ -899,96 +867,83 @@ const AdminPages = {
 
                     <div class="admin-content">
                         <div class="content-header">
-                            <p>Total: <span id="admin-article-count">${totalArticulos}</span> articulos</p>
+                            <p class="art-count" id="art-count">Cargando...</p>
                             <a href="/admin/nuevo" class="btn btn-primary">+ Nuevo Articulo</a>
                         </div>
-                        <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                            <select id="admin-cat-filter" onchange="AdminPages._filterArticles()" style="padding:6px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:0.85rem;background:#fff;cursor:pointer;">
+
+                        <div class="art-filter-bar" role="toolbar">
+                            <div class="art-search">
+                                <input type="search" id="art-q" placeholder="Buscar por título..." autocomplete="off">
+                            </div>
+                            <select id="art-cat" class="art-select">
                                 <option value="">Todas las categorías</option>
-                                ${[...new Set(articulos.map(a => a.categoria?.nombre).filter(Boolean))].sort().map(c => `<option value="${c}">${c}</option>`).join('')}
                             </select>
-                            <select id="admin-wbc-filter" onchange="AdminPages._filterArticles()" style="padding:6px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:0.85rem;background:#fff;cursor:pointer;">
-                                <option value="">WBC: Todos</option>
-                                <option value="wbc">Solo WBC 2026</option>
-                                <option value="no-wbc">Sin WBC</option>
+                            <select id="art-tag" class="art-select">
+                                <option value="">Todos los tags</option>
                             </select>
+                            <select id="art-status" class="art-select">
+                                <option value="">Todos los estados</option>
+                                <option value="published">Publicados</option>
+                                <option value="draft">Borradores</option>
+                                <option value="featured">Destacados</option>
+                            </select>
+                            <select id="art-date" class="art-select">
+                                <option value="">Todas las fechas</option>
+                                <option value="today">Hoy</option>
+                                <option value="week">Esta semana</option>
+                                <option value="month">Este mes</option>
+                                <option value="year">Este año</option>
+                            </select>
+                            <select id="art-sort" class="art-select">
+                                <option value="created_at_desc">Más recientes</option>
+                                <option value="created_at_asc">Más antiguos</option>
+                                <option value="titulo_asc">Título A-Z</option>
+                                <option value="titulo_desc">Título Z-A</option>
+                            </select>
+                            <button id="art-clear" class="art-clear-btn">Limpiar</button>
                         </div>
 
-                        ${articulos.length > 0 ? `
-                            <!-- Desktop table -->
-                            <div class="articles-table hide-mobile">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Título</th>
-                                            <th>Categoría</th>
-                                            <th>Estado</th>
-                                            <th>Fecha</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${articulos.map(article => `
-                                            <tr data-cat="${article.categoria?.nombre || ''}" data-wbc="${article.es_wbc2026 ? 'wbc' : 'no-wbc'}">
-                                                <td>
-                                                    <a href="/articulo/${article.slug}" target="_blank">
-                                                        ${article.titulo.substring(0, 60)}${article.titulo.length > 60 ? '...' : ''}
-                                                    </a>
-                                                </td>
-                                                <td><span class="badge">${article.categoria?.nombre || 'N/A'}</span></td>
-                                                <td>
-                                                    <span class="badge ${article.publicado ? 'badge-published' : 'badge-draft'}">
-                                                        ${article.publicado ? 'Publicado' : 'Borrador'}
-                                                    </span>
-                                                    ${article.destacado ? ' ⭐' : ''}
-                                                </td>
-                                                <td>${new Date(article.fecha || article.created_at).toLocaleDateString('es-MX')}</td>
-                                                <td class="actions-cell">
-                                                    ${canEditArticle(article) ? `<a href="/admin/editar/${article.id}" class="btn-small">Editar</a>` : ''}
-                                                    ${article.publicado ? `<button onclick="AdminPages.copyArticleUrl('${article.slug}', this)" class="btn-small btn-url" title="Copiar URL">🔗 URL</button>` : ''}
-                                                    ${isAdmin ? `<button onclick="AdminPages.deleteArticle(${article.id})" class="btn-small btn-danger">Eliminar</button>` : ''}
-                                                </td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class="articles-table hide-mobile">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Título</th>
+                                        <th>Categoría</th>
+                                        <th>Estado</th>
+                                        <th>Fecha</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="art-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div class="articles-cards show-mobile" id="art-cards"></div>
 
-                            <!-- Mobile cards -->
-                            <div class="articles-cards show-mobile">
-                                ${articulos.map(article => `
-                                    <div class="article-card-mobile" data-cat="${article.categoria?.nombre || ''}" data-wbc="${article.es_wbc2026 ? 'wbc' : 'no-wbc'}">
-                                        <div class="acm-top">
-                                            <span class="badge ${article.publicado ? 'badge-published' : 'badge-draft'}">${article.publicado ? 'Publicado' : 'Borrador'}</span>
-                                            <span class="acm-date">${new Date(article.fecha || article.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}</span>
-                                        </div>
-                                        <h4 class="acm-title">${article.titulo}</h4>
-                                        <div class="acm-bottom">
-                                            <span class="badge">${article.categoria?.nombre || 'N/A'}</span>
-                                            ${article.destacado ? '<span>⭐</span>' : ''}
-                                        </div>
-                                        <div class="acm-actions">
-                                            ${canEditArticle(article) ? `<a href="/admin/editar/${article.id}" class="acm-btn acm-btn-edit">Editar</a>` : ''}
-                                            ${article.publicado ? `<button onclick="event.stopPropagation(); AdminPages.copyArticleUrl('${article.slug}', this)" class="acm-btn acm-btn-url">Copiar URL</button>` : ''}
-                                            ${isAdmin ? `<button onclick="event.stopPropagation(); AdminPages.deleteArticle(${article.id})" class="acm-btn acm-btn-danger">Eliminar</button>` : ''}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : `
-                            <div class="empty-state">
-                                <div class="empty-icon">📝</div>
-                                <h3>No hay artículos</h3>
-                                <p>Crea tu primer artículo para comenzar</p>
-                                <a href="/admin/nuevo" class="btn btn-primary">Crear Artículo</a>
-                            </div>
-                        `}
+                        <div class="art-load-more-wrap">
+                            <button id="art-load-more" class="btn btn-secondary" style="display:none">Cargar más</button>
+                        </div>
                     </div>
                 </div>
             </div>
         `;
 
         document.title = 'Artículos - Beisjoven Admin';
+
+        // Populate category + tag dropdowns (cached across reloads)
+        await AdminPages._ensureArticulosDropdownData();
+        AdminPages._populateArticulosDropdowns();
+
+        // Sync filter bar UI to state parsed from URL
+        AdminPages._syncFilterBarFromState();
+
+        // Initial load
+        await AdminPages._loadArticulos(AdminPages._articulosState, {});
+        AdminPages._renderArticulosRows();
+        AdminPages._updateArticulosCount();
+        AdminPages._updateLoadMoreButton();
+
+        // Wire filter events
+        AdminPages._wireArticulosFilters();
     },
 
     // ==================== CREAR/EDITAR ARTÍCULO ====================
@@ -2010,23 +1965,297 @@ const AdminPages = {
         console.log('[articulos] Loaded', rows.length, 'of', AdminPages._articulosTotal, 'total (page', state.page + ')');
     },
 
-    // Filtrar artículos por categoría y WBC (works on both table rows + mobile cards)
-    _filterArticles: function() {
-        const cat = document.getElementById('admin-cat-filter').value;
-        const wbc = document.getElementById('admin-wbc-filter').value;
-        // Filter both desktop rows and mobile cards
-        const items = document.querySelectorAll('.articles-table tbody tr, .article-card-mobile');
-        let visible = 0;
-        items.forEach(item => {
-            const matchCat = !cat || item.dataset.cat === cat;
-            const matchWbc = !wbc || item.dataset.wbc === wbc;
-            const show = matchCat && matchWbc;
-            item.style.display = show ? '' : 'none';
-            if (show) visible++;
+    // ==================== ARTÍCULOS: RENDER / FILTER WIRING (ADMIN35-01b) ====================
+
+    _articulosCategorias: null,
+    _articulosTags: null,
+
+    _debounce: function(fn, wait) {
+        let t = null;
+        return function() {
+            const args = arguments;
+            const ctx = this;
+            clearTimeout(t);
+            t = setTimeout(function() { fn.apply(ctx, args); }, wait);
+        };
+    },
+
+    _datePresetToRange: function(preset) {
+        const now = new Date();
+        const end = now.toISOString();
+        let start = null;
+        if (preset === 'today') {
+            const s = new Date(now); s.setHours(0, 0, 0, 0);
+            start = s.toISOString();
+        } else if (preset === 'week') {
+            const s = new Date(now); s.setDate(s.getDate() - 7);
+            start = s.toISOString();
+        } else if (preset === 'month') {
+            const s = new Date(now); s.setMonth(s.getMonth() - 1);
+            start = s.toISOString();
+        } else if (preset === 'year') {
+            const s = new Date(now); s.setFullYear(s.getFullYear() - 1);
+            start = s.toISOString();
+        }
+        return start ? { desde: start, hasta: end } : { desde: null, hasta: null };
+    },
+
+    _rangeMatchesPreset: function(desde, hasta) {
+        if (!desde || !hasta) return '';
+        for (const preset of ['today', 'week', 'month', 'year']) {
+            const r = AdminPages._datePresetToRange(preset);
+            // Allow a few seconds of drift since the range was generated "now"
+            if (r.desde && Math.abs(new Date(r.desde) - new Date(desde)) < 60000) return preset;
+        }
+        return '';
+    },
+
+    _ensureArticulosDropdownData: async function() {
+        if (!AdminPages._articulosCategorias) {
+            const { data } = await supabaseClient.from('categorias').select('id, nombre').order('nombre');
+            AdminPages._articulosCategorias = data || [];
+        }
+        if (!AdminPages._articulosTags) {
+            const { data } = await supabaseClient.from('tags').select('id, nombre').order('nombre');
+            AdminPages._articulosTags = data || [];
+        }
+    },
+
+    _populateArticulosDropdowns: function() {
+        const catSel = document.getElementById('art-cat');
+        const tagSel = document.getElementById('art-tag');
+        if (catSel && AdminPages._articulosCategorias) {
+            catSel.innerHTML = '<option value="">Todas las categorías</option>' +
+                AdminPages._articulosCategorias.map(c =>
+                    `<option value="${c.id}">${AdminPages._escapeHtml(c.nombre)}</option>`
+                ).join('');
+        }
+        if (tagSel && AdminPages._articulosTags) {
+            tagSel.innerHTML = '<option value="">Todos los tags</option>' +
+                AdminPages._articulosTags.map(t =>
+                    `<option value="${t.id}">${AdminPages._escapeHtml(t.nombre)}</option>`
+                ).join('');
+        }
+    },
+
+    _escapeHtml: function(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
+    _syncFilterBarFromState: function() {
+        const s = AdminPages._articulosState;
+        const q = document.getElementById('art-q');
+        const cat = document.getElementById('art-cat');
+        const tag = document.getElementById('art-tag');
+        const status = document.getElementById('art-status');
+        const date = document.getElementById('art-date');
+        const sort = document.getElementById('art-sort');
+        if (q) q.value = s.q || '';
+        if (cat) cat.value = s.categoria_id != null ? String(s.categoria_id) : '';
+        if (tag) tag.value = s.tag_id != null ? String(s.tag_id) : '';
+        if (status) {
+            if (s.publicado === true) status.value = 'published';
+            else if (s.publicado === false) status.value = 'draft';
+            else if (s.destacado === true) status.value = 'featured';
+            else status.value = '';
+        }
+        if (date) date.value = AdminPages._rangeMatchesPreset(s.desde, s.hasta);
+        if (sort) sort.value = s.sort || 'created_at_desc';
+    },
+
+    _hasActiveFilter: function() {
+        const s = AdminPages._articulosState;
+        return !!(s.q || s.categoria_id || s.tag_id
+            || s.publicado !== null || s.destacado === true
+            || s.desde || s.hasta);
+    },
+
+    _articulosRowHtml: function(article, isAdmin, canEdit) {
+        const titulo = AdminPages._escapeHtml(article.titulo || '');
+        const tituloShort = titulo.length > 60 ? titulo.substring(0, 60) + '...' : titulo;
+        const catName = AdminPages._escapeHtml(article.categoria?.nombre || 'N/A');
+        const estado = article.publicado ? 'Publicado' : 'Borrador';
+        const estadoCls = article.publicado ? 'badge-published' : 'badge-draft';
+        const fecha = new Date(article.fecha || article.created_at).toLocaleDateString('es-MX');
+        const slug = AdminPages._escapeHtml(article.slug || '');
+        return `
+            <tr>
+                <td>
+                    <a href="/articulo/${slug}" target="_blank">${tituloShort}</a>
+                </td>
+                <td><span class="badge">${catName}</span></td>
+                <td>
+                    <span class="badge ${estadoCls}">${estado}</span>
+                    ${article.destacado ? ' ⭐' : ''}
+                </td>
+                <td>${fecha}</td>
+                <td class="actions-cell">
+                    ${canEdit ? `<a href="/admin/editar/${article.id}" class="btn-small">Editar</a>` : ''}
+                    ${article.publicado ? `<button onclick="AdminPages.copyArticleUrl('${slug}', this)" class="btn-small btn-url" title="Copiar URL">🔗 URL</button>` : ''}
+                    ${isAdmin ? `<button onclick="AdminPages.deleteArticle(${article.id})" class="btn-small btn-danger">Eliminar</button>` : ''}
+                </td>
+            </tr>
+        `;
+    },
+
+    _articulosCardHtml: function(article, isAdmin, canEdit) {
+        const titulo = AdminPages._escapeHtml(article.titulo || '');
+        const catName = AdminPages._escapeHtml(article.categoria?.nombre || 'N/A');
+        const estado = article.publicado ? 'Publicado' : 'Borrador';
+        const estadoCls = article.publicado ? 'badge-published' : 'badge-draft';
+        const fecha = new Date(article.fecha || article.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+        const slug = AdminPages._escapeHtml(article.slug || '');
+        return `
+            <div class="article-card-mobile">
+                <div class="acm-top">
+                    <span class="badge ${estadoCls}">${estado}</span>
+                    <span class="acm-date">${fecha}</span>
+                </div>
+                <h4 class="acm-title">${titulo}</h4>
+                <div class="acm-bottom">
+                    <span class="badge">${catName}</span>
+                    ${article.destacado ? '<span>⭐</span>' : ''}
+                </div>
+                <div class="acm-actions">
+                    ${canEdit ? `<a href="/admin/editar/${article.id}" class="acm-btn acm-btn-edit">Editar</a>` : ''}
+                    ${article.publicado ? `<button onclick="event.stopPropagation(); AdminPages.copyArticleUrl('${slug}', this)" class="acm-btn acm-btn-url">Copiar URL</button>` : ''}
+                    ${isAdmin ? `<button onclick="event.stopPropagation(); AdminPages.deleteArticle(${article.id})" class="acm-btn acm-btn-danger">Eliminar</button>` : ''}
+                </div>
+            </div>
+        `;
+    },
+
+    _renderArticulosRows: function() {
+        const isAdmin = Auth.isAdmin();
+        const userId = Auth.getUser()?.id;
+        const rows = AdminPages._articulosRows || [];
+        const tbody = document.getElementById('art-tbody');
+        const cards = document.getElementById('art-cards');
+
+        if (rows.length === 0) {
+            const s = AdminPages._articulosState;
+            const msg = s.q
+                ? `No se encontraron artículos para «${AdminPages._escapeHtml(s.q)}»`
+                : (AdminPages._hasActiveFilter()
+                    ? 'No se encontraron artículos con esos filtros'
+                    : 'No hay artículos aún');
+            const emptyRow = `<tr><td colspan="5" class="art-empty-cell">${msg}</td></tr>`;
+            const emptyCard = `<div class="art-empty-state">${msg}</div>`;
+            if (tbody) tbody.innerHTML = emptyRow;
+            if (cards) cards.innerHTML = emptyCard;
+            return;
+        }
+
+        const rowsHtml = rows.map(a => AdminPages._articulosRowHtml(a, isAdmin, isAdmin || a.user_id === userId)).join('');
+        const cardsHtml = rows.map(a => AdminPages._articulosCardHtml(a, isAdmin, isAdmin || a.user_id === userId)).join('');
+        if (tbody) tbody.innerHTML = rowsHtml;
+        if (cards) cards.innerHTML = cardsHtml;
+    },
+
+    _appendArticulosRows: function() {
+        const isAdmin = Auth.isAdmin();
+        const userId = Auth.getUser()?.id;
+        const all = AdminPages._articulosRows || [];
+        const pageSize = AdminPages._articulosState.pageSize || 25;
+        const appended = all.slice(all.length - pageSize);
+        const tbody = document.getElementById('art-tbody');
+        const cards = document.getElementById('art-cards');
+        const rowsHtml = appended.map(a => AdminPages._articulosRowHtml(a, isAdmin, isAdmin || a.user_id === userId)).join('');
+        const cardsHtml = appended.map(a => AdminPages._articulosCardHtml(a, isAdmin, isAdmin || a.user_id === userId)).join('');
+        if (tbody) tbody.insertAdjacentHTML('beforeend', rowsHtml);
+        if (cards) cards.insertAdjacentHTML('beforeend', cardsHtml);
+    },
+
+    _updateArticulosCount: function() {
+        const el = document.getElementById('art-count');
+        if (!el) return;
+        const loaded = AdminPages._articulosLoaded;
+        const total = AdminPages._articulosTotal;
+        const suffix = AdminPages._hasActiveFilter() ? ' filtrados' : '';
+        el.textContent = `Mostrando ${loaded} de ${total}${suffix}`;
+    },
+
+    _updateLoadMoreButton: function() {
+        const btn = document.getElementById('art-load-more');
+        if (!btn) return;
+        btn.style.display = AdminPages._articulosLoaded < AdminPages._articulosTotal ? '' : 'none';
+    },
+
+    _reloadArticulos: async function() {
+        await AdminPages._loadArticulos(AdminPages._articulosState, { append: false });
+        AdminPages._renderArticulosRows();
+        AdminPages._updateArticulosCount();
+        AdminPages._updateLoadMoreButton();
+    },
+
+    _wireArticulosFilters: function() {
+        const q = document.getElementById('art-q');
+        const debouncedSearch = AdminPages._debounce(function(val) {
+            AdminPages._articulosState.q = val;
+            AdminPages._articulosState.page = 0;
+            AdminPages._reloadArticulos();
+        }, 300);
+        q.addEventListener('input', function(e) {
+            const val = e.target.value.trim();
+            if (val.length === 0 || val.length >= 3) debouncedSearch(val);
         });
-        // Divide by 2 since desktop + mobile both count
-        const counter = document.getElementById('admin-article-count');
-        if (counter) counter.textContent = Math.ceil(visible / 2);
+
+        document.getElementById('art-cat').addEventListener('change', function(e) {
+            AdminPages._articulosState.categoria_id = e.target.value ? parseInt(e.target.value, 10) : null;
+            AdminPages._articulosState.page = 0;
+            AdminPages._reloadArticulos();
+        });
+
+        document.getElementById('art-tag').addEventListener('change', function(e) {
+            AdminPages._articulosState.tag_id = e.target.value ? parseInt(e.target.value, 10) : null;
+            AdminPages._articulosState.page = 0;
+            AdminPages._reloadArticulos();
+        });
+
+        document.getElementById('art-status').addEventListener('change', function(e) {
+            const v = e.target.value;
+            AdminPages._articulosState.publicado = null;
+            AdminPages._articulosState.destacado = null;
+            if (v === 'published') AdminPages._articulosState.publicado = true;
+            else if (v === 'draft') AdminPages._articulosState.publicado = false;
+            else if (v === 'featured') AdminPages._articulosState.destacado = true;
+            AdminPages._articulosState.page = 0;
+            AdminPages._reloadArticulos();
+        });
+
+        document.getElementById('art-date').addEventListener('change', function(e) {
+            const r = AdminPages._datePresetToRange(e.target.value);
+            AdminPages._articulosState.desde = r.desde;
+            AdminPages._articulosState.hasta = r.hasta;
+            AdminPages._articulosState.page = 0;
+            AdminPages._reloadArticulos();
+        });
+
+        document.getElementById('art-sort').addEventListener('change', function(e) {
+            AdminPages._articulosState.sort = e.target.value || 'created_at_desc';
+            AdminPages._articulosState.page = 0;
+            AdminPages._reloadArticulos();
+        });
+
+        document.getElementById('art-clear').addEventListener('click', function() {
+            AdminPages._articulosState = AdminPages._parseStateFromQuery(new URLSearchParams());
+            AdminPages._syncFilterBarFromState();
+            AdminPages._reloadArticulos();
+        });
+
+        document.getElementById('art-load-more').addEventListener('click', async function() {
+            AdminPages._articulosState.page++;
+            await AdminPages._loadArticulos(AdminPages._articulosState, { append: true });
+            AdminPages._appendArticulosRows();
+            AdminPages._updateArticulosCount();
+            AdminPages._updateLoadMoreButton();
+        });
     },
 
     // Copiar URL del artículo al portapapeles

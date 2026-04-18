@@ -398,11 +398,6 @@
         border-bottom: 2px solid var(--admin-border);
     }
 
-    /* ── FILTER SELECTS: Full width on mobile ────────────── */
-    #admin-cat-filter, #admin-wbc-filter {
-        flex: 1;
-        min-width: 0;
-    }
 }
 
 /* ==================== ARTICLE CARDS (Mobile) ==================== */
