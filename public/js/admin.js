@@ -933,16 +933,39 @@ const AdminPages = {
                         </div>
 
                         <div id="art-bulk-bar" class="art-bulk-bar" style="display:none">
-                            <span id="art-bulk-count" class="art-bulk-count">0 seleccionados</span>
-                            <div class="art-bulk-actions">
-                                <button class="art-bulk-btn art-bulk-primary" id="art-bulk-add-tag">+ Tag</button>
-                                <button class="art-bulk-btn art-bulk-primary" id="art-bulk-remove-tag">- Tag</button>
-                                <button class="art-bulk-btn" id="art-bulk-cat">Categoría</button>
-                                <button class="art-bulk-btn" id="art-bulk-publish">Publicar</button>
-                                <button class="art-bulk-btn" id="art-bulk-unpublish">Despublicar</button>
-                                <button class="art-bulk-btn art-bulk-danger" id="art-bulk-delete">Eliminar</button>
+                            <div class="art-bulk-header">
+                                <span id="art-bulk-count" class="art-bulk-count">0 seleccionados</span>
+                                <button class="art-bulk-clear" id="art-bulk-clear" type="button" aria-label="Limpiar selección">
+                                    <span class="art-bulk-clear-text">Limpiar</span>
+                                    <svg class="art-bulk-clear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                                </button>
                             </div>
-                            <button class="art-bulk-clear" id="art-bulk-clear">Limpiar</button>
+                            <div class="art-bulk-actions">
+                                <button class="art-bulk-btn art-bulk-primary" id="art-bulk-add-tag" type="button">
+                                    <svg class="art-bulk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line><line x1="17" y1="15" x2="21" y2="15"></line><line x1="19" y1="13" x2="19" y2="17"></line></svg>
+                                    <span class="art-bulk-label">+ Tag</span>
+                                </button>
+                                <button class="art-bulk-btn art-bulk-primary" id="art-bulk-remove-tag" type="button">
+                                    <svg class="art-bulk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line><line x1="17" y1="15" x2="21" y2="15"></line></svg>
+                                    <span class="art-bulk-label">- Tag</span>
+                                </button>
+                                <button class="art-bulk-btn" id="art-bulk-cat" type="button">
+                                    <svg class="art-bulk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg>
+                                    <span class="art-bulk-label">Categoría</span>
+                                </button>
+                                <button class="art-bulk-btn" id="art-bulk-publish" type="button">
+                                    <svg class="art-bulk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                    <span class="art-bulk-label">Publicar</span>
+                                </button>
+                                <button class="art-bulk-btn" id="art-bulk-unpublish" type="button">
+                                    <svg class="art-bulk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg>
+                                    <span class="art-bulk-label">Despublicar</span>
+                                </button>
+                                <button class="art-bulk-btn art-bulk-danger" id="art-bulk-delete" type="button">
+                                    <svg class="art-bulk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                                    <span class="art-bulk-label">Eliminar</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div id="art-drawer-backdrop" class="art-drawer-backdrop" aria-hidden="true"></div>
