@@ -2470,15 +2470,15 @@ const AdminPages = {
         if (ids.length === 0) return;
         await AdminPages._ensureArticulosDropdownData();
         TagPicker.open({
+            title: 'Agregar tag a ' + ids.length + ' artículo' + (ids.length === 1 ? '' : 's'),
             allTags: AdminPages._articulosTags || [],
             allowCreate: true,
-            title: 'Agregar tag a ' + ids.length + ' artículo' + (ids.length === 1 ? '' : 's'),
-            onConfirm: async function(selectedTags) {
-                if (selectedTags.length === 0) return;
+            onConfirm: async function(selectedTagIds) {
+                if (selectedTagIds.size === 0) return;
                 const rows = [];
                 ids.forEach(function(artId) {
-                    selectedTags.forEach(function(tag) {
-                        rows.push({ articulo_id: artId, tag_id: tag.id });
+                    selectedTagIds.forEach(function(tagId) {
+                        rows.push({ articulo_id: artId, tag_id: tagId });
                     });
                 });
                 const { error } = await supabaseClient
@@ -2510,11 +2510,14 @@ const AdminPages = {
             return;
         }
 
-        const tagMap = {};
+        const availableIds = new Set();
+        const availableTags = [];
         (data || []).forEach(function(row) {
-            if (row.tag) tagMap[row.tag.id] = row.tag;
+            if (row.tag && !availableIds.has(row.tag.id)) {
+                availableIds.add(row.tag.id);
+                availableTags.push(row.tag);
+            }
         });
-        const availableTags = Object.values(tagMap);
 
         if (availableTags.length === 0) {
             showToast('Los artículos seleccionados no tienen tags para quitar.', 'info');
@@ -2522,13 +2525,13 @@ const AdminPages = {
         }
 
         TagPicker.open({
-            allTags: availableTags,
-            filter: availableTags.map(function(t) { return t.id; }),
-            allowCreate: false,
             title: 'Quitar tag de ' + ids.length + ' artículo' + (ids.length === 1 ? '' : 's'),
-            onConfirm: async function(selectedTags) {
-                if (selectedTags.length === 0) return;
-                const tagIds = selectedTags.map(function(t) { return t.id; });
+            allTags: availableTags,
+            availableTagIds: availableIds,
+            allowCreate: false,
+            onConfirm: async function(selectedTagIds) {
+                if (selectedTagIds.size === 0) return;
+                const tagIds = Array.from(selectedTagIds);
                 const { error } = await supabaseClient
                     .from('articulo_tags')
                     .delete()
