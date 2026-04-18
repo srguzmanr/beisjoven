@@ -344,6 +344,7 @@
     /* ── ARTICLE LIST: Hide table, show cards ────────────── */
     .hide-mobile { display: none !important; }
     .show-mobile { display: block !important; }
+    .articles-cards { display: flex !important; }
 
     /* ── MEDIA LIBRARY: 2-column grid on mobile ──────────── */
     #media-gallery {
@@ -406,7 +407,7 @@
 .hide-mobile { display: block; }
 
 .articles-cards {
-    display: flex;
+    display: none;
     flex-direction: column;
     gap: 10px;
 }
