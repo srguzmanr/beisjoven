@@ -871,6 +871,11 @@ const AdminPages = {
                             <a href="/admin/nuevo" class="btn btn-primary">+ Nuevo Articulo</a>
                         </div>
 
+                        <button id="art-filters-trigger" class="art-filters-trigger">
+                            <span>Filtros</span>
+                            <span class="art-filters-count" id="art-filters-count" style="display:none">0</span>
+                        </button>
+
                         <div class="art-filter-bar" role="toolbar">
                             <div class="art-search">
                                 <input type="search" id="art-q" placeholder="Buscar por título..." autocomplete="off">
@@ -921,6 +926,57 @@ const AdminPages = {
 
                         <div class="art-load-more-wrap">
                             <button id="art-load-more" class="btn btn-secondary" style="display:none">Cargar más</button>
+                        </div>
+
+                        <div id="art-drawer-backdrop" class="art-drawer-backdrop" aria-hidden="true"></div>
+                        <div id="art-drawer" class="art-drawer" role="dialog" aria-modal="true" aria-labelledby="art-drawer-title" aria-hidden="true">
+                            <div class="art-drawer-header">
+                                <h3 id="art-drawer-title">Filtros</h3>
+                                <button id="art-drawer-clear" class="art-drawer-clear">Limpiar</button>
+                                <button id="art-drawer-close" class="art-drawer-close" aria-label="Cerrar filtros">✕</button>
+                            </div>
+                            <div class="art-drawer-body">
+                                <label class="art-drawer-label">Búsqueda</label>
+                                <input type="search" id="art-drawer-q" placeholder="Buscar por título..." autocomplete="off">
+
+                                <label class="art-drawer-label">Categoría</label>
+                                <select id="art-drawer-cat">
+                                    <option value="">Todas las categorías</option>
+                                </select>
+
+                                <label class="art-drawer-label">Tag</label>
+                                <select id="art-drawer-tag">
+                                    <option value="">Todos los tags</option>
+                                </select>
+
+                                <label class="art-drawer-label">Estado</label>
+                                <select id="art-drawer-status">
+                                    <option value="">Todos los estados</option>
+                                    <option value="published">Publicados</option>
+                                    <option value="draft">Borradores</option>
+                                    <option value="featured">Destacados</option>
+                                </select>
+
+                                <label class="art-drawer-label">Fecha</label>
+                                <select id="art-drawer-date">
+                                    <option value="">Todas las fechas</option>
+                                    <option value="today">Hoy</option>
+                                    <option value="week">Esta semana</option>
+                                    <option value="month">Este mes</option>
+                                    <option value="year">Este año</option>
+                                </select>
+
+                                <label class="art-drawer-label">Ordenar</label>
+                                <select id="art-drawer-sort">
+                                    <option value="created_at_desc">Más recientes</option>
+                                    <option value="created_at_asc">Más antiguos</option>
+                                    <option value="titulo_asc">Título A-Z</option>
+                                    <option value="titulo_desc">Título Z-A</option>
+                                </select>
+                            </div>
+                            <div class="art-drawer-footer">
+                                <button id="art-drawer-apply" class="art-drawer-apply">Aplicar filtros</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2022,20 +2078,22 @@ const AdminPages = {
     },
 
     _populateArticulosDropdowns: function() {
+        const catOptions = '<option value="">Todas las categorías</option>' +
+            (AdminPages._articulosCategorias || []).map(c =>
+                `<option value="${c.id}">${AdminPages._escapeHtml(c.nombre)}</option>`
+            ).join('');
+        const tagOptions = '<option value="">Todos los tags</option>' +
+            (AdminPages._articulosTags || []).map(t =>
+                `<option value="${t.id}">${AdminPages._escapeHtml(t.nombre)}</option>`
+            ).join('');
         const catSel = document.getElementById('art-cat');
         const tagSel = document.getElementById('art-tag');
-        if (catSel && AdminPages._articulosCategorias) {
-            catSel.innerHTML = '<option value="">Todas las categorías</option>' +
-                AdminPages._articulosCategorias.map(c =>
-                    `<option value="${c.id}">${AdminPages._escapeHtml(c.nombre)}</option>`
-                ).join('');
-        }
-        if (tagSel && AdminPages._articulosTags) {
-            tagSel.innerHTML = '<option value="">Todos los tags</option>' +
-                AdminPages._articulosTags.map(t =>
-                    `<option value="${t.id}">${AdminPages._escapeHtml(t.nombre)}</option>`
-                ).join('');
-        }
+        if (catSel && AdminPages._articulosCategorias) catSel.innerHTML = catOptions;
+        if (tagSel && AdminPages._articulosTags) tagSel.innerHTML = tagOptions;
+        const drawerCat = document.getElementById('art-drawer-cat');
+        const drawerTag = document.getElementById('art-drawer-tag');
+        if (drawerCat && AdminPages._articulosCategorias) drawerCat.innerHTML = catOptions;
+        if (drawerTag && AdminPages._articulosTags) drawerTag.innerHTML = tagOptions;
     },
 
     _escapeHtml: function(str) {
@@ -2192,6 +2250,7 @@ const AdminPages = {
         AdminPages._renderArticulosRows();
         AdminPages._updateArticulosCount();
         AdminPages._updateLoadMoreButton();
+        AdminPages._updateFiltersCountBadge();
     },
 
     _wireArticulosFilters: function() {
@@ -2256,6 +2315,121 @@ const AdminPages = {
             AdminPages._updateArticulosCount();
             AdminPages._updateLoadMoreButton();
         });
+
+        const trigger = document.getElementById('art-filters-trigger');
+        if (trigger) trigger.addEventListener('click', AdminPages._openArticulosDrawer);
+
+        const drawerClose = document.getElementById('art-drawer-close');
+        if (drawerClose) drawerClose.addEventListener('click', AdminPages._closeArticulosDrawer);
+
+        const drawerBackdrop = document.getElementById('art-drawer-backdrop');
+        if (drawerBackdrop) drawerBackdrop.addEventListener('click', AdminPages._closeArticulosDrawer);
+
+        const drawerApply = document.getElementById('art-drawer-apply');
+        if (drawerApply) drawerApply.addEventListener('click', AdminPages._applyDrawerFilters);
+
+        const drawerClearBtn = document.getElementById('art-drawer-clear');
+        if (drawerClearBtn) drawerClearBtn.addEventListener('click', function() {
+            AdminPages._articulosState = AdminPages._parseStateFromQuery(new URLSearchParams());
+            AdminPages._syncDrawerFromState();
+            AdminPages._syncFilterBarFromState();
+            AdminPages._reloadArticulos();
+        });
+
+        document.addEventListener('keydown', function artDrawerEsc(e) {
+            if (e.key === 'Escape') AdminPages._closeArticulosDrawer();
+        });
+    },
+
+    _openArticulosDrawer: function() {
+        const drawer = document.getElementById('art-drawer');
+        const backdrop = document.getElementById('art-drawer-backdrop');
+        if (!drawer || !backdrop) return;
+        AdminPages._syncDrawerFromState();
+        drawer.classList.add('art-drawer-open');
+        backdrop.classList.add('art-drawer-backdrop-open');
+        drawer.setAttribute('aria-hidden', 'false');
+        backdrop.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    },
+
+    _closeArticulosDrawer: function() {
+        const drawer = document.getElementById('art-drawer');
+        const backdrop = document.getElementById('art-drawer-backdrop');
+        if (!drawer || !backdrop) return;
+        drawer.classList.remove('art-drawer-open');
+        backdrop.classList.remove('art-drawer-backdrop-open');
+        drawer.setAttribute('aria-hidden', 'true');
+        backdrop.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    },
+
+    _syncDrawerFromState: function() {
+        const s = AdminPages._articulosState;
+        const q = document.getElementById('art-drawer-q'); if (q) q.value = s.q || '';
+        const cat = document.getElementById('art-drawer-cat'); if (cat) cat.value = s.categoria_id != null ? String(s.categoria_id) : '';
+        const tag = document.getElementById('art-drawer-tag'); if (tag) tag.value = s.tag_id != null ? String(s.tag_id) : '';
+        const status = document.getElementById('art-drawer-status');
+        if (status) {
+            if (s.publicado === true) status.value = 'published';
+            else if (s.publicado === false) status.value = 'draft';
+            else if (s.destacado === true) status.value = 'featured';
+            else status.value = '';
+        }
+        const date = document.getElementById('art-drawer-date');
+        if (date) date.value = AdminPages._rangeMatchesPreset(s.desde, s.hasta) || '';
+        const sort = document.getElementById('art-drawer-sort'); if (sort) sort.value = s.sort || 'created_at_desc';
+    },
+
+    _applyDrawerFilters: function() {
+        const q = document.getElementById('art-drawer-q').value.trim();
+        const cat = document.getElementById('art-drawer-cat').value;
+        const tag = document.getElementById('art-drawer-tag').value;
+        const status = document.getElementById('art-drawer-status').value;
+        const date = document.getElementById('art-drawer-date').value;
+        const sort = document.getElementById('art-drawer-sort').value;
+
+        AdminPages._articulosState.q = q;
+        AdminPages._articulosState.categoria_id = cat ? parseInt(cat, 10) : null;
+        AdminPages._articulosState.tag_id = tag ? parseInt(tag, 10) : null;
+        AdminPages._articulosState.publicado = null;
+        AdminPages._articulosState.destacado = null;
+        if (status === 'published') AdminPages._articulosState.publicado = true;
+        else if (status === 'draft') AdminPages._articulosState.publicado = false;
+        else if (status === 'featured') AdminPages._articulosState.destacado = true;
+        const r = AdminPages._datePresetToRange(date);
+        AdminPages._articulosState.desde = r.desde;
+        AdminPages._articulosState.hasta = r.hasta;
+        AdminPages._articulosState.sort = sort || 'created_at_desc';
+        AdminPages._articulosState.page = 0;
+
+        AdminPages._reloadArticulos();
+        AdminPages._closeArticulosDrawer();
+    },
+
+    _countActiveFilters: function() {
+        const s = AdminPages._articulosState;
+        let n = 0;
+        if (s.q) n++;
+        if (s.categoria_id) n++;
+        if (s.tag_id) n++;
+        if (s.publicado !== null) n++;
+        if (s.destacado === true) n++;
+        if (s.desde || s.hasta) n++;
+        if (s.sort !== 'created_at_desc') n++;
+        return n;
+    },
+
+    _updateFiltersCountBadge: function() {
+        const badge = document.getElementById('art-filters-count');
+        if (!badge) return;
+        const n = AdminPages._countActiveFilters();
+        if (n > 0) {
+            badge.textContent = n;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
     },
 
     // Copiar URL del artículo al portapapeles
