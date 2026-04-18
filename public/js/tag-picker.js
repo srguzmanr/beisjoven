@@ -167,10 +167,13 @@ const TagPicker = (function() {
         renderList('');
         updateConfirmBtn();
 
-        // Single delegated handler on the list: the label owns the row hit
-        // target (44px min-height) so clicking anywhere on the row toggles the
-        // nested checkbox natively. We only mutate the selection Set and the
-        // checkbox's `checked` property — NEVER replace listEl.innerHTML here.
+        // Single delegated handler on the list. A human click on a label row
+        // produces TWO events: one on the label (or inner span) and one
+        // synthetic click dispatched to the nested input by the browser. The
+        // browser natively toggles the checkbox before either event fires.
+        // We act ONLY on the input's event (e.target === cb) so the selection
+        // Set is updated exactly once with the already-correct checked state.
+        // Never mutate cb.checked here — the native toggle already ran.
         listEl.addEventListener('click', async function(e) {
             var createItem = e.target.closest('#bj-tp-create-item');
             if (createItem) {
@@ -201,12 +204,9 @@ const TagPicker = (function() {
             var cb = label.querySelector('input[type=checkbox]');
             if (!cb) return;
 
-            // Browsers fire a synthetic click on the nested checkbox when the
-            // label is clicked. If the original target IS the checkbox, its
-            // state has already toggled; otherwise we toggle it ourselves.
-            if (e.target !== cb) {
-                cb.checked = !cb.checked;
-            }
+            // Skip the label/span click; wait for the synthetic input click
+            // which carries the already-toggled checked state.
+            if (e.target !== cb) return;
 
             var id = parseInt(cb.dataset.id, 10);
             if (cb.checked) selected.add(id);
