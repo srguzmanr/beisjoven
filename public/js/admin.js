@@ -2328,6 +2328,16 @@ const AdminPages = {
         const drawerApply = document.getElementById('art-drawer-apply');
         if (drawerApply) drawerApply.addEventListener('click', AdminPages._applyDrawerFilters);
 
+        const drawerQ = document.getElementById('art-drawer-q');
+        if (drawerQ) {
+            drawerQ.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    AdminPages._applyDrawerFilters();
+                }
+            });
+        }
+
         const drawerClearBtn = document.getElementById('art-drawer-clear');
         if (drawerClearBtn) drawerClearBtn.addEventListener('click', function() {
             AdminPages._articulosState = AdminPages._parseStateFromQuery(new URLSearchParams());
