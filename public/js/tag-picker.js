@@ -33,7 +33,7 @@ const TagPicker = (function() {
         close(); // avoid duplicates
 
         var allTags = options.allTags || [];
-        var filter = options.filter || null; // array of ids or null
+        var filter = options.filter || null;
         var allowCreate = options.allowCreate !== false;
         var onConfirm = options.onConfirm || function() {};
         var title = options.title || 'Seleccionar tags';
@@ -42,7 +42,8 @@ const TagPicker = (function() {
             ? allTags.filter(function(t) { return filter.indexOf(t.id) !== -1; })
             : allTags;
 
-        var selected = []; // [{id, nombre}]
+        // selected is a Map of id → tag object so multi-select persists across search re-renders
+        var selectedMap = {};
 
         // Inject styles once
         if (!document.getElementById('bj-tp-styles')) {
@@ -57,9 +58,9 @@ const TagPicker = (function() {
                 '#bj-tp-search{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:0.95rem;font-family:inherit;box-sizing:border-box;outline:none;}',
                 '#bj-tp-search:focus{border-color:#1B2A4A;}',
                 '#bj-tp-list{overflow-y:auto;flex:1;padding:6px 0;}',
-                '.bj-tp-item{display:flex;align-items:center;gap:12px;padding:11px 20px;cursor:pointer;font-size:0.95rem;color:#111;}',
-                '.bj-tp-item:hover{background:#f3f4f6;}',
-                '.bj-tp-item input[type=checkbox]{width:18px;height:18px;accent-color:#1B2A4A;cursor:pointer;flex-shrink:0;}',
+                '.bj-tp-row{display:flex;align-items:center;gap:12px;padding:11px 20px;cursor:pointer;font-size:0.95rem;color:#111;user-select:none;-webkit-user-select:none;}',
+                '.bj-tp-row:hover{background:#f3f4f6;}',
+                '.bj-tp-row input[type=checkbox]{width:18px;height:18px;min-width:18px;accent-color:#1B2A4A;cursor:pointer;pointer-events:none;}',
                 '.bj-tp-create{color:#C8102E;font-weight:600;}',
                 '#bj-tp-empty{padding:24px 20px;color:#6b7280;font-size:0.9rem;text-align:center;}',
                 '#bj-tp-footer{display:flex;gap:10px;padding:12px 16px;border-top:1px solid #e5e7eb;}',
@@ -95,26 +96,23 @@ const TagPicker = (function() {
         var searchEl = document.getElementById('bj-tp-search');
         var confirmBtn = document.getElementById('bj-tp-confirm');
 
-        function isSelected(id) {
-            return selected.some(function(t) { return t.id === id; });
+        function selectedCount() {
+            return Object.keys(selectedMap).length;
         }
 
-        function toggleTag(tag) {
-            if (isSelected(tag.id)) {
-                selected = selected.filter(function(t) { return t.id !== tag.id; });
-            } else {
-                selected.push(tag);
-            }
-            updateConfirmBtn();
+        function isSelected(id) {
+            return Object.prototype.hasOwnProperty.call(selectedMap, id);
         }
 
         function updateConfirmBtn() {
-            confirmBtn.disabled = selected.length === 0;
-            confirmBtn.textContent = selected.length > 0
-                ? 'Confirmar (' + selected.length + ')'
-                : 'Confirmar';
+            var n = selectedCount();
+            confirmBtn.disabled = n === 0;
+            confirmBtn.textContent = n > 0 ? 'Confirmar (' + n + ')' : 'Confirmar';
         }
 
+        // Renders (or re-renders for search) without touching selection state.
+        // Each row has pointer-events:none on the checkbox so clicks land on the row
+        // div, which is handled by the single delegated listener on listEl.
         function renderList(q) {
             q = (q || '').toLowerCase().trim();
             var filtered = displayTags.filter(function(t) {
@@ -128,19 +126,18 @@ const TagPicker = (function() {
 
             var html = filtered.map(function(tag) {
                 var chk = isSelected(tag.id) ? ' checked' : '';
-                return '<label class="bj-tp-item">' +
-                    '<input type="checkbox" data-id="' + tag.id + '"' + chk + '> ' +
+                return '<div class="bj-tp-row" data-id="' + tag.id + '">' +
+                    '<input type="checkbox"' + chk + ' tabindex="-1"> ' +
                     _escapeHtml(tag.nombre) +
-                '</label>';
+                '</div>';
             }).join('');
 
-            // "Crear nuevo" option
             if (allowCreate && q) {
                 var exactMatch = displayTags.some(function(t) {
                     return t.nombre.toLowerCase() === q || _makeSlug(t.nombre) === _makeSlug(q);
                 });
                 if (!exactMatch) {
-                    html += '<div class="bj-tp-item bj-tp-create" id="bj-tp-create-item" data-name="' + _escapeHtml(q) + '">' +
+                    html += '<div class="bj-tp-row bj-tp-create" data-create="' + _escapeHtml(q) + '">' +
                         'Crear tag: <strong>' + _escapeHtml(q) + '</strong>' +
                         '</div>';
                 }
@@ -151,41 +148,49 @@ const TagPicker = (function() {
             }
 
             listEl.innerHTML = html;
-
-            // Wire checkbox changes
-            listEl.querySelectorAll('.bj-tp-item input[type=checkbox]').forEach(function(cb) {
-                cb.addEventListener('change', function() {
-                    var id = parseInt(this.dataset.id, 10);
-                    var tag = displayTags.find(function(t) { return t.id === id; });
-                    if (tag) toggleTag(tag);
-                    // Re-render to keep check state consistent
-                    renderList(searchEl.value);
-                });
-            });
-
-            // Wire "Crear nuevo"
-            var createItem = document.getElementById('bj-tp-create-item');
-            if (createItem) {
-                createItem.addEventListener('click', async function() {
-                    var name = this.dataset.name.trim();
-                    if (!name) return;
-                    this.textContent = 'Creando...';
-                    try {
-                        var newTag = await SupabaseAPI.createTag(name, _makeSlug(name));
-                        if (newTag) {
-                            allTags.push(newTag);
-                            displayTags.push(newTag);
-                            selected.push(newTag);
-                            searchEl.value = '';
-                            renderList('');
-                            updateConfirmBtn();
-                        }
-                    } catch (e) {
-                        console.error('[TagPicker] createTag failed:', e);
-                    }
-                });
-            }
         }
+
+        // Single delegated click handler on the stable listEl container.
+        // Fires for every click inside the list regardless of DOM re-renders.
+        listEl.addEventListener('click', async function(e) {
+            var row = e.target.closest('.bj-tp-row');
+            if (!row) return;
+
+            // "Crear nuevo" row
+            var createName = row.dataset.create;
+            if (createName !== undefined) {
+                row.textContent = 'Creando...';
+                try {
+                    var newTag = await SupabaseAPI.createTag(createName, _makeSlug(createName));
+                    if (newTag) {
+                        allTags.push(newTag);
+                        displayTags.push(newTag);
+                        selectedMap[newTag.id] = newTag;
+                        searchEl.value = '';
+                        renderList('');
+                        updateConfirmBtn();
+                    }
+                } catch (err) {
+                    console.error('[TagPicker] createTag failed:', err);
+                }
+                return;
+            }
+
+            // Regular tag row — toggle selection in-place (no full re-render)
+            var id = parseInt(row.dataset.id, 10);
+            var tag = displayTags.find(function(t) { return t.id === id; });
+            if (!tag) return;
+
+            var cb = row.querySelector('input[type=checkbox]');
+            if (isSelected(id)) {
+                delete selectedMap[id];
+                if (cb) cb.checked = false;
+            } else {
+                selectedMap[id] = tag;
+                if (cb) cb.checked = true;
+            }
+            updateConfirmBtn();
+        });
 
         renderList('');
 
@@ -201,12 +206,11 @@ const TagPicker = (function() {
         });
 
         confirmBtn.addEventListener('click', function() {
-            var result = selected.slice();
+            var result = Object.values(selectedMap);
             close();
             onConfirm(result);
         });
 
-        // Focus search on open
         setTimeout(function() { searchEl.focus(); }, 50);
     }
 
