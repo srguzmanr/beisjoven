@@ -1894,6 +1894,122 @@ const AdminPages = {
             });
     },
 
+    // ==================== ARTÍCULOS: SERVER-SIDE QUERY STATE (ADMIN35-01a) ====================
+    // State-driven backend infrastructure. Not yet wired to the UI — 01b consumes it.
+    _articulosState: {
+        q: '',
+        categoria_id: null,
+        tag_id: null,
+        publicado: null,
+        destacado: null,
+        desde: null,
+        hasta: null,
+        sort: 'created_at_desc',
+        page: 0,
+        pageSize: 25
+    },
+    _articulosTotal: 0,
+    _articulosLoaded: 0,
+    _articulosRows: [],
+
+    _parseStateFromQuery: function(query) {
+        const s = {
+            q: query.get('q') || '',
+            categoria_id: query.get('cat') ? parseInt(query.get('cat'), 10) : null,
+            tag_id: query.get('tag') ? parseInt(query.get('tag'), 10) : null,
+            publicado: null,
+            destacado: query.get('destacado') === '1' ? true : null,
+            desde: query.get('desde') || null,
+            hasta: query.get('hasta') || null,
+            sort: query.get('sort') || 'created_at_desc',
+            page: query.get('page') ? parseInt(query.get('page'), 10) : 0,
+            pageSize: 25
+        };
+        const status = query.get('status');
+        if (status === 'published') s.publicado = true;
+        else if (status === 'draft') s.publicado = false;
+        else if (status === 'featured') s.destacado = true;
+        return s;
+    },
+
+    _syncUrlFromState: function() {
+        const s = AdminPages._articulosState;
+        const params = new URLSearchParams();
+        if (s.q) params.set('q', s.q);
+        if (s.categoria_id) params.set('cat', s.categoria_id);
+        if (s.tag_id) params.set('tag', s.tag_id);
+        if (s.publicado === true) params.set('status', 'published');
+        else if (s.publicado === false) params.set('status', 'draft');
+        if (s.destacado === true) params.set('destacado', '1');
+        if (s.desde) params.set('desde', s.desde);
+        if (s.hasta) params.set('hasta', s.hasta);
+        if (s.sort !== 'created_at_desc') params.set('sort', s.sort);
+        if (s.page > 0) params.set('page', s.page);
+        const url = '/admin/articulos' + (params.toString() ? '?' + params.toString() : '');
+        history.replaceState(null, '', url);
+    },
+
+    _loadArticulos: async function(state, opts) {
+        opts = opts || {};
+        const append = opts.append === true;
+        const from = state.page * state.pageSize;
+        const to = from + state.pageSize - 1;
+
+        let select = '*, categoria:categorias(*), autor:autores(*)';
+        if (state.tag_id) {
+            select = '*, categoria:categorias(*), autor:autores(*), articulo_tags!inner(tag_id)';
+        }
+
+        let q = supabaseClient
+            .from('articulos')
+            .select(select, { count: 'exact' })
+            .range(from, to);
+
+        const sortMap = {
+            created_at_desc: ['created_at', false],
+            created_at_asc:  ['created_at', true],
+            titulo_asc:      ['titulo', true],
+            titulo_desc:     ['titulo', false]
+        };
+        const sortEntry = sortMap[state.sort] || sortMap.created_at_desc;
+        q = q.order(sortEntry[0], { ascending: sortEntry[1] });
+
+        if (state.q && state.q.length >= 3) q = q.ilike('titulo', '%' + state.q + '%');
+        if (state.categoria_id) q = q.eq('categoria_id', state.categoria_id);
+        if (state.tag_id) q = q.eq('articulo_tags.tag_id', state.tag_id);
+        if (state.publicado !== null) q = q.eq('publicado', state.publicado);
+        if (state.destacado === true) q = q.eq('destacado', true);
+        if (state.desde) q = q.gte('created_at', state.desde);
+        if (state.hasta) q = q.lte('created_at', state.hasta);
+
+        if (!Auth.isAdmin()) {
+            q = q.or('publicado.eq.true,user_id.eq.' + Auth.getUser().id);
+        }
+
+        const res = await q;
+        if (res.error) {
+            console.error('[articulos] Load failed:', res.error);
+            if (typeof showToast === 'function') showToast('Error al cargar artículos', 'error');
+            return;
+        }
+
+        AdminPages._articulosState = state;
+        AdminPages._articulosTotal = res.count || 0;
+        const rows = res.data || [];
+
+        if (append) {
+            AdminPages._articulosRows = AdminPages._articulosRows.concat(rows);
+            AdminPages._articulosLoaded += rows.length;
+        } else {
+            AdminPages._articulosRows = rows;
+            AdminPages._articulosLoaded = rows.length;
+        }
+
+        AdminPages._syncUrlFromState();
+
+        console.log('[articulos] Loaded', rows.length, 'of', AdminPages._articulosTotal, 'total (page', state.page + ')');
+    },
+
     // Filtrar artículos por categoría y WBC (works on both table rows + mobile cards)
     _filterArticles: function() {
         const cat = document.getElementById('admin-cat-filter').value;
