@@ -688,8 +688,9 @@
         display: none !important;
     }
 
-    /* When editor sticky bar is visible, hide tab bar */
-    body:has(.admin-sticky-bar) .admin-bottom-tabs {
+    /* When editor sticky bar or bulk bar is visible, hide tab bar */
+    body:has(.admin-sticky-bar) .admin-bottom-tabs,
+    body:has(.art-bulk-bar:not([style*="display: none"]):not([style*="display:none"])) .admin-bottom-tabs {
         display: none;
     }
 }

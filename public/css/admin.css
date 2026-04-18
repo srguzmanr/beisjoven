@@ -1748,3 +1748,261 @@
         display: inline-flex;
     }
 }
+
+/* ==================== BULK SELECTION (ADMIN35-02) ==================== */
+
+/* Checkbox column header */
+.art-check-th {
+    width: 44px;
+    padding: 10px 8px !important;
+    text-align: center;
+}
+.art-check-th input[type="checkbox"],
+.art-check-cell input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--admin-accent, #1B2A4A);
+    cursor: pointer;
+    display: block;
+    margin: 0 auto;
+    min-width: 18px;
+}
+.art-check-cell {
+    width: 44px;
+    text-align: center;
+    padding: 10px 8px !important;
+}
+
+/* Mobile card checkbox */
+.acm-check-wrap {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-right: 4px;
+}
+.acm-check {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 12px;
+    box-sizing: content-box;
+    margin: -12px;
+    cursor: pointer;
+    accent-color: var(--admin-accent, #1B2A4A);
+}
+
+/* Sticky bulk action bar */
+.art-bulk-bar {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--admin-surface, #fff);
+    border-top: 2px solid var(--admin-accent, #1B2A4A);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    z-index: 200;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+}
+.art-bulk-count {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--admin-text, #111);
+    white-space: nowrap;
+    min-width: 100px;
+}
+.art-bulk-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    flex: 1;
+}
+.art-bulk-btn {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: inherit;
+    border: 1px solid var(--admin-border, #e5e7eb);
+    background: var(--admin-surface-3, #f3f4f6);
+    color: var(--admin-text, #111);
+    border-radius: 6px;
+    cursor: pointer;
+    min-height: 36px;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.art-bulk-btn:hover {
+    background: var(--admin-surface-2, #e5e7eb);
+}
+.art-bulk-primary {
+    background: var(--admin-accent, #1B2A4A);
+    color: #fff;
+    border-color: var(--admin-accent, #1B2A4A);
+}
+.art-bulk-primary:hover {
+    opacity: 0.85;
+}
+.art-bulk-danger {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+.art-bulk-danger:hover {
+    background: #fecaca;
+}
+.art-bulk-clear {
+    background: none;
+    border: none;
+    color: var(--admin-text-muted, #6b7280);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 6px 4px;
+    text-decoration: underline;
+    white-space: nowrap;
+    font-family: inherit;
+}
+.art-bulk-clear:hover {
+    color: var(--admin-text, #111);
+}
+
+/* Bulk action modals */
+.art-bulk-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 10002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.art-bulk-modal {
+    background: var(--admin-surface, #fff);
+    color: var(--admin-text, #111);
+    border-radius: 12px;
+    padding: 28px 24px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.art-bulk-modal h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+.art-bulk-modal p {
+    margin: 0 0 20px 0;
+    color: var(--admin-text-muted, #6b7280);
+    font-size: 0.95rem;
+}
+.art-bulk-modal-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--admin-border, #e5e7eb);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    margin-bottom: 20px;
+    background: var(--admin-input-bg, #fff);
+    color: var(--admin-text, #111);
+    min-height: 44px;
+}
+.art-bulk-modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+.art-bulk-modal-cancel {
+    padding: 10px 20px;
+    border: 1px solid var(--admin-border, #e5e7eb);
+    background: var(--admin-surface-3, #f3f4f6);
+    color: var(--admin-text, #111);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: inherit;
+    min-height: 44px;
+}
+.art-bulk-modal-confirm {
+    padding: 10px 24px;
+    background: var(--admin-accent, #1B2A4A);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    min-height: 44px;
+}
+.art-bulk-modal-danger {
+    background: #dc2626;
+}
+
+/* Mobile bulk bar */
+@media (max-width: 767px) {
+    .art-bulk-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 8px 12px;
+        gap: 8px;
+    }
+    .art-bulk-actions {
+        gap: 6px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    .art-bulk-btn {
+        flex-shrink: 0;
+        min-height: 44px;
+        padding: 10px 14px;
+    }
+    .art-bulk-modal {
+        max-width: 100%;
+        margin: 0;
+        border-radius: 16px 16px 0 0;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+    .art-bulk-modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+}
+
+/* Dark mode for bulk bar and modals */
+[data-theme="dark"] .art-bulk-bar {
+    background: var(--admin-surface);
+    border-top-color: var(--admin-accent);
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.4);
+}
+[data-theme="dark"] .art-bulk-btn {
+    background: var(--admin-surface-3);
+    color: var(--admin-text);
+    border-color: var(--admin-border);
+}
+[data-theme="dark"] .art-bulk-btn:hover {
+    background: var(--admin-surface-2);
+}
+[data-theme="dark"] .art-bulk-danger {
+    background: var(--admin-danger-bg);
+    color: var(--admin-danger-text);
+}
+[data-theme="dark"] .art-bulk-modal {
+    background: var(--admin-surface);
+    color: var(--admin-text);
+}
+[data-theme="dark"] .art-bulk-modal-cancel {
+    background: var(--admin-surface-3);
+    color: var(--admin-text);
+    border-color: var(--admin-border);
+}
