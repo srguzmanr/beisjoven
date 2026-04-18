@@ -17,6 +17,26 @@ export const prerender = true;
     <meta name="robots" content="noindex, nofollow">
     <title>Admin - Beisjoven</title>
 
+    <!-- Theme init — set [data-theme] before paint to avoid FOUC -->
+    <script is:inline>
+        (function () {
+            try {
+                var path = window.location.pathname || '';
+                // Login stays light regardless of saved preference.
+                if (path === '/login' || path.indexOf('/login') === 0) {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                    return;
+                }
+                var saved = localStorage.getItem('bj-admin-theme');
+                var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var theme = saved || (prefersDark ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -93,6 +113,17 @@ export const prerender = true;
                     // Remove editor sticky bar if lingering from editor page
                     var stickyBar = document.getElementById('admin-sticky-bar');
                     if (stickyBar) stickyBar.remove();
+
+                    // Re-apply saved admin theme when leaving /login
+                    try {
+                        var path = (fullPath || '').split('?')[0];
+                        if (path !== '/login' && path.indexOf('/login') !== 0) {
+                            var saved = localStorage.getItem('bj-admin-theme');
+                            var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                            var theme = saved || (prefersDark ? 'dark' : 'light');
+                            document.documentElement.setAttribute('data-theme', theme);
+                        }
+                    } catch (e) {}
 
                     origHandleRoute(fullPath);
                     // Defer so the DOM has rendered

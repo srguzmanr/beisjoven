@@ -639,6 +639,9 @@ const AdminPages = {
             return;
         }
 
+        // Login page stays light regardless of saved admin theme
+        document.documentElement.setAttribute('data-theme', 'light');
+
         const main = document.getElementById('main-content');
         main.innerHTML = `
             <div class="login-page">
@@ -3317,6 +3320,9 @@ const AdminComponents = {
     },
     
     header: function(title) {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const themeIcon = isDark ? '☀️' : '🌙';
+        const themeLabel = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
         return `
             <header class="admin-header">
                 <div style="display: flex; align-items: center; gap: 12px;">
@@ -3324,9 +3330,30 @@ const AdminComponents = {
                 </div>
                 <div class="header-actions">
                     <span class="current-date">${new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                    <button type="button"
+                            id="admin-theme-toggle"
+                            class="admin-theme-toggle"
+                            onclick="AdminComponents.toggleTheme()"
+                            aria-label="${themeLabel}"
+                            title="${themeLabel}">${themeIcon}</button>
                 </div>
             </header>
         `;
+    },
+
+    toggleTheme: function() {
+        var current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        var next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('bj-admin-theme', next); } catch (e) {}
+        var btn = document.getElementById('admin-theme-toggle');
+        if (btn) {
+            var isDark = next === 'dark';
+            btn.textContent = isDark ? '☀️' : '🌙';
+            var label = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+            btn.setAttribute('aria-label', label);
+            btn.setAttribute('title', label);
+        }
     },
 
     // Bottom tab bar for mobile — replaces hamburger menu

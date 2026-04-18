@@ -34,7 +34,7 @@
 
     /* Dentro del sidebar: Categoría/Autor arriba del contenido principal */
     /* Usamos un wrapper invisible — ver nota abajo */
-    .form-sidebar .form-card { margin-bottom: 0; box-shadow: none; border-radius: 0; border-bottom: 1px solid #e5e7eb; padding: 16px; }
+    .form-sidebar .form-card { margin-bottom: 0; box-shadow: none; border-radius: 0; border-bottom: 1px solid var(--admin-border); padding: 16px; }
     .form-sidebar .form-card:last-child { border-bottom: none; }
 
     /* ── 3. BOTÓN PUBLICAR STICKY AL FONDO ───────────────────── */
@@ -44,7 +44,7 @@
         left: 0;
         right: 0;
         z-index: 999;
-        background: white;
+        background: var(--admin-surface);
         padding: 12px 16px;
         box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
         display: flex;
@@ -113,30 +113,13 @@
 }
 
 
-/* ==================== ADMIN FORZAR LIGHT MODE ==================== */
-/* color-scheme: light fuerza al navegador a renderizar controles nativos
-   (inputs, selects, checkboxes) en modo claro sin importar la preferencia del sistema */
-.admin-layout,
-.login-page,
-#media-library-modal {
+/* ==================== LOGIN — ALWAYS LIGHT ==================== */
+/* The login page stays light regardless of admin theme or OS preference.
+   Admin dark mode is opt-in via [data-theme="dark"] — see admin.css. */
+.login-page {
     color-scheme: light;
 }
 
-/* Force native controls light — checkboxes, selects, etc. */
-.admin-layout input[type="checkbox"],
-.admin-layout select,
-.form-grid-new input[type="checkbox"] {
-    color-scheme: light !important;
-}
-
-/* Forzar inputs claro en admin — color-scheme solo no es suficiente en todos los browsers */
-.admin-layout input,
-.admin-layout input[type="text"],
-.admin-layout input[type="url"],
-.admin-layout input[type="email"],
-.admin-layout input[type="password"],
-.admin-layout textarea,
-.admin-layout select,
 .login-page input,
 .login-page input[type="password"] {
     background-color: #ffffff !important;
@@ -144,144 +127,22 @@
     border-color: #e5e7eb !important;
     -webkit-text-fill-color: #111827 !important;
 }
-.admin-layout input::placeholder,
-.admin-layout textarea::placeholder {
+.login-page input::placeholder {
     color: #9ca3af !important;
     -webkit-text-fill-color: #9ca3af !important;
     opacity: 1 !important;
 }
-/* Autofill de iOS también */
-.admin-layout input:-webkit-autofill,
-.admin-layout input:-webkit-autofill:focus {
+.login-page input:-webkit-autofill,
+.login-page input:-webkit-autofill:focus {
     -webkit-box-shadow: 0 0 0 100px #ffffff inset !important;
     -webkit-text-fill-color: #111827 !important;
 }
-/* El dark-mode.css aplica a todo el body. El admin siempre debe ser claro. */
+
+/* Block the public site dark-mode.css from affecting the login page */
 @media (prefers-color-scheme: dark) {
-    .admin-layout,
-    .admin-layout .admin-main,
-    .admin-layout .admin-content,
-    .admin-layout .form-card,
-    .admin-layout .admin-section,
-    .admin-layout .admin-header,
-    .admin-layout .articles-table,
-    .admin-layout .article-form {
-        background: #f5f5f5 !important;
-        color: #111827 !important;
-    }
-    .admin-layout .form-card,
-    .admin-layout .admin-section,
-    .admin-layout .articles-table,
-    .admin-layout .admin-header,
-    .admin-layout .stat-card {
-        background: #ffffff !important;
-        color: #111827 !important;
-    }
-    .admin-layout .form-main input,
-    .admin-layout .form-main textarea,
-    .admin-layout .form-main select,
-    .admin-layout .form-card input,
-    .admin-layout .form-card select,
-    .admin-layout .rte-editor,
-    .admin-layout .rte-toolbar {
-        background: #ffffff !important;
-        color: #111827 !important;
-        border-color: #e5e7eb !important;
-    }
-    .admin-layout .form-main input::placeholder,
-    .admin-layout .form-main textarea::placeholder {
-        color: #9ca3af !important;
-    }
-    .admin-layout .admin-header h1,
-    .admin-layout .form-main label,
-    .admin-layout .form-card label,
-    .admin-layout .form-card h4,
-    .admin-layout .content-header h2 {
-        color: #111827 !important;
-    }
-    .admin-layout .articles-table th {
-        background: #f9fafb !important;
-        color: #374151 !important;
-    }
-    .admin-layout .articles-table td {
-        color: #374151 !important;
-        border-color: #f3f4f6 !important;
-    }
-    /* Sticky publish bar */
-    .form-actions {
-        background: #ffffff !important;
-    }
-    /* Login page */
     .login-container {
         background: #ffffff !important;
         color: #111827 !important;
-    }
-    .login-page input {
-        background: #ffffff !important;
-        color: #111827 !important;
-        border-color: #e5e7eb !important;
-    }
-    /* ── Media Library Modal — force light mode ────────────── */
-    #media-library-modal .ml-container {
-        background: #ffffff !important;
-        color: #111827 !important;
-    }
-    #media-library-modal .ml-header {
-        border-bottom-color: #e5e7eb !important;
-    }
-    #media-library-modal .ml-header .ml-close {
-        color: #6b7280 !important;
-    }
-    #media-library-modal .ml-toolbar,
-    #media-library-modal .ml-footer,
-    #media-library-modal #ml-meta-panel {
-        background: #f8fafc !important;
-        border-color: #e5e7eb !important;
-    }
-    #media-library-modal .ml-search {
-        background: #ffffff !important;
-        color: #111827 !important;
-        border-color: #d1d5db !important;
-    }
-    #media-library-modal .ml-search::placeholder {
-        color: #9ca3af !important;
-    }
-    #media-library-modal .ml-filter-btn {
-        background: #ffffff !important;
-        color: #6b7280 !important;
-        border-color: #d1d5db !important;
-    }
-    #media-library-modal .ml-filter-btn.active {
-        background: #c41e3a !important;
-        color: #ffffff !important;
-        border-color: #c41e3a !important;
-    }
-    #media-library-modal .ml-body {
-        background: #ffffff !important;
-    }
-    #media-library-modal #ml-count {
-        color: #6b7280 !important;
-    }
-    #media-library-modal .ml-cancel {
-        background: #e5e7eb !important;
-        color: #374151 !important;
-    }
-    #media-library-modal .ml-loading,
-    #media-library-modal .ml-empty {
-        color: #6b7280 !important;
-    }
-    #media-library-modal #ml-meta-panel p,
-    #media-library-modal #ml-meta-panel label {
-        color: #374151 !important;
-    }
-    #media-library-modal #ml-meta-panel input,
-    #media-library-modal #ml-meta-panel select {
-        background: #ffffff !important;
-        color: #111827 !important;
-        border-color: #d1d5db !important;
-    }
-    #media-library-modal small {
-        color: #6b7280 !important;
     }
 }
 
@@ -305,16 +166,16 @@
 .fg-extracto  { grid-area: extracto;  padding-bottom: 20px; }
 .fg-meta      { grid-area: meta;      padding-bottom: 20px; }
 .fg-contenido { grid-area: contenido; padding-bottom: 20px; }
-.fg-imagen    { grid-area: imagen;    background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
-.fg-checks    { grid-area: checks;    background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
-.fg-acciones  { grid-area: acciones;  background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.fg-imagen    { grid-area: imagen;    background: var(--admin-surface); border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
+.fg-checks    { grid-area: checks;    background: var(--admin-surface); border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
+.fg-acciones  { grid-area: acciones;  background: var(--admin-surface); border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 
 /* Labels en el nuevo grid */
 .form-grid-new label {
     display: block;
     margin-bottom: 6px;
     font-weight: 600;
-    color: #111827;
+    color: var(--admin-text);
     font-size: 0.95rem;
 }
 .form-grid-new input[type="text"],
@@ -323,7 +184,9 @@
 .form-grid-new select {
     width: 100%;
     padding: 12px 14px;
-    border: 2px solid #e5e7eb;
+    background: var(--admin-input-bg);
+    color: var(--admin-input-text);
+    border: 2px solid var(--admin-input-border);
     border-radius: 8px;
     font-size: 1rem;
     font-family: inherit;
@@ -352,7 +215,7 @@
     padding: 10px 0;
     cursor: pointer;
     min-height: 44px;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--admin-border);
 }
 .form-grid-new .checkbox-label:last-child { border-bottom: none; }
 .form-grid-new .checkbox-label input[type="checkbox"] {
@@ -387,7 +250,7 @@
     font-weight: 600;
 }
 .fg-acciones .btn-primary { background: #c4122e; color: white; }
-.fg-acciones .btn-secondary { background: #f3f4f6; color: #374151; }
+.fg-acciones .btn-secondary { background: var(--admin-surface-3); color: var(--admin-text); }
 
 /* ── MÓVIL: 1 columna en orden editorial ─────────────────── */
 @media (max-width: 768px) {
@@ -405,8 +268,8 @@
     .fg-extracto  { order: 2; padding: 12px 16px 0; }
     .fg-meta      { order: 3; padding: 12px 16px 0; }
     .fg-contenido { order: 4; padding: 12px 16px 0; }
-    .fg-imagen    { order: 5; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
-    .fg-checks    { order: 6; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
+    .fg-imagen    { order: 5; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid var(--admin-border); border-radius: 8px; }
+    .fg-checks    { order: 6; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid var(--admin-border); border-radius: 8px; }
     .fg-acciones  { order: 7; display: none; } /* oculto — reemplazado por sticky bar abajo */
 
     /* Categoría + Autor apilados en móvil */
@@ -430,7 +293,7 @@
         left: 0;
         right: 0;
         z-index: 999;
-        background: white;
+        background: var(--admin-surface);
         padding: 10px 16px;
         box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
         display: flex;
@@ -453,8 +316,8 @@
     .admin-sticky-bar .btn-cancel {
         flex: 1;
         padding: 14px;
-        background: #f3f4f6;
-        color: #374151;
+        background: var(--admin-surface-3);
+        color: var(--admin-text);
         border: none;
         border-radius: 8px;
         font-size: 0.9rem;
@@ -531,8 +394,8 @@
         position: sticky;
         top: 0;
         z-index: 50;
-        background: #fff;
-        border-bottom: 2px solid #e5e7eb;
+        background: var(--admin-surface);
+        border-bottom: 2px solid var(--admin-border);
     }
 
     /* ── FILTER SELECTS: Full width on mobile ────────────── */
@@ -555,8 +418,8 @@
 
 .article-card-mobile {
     display: block;
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
     border-radius: 10px;
     padding: 14px 16px;
     text-decoration: none;
@@ -576,13 +439,13 @@
 }
 .acm-date {
     font-size: 0.8rem;
-    color: #9ca3af;
+    color: var(--admin-text-faint);
 }
 .acm-title {
     font-family: 'Oswald', 'Inter', sans-serif;
     font-size: 1rem;
     font-weight: 600;
-    color: #111827;
+    color: var(--admin-text);
     margin: 0 0 8px 0;
     line-height: 1.3;
 }
@@ -614,14 +477,14 @@
     padding: 20px;
 }
 .onboarding-panel {
-    background: #fff;
+    background: var(--admin-surface);
+    color: var(--admin-text);
     border-radius: 16px;
     max-width: 480px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
     padding: 32px 28px;
-    color-scheme: light;
 }
 .onboarding-panel h2 {
     font-family: 'Oswald', sans-serif;
@@ -630,7 +493,7 @@
     margin: 0 0 8px 0;
 }
 .onboarding-panel .ob-subtitle {
-    color: #6b7280;
+    color: var(--admin-text-muted);
     margin: 0 0 24px 0;
     font-size: 0.95rem;
 }
@@ -644,7 +507,7 @@
     align-items: flex-start;
     gap: 14px;
     padding: 14px 0;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--admin-border);
 }
 .onboarding-steps li:last-child { border-bottom: none; }
 .ob-step-num {
@@ -660,8 +523,8 @@
     font-size: 0.9rem;
     flex-shrink: 0;
 }
-.ob-step-text strong { display: block; margin-bottom: 2px; color: #111827; }
-.ob-step-text span { color: #6b7280; font-size: 0.9rem; }
+.ob-step-text strong { display: block; margin-bottom: 2px; color: var(--admin-text); }
+.ob-step-text span { color: var(--admin-text-muted); font-size: 0.9rem; }
 .onboarding-panel .ob-guide-link {
     display: block;
     text-align: center;
@@ -735,12 +598,11 @@
         left: 0;
         right: 0;
         z-index: 9000;
-        background: #fff;
-        border-top: 1px solid #e5e7eb;
+        background: var(--admin-surface);
+        border-top: 1px solid var(--admin-border);
         padding: 4px 0 calc(4px + env(safe-area-inset-bottom));
         justify-content: space-around;
         align-items: center;
-        color-scheme: light;
     }
     .abt-tab {
         display: flex;
@@ -796,21 +658,21 @@
         left: 0;
         right: 0;
         z-index: 9002;
-        background: #fff;
+        background: var(--admin-surface);
         border-radius: 16px 16px 0 0;
         padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
     }
     .abt-more-sheet a {
         display: block;
         padding: 14px 24px;
-        color: #1a1a2e;
+        color: var(--admin-text);
         text-decoration: none;
         font-size: 1rem;
         font-weight: 500;
-        border-bottom: 1px solid #f3f4f6;
+        border-bottom: 1px solid var(--admin-border);
     }
     .abt-more-sheet a:last-child { border-bottom: none; }
-    .abt-more-sheet a:active { background: #f3f4f6; }
+    .abt-more-sheet a:active { background: var(--admin-surface-2); }
 
     /* Hide sidebar completely on mobile — tab bar replaces it */
     .admin-sidebar {
