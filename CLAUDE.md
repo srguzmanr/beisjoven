@@ -1,12 +1,14 @@
 # Beisjoven — Claude Code Guidelines
 
-## Git Rules — CRITICAL, READ FIRST
-- You MUST commit directly to `main`. Do NOT create feature branches. Do NOT run `git checkout -b`. Do NOT create pull requests.
-- If you find yourself about to create a branch, STOP. Commit to `main` instead.
-- This is a single-operator project. There is no code review process, no PR workflow, no branch merging. Branches add friction and zero value here.
+## Git Rules
+
+- Claude Code runs in a harness that auto-creates a feature branch per session. Commit to whatever branch you are on — do NOT switch branches, do NOT try to push to main.
+- Sergio clicks "Merge" in GitHub or VS Code after verifying the commit. That takes 2 seconds and preserves a clean commit-per-feature history.
+- Do NOT create pull requests unless explicitly asked.
+- Do NOT spend time explaining the branch situation in commit messages or chat — just commit and push to the current branch.
 - Run `npx astro build` before every push. If it fails, fix it before pushing.
-- After pushing to `main`, the Vercel deploy hook triggers automatically.
 - Use conventional commit messages: `feat(TICKET): description`, `fix(TICKET): description`
+- After merge to main, the Vercel deploy hook triggers automatically.
 
 ## Before Writing Code
 - Read every file you plan to modify BEFORE editing it.
