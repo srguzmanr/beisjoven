@@ -2481,6 +2481,7 @@ const AdminPages = {
                         rows.push({ articulo_id: artId, tag_id: tagId });
                     });
                 });
+                console.log('[_bulkAddTag] inserting:', ids, 'x', Array.from(selectedTagIds));
                 const { error } = await supabaseClient
                     .from('articulo_tags')
                     .upsert(rows, { onConflict: 'articulo_id,tag_id', ignoreDuplicates: true });
