@@ -853,6 +853,9 @@ const AdminPages = {
 
         const main = document.getElementById('main-content');
 
+        // Clear bulk selection on route entry
+        AdminPages._seleccionados.clear();
+
         // Parse state from URL query (ctx.query from Router, else window.location)
         const query = (ctx && ctx.query) || new URLSearchParams(window.location.search);
         AdminPages._articulosState = AdminPages._parseStateFromQuery(query);
@@ -912,6 +915,7 @@ const AdminPages = {
                             <table>
                                 <thead>
                                     <tr>
+                                        <th class="art-check-th"><input type="checkbox" id="art-select-all" title="Seleccionar todo"></th>
                                         <th>Título</th>
                                         <th>Categoría</th>
                                         <th>Estado</th>
@@ -926,6 +930,19 @@ const AdminPages = {
 
                         <div class="art-load-more-wrap">
                             <button id="art-load-more" class="btn btn-secondary" style="display:none">Cargar más</button>
+                        </div>
+
+                        <div id="art-bulk-bar" class="art-bulk-bar" style="display:none">
+                            <span id="art-bulk-count" class="art-bulk-count">0 seleccionados</span>
+                            <div class="art-bulk-actions">
+                                <button class="art-bulk-btn art-bulk-primary" id="art-bulk-add-tag">+ Tag</button>
+                                <button class="art-bulk-btn art-bulk-primary" id="art-bulk-remove-tag">- Tag</button>
+                                <button class="art-bulk-btn" id="art-bulk-cat">Categoría</button>
+                                <button class="art-bulk-btn" id="art-bulk-publish">Publicar</button>
+                                <button class="art-bulk-btn" id="art-bulk-unpublish">Despublicar</button>
+                                <button class="art-bulk-btn art-bulk-danger" id="art-bulk-delete">Eliminar</button>
+                            </div>
+                            <button class="art-bulk-clear" id="art-bulk-clear">Limpiar</button>
                         </div>
 
                         <div id="art-drawer-backdrop" class="art-drawer-backdrop" aria-hidden="true"></div>
@@ -997,8 +1014,9 @@ const AdminPages = {
         AdminPages._renderArticulosRows();
         AdminPages._updateArticulosCount();
         AdminPages._updateLoadMoreButton();
+        AdminPages._updateBulkBar();
 
-        // Wire filter events
+        // Wire filter events + bulk bar
         AdminPages._wireArticulosFilters();
     },
 
@@ -1907,6 +1925,7 @@ const AdminPages = {
 
     // ==================== ARTÍCULOS: SERVER-SIDE QUERY STATE (ADMIN35-01a) ====================
     // State-driven backend infrastructure. Not yet wired to the UI — 01b consumes it.
+    _seleccionados: new Set(), // persists across filter/sort changes; cleared on route change
     _articulosState: {
         q: '',
         categoria_id: null,
@@ -2142,8 +2161,10 @@ const AdminPages = {
         const estadoCls = article.publicado ? 'badge-published' : 'badge-draft';
         const fecha = new Date(article.fecha || article.created_at).toLocaleDateString('es-MX');
         const slug = AdminPages._escapeHtml(article.slug || '');
+        const checked = AdminPages._seleccionados.has(article.id) ? ' checked' : '';
         return `
             <tr>
+                <td class="art-check-cell"><input type="checkbox" class="art-row-check" data-id="${article.id}"${checked}></td>
                 <td>
                     <a href="/articulo/${slug}" target="_blank">${tituloShort}</a>
                 </td>
@@ -2169,9 +2190,13 @@ const AdminPages = {
         const estadoCls = article.publicado ? 'badge-published' : 'badge-draft';
         const fecha = new Date(article.fecha || article.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
         const slug = AdminPages._escapeHtml(article.slug || '');
+        const checked = AdminPages._seleccionados.has(article.id) ? ' checked' : '';
         return `
             <div class="article-card-mobile">
                 <div class="acm-top">
+                    <label class="acm-check-wrap" onclick="event.stopPropagation()">
+                        <input type="checkbox" class="art-row-check acm-check" data-id="${article.id}"${checked}>
+                    </label>
                     <span class="badge ${estadoCls}">${estado}</span>
                     <span class="acm-date">${fecha}</span>
                 </div>
@@ -2203,7 +2228,7 @@ const AdminPages = {
                 : (AdminPages._hasActiveFilter()
                     ? 'No se encontraron artículos con esos filtros'
                     : 'No hay artículos aún');
-            const emptyRow = `<tr><td colspan="5" class="art-empty-cell">${msg}</td></tr>`;
+            const emptyRow = `<tr><td colspan="6" class="art-empty-cell">${msg}</td></tr>`;
             const emptyCard = `<div class="art-empty-state">${msg}</div>`;
             if (tbody) tbody.innerHTML = emptyRow;
             if (cards) cards.innerHTML = emptyCard;
@@ -2214,6 +2239,8 @@ const AdminPages = {
         const cardsHtml = rows.map(a => AdminPages._articulosCardHtml(a, isAdmin, isAdmin || a.user_id === userId)).join('');
         if (tbody) tbody.innerHTML = rowsHtml;
         if (cards) cards.innerHTML = cardsHtml;
+        AdminPages._wireRowCheckboxes();
+        AdminPages._syncSelectAll();
     },
 
     _appendArticulosRows: function() {
@@ -2228,6 +2255,8 @@ const AdminPages = {
         const cardsHtml = appended.map(a => AdminPages._articulosCardHtml(a, isAdmin, isAdmin || a.user_id === userId)).join('');
         if (tbody) tbody.insertAdjacentHTML('beforeend', rowsHtml);
         if (cards) cards.insertAdjacentHTML('beforeend', cardsHtml);
+        AdminPages._wireRowCheckboxes();
+        AdminPages._syncSelectAll();
     },
 
     _updateArticulosCount: function() {
@@ -2251,6 +2280,7 @@ const AdminPages = {
         AdminPages._updateArticulosCount();
         AdminPages._updateLoadMoreButton();
         AdminPages._updateFiltersCountBadge();
+        AdminPages._updateBulkBar();
     },
 
     _wireArticulosFilters: function() {
@@ -2314,6 +2344,7 @@ const AdminPages = {
             AdminPages._appendArticulosRows();
             AdminPages._updateArticulosCount();
             AdminPages._updateLoadMoreButton();
+            AdminPages._updateBulkBar();
         });
 
         const trigger = document.getElementById('art-filters-trigger');
@@ -2349,7 +2380,298 @@ const AdminPages = {
         document.addEventListener('keydown', function artDrawerEsc(e) {
             if (e.key === 'Escape') AdminPages._closeArticulosDrawer();
         });
+
+        // Bulk action bar
+        const selectAll = document.getElementById('art-select-all');
+        if (selectAll) selectAll.addEventListener('change', function() {
+            const rows = AdminPages._articulosRows || [];
+            rows.forEach(function(a) {
+                if (selectAll.checked) AdminPages._seleccionados.add(a.id);
+                else AdminPages._seleccionados.delete(a.id);
+            });
+            AdminPages._renderArticulosRows();
+            AdminPages._updateBulkBar();
+        });
+
+        const bulkClear = document.getElementById('art-bulk-clear');
+        if (bulkClear) bulkClear.addEventListener('click', function() {
+            AdminPages._seleccionados.clear();
+            AdminPages._renderArticulosRows();
+            AdminPages._updateBulkBar();
+        });
+
+        const addTagBtn = document.getElementById('art-bulk-add-tag');
+        if (addTagBtn) addTagBtn.addEventListener('click', AdminPages._bulkAddTag);
+
+        const removeTagBtn = document.getElementById('art-bulk-remove-tag');
+        if (removeTagBtn) removeTagBtn.addEventListener('click', AdminPages._bulkRemoveTag);
+
+        const catBtn = document.getElementById('art-bulk-cat');
+        if (catBtn) catBtn.addEventListener('click', AdminPages._bulkChangeCategory);
+
+        const publishBtn = document.getElementById('art-bulk-publish');
+        if (publishBtn) publishBtn.addEventListener('click', function() { AdminPages._bulkSetPublished(true); });
+
+        const unpublishBtn = document.getElementById('art-bulk-unpublish');
+        if (unpublishBtn) unpublishBtn.addEventListener('click', function() { AdminPages._bulkSetPublished(false); });
+
+        const deleteBtn = document.getElementById('art-bulk-delete');
+        if (deleteBtn) deleteBtn.addEventListener('click', AdminPages._bulkDelete);
     },
+
+    // ==================== ARTÍCULOS: BULK ACTIONS (ADMIN35-02) ====================
+
+    // Debounced deploy hook — fires once per batch even if multiple ops run quickly
+    _debouncedDeploy: null, // initialized lazily below
+
+    _triggerDebouncedDeploy: function() {
+        if (!AdminPages._debouncedDeploy) {
+            AdminPages._debouncedDeploy = AdminPages._debounce(function() {
+                AdminPages._triggerVercelRebuild();
+            }, 5000);
+        }
+        AdminPages._debouncedDeploy();
+    },
+
+    _wireRowCheckboxes: function() {
+        document.querySelectorAll('.art-row-check').forEach(function(cb) {
+            cb.addEventListener('change', function() {
+                const id = parseInt(this.dataset.id, 10);
+                if (this.checked) AdminPages._seleccionados.add(id);
+                else AdminPages._seleccionados.delete(id);
+                AdminPages._syncSelectAll();
+                AdminPages._updateBulkBar();
+            });
+        });
+    },
+
+    _syncSelectAll: function() {
+        const selectAll = document.getElementById('art-select-all');
+        if (!selectAll) return;
+        const rows = AdminPages._articulosRows || [];
+        if (rows.length === 0) { selectAll.checked = false; selectAll.indeterminate = false; return; }
+        const selectedInPage = rows.filter(function(a) { return AdminPages._seleccionados.has(a.id); }).length;
+        if (selectedInPage === 0) { selectAll.checked = false; selectAll.indeterminate = false; }
+        else if (selectedInPage === rows.length) { selectAll.checked = true; selectAll.indeterminate = false; }
+        else { selectAll.checked = false; selectAll.indeterminate = true; }
+    },
+
+    _updateBulkBar: function() {
+        const bar = document.getElementById('art-bulk-bar');
+        if (!bar) return;
+        const n = AdminPages._seleccionados.size;
+        bar.style.display = n >= 1 ? '' : 'none';
+        const countEl = document.getElementById('art-bulk-count');
+        if (countEl) countEl.textContent = n + ' seleccionado' + (n === 1 ? '' : 's');
+    },
+
+    _bulkAddTag: async function() {
+        const ids = Array.from(AdminPages._seleccionados);
+        if (ids.length === 0) return;
+        await AdminPages._ensureArticulosDropdownData();
+        TagPicker.open({
+            allTags: AdminPages._articulosTags || [],
+            allowCreate: true,
+            title: 'Agregar tag a ' + ids.length + ' artículo' + (ids.length === 1 ? '' : 's'),
+            onConfirm: async function(selectedTags) {
+                if (selectedTags.length === 0) return;
+                const rows = [];
+                ids.forEach(function(artId) {
+                    selectedTags.forEach(function(tag) {
+                        rows.push({ articulo_id: artId, tag_id: tag.id });
+                    });
+                });
+                const { error } = await supabaseClient
+                    .from('articulo_tags')
+                    .upsert(rows, { onConflict: 'articulo_id,tag_id', ignoreDuplicates: true });
+                if (error) {
+                    console.error('[bulkAddTag] Failed:', error);
+                    showToast('Error al agregar tags: ' + error.message, 'error');
+                    return;
+                }
+                showToast(ids.length + ' artículos actualizados. El sitio se actualizará en ~2 min.');
+                AdminPages._triggerDebouncedDeploy();
+            }
+        });
+    },
+
+    _bulkRemoveTag: async function() {
+        const ids = Array.from(AdminPages._seleccionados);
+        if (ids.length === 0) return;
+
+        // Fetch tag IDs that appear on ≥1 selected article
+        const { data, error: fetchErr } = await supabaseClient
+            .from('articulo_tags')
+            .select('tag_id, tag:tags(id, nombre)')
+            .in('articulo_id', ids);
+        if (fetchErr) {
+            console.error('[bulkRemoveTag] Fetch failed:', fetchErr);
+            showToast('Error al obtener tags: ' + fetchErr.message, 'error');
+            return;
+        }
+
+        const tagMap = {};
+        (data || []).forEach(function(row) {
+            if (row.tag) tagMap[row.tag.id] = row.tag;
+        });
+        const availableTags = Object.values(tagMap);
+
+        if (availableTags.length === 0) {
+            showToast('Los artículos seleccionados no tienen tags para quitar.', 'info');
+            return;
+        }
+
+        TagPicker.open({
+            allTags: availableTags,
+            filter: availableTags.map(function(t) { return t.id; }),
+            allowCreate: false,
+            title: 'Quitar tag de ' + ids.length + ' artículo' + (ids.length === 1 ? '' : 's'),
+            onConfirm: async function(selectedTags) {
+                if (selectedTags.length === 0) return;
+                const tagIds = selectedTags.map(function(t) { return t.id; });
+                const { error } = await supabaseClient
+                    .from('articulo_tags')
+                    .delete()
+                    .in('articulo_id', ids)
+                    .in('tag_id', tagIds);
+                if (error) {
+                    console.error('[bulkRemoveTag] Failed:', error);
+                    showToast('Error al quitar tags: ' + error.message, 'error');
+                    return;
+                }
+                showToast(ids.length + ' artículos actualizados. El sitio se actualizará en ~2 min.');
+                AdminPages._triggerDebouncedDeploy();
+            }
+        });
+    },
+
+    _bulkChangeCategory: async function() {
+        const ids = Array.from(AdminPages._seleccionados);
+        if (ids.length === 0) return;
+        await AdminPages._ensureArticulosDropdownData();
+        const cats = AdminPages._articulosCategorias || [];
+        if (cats.length === 0) { showToast('No hay categorías disponibles.', 'error'); return; }
+
+        // Build inline modal
+        const existing = document.getElementById('art-bulk-cat-modal');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'art-bulk-cat-modal';
+        modal.className = 'art-bulk-modal-overlay';
+        modal.innerHTML =
+            '<div class="art-bulk-modal">' +
+                '<h3>Cambiar categoría</h3>' +
+                '<p>' + ids.length + ' artículo' + (ids.length === 1 ? '' : 's') + ' seleccionado' + (ids.length === 1 ? '' : 's') + '</p>' +
+                '<select id="art-bulk-cat-sel" class="art-bulk-modal-select">' +
+                    cats.map(function(c) {
+                        return '<option value="' + c.id + '">' + AdminPages._escapeHtml(c.nombre) + '</option>';
+                    }).join('') +
+                '</select>' +
+                '<div class="art-bulk-modal-footer">' +
+                    '<button class="art-bulk-modal-cancel" id="art-bulk-cat-cancel">Cancelar</button>' +
+                    '<button class="art-bulk-modal-confirm" id="art-bulk-cat-confirm">Confirmar</button>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('art-bulk-cat-cancel').addEventListener('click', function() { modal.remove(); });
+        document.getElementById('art-bulk-cat-confirm').addEventListener('click', async function() {
+            const catId = parseInt(document.getElementById('art-bulk-cat-sel').value, 10);
+            modal.remove();
+            const { error } = await supabaseClient
+                .from('articulos')
+                .update({ categoria_id: catId })
+                .in('id', ids);
+            if (error) {
+                console.error('[bulkChangeCategory] Failed:', error);
+                showToast('Error al cambiar categoría: ' + error.message, 'error');
+                return;
+            }
+            showToast(ids.length + ' artículos actualizados. El sitio se actualizará en ~2 min.');
+            AdminPages._triggerDebouncedDeploy();
+            AdminPages._reloadArticulos();
+        });
+    },
+
+    _bulkSetPublished: async function(publicado) {
+        const ids = Array.from(AdminPages._seleccionados);
+        if (ids.length === 0) return;
+        const { error } = await supabaseClient
+            .from('articulos')
+            .update({ publicado: publicado })
+            .in('id', ids);
+        if (error) {
+            console.error('[bulkSetPublished] Failed:', error);
+            showToast('Error al actualizar estado: ' + error.message, 'error');
+            return;
+        }
+        const accion = publicado ? 'publicados' : 'despublicados';
+        showToast(ids.length + ' artículos ' + accion + '. El sitio se actualizará en ~2 min.');
+        AdminPages._triggerDebouncedDeploy();
+        AdminPages._reloadArticulos();
+    },
+
+    _bulkDelete: async function() {
+        const ids = Array.from(AdminPages._seleccionados);
+        if (ids.length === 0) return;
+        if (!Auth.isAdmin()) { showToast('Solo administradores pueden eliminar artículos.', 'error'); return; }
+
+        const existing = document.getElementById('art-bulk-del-modal');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'art-bulk-del-modal';
+        modal.className = 'art-bulk-modal-overlay';
+        modal.innerHTML =
+            '<div class="art-bulk-modal">' +
+                '<h3>Eliminar artículos</h3>' +
+                '<p>¿Eliminar <strong>' + ids.length + ' artículo' + (ids.length === 1 ? '' : 's') + '</strong>?<br>Esto no se puede deshacer.</p>' +
+                '<div class="art-bulk-modal-footer">' +
+                    '<button class="art-bulk-modal-cancel" id="art-bulk-del-cancel">Cancelar</button>' +
+                    '<button class="art-bulk-modal-confirm art-bulk-modal-danger" id="art-bulk-del-confirm">Eliminar ' + ids.length + '</button>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+
+        modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+        document.getElementById('art-bulk-del-cancel').addEventListener('click', function() { modal.remove(); });
+        document.getElementById('art-bulk-del-confirm').addEventListener('click', async function() {
+            modal.remove();
+            // Explicit pre-delete of articulo_tags to ensure referential integrity
+            // regardless of whether ON DELETE CASCADE is configured on the FK.
+            // NOTE: If articulo_tags.articulo_id does NOT have ON DELETE CASCADE,
+            // skipping this step would cause the articulos delete to fail with a
+            // FK violation. Verify the constraint in Supabase before relying solely
+            // on CASCADE — do not auto-migrate.
+            const { error: tagErr } = await supabaseClient
+                .from('articulo_tags')
+                .delete()
+                .in('articulo_id', ids);
+            if (tagErr) {
+                console.error('[bulkDelete] articulo_tags cleanup failed:', tagErr);
+                showToast('Error al eliminar tags asociados: ' + tagErr.message, 'error');
+                return;
+            }
+            const { error } = await supabaseClient
+                .from('articulos')
+                .delete()
+                .in('id', ids);
+            if (error) {
+                console.error('[bulkDelete] Failed:', error);
+                showToast('Error al eliminar artículos: ' + error.message, 'error');
+                return;
+            }
+            AdminPages._seleccionados.clear();
+            AdminPages._updateBulkBar();
+            showToast(ids.length + ' artículos eliminados. El sitio se actualizará en ~2 min.');
+            AdminPages._triggerDebouncedDeploy();
+            AdminPages._reloadArticulos();
+        });
+    },
+
+    // ==================== ARTÍCULOS: DRAWER ====================
 
     _openArticulosDrawer: function() {
         const drawer = document.getElementById('art-drawer');
