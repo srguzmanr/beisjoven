@@ -208,7 +208,7 @@ const TagPicker = (function() {
             // which carries the already-toggled checked state.
             if (e.target !== cb) return;
 
-            var id = parseInt(cb.dataset.id, 10);
+            var id = cb.dataset.id;
             if (cb.checked) selected.add(id);
             else selected.delete(id);
             updateConfirmBtn();
@@ -227,10 +227,13 @@ const TagPicker = (function() {
 
         confirmBtn.addEventListener('click', function() {
             if (selected.size === 0) return;
-            var idSet = new Set(selected);
-            var tagObjs = allTags.filter(function(t) { return idSet.has(t.id); });
+            var validIds = new Set(Array.from(selected).filter(function(id) {
+                return typeof id === 'string' && id.length === 36;
+            }));
+            if (validIds.size === 0) return;
+            var tagObjs = allTags.filter(function(t) { return validIds.has(t.id); });
             close();
-            onConfirm(idSet, tagObjs);
+            onConfirm(validIds, tagObjs);
         });
 
         setTimeout(function() { searchEl.focus(); }, 50);
