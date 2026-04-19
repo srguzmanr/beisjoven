@@ -115,8 +115,8 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
     margin-right: auto;
     text-decoration: none;
   }
-  .site-header__logo img { display: block; width: auto; }
-  .site-header__logo--mobile { max-height: 32px; }
+  .site-header__logo img { width: auto; }
+  .site-header__logo--mobile { display: block; max-height: 32px; }
   .site-header__logo--desktop { display: none; }
 
   .site-header__chips-desktop { display: none; }
@@ -228,6 +228,7 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
       max-height: 40px;
       transition: max-height 200ms ease-out;
     }
+
     .site-header.is-compact .site-header__logo--desktop { max-height: 28px; }
 
     .site-header__chips-desktop {
