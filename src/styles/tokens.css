@@ -1,0 +1,127 @@
+/* ============================================================
+   DESIGN TOKENS — UI/UX Typography & Spacing Spec v1.1
+   ============================================================
+   Two layers, one source of truth per value:
+   - :root declares the authoring tokens using the spec's own names
+     (--lh-h1, --tracking-h1, etc.) so hand-written CSS can audit
+     against the spec doc verbatim.
+   - @theme maps Tailwind v4's utility-generating vars to those
+     :root tokens, so `text-h1`, `font-heading`, `max-w-prose`
+     etc. are available as utility classes.
+
+   Legacy tokens (--color-navy, --color-rojo, --font-headline)
+   in global.css are intentionally left untouched. Reconciliation
+   is a separate ticket.
+   ============================================================ */
+
+:root {
+  /* === LINE HEIGHTS === */
+  --lh-h1: 1.2;
+  --lh-h2: 1.25;
+  --lh-h3: 1.3;
+  --lh-h4: 1.35;
+  --lh-body: 1.7;
+  --lh-body-sm: 1.6;
+  --lh-caption: 1.5;
+  --lh-overline: 1.4;
+  --lh-nav: 1.4;
+  --lh-button: 1;
+  --lh-metadata: 1.5;
+  --lh-pullquote: 1.45;
+
+  /* === TRACKING === */
+  --tracking-h1: -0.02em;
+  --tracking-h2: -0.015em;
+  --tracking-h3: -0.01em;
+  --tracking-h4: 0;
+  --tracking-body: 0;
+  --tracking-caption: 0.01em;
+  --tracking-overline: 0.08em;
+  --tracking-nav: 0.01em;
+  --tracking-button: 0.02em;
+  --tracking-metadata: 0.01em;
+  --tracking-pullquote: -0.01em;
+
+  /* === CATEGORY COLOR FALLBACK ===
+     Pull quote left-border uses --category-color with this
+     fallback. Category color system is a future decision;
+     fallback keeps pull quotes functional today. */
+  --category-color: #D4A843;
+
+  /* === BRAND (spec values, coexist with legacy --color-* tokens) === */
+  --navy: #1B2A4A;
+  --red: #C8102E;
+  --red-dark: #9A0C23;
+  --gold: #D4A843;
+  --gray-medium: #6B7280;
+}
+
+/* === Tailwind v4 utility generation ===
+   `static` forces emission of every token into the output CSS
+   even if the matching utility class is not yet consumed. Without
+   it, Tailwind v4 tree-shakes unused @theme vars. This ticket is
+   pure infra — DESIGN-01b will be the first consumer — so we need
+   the tokens compiled and inspectable before any utility is used. */
+@theme static {
+  /* Fonts */
+  --font-heading: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+
+  /* Typography — fluid clamps per spec.
+     Tailwind v4 auto-generates .text-<key> with line-height and
+     letter-spacing applied from the --text-<key>--line-height /
+     --letter-spacing companion vars. */
+  --text-h1: clamp(1.875rem, 1.45rem + 1.13vw, 2.75rem);
+  --text-h1--line-height: var(--lh-h1);
+  --text-h1--letter-spacing: var(--tracking-h1);
+
+  --text-h2: clamp(1.5rem, 1.19rem + 0.83vw, 2rem);
+  --text-h2--line-height: var(--lh-h2);
+  --text-h2--letter-spacing: var(--tracking-h2);
+
+  --text-h3: clamp(1.25rem, 1.1rem + 0.42vw, 1.5rem);
+  --text-h3--line-height: var(--lh-h3);
+  --text-h3--letter-spacing: var(--tracking-h3);
+
+  --text-h4: clamp(1.125rem, 1.05rem + 0.21vw, 1.25rem);
+  --text-h4--line-height: var(--lh-h4);
+  --text-h4--letter-spacing: var(--tracking-h4);
+
+  --text-body: clamp(1.0625rem, 1.03rem + 0.1vw, 1.125rem);
+  --text-body--line-height: var(--lh-body);
+  --text-body--letter-spacing: var(--tracking-body);
+
+  --text-body-sm: clamp(0.9375rem, 0.92rem + 0.05vw, 1rem);
+  --text-body-sm--line-height: var(--lh-body-sm);
+
+  --text-caption: clamp(0.8125rem, 0.8rem + 0.03vw, 0.875rem);
+  --text-caption--line-height: var(--lh-caption);
+  --text-caption--letter-spacing: var(--tracking-caption);
+
+  --text-overline: 0.6875rem;
+  --text-overline--line-height: var(--lh-overline);
+  --text-overline--letter-spacing: var(--tracking-overline);
+
+  --text-nav: clamp(0.875rem, 0.86rem + 0.04vw, 0.9375rem);
+  --text-nav--line-height: var(--lh-nav);
+  --text-nav--letter-spacing: var(--tracking-nav);
+
+  --text-button: clamp(0.875rem, 0.86rem + 0.04vw, 0.9375rem);
+  --text-button--line-height: var(--lh-button);
+  --text-button--letter-spacing: var(--tracking-button);
+
+  --text-metadata: clamp(0.8125rem, 0.8rem + 0.03vw, 0.875rem);
+  --text-metadata--line-height: var(--lh-metadata);
+  --text-metadata--letter-spacing: var(--tracking-metadata);
+
+  --text-pullquote: clamp(1.375rem, 1.22rem + 0.42vw, 1.625rem);
+  --text-pullquote--line-height: var(--lh-pullquote);
+  --text-pullquote--letter-spacing: var(--tracking-pullquote);
+
+  /* Layout max widths — zero existing consumers of max-w-prose,
+     so spec names are used directly (override Tailwind's default
+     65ch prose utility with the spec's 42rem article column). */
+  --max-width-prose: 42rem;      /* 672px — article body column */
+  --max-width-breakout: 60rem;   /* 960px — galleries, embeds, tables */
+  --max-width-container: 75rem;  /* 1200px — page container */
+}
