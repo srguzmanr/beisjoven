@@ -17,6 +17,91 @@
       "source": "/beisjoven/:slug*",
       "destination": "/articulo/:slug*",
       "permanent": true
+    },
+    {
+      "source": "/profile/:path*",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/categoria/mexico",
+      "destination": "/seleccion",
+      "permanent": true
+    },
+    {
+      "source": "/categoria/jovenes",
+      "destination": "/juvenil",
+      "permanent": true
+    },
+    {
+      "source": "/articulo/2016/06/17/australia-es-el-primero",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/articulo/2016/06/15/nacional-premoyote",
+      "destination": "/juvenil",
+      "permanent": true
+    },
+    {
+      "source": "/articulo/2016/12/10/informacion-de-bats-2018",
+      "destination": "/juvenil",
+      "permanent": true
+    },
+    {
+      "source": "/articulo/prospectos-lmb-grandes-ligas-2026",
+      "destination": "/mlb",
+      "permanent": true
+    },
+    {
+      "source": "/articulo/mexicanos-mlb-temporada-2026",
+      "destination": "/mlb",
+      "permanent": true
+    },
+    {
+      "source": "/articulo/spring-training-2026-mexicanos",
+      "destination": "/mlb",
+      "permanent": true
+    },
+    {
+      "source": "/articulo/softbol-femenil-mexico-seleccion-mundial",
+      "destination": "/softbol",
+      "permanent": true
+    },
+    {
+      "source": "/video/resumen-puerto-rico-vs-mexico-rojo-serie-del-caribe-2026",
+      "destination": "/seleccion",
+      "permanent": true
+    },
+    {
+      "source": "/video/mexico-rojo-campeon-de-la-serie-del-caribe-2026",
+      "destination": "/seleccion",
+      "permanent": true
+    },
+    {
+      "source": "/video/serie-del-caribe-2026-mexico-rojo-vs-puerto-rico",
+      "destination": "/seleccion",
+      "permanent": true
+    },
+    {
+      "source": "/video/diablos-rojos-derrotan-a-pericos-serie-del-rey-lmb-2025",
+      "destination": "/liga-mexicana",
+      "permanent": true
+    },
+    {
+      "source": "/envivo",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/newsletter",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/videos",
+      "destination": "/",
+      "permanent": true
     }
   ],
   "rewrites": [
