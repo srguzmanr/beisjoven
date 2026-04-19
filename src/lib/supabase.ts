@@ -48,6 +48,9 @@ export interface Articulo {
   evento_id: number | null;
   pie_de_foto: string | null;
   foto_credito: string | null;
+  kicker: string | null;
+  photo_credit: string | null;
+  imagen_portada_alt: string | null;
   categoria: Categoria;
   autor: Autor;
 }
