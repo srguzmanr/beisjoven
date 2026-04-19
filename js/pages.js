@@ -910,7 +910,7 @@ const Pages = {
                     "name": "Beisjoven",
                     "logo": {
                         "@type": "ImageObject",
-                        "url": "https://beisjoven.com/BJ-Logo-H2-WEB.png"
+                        "url": "https://beisjoven.com/brand/logo-lockup.png"
                     }
                 },
                 "mainEntityOfPage": {
