@@ -30,6 +30,10 @@ if (!articulo) {
   return Astro.redirect('/404');
 }
 
+const supabaseUrl = 'https://yulkbjpotfmwqkzzfegg.supabase.co';
+const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY
+  || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bGtianBvdGZtd3FrenpmZWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2OTk3NTYsImV4cCI6MjA4NTI3NTc1Nn0.PK8mq4CeQkTdurdJ1EV_GOkrY2X4SCsst8O1NnoBWAU';
+
 const [related, masLeidos, tags, ogImageUrl] = await Promise.all([
   getRelatedArticulos(articulo.id, articulo.categoria_id),
   getMasLeidos(5),
@@ -353,15 +357,37 @@ const articleJsonLd = {
     </script>
   )}
 
-  <!-- Increment views client-side (fire-and-forget) -->
-  <script define:vars={{ articuloId: articulo.id, supabaseUrl: 'https://yulkbjpotfmwqkzzfegg.supabase.co' }}>
+  <!-- Increment views + GA4 scroll-depth events -->
+  <script define:vars={{ articuloId: articulo.id, supabaseUrl, anonKey: supabaseAnonKey }}>
     fetch(`${supabaseUrl}/rest/v1/rpc/increment_vistas`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': document.querySelector('meta[name="supabase-anon-key"]')?.content || '',
+        'apikey': anonKey,
+        'Authorization': `Bearer ${anonKey}`,
       },
       body: JSON.stringify({ articulo_id: articuloId }),
-    }).catch(() => {});
+    }).catch(err => console.error('[increment_vistas] Failed:', err));
+
+    (function() {
+      let fired50 = false;
+      let firedComplete = false;
+      function onScroll() {
+        if (typeof gtag !== 'function') return;
+        const scrollHeight = document.documentElement.scrollHeight;
+        if (scrollHeight <= window.innerHeight) return;
+        const progress = (window.scrollY + window.innerHeight) / scrollHeight;
+        if (!fired50 && progress >= 0.5) {
+          fired50 = true;
+          gtag('event', 'article_read_50', { articulo_id: articuloId });
+        }
+        if (!firedComplete && progress >= 0.95) {
+          firedComplete = true;
+          gtag('event', 'article_read_complete', { articulo_id: articuloId });
+          window.removeEventListener('scroll', onScroll);
+        }
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+    })();
   </script>
 </BaseLayout>
