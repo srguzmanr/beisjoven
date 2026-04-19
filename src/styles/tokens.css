@@ -54,6 +54,17 @@
   --red-dark: #9A0C23;
   --gold: #D4A843;
   --gray-medium: #6B7280;
+
+  /* === CATEGORY COLORS (DESIGN-02) ===
+     Applied via data-category attribute on chips and any component that
+     renders category color. Juvenil gold fails 4.5:1 on white — inactive
+     Juvenil labels must use --navy text, never --cat-juvenil. */
+  --cat-mlb: #2563EB;
+  --cat-liga-mexicana: #059669;
+  --cat-seleccion: #C8102E;
+  --cat-juvenil: #D4A843;
+  --cat-softbol: #7C3AED;
+  --cat-opinion: #6B7280;
 }
 
 /* Spec v1.1: H1 tightens to 1.15 at the ≥768px breakpoint. */

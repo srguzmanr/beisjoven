@@ -1,0 +1,378 @@
+---
+import { getCategorias } from '@/lib/supabase';
+
+const currentPath = Astro.url.pathname;
+
+// Hardcoded chip order (not DB-driven). Names/slugs come from categorias rows.
+const CHIP_ORDER = ['mlb', 'liga-mexicana', 'seleccion', 'juvenil', 'softbol', 'opinion'];
+
+const categorias = await getCategorias();
+const bySlug = new Map(categorias.map((c) => [c.slug, c]));
+const chips = CHIP_ORDER
+  .map((slug) => bySlug.get(slug))
+  .filter((c): c is NonNullable<typeof c> => Boolean(c));
+
+const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
+---
+
+<header id="site-header" class="site-header">
+  <div class="site-header__bar">
+    <a href="/" class="site-header__logo" aria-label="Beisjoven — Inicio">
+      <img class="site-header__logo--mobile" src="/brand/logo-mark.png" alt="Beisjoven" width="32" height="32" />
+      <img class="site-header__logo--desktop" src="/brand/logo-lockup.png" alt="Beisjoven" height="40" />
+    </a>
+
+    <nav class="site-header__chips-desktop" aria-label="Categorías">
+      {chips.map((c) => (
+        <a
+          href={`/categoria/${c.slug}`}
+          class="chip"
+          data-category={c.slug}
+          data-active={isActive(c.slug) ? 'true' : 'false'}
+          aria-current={isActive(c.slug) ? 'page' : undefined}
+        >
+          {c.nombre}
+        </a>
+      ))}
+    </nav>
+
+    <button
+      id="search-trigger"
+      class="site-header__search"
+      type="button"
+      aria-label="Buscar"
+      aria-expanded="false"
+      aria-controls="search-overlay"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M21 21l-4.35-4.35" stroke-linecap="round" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="site-header__chips-mobile">
+    <div class="site-header__chips-scroll" role="navigation" aria-label="Categorías">
+      {chips.map((c) => (
+        <a
+          href={`/categoria/${c.slug}`}
+          class="chip"
+          data-category={c.slug}
+          data-active={isActive(c.slug) ? 'true' : 'false'}
+          aria-current={isActive(c.slug) ? 'page' : undefined}
+        >
+          {c.nombre}
+        </a>
+      ))}
+    </div>
+  </div>
+</header>
+
+<div id="search-overlay" class="search-overlay" hidden>
+  <form class="search-overlay__form" action="/buscar" method="get" role="search">
+    <label for="search-overlay-input" class="sr-only">Buscar</label>
+    <input
+      id="search-overlay-input"
+      type="search"
+      name="q"
+      autocomplete="off"
+      placeholder="Buscar noticias, equipos, jugadores…"
+      required
+    />
+    <button id="search-close" type="button" aria-label="Cerrar búsqueda">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M6 6l12 12M6 18L18 6" stroke-linecap="round" />
+      </svg>
+    </button>
+  </form>
+</div>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: #ffffff;
+    border-bottom: 1px solid #F1F1F3;
+    transition: transform 200ms ease-out;
+    will-change: transform;
+  }
+  .site-header.is-hidden { transform: translateY(-100%); }
+
+  .site-header__bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+    padding: 0 16px;
+    max-width: var(--max-width-container, 75rem);
+    margin: 0 auto;
+  }
+
+  .site-header__logo {
+    display: flex;
+    align-items: center;
+    margin-right: auto;
+    text-decoration: none;
+  }
+  .site-header__logo img { display: block; width: auto; }
+  .site-header__logo--mobile { max-height: 32px; }
+  .site-header__logo--desktop { display: none; }
+
+  .site-header__chips-desktop { display: none; }
+
+  .site-header__search {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: var(--navy, #1B2A4A);
+    cursor: pointer;
+    transition: background-color 120ms ease-out;
+  }
+  .site-header__search:hover,
+  .site-header__search:focus-visible {
+    background-color: rgba(27, 42, 74, 0.06);
+    outline: none;
+  }
+  .site-header__search svg { width: 20px; height: 20px; }
+
+  /* Mobile chips row */
+  .site-header__chips-mobile {
+    position: relative;
+    height: 40px;
+    border-bottom: 1px solid #F1F1F3;
+    background: #ffffff;
+  }
+  .site-header__chips-scroll {
+    display: flex;
+    gap: 8px;
+    height: 100%;
+    padding: 4px 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .site-header__chips-scroll::-webkit-scrollbar { display: none; }
+  .site-header__chips-scroll > .chip { scroll-snap-align: start; }
+  .site-header__chips-mobile::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 24px;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0), #ffffff);
+  }
+
+  /* Chip base */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid rgba(27, 42, 74, 0.14);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--navy, #1B2A4A);
+    font-family: var(--font-heading, "Plus Jakarta Sans"), system-ui, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      background-color 120ms ease-out,
+      color 120ms ease-out,
+      border-color 120ms ease-out;
+  }
+  .chip:hover { border-color: rgba(27, 42, 74, 0.28); }
+  .chip:focus-visible { outline: 2px solid var(--navy, #1B2A4A); outline-offset: 2px; }
+
+  /* Active: background in category color, white text */
+  .chip[data-active="true"] { color: #ffffff; border-color: transparent; }
+  .chip[data-active="true"][data-category="mlb"]            { background: var(--cat-mlb); }
+  .chip[data-active="true"][data-category="liga-mexicana"]  { background: var(--cat-liga-mexicana); }
+  .chip[data-active="true"][data-category="seleccion"]      { background: var(--cat-seleccion); }
+  .chip[data-active="true"][data-category="juvenil"]        { background: var(--cat-juvenil); }
+  .chip[data-active="true"][data-category="softbol"]        { background: var(--cat-softbol); }
+  .chip[data-active="true"][data-category="opinion"]        { background: var(--cat-opinion); }
+
+  /* Desktop: single bar, chips center, no mobile row */
+  @media (min-width: 768px) {
+    .site-header__bar {
+      height: 64px;
+      padding: 0 24px;
+      gap: 24px;
+      transition: height 200ms ease-out;
+    }
+    .site-header.is-compact .site-header__bar { height: 48px; }
+
+    .site-header__logo { margin-right: 0; }
+    .site-header__logo--mobile { display: none; }
+    .site-header__logo--desktop {
+      display: block;
+      max-height: 40px;
+      transition: max-height 200ms ease-out;
+    }
+    .site-header.is-compact .site-header__logo--desktop { max-height: 28px; }
+
+    .site-header__chips-desktop {
+      display: flex;
+      flex: 1;
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .site-header__chips-mobile { display: none; }
+  }
+
+  /* Search overlay */
+  .search-overlay {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 60;
+    background: #ffffff;
+    border-bottom: 1px solid #E7E7EA;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    padding: 10px 12px;
+  }
+  .search-overlay[hidden] { display: none; }
+  .search-overlay__form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: var(--max-width-container, 75rem);
+    margin: 0 auto;
+    height: 48px;
+  }
+  .search-overlay__form input {
+    flex: 1;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid rgba(27, 42, 74, 0.18);
+    border-radius: 10px;
+    background: #ffffff;
+    color: var(--navy, #1B2A4A);
+    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+  }
+  .search-overlay__form input:focus {
+    border-color: var(--navy, #1B2A4A);
+    box-shadow: 0 0 0 3px rgba(27, 42, 74, 0.12);
+  }
+  .search-overlay__form button {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: var(--navy, #1B2A4A);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .search-overlay__form button svg { width: 22px; height: 22px; }
+  .search-overlay__form button:hover,
+  .search-overlay__form button:focus-visible {
+    background: rgba(27, 42, 74, 0.06);
+    outline: none;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>
+
+<script is:inline>
+  (() => {
+    const header = document.getElementById('site-header');
+    const trigger = document.getElementById('search-trigger');
+    const overlay = document.getElementById('search-overlay');
+    const closeBtn = document.getElementById('search-close');
+
+    if (header) {
+      const THRESHOLD = 80;
+      const desktopMql = window.matchMedia('(min-width: 768px)');
+      let lastY = window.scrollY;
+      let ticking = false;
+
+      function onScroll() {
+        const y = window.scrollY;
+        const isDesktop = desktopMql.matches;
+
+        if (y <= THRESHOLD) {
+          header.classList.remove('is-hidden');
+          header.classList.remove('is-compact');
+        } else if (isDesktop) {
+          header.classList.add('is-compact');
+          header.classList.remove('is-hidden');
+        } else {
+          header.classList.remove('is-compact');
+          if (y > lastY) {
+            header.classList.add('is-hidden');
+          } else {
+            header.classList.remove('is-hidden');
+          }
+        }
+        lastY = y;
+        ticking = false;
+      }
+
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(onScroll);
+          ticking = true;
+        }
+      }, { passive: true });
+    }
+
+    if (trigger && overlay && closeBtn) {
+      const input = overlay.querySelector('input[name="q"]');
+
+      function open() {
+        overlay.hidden = false;
+        trigger.setAttribute('aria-expanded', 'true');
+        setTimeout(() => { if (input) input.focus(); }, 30);
+      }
+      function close() {
+        overlay.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+      }
+
+      trigger.addEventListener('click', open);
+      closeBtn.addEventListener('click', close);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !overlay.hidden) {
+          close();
+          trigger.focus();
+        }
+      });
+    }
+  })();
+</script>
