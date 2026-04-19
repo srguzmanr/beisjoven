@@ -874,6 +874,10 @@ const AdminPages = {
                             <a href="/admin/nuevo" class="btn btn-primary">+ Nuevo Artículo</a>
                         </div>
 
+                        <div class="admin-tabs-header" id="art-tabs-header">
+                            <div class="admin-tabs" id="art-tabs" role="tablist" aria-label="Filtrar por estado"></div>
+                        </div>
+
                         <button id="art-filters-trigger" class="art-filters-trigger">
                             <span>Filtros</span>
                             <span class="art-filters-count" id="art-filters-count" style="display:none">0</span>
@@ -888,12 +892,6 @@ const AdminPages = {
                             </select>
                             <select id="art-tag" class="art-select">
                                 <option value="">Todos los tags</option>
-                            </select>
-                            <select id="art-status" class="art-select">
-                                <option value="">Todos los estados</option>
-                                <option value="published">Publicados</option>
-                                <option value="draft">Borradores</option>
-                                <option value="featured">Destacados</option>
                             </select>
                             <select id="art-date" class="art-select">
                                 <option value="">Todas las fechas</option>
@@ -989,14 +987,6 @@ const AdminPages = {
                                     <option value="">Todos los tags</option>
                                 </select>
 
-                                <label class="art-drawer-label">Estado</label>
-                                <select id="art-drawer-status">
-                                    <option value="">Todos los estados</option>
-                                    <option value="published">Publicados</option>
-                                    <option value="draft">Borradores</option>
-                                    <option value="featured">Destacados</option>
-                                </select>
-
                                 <label class="art-drawer-label">Fecha</label>
                                 <select id="art-drawer-date">
                                     <option value="">Todas las fechas</option>
@@ -1032,6 +1022,10 @@ const AdminPages = {
         // Sync filter bar UI to state parsed from URL
         AdminPages._syncFilterBarFromState();
 
+        // Paint tabs immediately with cached counts (or placeholders) so the
+        // header is never empty; real counts refresh in the background below.
+        AdminPages._renderArticulosTabs();
+
         // Initial load
         await AdminPages._loadArticulos(AdminPages._articulosState, {});
         AdminPages._renderArticulosRows();
@@ -1041,6 +1035,9 @@ const AdminPages = {
 
         // Wire filter events + bulk bar
         AdminPages._wireArticulosFilters();
+
+        // Fetch live tab counts in the background — never block the list.
+        AdminPages._refreshArticulosTabCounts();
     },
 
     // ==================== CREAR/EDITAR ARTÍCULO ====================
@@ -1953,8 +1950,7 @@ const AdminPages = {
         q: '',
         categoria_id: null,
         tag_id: null,
-        publicado: null,
-        destacado: null,
+        tab: 'todos',
         desde: null,
         hasta: null,
         sort: 'created_at_desc',
@@ -1964,25 +1960,37 @@ const AdminPages = {
     _articulosTotal: 0,
     _articulosLoaded: 0,
     _articulosRows: [],
+    _articulosTabs: [
+        { key: 'todos',       label: 'Todos' },
+        { key: 'publicados',  label: 'Publicados' },
+        { key: 'borradores',  label: 'Borradores' },
+        { key: 'destacados',  label: 'Destacados' }
+    ],
+    _articulosTabCounts: { todos: 0, publicados: 0, borradores: 0, destacados: 0 },
 
     _parseStateFromQuery: function(query) {
-        const s = {
+        const validTabs = { todos: 1, publicados: 1, borradores: 1, destacados: 1 };
+        let tab = query.get('tab');
+        if (!tab || !validTabs[tab]) {
+            // Back-compat with legacy URL params from the pre-tab filter bar
+            const status = query.get('status');
+            if (status === 'published') tab = 'publicados';
+            else if (status === 'draft') tab = 'borradores';
+            else if (status === 'featured') tab = 'destacados';
+            else if (query.get('destacado') === '1') tab = 'destacados';
+            else tab = 'todos';
+        }
+        return {
             q: query.get('q') || '',
             categoria_id: query.get('cat') ? parseInt(query.get('cat'), 10) : null,
             tag_id: query.get('tag') ? parseInt(query.get('tag'), 10) : null,
-            publicado: null,
-            destacado: query.get('destacado') === '1' ? true : null,
+            tab: tab,
             desde: query.get('desde') || null,
             hasta: query.get('hasta') || null,
             sort: query.get('sort') || 'created_at_desc',
             page: query.get('page') ? parseInt(query.get('page'), 10) : 0,
             pageSize: 25
         };
-        const status = query.get('status');
-        if (status === 'published') s.publicado = true;
-        else if (status === 'draft') s.publicado = false;
-        else if (status === 'featured') s.destacado = true;
-        return s;
     },
 
     _syncUrlFromState: function() {
@@ -1991,15 +1999,36 @@ const AdminPages = {
         if (s.q) params.set('q', s.q);
         if (s.categoria_id) params.set('cat', s.categoria_id);
         if (s.tag_id) params.set('tag', s.tag_id);
-        if (s.publicado === true) params.set('status', 'published');
-        else if (s.publicado === false) params.set('status', 'draft');
-        if (s.destacado === true) params.set('destacado', '1');
+        if (s.tab && s.tab !== 'todos') params.set('tab', s.tab);
         if (s.desde) params.set('desde', s.desde);
         if (s.hasta) params.set('hasta', s.hasta);
         if (s.sort !== 'created_at_desc') params.set('sort', s.sort);
         if (s.page > 0) params.set('page', s.page);
         const url = '/admin/articulos' + (params.toString() ? '?' + params.toString() : '');
         history.replaceState(null, '', url);
+    },
+
+    // Map a tab key to the (publicado, destacado) predicate. Returns
+    // { publicado: bool|null, destacado: bool|null }.
+    _tabToPredicate: function(tab) {
+        if (tab === 'publicados')  return { publicado: true,  destacado: null };
+        if (tab === 'borradores')  return { publicado: false, destacado: null };
+        if (tab === 'destacados')  return { publicado: null,  destacado: true };
+        return { publicado: null, destacado: null };
+    },
+
+    // Apply the Artículos query scope (search + drawer filters + RLS) to a
+    // Supabase query builder. Caller layers the per-tab predicate on top.
+    _applyArticulosScope: function(q, state) {
+        if (state.q && state.q.length >= 3) q = q.ilike('titulo', '%' + state.q + '%');
+        if (state.categoria_id) q = q.eq('categoria_id', state.categoria_id);
+        if (state.tag_id) q = q.eq('articulo_tags.tag_id', state.tag_id);
+        if (state.desde) q = q.gte('created_at', state.desde);
+        if (state.hasta) q = q.lte('created_at', state.hasta);
+        if (!Auth.isAdmin()) {
+            q = q.or('publicado.eq.true,user_id.eq.' + Auth.getUser().id);
+        }
+        return q;
     },
 
     _loadArticulos: async function(state, opts) {
@@ -2027,17 +2056,10 @@ const AdminPages = {
         const sortEntry = sortMap[state.sort] || sortMap.created_at_desc;
         q = q.order(sortEntry[0], { ascending: sortEntry[1] });
 
-        if (state.q && state.q.length >= 3) q = q.ilike('titulo', '%' + state.q + '%');
-        if (state.categoria_id) q = q.eq('categoria_id', state.categoria_id);
-        if (state.tag_id) q = q.eq('articulo_tags.tag_id', state.tag_id);
-        if (state.publicado !== null) q = q.eq('publicado', state.publicado);
-        if (state.destacado === true) q = q.eq('destacado', true);
-        if (state.desde) q = q.gte('created_at', state.desde);
-        if (state.hasta) q = q.lte('created_at', state.hasta);
-
-        if (!Auth.isAdmin()) {
-            q = q.or('publicado.eq.true,user_id.eq.' + Auth.getUser().id);
-        }
+        q = AdminPages._applyArticulosScope(q, state);
+        const pred = AdminPages._tabToPredicate(state.tab);
+        if (pred.publicado !== null) q = q.eq('publicado', pred.publicado);
+        if (pred.destacado === true) q = q.eq('destacado', true);
 
         const res = await q;
         if (res.error) {
@@ -2153,18 +2175,11 @@ const AdminPages = {
         const q = document.getElementById('art-q');
         const cat = document.getElementById('art-cat');
         const tag = document.getElementById('art-tag');
-        const status = document.getElementById('art-status');
         const date = document.getElementById('art-date');
         const sort = document.getElementById('art-sort');
         if (q) q.value = s.q || '';
         if (cat) cat.value = s.categoria_id != null ? String(s.categoria_id) : '';
         if (tag) tag.value = s.tag_id != null ? String(s.tag_id) : '';
-        if (status) {
-            if (s.publicado === true) status.value = 'published';
-            else if (s.publicado === false) status.value = 'draft';
-            else if (s.destacado === true) status.value = 'featured';
-            else status.value = '';
-        }
         if (date) date.value = AdminPages._rangeMatchesPreset(s.desde, s.hasta);
         if (sort) sort.value = s.sort || 'created_at_desc';
     },
@@ -2172,7 +2187,7 @@ const AdminPages = {
     _hasActiveFilter: function() {
         const s = AdminPages._articulosState;
         return !!(s.q || s.categoria_id || s.tag_id
-            || s.publicado !== null || s.destacado === true
+            || (s.tab && s.tab !== 'todos')
             || s.desde || s.hasta);
     },
 
@@ -2324,6 +2339,82 @@ const AdminPages = {
         AdminPages._updateLoadMoreButton();
         AdminPages._updateFiltersCountBadge();
         AdminPages._updateBulkBar();
+        // Refresh tab counts in the background — never block the list render.
+        AdminPages._refreshArticulosTabCounts();
+    },
+
+    _renderArticulosTabs: function() {
+        const host = document.getElementById('art-tabs');
+        if (!host) return;
+        const counts = AdminPages._articulosTabCounts || {};
+        const active = AdminPages._articulosState.tab || 'todos';
+        host.innerHTML = AdminPages._articulosTabs.map(function(t) {
+            const n = counts[t.key];
+            const nStr = (typeof n === 'number') ? String(n) : '…';
+            const isActive = active === t.key;
+            return '<button type="button"' +
+                ' role="tab"' +
+                ' aria-selected="' + (isActive ? 'true' : 'false') + '"' +
+                ' class="admin-tab' + (isActive ? ' admin-tab-active' : '') + '"' +
+                ' data-tab="' + t.key + '"' +
+                ' onclick="AdminPages._setArticulosTab(\'' + t.key + '\', this)">' +
+                t.label + ' (' + nStr + ')' +
+            '</button>';
+        }).join('');
+    },
+
+    _setArticulosTab: function(key, btn) {
+        const validTabs = { todos: 1, publicados: 1, borradores: 1, destacados: 1 };
+        if (!validTabs[key]) return;
+        if (AdminPages._articulosState.tab === key) return;
+        AdminPages._articulosState.tab = key;
+        AdminPages._articulosState.page = 0;
+        AdminPages._seleccionados.clear();
+        AdminPages._renderArticulosTabs();
+        // Scroll the selected tab into view on mobile where the tab bar is a
+        // horizontally scrollable row.
+        if (btn && typeof btn.scrollIntoView === 'function') {
+            try {
+                btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            } catch (_e) { /* no-op if the browser rejects options */ }
+        }
+        AdminPages._reloadArticulos();
+    },
+
+    // Fetch counts for every tab in parallel, honoring the current drawer
+    // filters + search + RLS. Uses head:true (no rows transferred).
+    _refreshArticulosTabCounts: async function() {
+        const state = AdminPages._articulosState;
+        function buildCountQuery(tab) {
+            let select = 'id';
+            if (state.tag_id) select = 'id, articulo_tags!inner(tag_id)';
+            let q = supabaseClient
+                .from('articulos')
+                .select(select, { count: 'exact', head: true });
+            q = AdminPages._applyArticulosScope(q, state);
+            const pred = AdminPages._tabToPredicate(tab);
+            if (pred.publicado !== null) q = q.eq('publicado', pred.publicado);
+            if (pred.destacado === true) q = q.eq('destacado', true);
+            return q;
+        }
+        try {
+            const results = await Promise.all(
+                AdminPages._articulosTabs.map(function(t) { return buildCountQuery(t.key); })
+            );
+            const next = {};
+            AdminPages._articulosTabs.forEach(function(t, i) {
+                const r = results[i];
+                if (r && !r.error) next[t.key] = r.count || 0;
+                else {
+                    if (r && r.error) console.error('[articulos] Tab count failed (' + t.key + '):', r.error);
+                    next[t.key] = AdminPages._articulosTabCounts[t.key] || 0;
+                }
+            });
+            AdminPages._articulosTabCounts = next;
+            AdminPages._renderArticulosTabs();
+        } catch (e) {
+            console.error('[articulos] Tab counts failed:', e);
+        }
     },
 
     _wireArticulosFilters: function() {
@@ -2350,17 +2441,6 @@ const AdminPages = {
             AdminPages._reloadArticulos();
         });
 
-        document.getElementById('art-status').addEventListener('change', function(e) {
-            const v = e.target.value;
-            AdminPages._articulosState.publicado = null;
-            AdminPages._articulosState.destacado = null;
-            if (v === 'published') AdminPages._articulosState.publicado = true;
-            else if (v === 'draft') AdminPages._articulosState.publicado = false;
-            else if (v === 'featured') AdminPages._articulosState.destacado = true;
-            AdminPages._articulosState.page = 0;
-            AdminPages._reloadArticulos();
-        });
-
         document.getElementById('art-date').addEventListener('change', function(e) {
             const r = AdminPages._datePresetToRange(e.target.value);
             AdminPages._articulosState.desde = r.desde;
@@ -2378,6 +2458,7 @@ const AdminPages = {
         document.getElementById('art-clear').addEventListener('click', function() {
             AdminPages._articulosState = AdminPages._parseStateFromQuery(new URLSearchParams());
             AdminPages._syncFilterBarFromState();
+            AdminPages._renderArticulosTabs();
             AdminPages._reloadArticulos();
         });
 
@@ -2417,6 +2498,7 @@ const AdminPages = {
             AdminPages._articulosState = AdminPages._parseStateFromQuery(new URLSearchParams());
             AdminPages._syncDrawerFromState();
             AdminPages._syncFilterBarFromState();
+            AdminPages._renderArticulosTabs();
             AdminPages._reloadArticulos();
         });
 
@@ -2537,6 +2619,7 @@ const AdminPages = {
                 }
                 showToast(ids.length + ' artículos actualizados. El sitio se actualizará en ~2 min.');
                 AdminPages._triggerDebouncedDeploy();
+                AdminPages._refreshArticulosTabCounts();
             }
         });
     },
@@ -2590,6 +2673,7 @@ const AdminPages = {
                 }
                 showToast(ids.length + ' artículos actualizados. El sitio se actualizará en ~2 min.');
                 AdminPages._triggerDebouncedDeploy();
+                AdminPages._refreshArticulosTabCounts();
             }
         });
     },
@@ -2731,13 +2815,6 @@ const AdminPages = {
         const q = document.getElementById('art-drawer-q'); if (q) q.value = s.q || '';
         const cat = document.getElementById('art-drawer-cat'); if (cat) cat.value = s.categoria_id != null ? String(s.categoria_id) : '';
         const tag = document.getElementById('art-drawer-tag'); if (tag) tag.value = s.tag_id != null ? String(s.tag_id) : '';
-        const status = document.getElementById('art-drawer-status');
-        if (status) {
-            if (s.publicado === true) status.value = 'published';
-            else if (s.publicado === false) status.value = 'draft';
-            else if (s.destacado === true) status.value = 'featured';
-            else status.value = '';
-        }
         const date = document.getElementById('art-drawer-date');
         if (date) date.value = AdminPages._rangeMatchesPreset(s.desde, s.hasta) || '';
         const sort = document.getElementById('art-drawer-sort'); if (sort) sort.value = s.sort || 'created_at_desc';
@@ -2747,18 +2824,12 @@ const AdminPages = {
         const q = document.getElementById('art-drawer-q').value.trim();
         const cat = document.getElementById('art-drawer-cat').value;
         const tag = document.getElementById('art-drawer-tag').value;
-        const status = document.getElementById('art-drawer-status').value;
         const date = document.getElementById('art-drawer-date').value;
         const sort = document.getElementById('art-drawer-sort').value;
 
         AdminPages._articulosState.q = q;
         AdminPages._articulosState.categoria_id = cat ? parseInt(cat, 10) : null;
         AdminPages._articulosState.tag_id = tag ? parseInt(tag, 10) : null;
-        AdminPages._articulosState.publicado = null;
-        AdminPages._articulosState.destacado = null;
-        if (status === 'published') AdminPages._articulosState.publicado = true;
-        else if (status === 'draft') AdminPages._articulosState.publicado = false;
-        else if (status === 'featured') AdminPages._articulosState.destacado = true;
         const r = AdminPages._datePresetToRange(date);
         AdminPages._articulosState.desde = r.desde;
         AdminPages._articulosState.hasta = r.hasta;
@@ -2775,8 +2846,6 @@ const AdminPages = {
         if (s.q) n++;
         if (s.categoria_id) n++;
         if (s.tag_id) n++;
-        if (s.publicado !== null) n++;
-        if (s.destacado === true) n++;
         if (s.desde || s.hasta) n++;
         if (s.sort !== 'created_at_desc') n++;
         return n;
@@ -3625,16 +3694,16 @@ const AdminPages = {
         var pillsHtml = this._historiasEstados.map(function(e) {
             var count = e.key === 'todas' ? total : (counts[e.key] || 0);
             var isActive = state.estado === e.key;
-            return '<button type="button" class="hist-pill' + (isActive ? ' hist-pill-active' : '') +
+            return '<button type="button" class="admin-tab' + (isActive ? ' admin-tab-active' : '') +
                 '" onclick="AdminPages._setHistoriaFilter(\'' + e.key + '\')">' +
                 e.label + ' (' + count + ')' +
                 '</button>';
         }).join('');
 
         container.innerHTML =
-            '<div class="historias-header">' +
-                '<div class="historias-total">Total: <strong>' + total + '</strong> envío' + (total === 1 ? '' : 's') + '</div>' +
-                '<div class="historias-pills">' + pillsHtml + '</div>' +
+            '<div class="admin-tabs-header">' +
+                '<div class="admin-tabs-total">Total: <strong>' + total + '</strong> envío' + (total === 1 ? '' : 's') + '</div>' +
+                '<div class="admin-tabs">' + pillsHtml + '</div>' +
             '</div>' +
             '<div id="historias-list-wrap"></div>' +
             '<div id="historias-detail-panel" class="hist-detail-panel" style="display:none;"></div>' +
@@ -4363,12 +4432,6 @@ const AdminComponents = {
         style.id = 'bj-historias-styles';
         style.textContent = [
             '.nav-badge{display:inline-block;min-width:20px;padding:2px 7px;margin-left:6px;background:#C8102E;color:#fff;border-radius:10px;font-size:0.72rem;font-weight:700;text-align:center;line-height:1.3;}',
-            '.historias-header{margin-bottom:16px;}',
-            '.historias-total{color:#374151;font-size:0.95rem;margin-bottom:10px;}',
-            '.historias-pills{display:flex;flex-wrap:wrap;gap:8px;}',
-            '.hist-pill{padding:8px 14px;border-radius:9999px;border:1px solid #e5e7eb;background:#fff;color:#374151;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:inherit;min-height:40px;}',
-            '.hist-pill:hover{background:#f3f4f6;}',
-            '.hist-pill-active{background:#C8102E;color:#fff;border-color:#C8102E;}',
             '.hist-count{color:#6b7280;font-size:0.85rem;margin:14px 0 10px;}',
             '.hist-estado-pill{display:inline-block;padding:3px 10px;border-radius:9999px;color:#fff;font-size:0.75rem;font-weight:600;line-height:1.4;white-space:nowrap;}',
             '.hist-row{cursor:pointer;transition:background 0.15s;}',
@@ -4436,8 +4499,6 @@ const AdminComponents = {
                 '.hist-detail-panel{width:100%;top:0;left:0;right:0;bottom:0;}',
                 '.hist-detail-inner{padding:16px 14px 140px;}',
                 '.hist-dl{grid-template-columns:110px 1fr;}',
-                '.historias-pills{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;-webkit-overflow-scrolling:touch;}',
-                '.hist-pill{flex-shrink:0;}',
             '}',
             '@media (min-width: 769px){',
                 '.hist-cards{display:none !important;}',

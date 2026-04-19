@@ -1375,13 +1375,6 @@
 [data-theme="dark"] .mlc-upload-progress-bar { background: var(--admin-surface-3); }
 
 /* ---------- Historias (hist-*) ---------- */
-[data-theme="dark"] .historias-total { color: var(--admin-text); }
-[data-theme="dark"] .hist-pill {
-    background: var(--admin-surface);
-    border-color: var(--admin-border);
-    color: var(--admin-text);
-}
-[data-theme="dark"] .hist-pill:hover { background: var(--admin-surface-2); }
 [data-theme="dark"] .hist-count { color: var(--admin-text-muted); }
 [data-theme="dark"] .hist-row:hover { background: var(--admin-surface-2); }
 [data-theme="dark"] .hist-card {
@@ -2055,3 +2048,49 @@
     color: var(--admin-text);
     border-color: var(--admin-border);
 }
+
+/* ==================== ADMIN TABS (shared: Artículos, Tu Historia) ==================== */
+.admin-tabs-header { margin-bottom: 16px; }
+.admin-tabs-total { color: #374151; font-size: 0.95rem; margin-bottom: 10px; }
+.admin-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.admin-tab {
+    padding: 8px 14px;
+    border-radius: 9999px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #374151;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    min-height: 44px;
+    line-height: 1.2;
+}
+.admin-tab:hover { background: #f3f4f6; }
+.admin-tab-active {
+    background: #C8102E;
+    color: #fff;
+    border-color: #C8102E;
+}
+@media (max-width: 768px) {
+    .admin-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .admin-tabs::-webkit-scrollbar { display: none; }
+    .admin-tab { flex-shrink: 0; }
+}
+[data-theme="dark"] .admin-tabs-total { color: var(--admin-text); }
+[data-theme="dark"] .admin-tab {
+    background: var(--admin-surface);
+    border-color: var(--admin-border);
+    color: var(--admin-text);
+}
+[data-theme="dark"] .admin-tab:hover { background: var(--admin-surface-2); }
