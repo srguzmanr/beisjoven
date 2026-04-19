@@ -56,6 +56,13 @@
   --gray-medium: #6B7280;
 }
 
+/* Spec v1.1: H1 tightens to 1.15 at the ≥768px breakpoint. */
+@media (min-width: 768px) {
+  :root {
+    --lh-h1: 1.15;
+  }
+}
+
 /* === Tailwind v4 utility generation ===
    `static` forces emission of every token into the output CSS
    even if the matching utility class is not yet consumed. Without
