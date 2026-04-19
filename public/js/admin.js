@@ -755,7 +755,7 @@ const AdminPages = {
                                 <h2 style="font-family: Oswald, sans-serif; font-size: 1.8rem; margin: 0 0 5px 0;">Hola, ${user.name}!</h2>
                                 <p style="margin: 0; opacity: 0.9;">${user.role === 'admin' ? 'Administrador' : 'Editor'} — Panel de Beisjoven</p>
                             </div>
-                            <a href="#" onclick="Router.navigate('/admin/nuevo'); return false;" style="background: white; color: #c41e3a; padding: 12px 24px; border-radius: 25px; font-weight: 600; text-decoration: none; white-space: nowrap;">+ Nuevo Articulo</a>
+                            <a href="#" onclick="Router.navigate('/admin/nuevo'); return false;" style="background: white; color: #c41e3a; padding: 12px 24px; border-radius: 25px; font-weight: 600; text-decoration: none; white-space: nowrap;">+ Nuevo Artículo</a>
                         </div>
 
                         <div class="stats-grid">
@@ -871,7 +871,7 @@ const AdminPages = {
                     <div class="admin-content">
                         <div class="content-header">
                             <p class="art-count" id="art-count">Cargando...</p>
-                            <a href="/admin/nuevo" class="btn btn-primary">+ Nuevo Articulo</a>
+                            <a href="/admin/nuevo" class="btn btn-primary">+ Nuevo Artículo</a>
                         </div>
 
                         <button id="art-filters-trigger" class="art-filters-trigger">
@@ -2213,20 +2213,40 @@ const AdminPages = {
         const estadoCls = article.publicado ? 'badge-published' : 'badge-draft';
         const fecha = new Date(article.fecha || article.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
         const slug = AdminPages._escapeHtml(article.slug || '');
-        const checked = AdminPages._seleccionados.has(article.id) ? ' checked' : '';
+        const isSelected = AdminPages._seleccionados.has(article.id);
+        const checked = isSelected ? ' checked' : '';
+        const selectedCls = isSelected ? ' is-selected' : '';
+        const imgUrl = article.imagen_url ? AdminPages._escapeHtml(article.imagen_url) : '';
+        const imgTag = imgUrl
+            ? `<img class="acm-thumb-img" src="${imgUrl}" alt="" loading="lazy" onerror="this.closest('.acm-thumb').classList.add('acm-thumb--fallback'); this.remove();">`
+            : '';
+        const thumbCls = imgUrl ? 'acm-thumb' : 'acm-thumb acm-thumb--fallback';
         return `
-            <div class="article-card-mobile">
-                <div class="acm-top">
-                    <label class="acm-check-wrap" onclick="event.stopPropagation()">
-                        <input type="checkbox" class="art-row-check acm-check" data-id="${article.id}"${checked}>
-                    </label>
-                    <span class="badge ${estadoCls}">${estado}</span>
-                    <span class="acm-date">${fecha}</span>
-                </div>
-                <h4 class="acm-title">${titulo}</h4>
-                <div class="acm-bottom">
-                    <span class="badge">${catName}</span>
-                    ${article.destacado ? '<span>⭐</span>' : ''}
+            <div class="article-card-mobile${selectedCls}">
+                <div class="acm-head">
+                    <div class="acm-media">
+                        <div class="${thumbCls}">
+                            ${imgTag}
+                            <svg class="acm-thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                        </div>
+                        <label class="acm-select-badge" onclick="event.stopPropagation()" aria-label="Seleccionar artículo">
+                            <input type="checkbox" class="art-row-check acm-check" data-id="${article.id}"${checked}>
+                            <span class="acm-select-badge-visual" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="acm-body">
+                        <div class="acm-top">
+                            <span class="badge ${estadoCls}">${estado}</span>
+                            <span class="acm-date">${fecha}</span>
+                        </div>
+                        <h4 class="acm-title">${titulo}</h4>
+                        <div class="acm-bottom">
+                            <span class="badge">${catName}</span>
+                            ${article.destacado ? '<span>⭐</span>' : ''}
+                        </div>
+                    </div>
                 </div>
                 <div class="acm-actions">
                     ${canEdit ? `<a href="/admin/editar/${article.id}" class="acm-btn acm-btn-edit">Editar</a>` : ''}
@@ -2462,6 +2482,8 @@ const AdminPages = {
                 const id = parseInt(this.dataset.id, 10);
                 if (this.checked) AdminPages._seleccionados.add(id);
                 else AdminPages._seleccionados.delete(id);
+                const card = this.closest('.article-card-mobile');
+                if (card) card.classList.toggle('is-selected', this.checked);
                 AdminPages._syncSelectAll();
                 AdminPages._updateBulkBar();
             });
@@ -2579,46 +2601,27 @@ const AdminPages = {
         const cats = AdminPages._articulosCategorias || [];
         if (cats.length === 0) { showToast('No hay categorías disponibles.', 'error'); return; }
 
-        // Build inline modal
-        const existing = document.getElementById('art-bulk-cat-modal');
-        if (existing) existing.remove();
-
-        const modal = document.createElement('div');
-        modal.id = 'art-bulk-cat-modal';
-        modal.className = 'art-bulk-modal-overlay';
-        modal.innerHTML =
-            '<div class="art-bulk-modal">' +
-                '<h3>Cambiar categoría</h3>' +
-                '<p>' + ids.length + ' artículo' + (ids.length === 1 ? '' : 's') + ' seleccionado' + (ids.length === 1 ? '' : 's') + '</p>' +
-                '<select id="art-bulk-cat-sel" class="art-bulk-modal-select">' +
-                    cats.map(function(c) {
-                        return '<option value="' + c.id + '">' + AdminPages._escapeHtml(c.nombre) + '</option>';
-                    }).join('') +
-                '</select>' +
-                '<div class="art-bulk-modal-footer">' +
-                    '<button class="art-bulk-modal-cancel" id="art-bulk-cat-cancel">Cancelar</button>' +
-                    '<button class="art-bulk-modal-confirm" id="art-bulk-cat-confirm">Confirmar</button>' +
-                '</div>' +
-            '</div>';
-        document.body.appendChild(modal);
-
-        modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
-        document.getElementById('art-bulk-cat-cancel').addEventListener('click', function() { modal.remove(); });
-        document.getElementById('art-bulk-cat-confirm').addEventListener('click', async function() {
-            const catId = parseInt(document.getElementById('art-bulk-cat-sel').value, 10);
-            modal.remove();
-            const { error } = await supabaseClient
-                .from('articulos')
-                .update({ categoria_id: catId })
-                .in('id', ids);
-            if (error) {
-                console.error('[bulkChangeCategory] Failed:', error);
-                showToast('Error al cambiar categoría: ' + error.message, 'error');
-                return;
+        PickerModal.open({
+            mode: 'single',
+            title: 'Cambiar categoría',
+            articleCount: ids.length,
+            items: cats,
+            confirmLabel: 'Confirmar',
+            onConfirm: async function(selectedSet) {
+                const catId = parseInt(Array.from(selectedSet)[0], 10);
+                const { error } = await supabaseClient
+                    .from('articulos')
+                    .update({ categoria_id: catId })
+                    .in('id', ids);
+                if (error) {
+                    console.error('[bulkChangeCategory] Failed:', error);
+                    showToast('Error al cambiar categoría: ' + error.message, 'error');
+                    return;
+                }
+                showToast(ids.length + ' artículos actualizados. El sitio se actualizará en ~2 min.');
+                AdminPages._triggerDebouncedDeploy();
+                AdminPages._reloadArticulos();
             }
-            showToast(ids.length + ' artículos actualizados. El sitio se actualizará en ~2 min.');
-            AdminPages._triggerDebouncedDeploy();
-            AdminPages._reloadArticulos();
         });
     },
 
@@ -4483,7 +4486,7 @@ var Onboarding = {
                         '<span class="ob-step-num">1</span>' +
                         '<div class="ob-step-text">' +
                             '<strong>Crea tu primer articulo</strong>' +
-                            '<span>Ve a "Nuevo Articulo" en el menu lateral y escribe tu primera nota.</span>' +
+                            '<span>Ve a "Nuevo Artículo" en el menu lateral y escribe tu primera nota.</span>' +
                         '</div>' +
                     '</li>' +
                     '<li>' +

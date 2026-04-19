@@ -34,6 +34,10 @@
     --admin-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
     --admin-code-bg: #f3f4f6;
     --admin-link: #C8102E;
+    --admin-badge-accent: #1B2A4A;
+    --admin-badge-accent-text: #ffffff;
+    --admin-thumb-bg: #f3f4f6;
+    --admin-thumb-icon: #9ca3af;
 }
 
 [data-theme="dark"] {
@@ -65,6 +69,10 @@
     --admin-shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.35);
     --admin-code-bg: #0f172a;
     --admin-link: #f87171;
+    --admin-badge-accent: #3b5591;
+    --admin-badge-accent-text: #ffffff;
+    --admin-thumb-bg: #0f1b36;
+    --admin-thumb-icon: #64748b;
 }
 
 /* Smooth transitions for theme swap */
@@ -1761,7 +1769,7 @@
 .art-check-cell input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: var(--admin-accent, #1B2A4A);
+    accent-color: var(--admin-badge-accent, #1B2A4A);
     cursor: pointer;
     display: block;
     margin: 0 auto;
@@ -1773,24 +1781,7 @@
     padding: 10px 8px !important;
 }
 
-/* Mobile card checkbox */
-.acm-check-wrap {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    margin-right: 4px;
-}
-.acm-check {
-    width: 20px !important;
-    height: 20px !important;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 12px;
-    box-sizing: content-box;
-    margin: -12px;
-    cursor: pointer;
-    accent-color: var(--admin-accent, #1B2A4A);
-}
+/* Mobile card checkbox is visually replaced by .acm-select-badge — see admin-mobile-fix.css */
 
 /* Sticky bulk action bar */
 .art-bulk-bar {
