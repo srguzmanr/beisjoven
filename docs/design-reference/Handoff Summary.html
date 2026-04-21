@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Beisjoven — Homepage & Header Redesign · Handoff Summary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="tokens.css"/>
+<style>
+  body { background: #F6F5F1; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .doc {
+    max-width: 880px; margin: 0 auto;
+    padding: 56px 48px 80px;
+    background: #fff;
+    box-shadow: 0 40px 80px -30px rgba(15,27,51,0.15);
+  }
+  @media (max-width: 760px) { .doc { padding: 32px 20px 56px; } }
+
+  /* ---- Masthead ---- */
+  .mh { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; padding-bottom: 20px; border-bottom: 2px solid var(--navy); margin-bottom: 40px; }
+  .mh__eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); font-weight: 700; }
+  .mh__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(2rem, 1.5rem + 1.8vw, 2.75rem); letter-spacing: -0.02em; color: var(--navy); margin: 8px 0 6px; line-height: 1.1; text-wrap: balance; }
+  .mh__sub { font-size: 16px; color: var(--ink-2); line-height: 1.5; max-width: 560px; }
+  .mh__meta { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); line-height: 1.8; text-align: right; }
+  .mh__meta b { color: var(--navy); }
+
+  /* ---- Body ---- */
+  h2.sec { font-family: var(--font-heading); font-weight: 700; font-size: 22px; letter-spacing: -0.015em; color: var(--navy); margin: 56px 0 4px; }
+  h2.sec::before { content: ''; display: block; width: 28px; height: 3px; background: var(--red); margin-bottom: 14px; }
+  .sec-sub { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 22px; }
+
+  h3.sub { font-family: var(--font-heading); font-weight: 600; font-size: 17px; letter-spacing: -0.005em; color: var(--navy); margin: 24px 0 6px; }
+
+  p, li { font-size: 15px; line-height: 1.7; color: var(--ink); }
+  p { margin: 0 0 12px; }
+  ul { padding-left: 20px; margin: 0 0 16px; }
+  li + li { margin-top: 6px; }
+  a { color: var(--navy); text-decoration: underline; text-underline-offset: 2px; }
+
+  /* ---- TL;DR box ---- */
+  .tldr {
+    background: #F6F5F1;
+    border-left: 4px solid var(--red);
+    padding: 20px 24px;
+    margin-bottom: 40px;
+  }
+  .tldr__label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); font-weight: 700; margin-bottom: 8px; }
+  .tldr p { font-size: 16px; line-height: 1.6; color: var(--navy); margin: 0; }
+  .tldr p + p { margin-top: 10px; }
+
+  /* ---- What / Where / When table ---- */
+  .key-facts {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 6px 20px;
+    padding: 20px 24px;
+    border: 1px solid var(--rule);
+    margin-bottom: 40px;
+  }
+  .key-facts dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); align-self: baseline; line-height: 1.9; }
+  .key-facts dd { margin: 0; font-size: 14px; color: var(--navy); line-height: 1.9; font-weight: 500; }
+  .key-facts a { color: var(--navy); }
+
+  /* ---- Diagnosis / Solution columns ---- */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 8px;
+  }
+  @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+  .col-card {
+    padding: 20px 22px;
+    border: 1px solid var(--rule);
+    background: #fff;
+  }
+  .col-card h4 { font-family: var(--font-heading); font-weight: 600; font-size: 14px; letter-spacing: -0.005em; margin: 0 0 12px; color: var(--navy); }
+  .col-card ul { padding-left: 18px; margin: 0; }
+  .col-card li { font-size: 14px; line-height: 1.55; margin-top: 6px; color: var(--ink); }
+  .col-card li:first-child { margin-top: 0; }
+  .col-card.prob h4 { color: var(--red); }
+  .col-card.prob { background: #FDF6F6; border-color: #F2D6DB; }
+  .col-card.solv { background: #F3F8F3; border-color: #C9DFCB; }
+  .col-card.solv h4 { color: #15803D; }
+
+  /* ---- Numbered issue list ---- */
+  .issues { counter-reset: issue; margin: 8px 0 0; padding: 0; list-style: none; }
+  .issues > li { counter-increment: issue; padding: 16px 0 18px; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: 36px 1fr; gap: 16px; }
+  .issues > li:last-child { border-bottom: 0; }
+  .issues > li::before {
+    content: counter(issue, decimal-leading-zero);
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+    color: var(--red); font-weight: 700; padding-top: 2px;
+  }
+  .issues h4 { font-family: var(--font-heading); font-weight: 600; font-size: 15px; color: var(--navy); margin: 0 0 4px; }
+  .issues p { font-size: 14px; line-height: 1.55; margin: 4px 0 0; color: var(--ink-2); }
+  .issues .fix { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: #15803D; text-transform: uppercase; font-weight: 600; margin-top: 6px; display: inline-block; }
+
+  /* ---- Recommendation block ---- */
+  .rec {
+    background: var(--navy); color: #fff;
+    padding: 28px 28px;
+    margin: 16px 0 8px;
+  }
+  .rec__label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 10px; }
+  .rec h3 { font-family: var(--font-heading); font-weight: 700; font-size: 20px; color: #fff; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .rec p { color: rgba(255,255,255,0.88); font-size: 15px; line-height: 1.6; margin: 0 0 6px; }
+
+  /* ---- Variant matrix ---- */
+  .matrix {
+    display: grid;
+    grid-template-columns: 140px repeat(3, 1fr);
+    border: 1px solid var(--rule);
+    font-size: 13px;
+    margin: 12px 0 0;
+  }
+  .matrix > div { padding: 10px 12px; border-bottom: 1px solid var(--rule); border-right: 1px solid var(--rule); line-height: 1.5; }
+  .matrix > div:nth-child(4n) { border-right: 0; }
+  .matrix > div:nth-last-child(-n+4) { border-bottom: 0; }
+  .matrix .mh-cell {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); font-weight: 700;
+    background: #F6F5F1; padding-top: 12px;
+  }
+  .matrix .rh {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); font-weight: 700;
+    background: #F6F5F1;
+  }
+  .matrix .rec-cell { background: #F3F8F3; }
+
+  /* ---- Token preview strip ---- */
+  .tokens {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin: 10px 0 0;
+  }
+  .tok {
+    padding: 14px 12px 10px;
+    border: 1px solid var(--rule);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .tok__swatch { height: 44px; }
+  .tok__name { font-family: var(--font-heading); font-weight: 600; font-size: 12px; color: var(--navy); }
+  .tok__hex { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--muted); }
+
+  /* ---- Open Questions / Risks ---- */
+  .q-list {
+    margin: 10px 0 0; padding: 0; list-style: none;
+    border-top: 1px solid var(--rule);
+  }
+  .q-list li { padding: 14px 0; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: 80px 1fr; gap: 16px; }
+  .q-list .qtag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); font-weight: 700; padding-top: 3px; }
+  .q-list .qtag.risk { color: #C2410C; }
+  .q-list .qtag.scope { color: var(--navy); }
+  .q-list h4 { font-family: var(--font-heading); font-weight: 600; font-size: 14px; margin: 0 0 4px; color: var(--navy); }
+  .q-list p { font-size: 13px; line-height: 1.55; color: var(--ink-2); margin: 0; }
+
+  /* ---- Next steps ---- */
+  .steps { counter-reset: step; margin: 12px 0 0; padding: 0; list-style: none; }
+  .steps li {
+    counter-increment: step; padding: 14px 16px 14px 52px; border: 1px solid var(--rule);
+    position: relative; margin-bottom: 8px; background: #fff;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: 16px; top: 12px;
+    width: 24px; height: 24px; background: var(--navy); color: #fff;
+    font-family: var(--font-heading); font-weight: 700; font-size: 13px;
+    display: grid; place-items: center; border-radius: 50%;
+  }
+  .steps h4 { font-family: var(--font-heading); font-weight: 600; font-size: 14px; color: var(--navy); margin: 0 0 2px; }
+  .steps p { font-size: 13px; line-height: 1.5; color: var(--ink-2); margin: 0; }
+  .steps .owner { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-left: 8px; }
+
+  /* ---- Footer ---- */
+  .foot { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--rule); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; display: flex; gap: 24px; flex-wrap: wrap; }
+  .foot b { color: var(--navy); }
+
+  .cta-row {
+    display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+  }
+  .cta {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    background: var(--navy); color: #fff;
+    font-family: var(--font-body); font-weight: 600; font-size: 13px;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+  }
+  .cta.ghost { background: transparent; color: var(--navy); border: 1px solid var(--navy); }
+
+  .inline-pill {
+    display: inline-block;
+    font-family: var(--font-body); font-weight: 700;
+    font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 2px 7px; color: #fff; border-radius: 2px;
+    vertical-align: 1px;
+  }
+
+  @media print {
+    body { background: #fff; }
+    .doc { box-shadow: none; max-width: none; padding: 24px 32px; }
+    .cta-row, .foot a { display: none; }
+  }
+</style>
+</head>
+<body>
+<article class="doc">
+
+  <!-- Masthead -->
+  <header class="mh">
+    <div>
+      <div class="mh__eyebrow">Design handoff · v2 · Homepage + Header</div>
+      <h1 class="mh__title">Somos el futuro del beis — but our front door doesn't say so.</h1>
+      <p class="mh__sub">A redesign of the Beisjoven homepage and header that moves editorial content above the fold, tightens chrome, and makes category wayfinding earn its space. For PM, UX/UI, and engineering review.</p>
+      <div class="cta-row">
+        <a class="cta" href="./Homepage Prototype.html">Open prototype →</a>
+        <a class="cta ghost" href="./Spec.html">Spec & anatomy →</a>
+      </div>
+    </div>
+    <aside class="mh__meta">
+      <b>Prepared</b><br/>19 Apr 2026<br/><br/>
+      <b>For</b><br/>Product · UX/UI<br/><br/>
+      <b>Status</b><br/>Ready for review<br/><br/>
+      <b>Spec</b><br/>Typography v1.1
+    </aside>
+  </header>
+
+  <!-- TL;DR -->
+  <section class="tldr">
+    <div class="tldr__label">TL;DR</div>
+    <p>The current homepage buries its own front page. Readers see <b>450px of chrome</b> and a <b>mute photo hero</b> before any headline renders — on a site where <b>76.6% of traffic is mobile</b> and <b>only 8.9% of readers scroll past 50%</b>. This redesign cuts header chrome in half, puts an editorial hero with a visible headline above the fold on every viewport, and introduces a category color system so the six editorial sections become navigable assets instead of a flat list.</p>
+    <p>We're shipping as a clickable prototype with <b>three design bands</b> (Safe · Default · Ambitious), two category-color modes, and a live-event toggle — so Product can make the brand-level calls before UX specs them and engineering builds them in Astro.</p>
+  </section>
+
+  <!-- Quick facts -->
+  <dl class="key-facts">
+    <dt>Artifacts</dt><dd><a href="./Homepage Prototype.html">Homepage Prototype.html</a> · <a href="./Spec.html">Spec.html</a> · <code>tokens.css</code></dd>
+    <dt>Viewports</dt><dd>375 (primary, 76.6% of traffic) · 1280 (secondary)</dd>
+    <dt>Spec consumed</dt><dd>Typography &amp; Spacing v1.1 — verbatim, via <code>tokens.css</code></dd>
+    <dt>Stack</dt><dd>Astro SSG + Tailwind compatible · no SPA-only patterns · zero paid deps · no new fonts</dd>
+    <dt>Out of scope</dt><dd>Article pages · dark mode (Q4 2026) · author/category landing pages · search results UI</dd>
+  </dl>
+
+  <!-- Problem -->
+  <h2 class="sec">The problem we're solving</h2>
+  <div class="sec-sub">Visual audit · current homepage on 1440 desktop</div>
+  <p>The live site is a well-produced editorial product hiding behind a generic publisher chassis. Five specific failures compound:</p>
+
+  <ol class="issues">
+    <li>
+      <div>
+        <h4>The hero is mute</h4>
+        <p>A full-bleed photo renders above the fold with no visible headline. The most important story of the day is represented by a basketball-celebration image — readers can't tell what it's about without scrolling. Museum poster, not news hero.</p>
+        <span class="fix">Fix → headline overlay on mobile, prose block on desktop, category kicker on both.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h4>Header wastes ~450px before a headline</h4>
+        <p>Top bar (date + Contacto) → oversized logo + oversized search → flat nav → LIVE strip. Four stacked bands on a site where the fold is roughly 660px on mobile.</p>
+        <span class="fix">Fix → single brand row, search behind icon, quick-hits ticker folded into nav band.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h4>Logo is small, search is oversized</h4>
+        <p>Visual weight is inverted — the search field outweighs the brand mark.</p>
+        <span class="fix">Fix → BJ monogram + BEISJOVEN wordmark at ~28–36px; search collapses to a 44×44 icon.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h4>Nav is flat &amp; underutilized</h4>
+        <p>GA4 shows <b>8 category clicks / 30 days</b>. The nav isn't earning its space. Active state is a one-pixel red underline.</p>
+        <span class="fix">Fix → 2px active underline in category accent color; mobile uses horizontal chip scroll with right-edge fade.</span>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h4>Cards lack variety</h4>
+        <p>Hero and secondary cards share the same aspect, pill, and spacing. No signal that one story matters more than another.</p>
+        <span class="fix">Fix → hero / standard / list / rail variants with specified ratios, type steps, and category left-border rules.</span>
+      </div>
+    </li>
+  </ol>
+
+  <!-- Approach -->
+  <h2 class="sec">Our approach</h2>
+  <div class="sec-sub">Three bands instead of three competing proposals</div>
+
+  <p>Rather than ship three standalone designs, we packaged the decisions into <b>one prototype with three toggleable design bands</b>. Every other choice — category color, live event, mobile nav behavior — is orthogonal. This lets Product mix the header from one band with the hero from another without re-spec work.</p>
+
+  <div class="matrix" role="table">
+    <div class="mh-cell">&nbsp;</div>
+    <div class="mh-cell">Safe</div>
+    <div class="mh-cell rec-cell">Default · recommended</div>
+    <div class="mh-cell">Ambitious</div>
+
+    <div class="rh">Header</div>
+    <div>Masthead + nav. Evolutionary. Quick-hits bar retained.</div>
+    <div class="rec-cell">Single bar. Brand + nav + search icon in one row. Quick-hits ticker beneath.</div>
+    <div>Editorial masthead, oversized wordmark, inline index of today's sections.</div>
+
+    <div class="rh">Hero</div>
+    <div>Split — photo left, headline + deck + byline right.</div>
+    <div class="rec-cell">Full-bleed photo, gradient overlay on mobile, prose block on desktop.</div>
+    <div>Magazine cover — oversized H1 overlaid on a 21:9 photo, asymmetric grid.</div>
+
+    <div class="rh">Cards</div>
+    <div>Standard 16:10, category pill top-left.</div>
+    <div class="rec-cell">Standard 16:10 with 4px category left-border on text block.</div>
+    <div>Pull-quote card variant, larger headlines, deck copy more prominent.</div>
+
+    <div class="rh">Energy</div>
+    <div>Calm. Low risk. Ships in a sprint.</div>
+    <div class="rec-cell">Editorial. Image-forward. The level of The Athletic or Baseball America.</div>
+    <div>Bold. Print-magazine feel. Needs strong original photography every day.</div>
+
+    <div class="rh">Best for</div>
+    <div>A/B control group.</div>
+    <div class="rec-cell">Daily publishing cadence, existing photo pipeline.</div>
+    <div>Tentpole moments (Serie del Caribe, CONADEIP Final 8, WBC).</div>
+  </div>
+
+  <!-- Recommendation -->
+  <div class="rec">
+    <div class="rec__label">Recommendation</div>
+    <h3>Ship <b>Default</b> as the daily look. Keep <b>Ambitious</b> as a tentpole mode triggered manually for big events.</h3>
+    <p>Default balances editorial seriousness with production sustainability. Ambitious is worth the investment <i>occasionally</i> but costs photo direction every day it runs. Safe is the A/B control we'd fall back to if Default fails a click-through guardrail post-launch.</p>
+  </div>
+
+  <!-- Category color decision -->
+  <h2 class="sec">Category color system — brand decision</h2>
+  <div class="sec-sub">Tradeoff laid out for a single call</div>
+
+  <div class="two-col">
+    <div class="col-card prob">
+      <h4>Option A · Single gold accent</h4>
+      <ul>
+        <li>Calmer, more unified brand voice.</li>
+        <li>Zero risk of category clashing against photos.</li>
+        <li>Does less work for wayfinding — readers rely entirely on pill labels to distinguish sections.</li>
+        <li>Fits the "one paper, one voice" editorial philosophy.</li>
+      </ul>
+    </div>
+    <div class="col-card solv">
+      <h4>Option B · Per-category accents <i>(recommended)</i></h4>
+      <ul>
+        <li><span class="inline-pill" style="background:#2563EB">MLB</span> <span class="inline-pill" style="background:#059669">LIGAS MX</span> <span class="inline-pill" style="background:#C8102E">SELECCIÓN</span> <span class="inline-pill" style="background:#7C3AED">SOFTBOL</span> <span class="inline-pill" style="background:#D4A843;color:#1B2A4A">JUVENIL</span> <span class="inline-pill" style="background:#6B7280">OPINIÓN</span></li>
+        <li>Makes Juvenil (our editorial moat) identifiable at a glance on any scroll position.</li>
+        <li>Section underline + 4px card left-border + pill all carry the accent — a single design rule applied three places.</li>
+        <li>Fully reversible if GA4 shows it's not moving category-click behavior.</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:16px;"><b>Our read:</b> ship with per-category accents (Option B). The colors are calibrated within the Typography Spec v1.1 low-chroma palette, so they read as editorial signage rather than a kids-book rainbow. The toggle stays in the codebase as <code>useCatColor</code> — one prop flip to revert.</p>
+
+  <!-- Token strip -->
+  <h2 class="sec">Design tokens consumed</h2>
+  <div class="sec-sub">From Typography &amp; Spacing Spec v1.1 — no new tokens introduced</div>
+  <p>Every value in the prototype resolves through <code>tokens.css</code>, which mirrors the spec verbatim. Legacy hexes <code>#1b3557</code> and <code>#e83646</code> are not referenced anywhere in the build.</p>
+  <div class="tokens">
+    <div class="tok"><span class="tok__swatch" style="background:#1B2A4A"></span><span class="tok__name">Navy</span><span class="tok__hex">#1B2A4A</span></div>
+    <div class="tok"><span class="tok__swatch" style="background:#C8102E"></span><span class="tok__name">Red</span><span class="tok__hex">#C8102E</span></div>
+    <div class="tok"><span class="tok__swatch" style="background:#D4A843"></span><span class="tok__name">Gold</span><span class="tok__hex">#D4A843</span></div>
+    <div class="tok"><span class="tok__swatch" style="background:#F6F5F1;border:1px solid var(--rule)"></span><span class="tok__name">Off-white</span><span class="tok__hex">#F6F5F1</span></div>
+    <div class="tok"><span class="tok__swatch" style="background:#E5E7EB"></span><span class="tok__name">Rule</span><span class="tok__hex">#E5E7EB</span></div>
+    <div class="tok"><span class="tok__swatch" style="background:#6B7280"></span><span class="tok__name">Muted</span><span class="tok__hex">#6B7280</span></div>
+  </div>
+
+  <h3 class="sub">Type scale (fluid, clamp-based)</h3>
+  <ul>
+    <li><b>H1</b> 30→44px · Plus Jakarta Sans 700 · −0.02em · used on hero only</li>
+    <li><b>H2</b> 24→32px · Plus Jakarta Sans 600 · section headers</li>
+    <li><b>H3</b> 20→24px · Plus Jakarta Sans 600 · standard card headlines</li>
+    <li><b>Body</b> 17→18px · Inter 400 · 1.7 line-height · deck copy</li>
+    <li><b>Meta</b> 13→14px · Inter 500 · bylines, dates</li>
+    <li><b>Overline</b> 11px · Inter 600 · 0.08em tracking · kickers and category labels</li>
+  </ul>
+
+  <!-- What we need back -->
+  <h2 class="sec">Decisions we need from you</h2>
+  <div class="sec-sub">Please resolve before engineering picks up the ticket</div>
+
+  <ol class="q-list">
+    <li>
+      <span class="qtag">Decision</span>
+      <div>
+        <h4>Band choice for daily</h4>
+        <p>Safe · Default (our rec) · Ambitious. This determines the hero and header patterns engineering builds first.</p>
+      </div>
+    </li>
+    <li>
+      <span class="qtag">Decision</span>
+      <div>
+        <h4>Category color — on or off</h4>
+        <p>Per-category accents (our rec) vs single gold. Reversible post-launch via one prop, but drives card + pill + underline spec.</p>
+      </div>
+    </li>
+    <li>
+      <span class="qtag">Decision</span>
+      <div>
+        <h4>Quick-hits ticker — editorial ownership</h4>
+        <p>We designed it in. Who writes the 3–5 entries? Is it admin-editable in the CMS or scripted per-event?</p>
+      </div>
+    </li>
+    <li>
+      <span class="qtag risk">Risk</span>
+      <div>
+        <h4>Original photography pipeline</h4>
+        <p>Default &amp; Ambitious heroes both depend on a daily lead photo with a clear focal subject. If the pipeline produces more event-scoreboard shots than editorial portraits, mobile gradient overlays will fight the image. UX should review 5–10 real candidate photos against the hero overlay before launch.</p>
+      </div>
+    </li>
+    <li>
+      <span class="qtag risk">Risk</span>
+      <div>
+        <h4>Category underutilization may be a content problem, not a design one</h4>
+        <p>GA4 shows 8 category clicks / 30d. Stronger nav design helps, but if category hubs themselves are underpopulated, the design won't move the needle alone. Worth parallel editorial review of each of the six hub pages.</p>
+      </div>
+    </li>
+    <li>
+      <span class="qtag scope">Scope</span>
+      <div>
+        <h4>Sponsor slot timing</h4>
+        <p>Phase 1 reserves the slot (970×90 desktop, 320×50 mobile) below the hero. UX should confirm Sprint 5 still owns the sponsor system design so we don't paint ourselves in.</p>
+      </div>
+    </li>
+  </ol>
+
+  <!-- Next steps -->
+  <h2 class="sec">Suggested next steps</h2>
+  <div class="sec-sub">Two weeks from review to tickets-ready</div>
+
+  <ol class="steps">
+    <li>
+      <h4>Design review session <span class="owner">PM + UX/UI</span></h4>
+      <p>30 min. Walk the prototype band-by-band on a 375 phone. Resolve the three Decisions above. This week.</p>
+    </li>
+    <li>
+      <h4>Photography audit <span class="owner">UX + Editorial</span></h4>
+      <p>Pull 10 recent hero candidates from the photo library. Drop them into the Default hero on mobile. Confirm the gradient overlay holds. Flag any that don't.</p>
+    </li>
+    <li>
+      <h4>Engineering estimation <span class="owner">Claude Code</span></h4>
+      <p>Break prototype into Astro components: <code>Header</code>, <code>Hero</code>, <code>StoryCard</code>, <code>ListCard</code>, <code>CategoryRail</code>, <code>Gallery</code>, <code>Newsletter</code>. Tokens are already token-ready in <code>tokens.css</code>.</p>
+    </li>
+    <li>
+      <h4>QA plan <span class="owner">UX + Eng</span></h4>
+      <p>Visual regression on 375 / 768 / 1280. Lighthouse mobile target: LCP &lt; 2.5s, CLS &lt; 0.1. Above-fold must contain at minimum: logo, nav, one headline, one image.</p>
+    </li>
+    <li>
+      <h4>Success metrics <span class="owner">PM</span></h4>
+      <p>Scroll-to-50% from 8.9% → target 18% at 30 days. Category clicks from 8/30d → target 60+/30d. Article completion rate hold ≥ 45%.</p>
+    </li>
+  </ol>
+
+  <!-- Footer -->
+  <footer class="foot">
+    <span><b>Beisjoven</b> — Somos el futuro del beis</span>
+    <span>Spec: Typography v1.1</span>
+    <span>Prototype v2 · 19 Abr 2026</span>
+    <span style="margin-left:auto"><a href="./Homepage Prototype.html" style="color:var(--navy);text-decoration:underline">Prototype</a> · <a href="./Spec.html" style="color:var(--navy);text-decoration:underline">Spec</a></span>
+  </footer>
+</article>
+</body>
+</html>

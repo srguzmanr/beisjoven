@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Beisjoven — Spec & Anatomy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,500;0,600;0,700;0,800;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="tokens.css"/>
+<style>
+  body { background: #F6F5F1; }
+  .spec-shell { max-width: 1200px; margin: 0 auto; padding: 32px 32px 80px; }
+  .spec-top { display: flex; align-items: center; gap: 16px; padding-bottom: 24px; border-bottom: 2px solid var(--navy); margin-bottom: 40px; }
+  .spec-top h1 { font-size: 32px; letter-spacing: -0.02em; }
+  .spec-top a { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--navy); text-decoration: underline; }
+  .spec-group { margin-bottom: 64px; }
+  .spec-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .spec-title { font-family: var(--font-heading); font-weight: 700; font-size: 24px; color: var(--navy); letter-spacing: -0.015em; margin: 0 0 8px; }
+  .spec-desc { color: var(--ink-2); max-width: 640px; margin: 0 0 28px; }
+  .spec-grid { display: grid; gap: 24px; }
+  .spec-card { background: #fff; border: 1px solid var(--rule); padding: 24px; }
+  .spec-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .spec-kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 20px; font-size: 13px; line-height: 1.6; }
+  .spec-kv dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); align-self: baseline; }
+  .spec-kv dd { margin: 0; color: var(--navy); font-weight: 500; }
+  .token-row { display: grid; grid-template-columns: 180px 1fr max-content; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--rule); align-items: baseline; }
+  .token-row:last-child { border-bottom: 0; }
+  .swatch { display: inline-flex; align-items: center; gap: 12px; padding: 12px 14px; background: #fff; border: 1px solid var(--rule); }
+  .swatch .chip { width: 36px; height: 36px; border: 1px solid rgba(0,0,0,0.06); }
+  .swatch .swatch-name { font-family: var(--font-heading); font-weight: 600; font-size: 13px; color: var(--navy); }
+  .swatch .swatch-hex { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="spec-shell">
+  <div class="spec-top">
+    <span style="width:12px;height:12px;background:var(--red);display:inline-block"></span>
+    <h1 class="h1" style="font-size:32px;margin:0">Beisjoven — Spec & Anatomy</h1>
+    <span style="flex:1"></span>
+    <a href="./Homepage Prototype.html">← Homepage prototype</a>
+  </div>
+
+  <!-- Type scale -->
+  <section class="spec-group">
+    <div class="spec-eyebrow">Typography Spec v1.1 · applied via tokens.css</div>
+    <h2 class="spec-title">Type scale (fluid, clamp-based)</h2>
+    <p class="spec-desc">Every heading and body size below is consumed from <code>var(--text-*)</code> in <code>tokens.css</code>, matching the spec values verbatim. Resize the window to watch the fluid scale.</p>
+    <div class="spec-card">
+      <div class="token-row"><span class="spec-label">H1</span><span class="h1">Somos el futuro del beis</span><span class="spec-label">30 → 44 · PJS 700 · −0.02em</span></div>
+      <div class="token-row"><span class="spec-label">H2</span><span class="h2">Lo último en CONADEIP</span><span class="spec-label">24 → 32 · PJS 600 · −0.015em</span></div>
+      <div class="token-row"><span class="spec-label">H3 Card</span><span class="h3">Mexico Rojo se lleva el primer juego</span><span class="spec-label">20 → 24 · PJS 600 · −0.01em</span></div>
+      <div class="token-row"><span class="spec-label">H4</span><span class="h4">Rotación abridora LMB 2026</span><span class="spec-label">18 → 20 · PJS 600</span></div>
+      <div class="token-row"><span class="spec-label">Body</span><span class="body" style="max-width:560px">El beisbol mexicano atraviesa una generación de oro, pero sigue perdiendo fanáticos jóvenes. La pregunta no es de talento — es de narrativa.</span><span class="spec-label">17 → 18 · Inter 400 · 1.7</span></div>
+      <div class="token-row"><span class="spec-label">Meta</span><span class="meta">Redacción Beisjoven · 19 abr 2026</span><span class="spec-label">13 → 14 · Inter 500</span></div>
+      <div class="token-row"><span class="spec-label">Overline</span><span class="overline">CONADEIP · Final 8 Tijuana</span><span class="spec-label">11 · Inter 600 · 0.08em</span></div>
+    </div>
+  </section>
+
+  <!-- Color palette -->
+  <section class="spec-group">
+    <div class="spec-eyebrow">Color · brand palette v1.1 + category accents</div>
+    <h2 class="spec-title">Color system</h2>
+    <p class="spec-desc">Brand palette is fixed. Legacy hexes (#1b3557, #e83646) are removed. Category accents drive the category color system (pill bg, 4px card left border, 2px section underline).</p>
+    <div class="spec-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+      <span class="swatch"><span class="chip" style="background:#1B2A4A"></span><span><span class="swatch-name">Navy</span><br/><span class="swatch-hex">#1B2A4A</span></span></span>
+      <span class="swatch"><span class="chip" style="background:#C8102E"></span><span><span class="swatch-name">Red</span><br/><span class="swatch-hex">#C8102E</span></span></span>
+      <span class="swatch"><span class="chip" style="background:#D4A843"></span><span><span class="swatch-name">Gold</span><br/><span class="swatch-hex">#D4A843</span></span></span>
+      <span class="swatch"><span class="chip" style="background:#FFFFFF;border:1px solid var(--rule-strong)"></span><span><span class="swatch-name">White</span><br/><span class="swatch-hex">#FFFFFF</span></span></span>
+      <span class="swatch"><span class="chip" style="background:#2563EB"></span><span><span class="swatch-name">MLB</span><br/><span class="swatch-hex">#2563EB</span></span></span>
+      <span class="swatch"><span class="chip" style="background:#059669"></span><span><span class="swatch-name">Ligas MX</span><br/><span class="swatch-hex">#059669</span></span></span>
+      <span class="swatch"><span class="chip" style="background:#C8102E"></span><span><span class="swatch-name">Selección</span><br/><span class="swatch-hex">#C8102E</span></span></span>
+      <span class="swatch"><span class="chip" style="background:#7C3AED"></span><span><span class="swatch-name">Softbol</span><br/><span class="swatch-hex">#7C3AED</span></span></span>
+      <span class="swatch"><span class="chip" style="background:#D4A843"></span><span><span class="swatch-name">Juvenil</span><br/><span class="swatch-hex">#D4A843</span></span></span>
+      <span class="swatch"><span class="chip" style="background:#6B7280"></span><span><span class="swatch-name">Opinión</span><br/><span class="swatch-hex">#6B7280</span></span></span>
+    </div>
+  </section>
+
+  <!-- Pills -->
+  <section class="spec-group">
+    <div class="spec-eyebrow">Category pill · solid, full-opacity bg + white text</div>
+    <h2 class="spec-title">Category pills</h2>
+    <p class="spec-desc">Used on all cards. Font: Inter 700, 11px, 0.08em tracking, uppercase. Padding 4×10. Radius 2.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px">
+      <span class="pill" style="background:#2563EB">MLB</span>
+      <span class="pill" style="background:#059669">LIGAS MX</span>
+      <span class="pill" style="background:#C8102E">SELECCIÓN</span>
+      <span class="pill" style="background:#7C3AED">SOFTBOL</span>
+      <span class="pill" style="background:#D4A843;color:#1B2A4A">JUVENIL</span>
+      <span class="pill" style="background:#6B7280">OPINIÓN</span>
+    </div>
+  </section>
+
+  <!-- Card anatomy -->
+  <section class="spec-group">
+    <div class="spec-eyebrow">Card system</div>
+    <h2 class="spec-title">Card anatomy</h2>
+    <p class="spec-desc">Standard card: 16:10 thumbnail, 4px category left border on text block (matches pull-quote rule from Spec v1.1 — visual system consistency), category pill, H3 headline, optional deck, metadata row.</p>
+    <div class="spec-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));align-items:start">
+      <!-- Standard -->
+      <figure style="margin:0">
+        <div class="ph" data-label="photo · 16:10" style="aspect-ratio:16/10"></div>
+        <div style="border-left:4px solid #2563EB;padding:14px 0 0 14px">
+          <span class="pill" style="background:#2563EB">MLB</span>
+          <h3 class="h3" style="margin:8px 0 0">Urías vuelve al bullpen en Dodger Stadium tras ocho meses</h3>
+          <p class="body-sm" style="color:var(--ink-2);margin:8px 0 0">El sinaloense tiró 28 lanzamientos y apunta a regreso en mayo.</p>
+          <div class="meta" style="margin-top:10px">Redacción Beisjoven · 19 abr 2026</div>
+        </div>
+        <figcaption class="spec-label" style="margin-top:12px">Standard card · 16:10</figcaption>
+      </figure>
+      <!-- List -->
+      <figure style="margin:0">
+        <div style="display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:start;padding:14px 0;border-bottom:1px solid var(--rule)">
+          <div class="ph" data-label="1:1" style="aspect-ratio:1/1"></div>
+          <div style="border-left:3px solid #059669;padding-left:10px">
+            <span class="pill" style="background:#059669">LIGAS MX</span>
+            <h4 style="font-family:var(--font-heading);font-weight:600;font-size:15px;line-height:1.3;color:var(--navy);margin:4px 0 0">Diablos anuncian rotación abridora para el arranque de LMB 2026</h4>
+            <div style="margin-top:6px;font-size:13px;color:var(--muted);font-weight:500">19 abr · hace 6h</div>
+          </div>
+        </div>
+        <figcaption class="spec-label" style="margin-top:12px">List card · 1:1</figcaption>
+      </figure>
+      <!-- Hero-ish -->
+      <figure style="margin:0">
+        <div class="ph ph--dark" data-label="hero · 21:9" style="aspect-ratio:21/9"></div>
+        <div style="margin-top:14px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span style="width:28px;height:3px;background:#D4A843"></span>
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#D4A843">Juvenil</span>
+          </div>
+          <h3 class="h3" style="margin:0">Halcones Inter van por la corona de CONADEIP</h3>
+          <div class="meta" style="margin-top:10px">Redacción Beisjoven · 19 abr 2026</div>
+        </div>
+        <figcaption class="spec-label" style="margin-top:12px">Hero (Default band) · 21:9</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- Tokens applied -->
+  <section class="spec-group">
+    <div class="spec-eyebrow">Applied tokens</div>
+    <h2 class="spec-title">Spacing & width</h2>
+    <div class="spec-card">
+      <dl class="spec-kv">
+        <dt>Gutter</dt><dd>16px mobile / 32px desktop</dd>
+        <dt>Section gap</dt><dd>48px mobile / 64px desktop</dd>
+        <dt>Card gap</dt><dd>16–24px (gap-4 / gap-6)</dd>
+        <dt>Article prose</dt><dd>max-w 672px (42rem)</dd>
+        <dt>Breakout</dt><dd>max-w 960px (60rem)</dd>
+        <dt>Page container</dt><dd>max-w 1200px (75rem)</dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- Header anatomy -->
+  <section class="spec-group">
+    <div class="spec-eyebrow">Header anatomy</div>
+    <h2 class="spec-title">Components stacked in order</h2>
+    <p class="spec-desc">All three bands share the same stack. Only the brand row changes between variants. Mobile auto-hides on scroll down, reveals on scroll up (80px threshold). Desktop shrinks to the nav row on sticky.</p>
+    <div class="spec-card">
+      <dl class="spec-kv">
+        <dt>1. Brand row</dt><dd>Mark-only mobile · Mark+Wordmark desktop · 44×44 tap targets</dd>
+        <dt>2. Nav</dt><dd>Mobile: horizontal scrollable chips w/ right-edge fade gradient · Desktop: inline category list w/ 2px underline on active</dd>
+        <dt>3. Quick Hits</dt><dd>Always-present, admin-editable, rotates every 4.5s, 36px tall</dd>
+        <dt>4. LIVE strip</dt><dd>Conditional (event-only). Sits ABOVE Quick Hits when active. Red EN VIVO pill + pulse, category color tab</dd>
+        <dt>Search</dt><dd>Icon-only (44×44, aria-label="Buscar") on all breakpoints. Tap opens full-viewport overlay</dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- Below-fold stack -->
+  <section class="spec-group">
+    <div class="spec-eyebrow">Below-the-fold</div>
+    <h2 class="spec-title">Module order</h2>
+    <div class="spec-card">
+      <ol style="padding-left:18px;margin:0;line-height:1.9;color:var(--navy)">
+        <li><b>Sponsor reservation</b> — Phase 1 empty, swap-ready for Sprint 5. 970×90 desktop / 320×50 mobile.</li>
+        <li><b>Mixed feed</b> — Lo último (2×2 grid) + Más leídos rail.</li>
+        <li><b>Juvenil rail</b> — navy background, "Nuestra obsesión" eyebrow. The editorial moat.</li>
+        <li><b>Gallery module</b> — "La semana, en imágenes". Surfaces BJ's original event photography.</li>
+        <li><b>Per-category sections</b> — MLB, Ligas, Selección, Softbol, Opinión. 3-up grids.</li>
+        <li><b>Newsletter</b> — El Diamante sign-up block.</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer style="padding-top:32px;border-top:1px solid var(--rule);color:var(--muted);font-size:12px;font-family:var(--font-mono);letter-spacing:0.04em">
+    Beisjoven · Typography & Spacing Spec v1.1 · Somos el futuro del beis
+  </footer>
+</div>
+</body>
+</html>

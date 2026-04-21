@@ -1,0 +1,1159 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Beisjoven — Product Bible</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,500;0,600;0,700;0,800;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="tokens.css"/>
+<style>
+  body { background: #F6F5F1; }
+
+  /* ---------- Shell ---------- */
+  .bible { max-width: 1200px; margin: 0 auto; padding: 0 32px 120px; }
+  @media (max-width: 760px) { .bible { padding: 0 16px 72px; } }
+
+  /* ---------- Masthead ---------- */
+  .mh {
+    padding: 48px 0 28px;
+    border-bottom: 2px solid var(--navy);
+    margin-bottom: 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: end;
+  }
+  .mh__eyebrow {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--red); font-weight: 700;
+  }
+  .mh__title {
+    font-family: var(--font-heading); font-weight: 700;
+    font-size: clamp(2.25rem, 1.6rem + 2.5vw, 3.5rem);
+    letter-spacing: -0.025em; color: var(--navy); margin: 10px 0 8px;
+    line-height: 1.05; text-wrap: balance;
+  }
+  .mh__sub { font-size: 17px; color: var(--ink-2); line-height: 1.55; max-width: 600px; margin: 0; }
+  .mh__meta {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); text-align: right; line-height: 1.9;
+  }
+  .mh__meta b { color: var(--navy); }
+  @media (max-width: 760px) {
+    .mh { grid-template-columns: 1fr; }
+    .mh__meta { text-align: left; }
+  }
+
+  /* ---------- Sticky TOC ---------- */
+  .toc {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(246, 245, 241, 0.96);
+    backdrop-filter: saturate(1.2) blur(6px);
+    -webkit-backdrop-filter: saturate(1.2) blur(6px);
+    border-bottom: 1px solid var(--rule-strong);
+    padding: 10px 0;
+    margin: 0 -32px 48px;
+    padding-left: 32px; padding-right: 32px;
+    display: flex; gap: 24px; align-items: center;
+    font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    letter-spacing: 0.02em;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .toc::-webkit-scrollbar { display: none; }
+  .toc__brand {
+    font-family: var(--font-heading); font-weight: 700; font-size: 13px;
+    color: var(--navy); letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toc__brand::before { content: ''; width: 8px; height: 8px; background: var(--red); display: inline-block; }
+  .toc a {
+    color: var(--ink-2);
+    padding: 6px 0;
+    border-bottom: 2px solid transparent;
+    text-transform: uppercase; font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.08em; font-weight: 700;
+  }
+  .toc a:hover { color: var(--red); }
+  .toc a.active { color: var(--navy); border-bottom-color: var(--red); }
+  .toc__spacer { flex: 1; }
+  .toc__return {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  @media (max-width: 760px) {
+    .toc { margin: 0 -16px 32px; padding-left: 16px; padding-right: 16px; gap: 16px; }
+    .toc__return { display: none; }
+  }
+
+  /* ---------- Part header ---------- */
+  .part { margin: 72px 0 0; scroll-margin-top: 72px; }
+  .part:first-of-type { margin-top: 0; }
+  .part__head {
+    display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: end;
+    padding-bottom: 18px; border-bottom: 2px solid var(--navy);
+    margin-bottom: 40px;
+  }
+  .part__num {
+    font-family: var(--font-heading); font-weight: 800;
+    font-size: clamp(3.5rem, 2.5rem + 4vw, 6rem);
+    letter-spacing: -0.03em; color: var(--red); line-height: 0.9;
+    font-feature-settings: 'tnum';
+  }
+  .part__num small {
+    display: block; font-family: var(--font-mono); font-weight: 700;
+    font-size: 11px; letter-spacing: 0.12em; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 4px;
+  }
+  .part__title {
+    font-family: var(--font-heading); font-weight: 700;
+    font-size: clamp(1.75rem, 1.3rem + 1.5vw, 2.5rem);
+    letter-spacing: -0.02em; color: var(--navy); margin: 0 0 6px;
+    line-height: 1.1;
+  }
+  .part__sub {
+    font-size: 15px; color: var(--ink-2); margin: 0; max-width: 680px;
+    line-height: 1.55;
+  }
+  @media (max-width: 640px) {
+    .part__head { grid-template-columns: 1fr; gap: 14px; align-items: start; }
+    .part__num { font-size: 72px; }
+  }
+
+  /* ---------- Section ---------- */
+  .sec { margin-bottom: 56px; scroll-margin-top: 72px; }
+  .sec__eyebrow {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 8px;
+  }
+  .sec__title {
+    font-family: var(--font-heading); font-weight: 700; font-size: 24px;
+    letter-spacing: -0.015em; color: var(--navy); margin: 0 0 6px;
+  }
+  .sec__title::before {
+    content: ''; display: inline-block; width: 24px; height: 3px;
+    background: var(--red); vertical-align: 6px; margin-right: 12px;
+  }
+  .sec__desc { color: var(--ink-2); font-size: 15px; line-height: 1.65; max-width: 680px; margin: 0 0 20px; }
+
+  /* ---------- Cards ---------- */
+  .card {
+    background: #fff; border: 1px solid var(--rule); padding: 22px 24px;
+  }
+  .card + .card { margin-top: 14px; }
+
+  /* ---------- KV list ---------- */
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 28px; font-size: 14px; line-height: 1.65; }
+  .kv dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); align-self: baseline; padding-top: 3px; }
+  .kv dd { margin: 0; color: var(--navy); font-weight: 500; }
+  .kv dd code { font-family: var(--font-mono); font-size: 12px; background: #F6F5F1; padding: 1px 5px; border-radius: 2px; }
+
+  /* ---------- Vision hero ---------- */
+  .vision {
+    background: var(--navy); color: #fff;
+    padding: 44px 40px; margin-bottom: 48px;
+    position: relative; overflow: hidden;
+  }
+  .vision::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 6px; background: var(--gold);
+  }
+  .vision__eyebrow {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 14px;
+  }
+  .vision__quote {
+    font-family: var(--font-heading); font-weight: 700;
+    font-size: clamp(2rem, 1.4rem + 2.4vw, 3.25rem);
+    letter-spacing: -0.02em; line-height: 1.05; margin: 0 0 16px;
+    text-wrap: balance;
+  }
+  .vision__body { font-size: 16px; line-height: 1.65; color: rgba(255,255,255,0.85); max-width: 600px; margin: 0; }
+  @media (max-width: 640px) { .vision { padding: 32px 24px; } }
+
+  /* ---------- Pillars grid ---------- */
+  .pillars {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 16px;
+  }
+  .pillar {
+    background: #fff; padding: 22px 22px 20px;
+    border-top: 4px solid var(--pc, var(--navy));
+    border-left: 1px solid var(--rule);
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .pillar__head { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+  .pillar__name { font-family: var(--font-heading); font-weight: 700; font-size: 18px; color: var(--navy); margin: 0; }
+  .pillar__slug {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em;
+    color: var(--muted); background: #F6F5F1; padding: 3px 8px; border-radius: 2px;
+  }
+  .pillar__desc { font-size: 14px; line-height: 1.5; color: var(--ink-2); margin: 0; }
+  .pillar__scope {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--muted); margin-top: auto; line-height: 1.6;
+  }
+  .pillar__scope b { color: var(--navy); }
+
+  /* ---------- Rules (classification) ---------- */
+  .rules { counter-reset: rule; padding: 0; list-style: none; margin: 0; }
+  .rules li {
+    counter-increment: rule;
+    padding: 18px 0 18px 52px; position: relative;
+    border-bottom: 1px solid var(--rule);
+  }
+  .rules li:last-child { border-bottom: 0; }
+  .rules li::before {
+    content: counter(rule, decimal-leading-zero);
+    position: absolute; left: 0; top: 18px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+    color: var(--red); font-weight: 700;
+  }
+  .rules h4 {
+    font-family: var(--font-heading); font-weight: 600; font-size: 15px; color: var(--navy); margin: 0 0 4px;
+    letter-spacing: -0.005em;
+  }
+  .rules p { font-size: 14px; line-height: 1.55; color: var(--ink-2); margin: 4px 0 0; }
+  .rules .example {
+    display: inline-block; margin-top: 8px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em;
+    color: var(--navy); background: #F6F5F1; padding: 4px 10px; border-radius: 2px;
+  }
+  .rules .arrow { color: var(--red); margin: 0 6px; font-weight: 700; }
+
+  /* ---------- Stats ---------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0;
+    border: 1px solid var(--rule);
+    background: #fff;
+  }
+  .stat {
+    padding: 22px 20px;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .stat:last-child { border-right: 0; }
+  .stat__num {
+    font-family: var(--font-heading); font-weight: 700;
+    font-size: clamp(1.75rem, 1.3rem + 1.5vw, 2.5rem);
+    color: var(--navy); letter-spacing: -0.02em; line-height: 1;
+    margin: 0 0 8px;
+  }
+  .stat__num small { font-size: 0.55em; color: var(--muted); font-weight: 600; margin-left: 2px; letter-spacing: 0; }
+  .stat__label {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--muted); font-weight: 700; line-height: 1.45;
+  }
+
+  /* ---------- Type scale table ---------- */
+  .tscale { background: #fff; border: 1px solid var(--rule); padding: 8px 24px; }
+  .tscale .row {
+    display: grid; grid-template-columns: 80px 1fr max-content;
+    gap: 20px; align-items: baseline; padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .tscale .row:last-child { border-bottom: 0; }
+  .tscale .t-label {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); font-weight: 700;
+  }
+  .tscale .t-spec {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em;
+    color: var(--muted); text-align: right; white-space: nowrap;
+  }
+
+  /* ---------- Color grid ---------- */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .sw {
+    background: #fff; border: 1px solid var(--rule);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .sw__chip { height: 72px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+  .sw__body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 3px; }
+  .sw__name { font-family: var(--font-heading); font-weight: 600; font-size: 14px; color: var(--navy); letter-spacing: -0.005em; }
+  .sw__hex { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--muted); }
+  .sw__role { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; margin-top: 4px; }
+
+  /* ---------- Pill demo ---------- */
+  .pills { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  /* ---------- Card anatomy ---------- */
+  .cards-grid {
+    display: grid; gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start;
+  }
+  .card-fig { background: #fff; border: 1px solid var(--rule); padding: 20px; }
+  .card-fig h5 {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 12px;
+  }
+  .card-fig figcaption {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em;
+    color: var(--muted); margin-top: 14px; border-top: 1px dashed var(--rule); padding-top: 10px;
+  }
+
+  /* ---------- Link states demo ---------- */
+  .linkdemo {
+    display: grid; grid-template-columns: max-content 1fr; gap: 10px 28px;
+    font-size: 14px; align-items: baseline; padding: 10px 0;
+  }
+  .linkdemo dt {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); font-weight: 700;
+  }
+  .linkdemo dd { margin: 0; }
+  .lnk { color: var(--navy); border-bottom: 1px solid rgba(27,42,74,0.4); text-decoration: none; }
+  .lnk--hover { color: var(--red); border-bottom: 1px solid rgba(200,16,46,0.6); }
+  .lnk--active { color: #9A0C23; border-bottom: 1px solid rgba(154,12,35,0.7); }
+  .lnk--focus { color: var(--navy); border-bottom: 1px solid rgba(27,42,74,0.4); outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 2px; }
+
+  /* ---------- Pullquote ---------- */
+  .pq {
+    border-left: 4px solid var(--cat-juvenil);
+    padding: 8px 0 8px 20px;
+    font-family: var(--font-heading); font-weight: 500; font-style: italic;
+    font-size: var(--text-pullquote); line-height: 1.45;
+    color: var(--navy); margin: 0;
+    max-width: 640px;
+  }
+  .pq cite {
+    display: block; margin-top: 12px;
+    font-family: var(--font-mono); font-style: normal; font-weight: 600;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  }
+
+  /* ---------- Accessibility ---------- */
+  .a11y { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .a11y__item {
+    background: #fff; border: 1px solid var(--rule); padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .a11y__head {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; font-weight: 700;
+  }
+  .a11y__head .tag { padding: 2px 7px; border-radius: 2px; color: #fff; }
+  .a11y__head .tag.pass { background: #15803D; }
+  .a11y__head .tag.fail { background: var(--red); }
+  .a11y__body { font-size: 13px; line-height: 1.55; color: var(--ink-2); margin: 0; }
+  .a11y__demo {
+    padding: 12px 14px; border: 1px dashed var(--rule-strong);
+    font-family: var(--font-heading); font-weight: 700; font-size: 18px;
+    letter-spacing: -0.01em;
+  }
+
+  /* ---------- Page-arch diagrams ---------- */
+  .arch {
+    background: #fff; border: 1px solid var(--rule);
+    display: grid; grid-template-columns: 1fr 360px; gap: 0;
+  }
+  @media (max-width: 900px) { .arch { grid-template-columns: 1fr; } }
+  .arch__diagram { padding: 24px; border-right: 1px solid var(--rule); background: #F6F5F1; }
+  @media (max-width: 900px) { .arch__diagram { border-right: 0; border-bottom: 1px solid var(--rule); } }
+  .arch__notes { padding: 24px; }
+  .arch__notes h4 {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 10px;
+  }
+  .arch__notes h4:not(:first-child) { margin-top: 20px; }
+  .arch__notes ul { margin: 0; padding-left: 18px; }
+  .arch__notes li { font-size: 13px; line-height: 1.55; color: var(--ink); margin-top: 4px; }
+
+  /* Diagram blocks */
+  .mod {
+    background: #fff; border: 1px solid var(--rule);
+    padding: 12px 14px;
+    display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;
+    margin-bottom: 6px;
+  }
+  .mod__name { font-family: var(--font-heading); font-weight: 600; font-size: 13px; color: var(--navy); }
+  .mod__name small { display: block; font-family: var(--font-body); font-weight: 500; font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.02em; }
+  .mod__h {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em;
+    color: var(--muted); text-transform: uppercase;
+  }
+  .mod--hero { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .mod--hero .mod__name, .mod--hero .mod__name small, .mod--hero .mod__h { color: #fff; }
+  .mod--hero .mod__h { color: rgba(255,255,255,0.7); }
+  .mod--accent { border-left: 4px solid var(--gold); }
+  .mod--sponsor {
+    background: repeating-linear-gradient(135deg, rgba(27,42,74,0.04) 0 10px, transparent 10px 20px);
+    border: 1px dashed var(--rule-strong); color: var(--muted);
+  }
+  .mod--sponsor .mod__name { color: var(--muted); font-family: var(--font-mono); font-weight: 700; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .mod--live { border-color: var(--red); background: #FDF2F4; }
+  .mod--live .mod__name { color: var(--red); }
+  .mod--ticker { background: var(--navy); color: #fff; border-color: var(--navy); font-size: 12px; }
+  .mod--ticker .mod__name, .mod--ticker .mod__h { color: #fff; }
+  .mod--ticker .mod__h { color: rgba(255,255,255,0.7); }
+
+  .diag-note {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); font-weight: 700;
+    padding: 4px 0 8px;
+  }
+
+  /* Section-cat underline (used inside diagrams and byline rule box) */
+  .catline {
+    height: 2px; background: var(--pc, var(--navy)); margin: 8px 0;
+  }
+
+  /* ---------- Callouts ---------- */
+  .callout {
+    background: #F6F5F1;
+    border-left: 4px solid var(--gold);
+    padding: 16px 20px;
+    margin: 20px 0;
+  }
+  .callout__label {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--navy); font-weight: 700; margin-bottom: 4px;
+  }
+  .callout p { font-size: 14px; line-height: 1.6; color: var(--ink); margin: 0; }
+
+  .callout--warn { border-left-color: var(--red); }
+  .callout--warn .callout__label { color: var(--red); }
+
+  /* ---------- Section heading for in-part subsections ---------- */
+  .sub-hd {
+    display: flex; align-items: baseline; gap: 14px;
+    padding-bottom: 10px; margin: 32px 0 16px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .sub-hd h3 {
+    font-family: var(--font-heading); font-weight: 600; font-size: 18px;
+    color: var(--navy); margin: 0; letter-spacing: -0.01em;
+  }
+  .sub-hd .sub-hd__tag {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted); font-weight: 700;
+  }
+
+  /* ---------- Bylinerule visual ---------- */
+  .byline-demo {
+    background: #fff; border: 1px solid var(--rule); padding: 22px 24px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  }
+  @media (max-width: 640px) { .byline-demo { grid-template-columns: 1fr; } }
+  .byline-demo__good, .byline-demo__bad {
+    padding: 14px 16px;
+    border: 1px solid var(--rule);
+    position: relative;
+  }
+  .byline-demo__good { background: #F3F8F3; border-color: #C9DFCB; }
+  .byline-demo__bad { background: #FDF6F6; border-color: #F2D6DB; }
+  .byline-demo .tag {
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; font-weight: 700; margin-bottom: 8px; display: inline-block;
+  }
+  .byline-demo__good .tag { color: #15803D; }
+  .byline-demo__bad .tag { color: var(--red); }
+  .byline-demo .byline-samp {
+    font-family: var(--font-body); font-weight: 500;
+    font-size: 14px; color: var(--muted); letter-spacing: 0.01em;
+  }
+  .byline-demo .byline-samp b { color: var(--navy); font-weight: 600; }
+
+  /* ---------- Footer ---------- */
+  .end {
+    margin-top: 80px; padding-top: 28px;
+    border-top: 2px solid var(--navy);
+    display: flex; gap: 24px; flex-wrap: wrap;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .end b { color: var(--navy); }
+  .end a { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Print */
+  @media print {
+    .toc { display: none; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="toc" aria-label="Contents">
+  <span class="toc__brand">BEISJOVEN · Product Bible</span>
+  <a href="#part-1" data-scrollspy="part-1" class="active">Part 1 · Product</a>
+  <a href="#part-2" data-scrollspy="part-2">Part 2 · Design System</a>
+  <a href="#part-3" data-scrollspy="part-3">Part 3 · Page Architectures</a>
+  <span class="toc__spacer"></span>
+  <a href="./Spec.html" class="toc__return">Spec →</a>
+  <a href="./Homepage Prototype.html" class="toc__return">Prototype →</a>
+</nav>
+
+<div class="bible">
+
+  <!-- ================================================= -->
+  <!-- Masthead -->
+  <!-- ================================================= -->
+  <header class="mh">
+    <div>
+      <div class="mh__eyebrow">Product Bible · v1 · Parts 1–3</div>
+      <h1 class="mh__title">The canonical reference for the whole product.</h1>
+      <p class="mh__sub">What Beisjoven is, who it serves, how it looks, and how its pages are put together. Built on Typography &amp; Spacing Spec v1.1 and the Homepage Redesign v2 — extended, not redesigned.</p>
+    </div>
+    <aside class="mh__meta">
+      <b>Prepared</b><br/>21 Apr 2026<br/><br/>
+      <b>For</b><br/>Product · UX/UI · Eng<br/><br/>
+      <b>Status</b><br/>Canonical<br/><br/>
+      <b>Companion</b><br/>Parts 4–6 (MD)
+    </aside>
+  </header>
+
+  <!-- ============================================================== -->
+  <!-- PART 1 — PRODUCT                                                -->
+  <!-- ============================================================== -->
+  <section class="part" id="part-1">
+    <header class="part__head">
+      <div class="part__num"><small>Part</small>01</div>
+      <div>
+        <h2 class="part__title">Product</h2>
+        <p class="part__sub">Who we are, who we serve, what we cover, and how we classify it. The answers that stop arguments at 11pm on a production deadline.</p>
+      </div>
+    </header>
+
+    <!-- Vision -->
+    <section class="sec" id="vision">
+      <div class="sec__eyebrow">1.1 · Vision</div>
+      <div class="vision">
+        <div class="vision__eyebrow">Mission</div>
+        <blockquote class="vision__quote">Somos el futuro del beis.</blockquote>
+        <p class="vision__body">Beisjoven is the Spanish-language editorial home for the next generation of Mexican baseball and softball — built for readers who take the sport seriously and want coverage that does too. We exist because no other publication is treating youth, college, LMB, MLB, Selección and softbol as one continuous story, with one editorial voice.</p>
+      </div>
+      <div class="callout">
+        <div class="callout__label">What this means in practice</div>
+        <p>Every editorial decision — every headline, every photo crop, every pillar label — should read as if written by a publication that already exists in 2030 and has been setting the terms of the conversation for years. We are a paper of record for a beat that doesn't yet have one.</p>
+      </div>
+    </section>
+
+    <!-- Pillars -->
+    <section class="sec" id="pillars">
+      <div class="sec__eyebrow">1.2 · Editorial pillars · SEO-critical slugs — do not change</div>
+      <h2 class="sec__title">The six pillars</h2>
+      <p class="sec__desc">Every article is filed under exactly one pillar. Slugs are URL-stable and immutable; display names localize independently.</p>
+      <div class="pillars">
+        <article class="pillar" style="--pc:var(--cat-ligas)">
+          <div class="pillar__head">
+            <h3 class="pillar__name">Ligas MX</h3>
+            <span class="pillar__slug">/liga-mexicana</span>
+          </div>
+          <p class="pillar__desc">LMB, LMP, Liga Mexicana del Pacífico y ligas regionales. Todos los equipos profesionales mexicanos.</p>
+          <div class="pillar__scope"><b>Incluye:</b> Diablos, Sultanes, Naranjeros, BCL Americas, preseason<br/><b>Accent:</b> #059669</div>
+        </article>
+        <article class="pillar" style="--pc:var(--cat-mlb)">
+          <div class="pillar__head">
+            <h3 class="pillar__name">MLB</h3>
+            <span class="pillar__slug">/mlb</span>
+          </div>
+          <p class="pillar__desc">Grandes Ligas y programas propiedad de MLB. El filtro es institucional, no geográfico.</p>
+          <div class="pillar__scope"><b>Incluye:</b> MLB Academy, DSL, Prospect League, WBC<br/><b>Accent:</b> #2563EB</div>
+        </article>
+        <article class="pillar" style="--pc:var(--cat-softbol)">
+          <div class="pillar__head">
+            <h3 class="pillar__name">Softbol</h3>
+            <span class="pillar__slug">/softbol</span>
+          </div>
+          <p class="pillar__desc">Todo el sofbol, siempre. El deporte manda sobre la edad, el nivel y la institución.</p>
+          <div class="pillar__scope"><b>Incluye:</b> Femenil, universitario, juvenil, Copa del Mundo WBSC<br/><b>Accent:</b> #7C3AED</div>
+        </article>
+        <article class="pillar" style="--pc:var(--cat-seleccion)">
+          <div class="pillar__head">
+            <h3 class="pillar__name">Selección</h3>
+            <span class="pillar__slug">/seleccion</span>
+          </div>
+          <p class="pillar__desc">Las selecciones nacionales mexicanas bajo cualquier paraguas WBSC.</p>
+          <div class="pillar__scope"><b>Incluye:</b> Serie del Caribe, Premier12, Panamericanos, Olimpiadas<br/><b>Accent:</b> #C8102E</div>
+        </article>
+        <article class="pillar" style="--pc:var(--cat-juvenil)">
+          <div class="pillar__head">
+            <h3 class="pillar__name">Juvenil</h3>
+            <span class="pillar__slug">/juvenil</span>
+          </div>
+          <p class="pillar__desc">Nuestra obsesión. Beisbol amateur, juvenil y universitario — incluyendo college DI.</p>
+          <div class="pillar__scope"><b>Incluye:</b> CONADEIP, Liga Mandarina, prospectos Sub-18, college baseball<br/><b>Accent:</b> #D4A843</div>
+        </article>
+        <article class="pillar" style="--pc:var(--cat-opinion)">
+          <div class="pillar__head">
+            <h3 class="pillar__name">Opinión</h3>
+            <span class="pillar__slug">/opinion</span>
+          </div>
+          <p class="pillar__desc">Columnas, análisis firmado y cartas editoriales. Voz autoral permitida; firmas operan sobre "Redacción Beisjoven".</p>
+          <div class="pillar__scope"><b>Incluye:</b> La Carta, análisis de temporada, ensayos largos<br/><b>Accent:</b> #6B7280</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Classification rules -->
+    <section class="sec" id="classification">
+      <div class="sec__eyebrow">1.3 · Classification rules · authoritative</div>
+      <h2 class="sec__title">When pillars collide — how we file</h2>
+      <p class="sec__desc">A story almost never belongs to two pillars. When it looks like it does, one of these rules resolves it. Rule 1 and Rule 2 take precedence over everything.</p>
+      <div class="card" style="padding: 4px 28px 8px">
+        <ol class="rules">
+          <li>
+            <h4>El deporte manda sobre la edad</h4>
+            <p>Cualquier historia de sofbol — juvenil, universitario, profesional o de Selección — se publica bajo <b>Softbol</b>. Nunca bajo Juvenil.</p>
+            <span class="example">Femenil Sub-18 vs Japón <span class="arrow">→</span> Softbol</span>
+          </li>
+          <li>
+            <h4>La institución MLB manda sobre la edad</h4>
+            <p>Programas propiedad u operados por MLB (Academy, DSL, MLB Prospect League) se publican bajo <b>MLB</b>, aunque los peloteros sean menores de 18. La marca institucional prevalece sobre el corte demográfico.</p>
+            <span class="example">MLB Academy Monterrey <span class="arrow">→</span> MLB (no Juvenil)</span>
+          </li>
+          <li>
+            <h4>WBSC (selecciones internacionales) <span class="arrow">→</span> Selección</h4>
+            <p>Cualquier evento bajo paraguas WBSC con selección nacional mexicana participando: Serie del Caribe, Premier12, Panamericanos, Olimpiadas.</p>
+            <span class="example">Mexico Rojo vs Venezuela (Serie del Caribe) <span class="arrow">→</span> Selección</span>
+          </li>
+          <li>
+            <h4>WBC (Clásico Mundial) <span class="arrow">→</span> MLB</h4>
+            <p>Excepción a la regla WBSC. El Clásico Mundial es operado por MLB y se clasifica bajo MLB, aunque compitan selecciones nacionales.</p>
+            <span class="example">México vs EE.UU. Clásico 2026 <span class="arrow">→</span> MLB</span>
+          </li>
+          <li>
+            <h4>BCL Americas <span class="arrow">→</span> Ligas MX</h4>
+            <p>Baseball Champions League Americas se publica bajo Ligas, no Selección, porque los participantes son clubes profesionales (no selecciones nacionales).</p>
+            <span class="example">Diablos en BCL Americas <span class="arrow">→</span> Ligas MX</span>
+          </li>
+          <li>
+            <h4>College baseball (DI) <span class="arrow">→</span> Juvenil</h4>
+            <p>Peloteros mexicanos en NCAA Division I se publican bajo Juvenil. Es formación — el siguiente escalón después de Sub-18.</p>
+            <span class="example">Mexicanos en DI 2026 <span class="arrow">→</span> Juvenil</span>
+          </li>
+          <li>
+            <h4>College softball <span class="arrow">→</span> Softbol</h4>
+            <p>Regla 1 prevalece. Sofbol universitario se publica bajo Softbol, nunca Juvenil.</p>
+            <span class="example">Sofbol Universitario USA 2026 <span class="arrow">→</span> Softbol</span>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Byline -->
+    <section class="sec" id="byline">
+      <div class="sec__eyebrow">1.4 · Byline</div>
+      <h2 class="sec__title">One voice, one byline</h2>
+      <p class="sec__desc">All reporting and straight news is attributed to <b>Redacción Beisjoven</b>. The operator's personal name never appears as a byline in Phase 1. Opinion columns may carry a personal byline once Phase 2 opens (TBD).</p>
+      <div class="byline-demo">
+        <div class="byline-demo__good">
+          <span class="tag">✓ Correct</span>
+          <div class="byline-samp">Por <b>Redacción Beisjoven</b> · 19 abr 2026 · 4 min</div>
+        </div>
+        <div class="byline-demo__bad">
+          <span class="tag">✗ Never</span>
+          <div class="byline-samp">Por <b>[operator personal name]</b> · 19 abr 2026 · 4 min</div>
+        </div>
+      </div>
+      <div class="callout callout--warn">
+        <div class="callout__label">Why</div>
+        <p>One byline builds institutional voice. Three readers finding the same byline in three weeks start perceiving Beisjoven as a paper, not a blog. It also insulates the operator from attribution-level risk during Phase 1.</p>
+      </div>
+    </section>
+
+    <!-- Audience snapshot -->
+    <section class="sec" id="audience">
+      <div class="sec__eyebrow">1.5 · Audience · Apr 2026 snapshot from GA4</div>
+      <h2 class="sec__title">Who actually reads us</h2>
+      <p class="sec__desc">Every design and editorial tradeoff in this Bible is stress-tested against these numbers. If a decision optimizes for desktop or for scroll-depth, it loses.</p>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat__num">76.6<small>%</small></div>
+          <div class="stat__label">Mobile traffic</div>
+        </div>
+        <div class="stat">
+          <div class="stat__num">50<small>% / </small>30<small>%</small></div>
+          <div class="stat__label">US / MX split</div>
+        </div>
+        <div class="stat">
+          <div class="stat__num">47<small>%</small></div>
+          <div class="stat__label">Article completion</div>
+        </div>
+        <div class="stat">
+          <div class="stat__num">8.9<small>%</small></div>
+          <div class="stat__label">Scroll to 50%</div>
+        </div>
+        <div class="stat">
+          <div class="stat__num">375 <small>·</small> 412</div>
+          <div class="stat__label">Primary viewports</div>
+        </div>
+      </div>
+      <div class="callout">
+        <div class="callout__label">Reads of the numbers</div>
+        <p>Completion rate is strong (47% is top-decile for long-form editorial) — readers who land on an article <i>finish</i> it. But only 8.9% make it past the homepage fold, which is the lever the v2 redesign pulls directly. The US/MX split reframes language and timezone assumptions: we publish in Spanish, but half our audience reads from the US — schedule accordingly.</p>
+      </div>
+    </section>
+
+    <!-- Phase -->
+    <section class="sec" id="phase">
+      <div class="sec__eyebrow">1.6 · Business phase</div>
+      <h2 class="sec__title">Where we are</h2>
+      <div class="kv card">
+        <dt>Phase</dt><dd><b>Phase 1 — Content &amp; Audience.</b> Monetization is second-order. Build the paper; the sponsors follow.</dd>
+        <dt>First sponsor</dt><dd>Closed February 2026. Slot reserved on homepage below hero, swaps in Sprint 5.</dd>
+        <dt>Next phase</dt><dd>Phase 2 — Diversified revenue (newsletter sponsorships, premium long-form). Gate: scroll-to-50% ≥ 18% on homepage <i>and</i> 30-day repeat visitor rate ≥ 28%.</dd>
+        <dt>Team</dt><dd>Operator (full-stack) + rotating editorial contributors under "Redacción Beisjoven" byline.</dd>
+      </div>
+    </section>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- PART 2 — DESIGN SYSTEM                                          -->
+  <!-- ============================================================== -->
+  <section class="part" id="part-2">
+    <header class="part__head">
+      <div class="part__num"><small>Part</small>02</div>
+      <div>
+        <h2 class="part__title">Design System</h2>
+        <p class="part__sub">Tokens, type, color, components. Every value consumed from <code>tokens.css</code> — Typography &amp; Spacing Spec v1.1 applied verbatim. No new tokens introduced by this Bible.</p>
+      </div>
+    </header>
+
+    <!-- Type scale -->
+    <section class="sec" id="type-scale">
+      <div class="sec__eyebrow">2.1 · Type scale · fluid, clamp-based</div>
+      <h2 class="sec__title">Type scale</h2>
+      <p class="sec__desc">Values below are rendered live from <code>var(--text-*)</code>. Resize the window and watch the clamp floors and ceilings resolve. Plus Jakarta Sans for headings; Inter for body, meta and nav.</p>
+      <div class="tscale">
+        <div class="row"><span class="t-label">H1</span><span class="h1">Somos el futuro del beis</span><span class="t-spec">30 → 44 · PJS 700 · −0.02em · 1.15</span></div>
+        <div class="row"><span class="t-label">H2</span><span class="h2">Lo último en CONADEIP</span><span class="t-spec">24 → 32 · PJS 600 · −0.015em · 1.2</span></div>
+        <div class="row"><span class="t-label">H3</span><span class="h3">Mexico Rojo se lleva el primer juego de la Serie del Caribe</span><span class="t-spec">20 → 24 · PJS 600 · −0.01em · 1.3</span></div>
+        <div class="row"><span class="t-label">H4</span><span class="h4">Rotación abridora LMB 2026</span><span class="t-spec">18 → 20 · PJS 600 · 1.35</span></div>
+        <div class="row"><span class="t-label">Body</span><span class="body" style="max-width:560px">El beisbol mexicano atraviesa una generación de oro, pero sigue perdiendo fanáticos jóvenes. La pregunta no es de talento — es de narrativa.</span><span class="t-spec">17 → 18 · Inter 400 · 1.7</span></div>
+        <div class="row"><span class="t-label">Meta</span><span class="meta">Redacción Beisjoven · 19 abr 2026 · 4 min</span><span class="t-spec">13 → 14 · Inter 500 · 0.01em</span></div>
+        <div class="row"><span class="t-label">Overline</span><span class="overline">CONADEIP · Final 8 Tijuana</span><span class="t-spec">11 · Inter 600 · 0.08em</span></div>
+        <div class="row"><span class="t-label">Pullquote</span><span style="font-family:var(--font-heading);font-weight:500;font-style:italic;font-size:var(--text-pullquote);line-height:1.45;color:var(--navy)">Hidden behind a generic publisher chassis.</span><span class="t-spec">22 → 26 · PJS 500 italic · 1.45</span></div>
+      </div>
+    </section>
+
+    <!-- Color -->
+    <section class="sec" id="color">
+      <div class="sec__eyebrow">2.2 · Color system · brand palette + category accents</div>
+      <h2 class="sec__title">Color</h2>
+      <p class="sec__desc">The brand palette is fixed. Legacy hexes <code>#1b3557</code> and <code>#e83646</code> are removed. Category accents drive three places: pill backgrounds, 4px card left borders, and 2px section underlines.</p>
+
+      <div class="sub-hd"><h3>Brand</h3><span class="sub-hd__tag">7 values · fixed</span></div>
+      <div class="swatches">
+        <div class="sw"><div class="sw__chip" style="background:#1B2A4A"></div><div class="sw__body"><span class="sw__name">Navy</span><span class="sw__hex">#1B2A4A</span><span class="sw__role">Primary · body text · header bg</span></div></div>
+        <div class="sw"><div class="sw__chip" style="background:#C8102E"></div><div class="sw__body"><span class="sw__name">Red</span><span class="sw__hex">#C8102E</span><span class="sw__role">Accent · live · section rule</span></div></div>
+        <div class="sw"><div class="sw__chip" style="background:#D4A843"></div><div class="sw__body"><span class="sw__name">Gold</span><span class="sw__hex">#D4A843</span><span class="sw__role">Focus ring · juvenil · on-navy</span></div></div>
+        <div class="sw"><div class="sw__chip" style="background:#FFFFFF;border:1px solid var(--rule-strong)"></div><div class="sw__body"><span class="sw__name">White</span><span class="sw__hex">#FFFFFF</span><span class="sw__role">Page bg · pill text</span></div></div>
+        <div class="sw"><div class="sw__chip" style="background:#F6F5F1"></div><div class="sw__body"><span class="sw__name">Off-white</span><span class="sw__hex">#F6F5F1</span><span class="sw__role">Section bg · callout bg</span></div></div>
+        <div class="sw"><div class="sw__chip" style="background:#E5E7EB"></div><div class="sw__body"><span class="sw__name">Rule</span><span class="sw__hex">#E5E7EB</span><span class="sw__role">Hairlines · card border</span></div></div>
+        <div class="sw"><div class="sw__chip" style="background:#6B7280"></div><div class="sw__body"><span class="sw__name">Muted</span><span class="sw__hex">#6B7280</span><span class="sw__role">Metadata · labels · opinion</span></div></div>
+      </div>
+
+      <div class="sub-hd"><h3>Category accents</h3><span class="sub-hd__tag">6 values · toggleable via useCatColor</span></div>
+      <div class="swatches">
+        <div class="sw"><div class="sw__chip" style="background:#2563EB"></div><div class="sw__body"><span class="sw__name">MLB</span><span class="sw__hex">#2563EB</span><span class="sw__role">--cat-mlb</span></div></div>
+        <div class="sw"><div class="sw__chip" style="background:#059669"></div><div class="sw__body"><span class="sw__name">Ligas MX</span><span class="sw__hex">#059669</span><span class="sw__role">--cat-ligas</span></div></div>
+        <div class="sw"><div class="sw__chip" style="background:#C8102E"></div><div class="sw__body"><span class="sw__name">Selección</span><span class="sw__hex">#C8102E</span><span class="sw__role">--cat-seleccion · reuses brand red</span></div></div>
+        <div class="sw"><div class="sw__chip" style="background:#D4A843"></div><div class="sw__body"><span class="sw__name">Juvenil</span><span class="sw__hex">#D4A843</span><span class="sw__role">--cat-juvenil · reuses brand gold</span></div></div>
+        <div class="sw"><div class="sw__chip" style="background:#7C3AED"></div><div class="sw__body"><span class="sw__name">Softbol</span><span class="sw__hex">#7C3AED</span><span class="sw__role">--cat-softbol</span></div></div>
+        <div class="sw"><div class="sw__chip" style="background:#6B7280"></div><div class="sw__body"><span class="sw__name">Opinión</span><span class="sw__hex">#6B7280</span><span class="sw__role">--cat-opinion · reuses muted</span></div></div>
+      </div>
+    </section>
+
+    <!-- Pills -->
+    <section class="sec" id="pills">
+      <div class="sec__eyebrow">2.3 · Category pill · solid, full-opacity bg</div>
+      <h2 class="sec__title">Category pills</h2>
+      <p class="sec__desc">Inter 700, 11px, tracking 0.08em, uppercase. Padding 4×10px. Radius 2px. White text on all categories except Juvenil — gold on white fails WCAG AA, so Juvenil reverses to navy text on gold ground.</p>
+      <div class="pills">
+        <span class="pill" style="background:#2563EB">MLB</span>
+        <span class="pill" style="background:#059669">LIGAS MX</span>
+        <span class="pill" style="background:#C8102E">SELECCIÓN</span>
+        <span class="pill" style="background:#7C3AED">SOFTBOL</span>
+        <span class="pill" style="background:#D4A843;color:#1B2A4A">JUVENIL</span>
+        <span class="pill" style="background:#6B7280">OPINIÓN</span>
+        <span class="pill pill--live">EN VIVO</span>
+        <span class="pill pill--ghost">GHOST · opt.</span>
+      </div>
+    </section>
+
+    <!-- Cards -->
+    <section class="sec" id="cards">
+      <div class="sec__eyebrow">2.4 · Card anatomy · three variants</div>
+      <h2 class="sec__title">Cards</h2>
+      <p class="sec__desc">Every content surface composes one of these. The 4px category left border is the connective tissue — same rule as the pull-quote, one design principle applied consistently.</p>
+      <div class="cards-grid">
+        <!-- Standard 16:10 -->
+        <figure class="card-fig">
+          <h5>Standard · 16:10</h5>
+          <div class="ph" data-label="photo · 16:10" style="aspect-ratio:16/10"></div>
+          <div style="border-left:4px solid #2563EB;padding:14px 0 0 14px">
+            <span class="pill" style="background:#2563EB">MLB</span>
+            <h3 class="h3" style="margin:8px 0 0">Urías vuelve al bullpen en Dodger Stadium tras ocho meses</h3>
+            <p class="body-sm" style="color:var(--ink-2);margin:8px 0 0">El sinaloense tiró 28 lanzamientos y apunta a regreso en mayo.</p>
+            <div class="meta" style="margin-top:10px">Redacción Beisjoven · 19 abr 2026</div>
+          </div>
+          <figcaption>16:10 thumb · 4px cat border · pill + H3 + deck + meta</figcaption>
+        </figure>
+        <!-- List 1:1 -->
+        <figure class="card-fig">
+          <h5>List · 1:1</h5>
+          <div style="display:grid;grid-template-columns:80px 1fr;gap:14px;align-items:start;padding:12px 0 16px;border-bottom:1px solid var(--rule)">
+            <div class="ph" data-label="1:1" style="aspect-ratio:1/1"></div>
+            <div style="border-left:3px solid #059669;padding-left:12px">
+              <span class="pill" style="background:#059669">LIGAS MX</span>
+              <h4 style="font-family:var(--font-heading);font-weight:600;font-size:15px;line-height:1.3;color:var(--navy);margin:6px 0 0">Diablos anuncian rotación abridora para el arranque de LMB 2026</h4>
+              <div class="meta" style="margin-top:6px">19 abr · hace 6h</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:80px 1fr;gap:14px;align-items:start;padding:12px 0 4px">
+            <div class="ph" data-label="1:1" style="aspect-ratio:1/1"></div>
+            <div style="border-left:3px solid #7C3AED;padding-left:12px">
+              <span class="pill" style="background:#7C3AED">SOFTBOL</span>
+              <h4 style="font-family:var(--font-heading);font-weight:600;font-size:15px;line-height:1.3;color:var(--navy);margin:6px 0 0">Femenil Sub-18 cae en extra innings ante Japón</h4>
+              <div class="meta" style="margin-top:6px">18 abr · hace 1d</div>
+            </div>
+          </div>
+          <figcaption>80px thumb · 3px cat border · H4 + meta. Used in rails.</figcaption>
+        </figure>
+        <!-- Hero 21:9 -->
+        <figure class="card-fig">
+          <h5>Hero · 21:9</h5>
+          <div class="ph ph--dark" data-label="hero · 21:9" style="aspect-ratio:21/9"></div>
+          <div style="margin-top:14px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span style="width:28px;height:3px;background:#D4A843"></span>
+              <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#D4A843">CONADEIP · Final 8 Tijuana</span>
+            </div>
+            <h3 class="h3" style="margin:0;text-wrap:balance">Halcones Inter van por la corona de CONADEIP que se les ha negado en Tijuana</h3>
+            <p class="body-sm" style="color:var(--ink-2);margin:10px 0 0;max-width:52ch">Mañana arranca la Final 8. El eterno aspirante llega con su rotación más sólida en cinco años.</p>
+            <div class="meta" style="margin-top:10px">Redacción Beisjoven · 19 abr 2026</div>
+          </div>
+          <figcaption>21:9 · dash+overline kicker · H1 candidate · Default hero</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Spacing & width -->
+    <section class="sec" id="spacing">
+      <div class="sec__eyebrow">2.5 · Spacing &amp; width</div>
+      <h2 class="sec__title">Spacing &amp; container widths</h2>
+      <div class="card">
+        <dl class="kv">
+          <dt>Gutter</dt><dd><code>16px</code> mobile · <code>32px</code> desktop — page-edge padding</dd>
+          <dt>Section gap</dt><dd><code>48px</code> mobile · <code>64px</code> desktop — between major surfaces</dd>
+          <dt>Card gap</dt><dd><code>16px</code>–<code>24px</code> — grid and rail spacing</dd>
+          <dt>Article prose</dt><dd><code>max-width: 42rem</code> (672px) — default paragraph width</dd>
+          <dt>Breakout</dt><dd><code>max-width: 60rem</code> (960px) — pull quotes, inline figures</dd>
+          <dt>Page container</dt><dd><code>max-width: 75rem</code> (1200px) — outermost shell</dd>
+        </dl>
+      </div>
+    </section>
+
+    <!-- Links -->
+    <section class="sec" id="links">
+      <div class="sec__eyebrow">2.6 · Link states · from Spec v1.1</div>
+      <h2 class="sec__title">Link states</h2>
+      <p class="sec__desc">All interactive text — bylines, breadcrumbs, nav, inline-prose links — follows the same state chain. The 40%-opacity underline prevents underline-clutter in dense lists without hiding affordance entirely.</p>
+      <div class="card">
+        <dl class="linkdemo">
+          <dt>Default</dt><dd><a class="lnk" href="#">Redacción Beisjoven</a> <span class="meta" style="margin-left:12px">navy · 1px underline 40% opacity</span></dd>
+          <dt>Hover</dt><dd><a class="lnk lnk--hover" href="#">Redacción Beisjoven</a> <span class="meta" style="margin-left:12px">red · underline 60% opacity</span></dd>
+          <dt>Active</dt><dd><a class="lnk lnk--active" href="#">Redacción Beisjoven</a> <span class="meta" style="margin-left:12px">darkened red #9A0C23</span></dd>
+          <dt>Focus</dt><dd><a class="lnk lnk--focus" href="#">Redacción Beisjoven</a> <span class="meta" style="margin-left:12px">2px gold ring · 2px offset</span></dd>
+        </dl>
+      </div>
+    </section>
+
+    <!-- Pullquote -->
+    <section class="sec" id="pullquote">
+      <div class="sec__eyebrow">2.7 · Pull quote · article-body component</div>
+      <h2 class="sec__title">Pull quote</h2>
+      <p class="sec__desc">4px category-color left border, no decorative quote marks, Plus Jakarta Sans 500 italic at 22–26px. Same border rule as cards — visual system consistency.</p>
+      <blockquote class="pq">
+        "El beisbol mexicano tiene un problema de narrativa, no de talento. La generación está ahí — lo que falta es alguien que escriba sobre ella como si importara."
+        <cite>— Opinión · La Carta, 18 abr 2026</cite>
+      </blockquote>
+    </section>
+
+    <!-- Accessibility -->
+    <section class="sec" id="a11y">
+      <div class="sec__eyebrow">2.8 · Accessibility floors · WCAG AA</div>
+      <h2 class="sec__title">Accessibility</h2>
+      <p class="sec__desc">Minimum 4.5:1 contrast for body text, 3:1 for large text (≥24px or ≥19px bold). One color combination in our palette fails — it's called out below and never used as body text.</p>
+      <div class="a11y">
+        <div class="a11y__item">
+          <div class="a11y__head"><span class="tag pass">PASS</span><span style="color:var(--muted)">Navy on white</span></div>
+          <div class="a11y__demo" style="background:#fff;color:#1B2A4A">Body copy sample</div>
+          <p class="a11y__body">14.2:1 contrast. Primary body text combo.</p>
+        </div>
+        <div class="a11y__item">
+          <div class="a11y__head"><span class="tag pass">PASS</span><span style="color:var(--muted)">White on navy</span></div>
+          <div class="a11y__demo" style="background:#1B2A4A;color:#fff">Footer / hero</div>
+          <p class="a11y__body">14.2:1 contrast. Footer and dark hero treatments.</p>
+        </div>
+        <div class="a11y__item">
+          <div class="a11y__head"><span class="tag pass">PASS</span><span style="color:var(--muted)">Red on white</span></div>
+          <div class="a11y__demo" style="background:#fff;color:#C8102E">Section rule accent</div>
+          <p class="a11y__body">6.3:1. Used sparingly for section rules and LIVE pill.</p>
+        </div>
+        <div class="a11y__item">
+          <div class="a11y__head"><span class="tag fail">FAIL</span><span style="color:var(--red)">Gold on white</span></div>
+          <div class="a11y__demo" style="background:#fff;color:#D4A843">Never as body</div>
+          <p class="a11y__body"><b>2.67:1.</b> Gold fails on white — never body text. Use only as accent rule, focus ring (outline, not text), or on navy bg.</p>
+        </div>
+        <div class="a11y__item">
+          <div class="a11y__head"><span class="tag pass">PASS</span><span style="color:var(--muted)">Gold on navy</span></div>
+          <div class="a11y__demo" style="background:#1B2A4A;color:#D4A843">Navy bg accent</div>
+          <p class="a11y__body">6.1:1. Gold is always this, not on white.</p>
+        </div>
+        <div class="a11y__item">
+          <div class="a11y__head"><span class="tag pass">PASS</span><span style="color:var(--muted)">Muted on white</span></div>
+          <div class="a11y__demo" style="background:#fff;color:#6B7280;font-size:13px">Meta 13–14px · 4.8:1</div>
+          <p class="a11y__body">Metadata lower-bound. At smaller sizes, escalate to ink-2.</p>
+        </div>
+      </div>
+      <div class="callout">
+        <div class="callout__label">Other floors</div>
+        <p>All tap targets ≥ 44×44px (iOS HIG). Focus-visible always shows — never suppressed. Prefers-reduced-motion respected on the Quick Hits ticker and LIVE pulse. Language attribute <code>lang="es"</code> on every page.</p>
+      </div>
+    </section>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- PART 3 — PAGE ARCHITECTURES                                     -->
+  <!-- ============================================================== -->
+  <section class="part" id="part-3">
+    <header class="part__head">
+      <div class="part__num"><small>Part</small>03</div>
+      <div>
+        <h2 class="part__title">Page Architectures</h2>
+        <p class="part__sub">Four templates — Homepage, Article, Category, Author. Module order is authoritative. Components are referenced by name; their anatomy lives in Part 2.</p>
+      </div>
+    </header>
+
+    <!-- Header anatomy recap -->
+    <section class="sec" id="header-anatomy">
+      <div class="sec__eyebrow">3.0 · Header · shared across all templates</div>
+      <h2 class="sec__title">Header anatomy</h2>
+      <p class="sec__desc">Every template starts with the same header stack. Quick Hits is always-on; LIVE strip is conditional and sits above Quick Hits when active. Mobile auto-hides at 80px scroll; desktop shrinks to the nav row on sticky.</p>
+      <div class="card">
+        <dl class="kv">
+          <dt>1. Brand row</dt><dd>Mark-only mobile · Mark + Wordmark desktop · 44×44 tap targets</dd>
+          <dt>2. Nav</dt><dd>Mobile: horizontal scrollable chips with right-edge fade gradient · Desktop: inline category list with 2px underline on active (category-accent color)</dd>
+          <dt>3. Quick Hits</dt><dd>Admin-editable, always-present, rotates every 4.5s, 36px tall</dd>
+          <dt>4. LIVE strip</dt><dd>Conditional — event-only. Sits <b>above</b> Quick Hits. Red <code>EN VIVO</code> pill + pulse, category-color tab</dd>
+          <dt>Search</dt><dd>Icon-only 44×44, <code>aria-label="Buscar"</code>. Tap opens full-viewport overlay</dd>
+          <dt>Scroll behavior</dt><dd>Mobile: auto-hide at 80px scroll-down, reveal on scroll-up · Desktop: shrinks to nav-only on sticky</dd>
+        </dl>
+      </div>
+    </section>
+
+    <!-- 3a Homepage -->
+    <section class="sec" id="page-home">
+      <div class="sec__eyebrow">3.1 · Homepage · /</div>
+      <h2 class="sec__title">Homepage (Default band · baseline)</h2>
+      <p class="sec__desc">Default band is the daily shipping look. HeroSplit is a first-class variant swap; HeroAmbitious lives in the codebase, unwired, for tentpole events (WBC, CONADEIP Final 8, Serie del Caribe).</p>
+      <div class="arch">
+        <div class="arch__diagram">
+          <div class="diag-note">Module stack · top → bottom</div>
+          <div class="mod"><span class="mod__name">Header<small>Brand · Nav · Quick Hits · LIVE (conditional)</small></span><span class="mod__h">auto-hide</span></div>
+          <div class="mod mod--hero" style="padding:24px"><span class="mod__name" style="font-family:var(--font-heading);font-size:16px">Hero<small style="font-size:11px">Default band · 21:9 photo · kicker · H1 · deck · byline</small></span><span class="mod__h">variant: Default / Split / Ambitious</small></div>
+          <div class="mod mod--sponsor"><span class="mod__name">Sponsor slot · reserved</span><span class="mod__h">970×90 / 320×50</span></div>
+          <div class="mod mod--accent"><span class="mod__name">Mixed feed<small>Lo último · 2×2 story grid + Más leídos rail</small></span><span class="mod__h">+cat-border</span></div>
+          <div class="mod mod--hero"><span class="mod__name">Juvenil rail<small>Nuestra obsesión · navy bg · gold accent</small></span><span class="mod__h">editorial moat</span></div>
+          <div class="mod"><span class="mod__name">Gallery module<small>La semana, en imágenes · surfaces BJ photography</small></span><span class="mod__h">4-up grid</span></div>
+          <div class="mod mod--accent"><span class="mod__name">Per-category sections<small>MLB · Ligas · Selección · Softbol · Opinión — each 3-up</small></span><span class="mod__h">cat-underline</span></div>
+          <div class="mod"><span class="mod__name">Newsletter<small>El Diamante · email capture</small></span><span class="mod__h">CTA</span></div>
+          <div class="mod"><span class="mod__name">Footer<small>Brand · links · social · legal</small></span><span class="mod__h"></span></div>
+        </div>
+        <div class="arch__notes">
+          <h4>Components</h4>
+          <ul>
+            <li><code>&lt;Header/&gt;</code> · <code>&lt;QuickHits/&gt;</code> · <code>&lt;LiveStrip/&gt;</code></li>
+            <li><code>&lt;HeroDefault/&gt;</code> <span style="color:var(--muted)">· <code>&lt;HeroSplit/&gt;</code> · <code>&lt;HeroAmbitious/&gt;</code></span></li>
+            <li><code>&lt;SponsorSlot/&gt;</code> <span style="color:var(--muted)">· empty in Phase 1</span></li>
+            <li><code>&lt;StoryCard/&gt;</code> × 4 + <code>&lt;ListCard/&gt;</code> × 4</li>
+            <li><code>&lt;CategoryRail cat="juvenil" dark/&gt;</code></li>
+            <li><code>&lt;Gallery/&gt;</code> · <code>&lt;CategorySection/&gt;</code> × 5</li>
+            <li><code>&lt;NewsletterBlock/&gt;</code> · <code>&lt;Footer/&gt;</code></li>
+          </ul>
+          <h4>Hero variants</h4>
+          <ul>
+            <li><b>Default</b> — baseline, image-forward, prose block below on desktop.</li>
+            <li><b>Split</b> — photo left, headline + deck + byline right. First-class swap, available per-story.</li>
+            <li><b>Ambitious</b> — magazine cover, oversized H1 overlaid on 21:9. Unwired in code; flip flag for tentpoles only.</li>
+          </ul>
+          <h4>Sprint notes</h4>
+          <ul>
+            <li>Sponsor slot empty (Phase 1). Sprint 5 wires ad system.</li>
+            <li>Category color system toggle = <code>useCatColor</code>. Reversible post-launch.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3b Article -->
+    <section class="sec" id="page-article">
+      <div class="sec__eyebrow">3.2 · Article · /<em>&lt;slug&gt;</em></div>
+      <h2 class="sec__title">Article page</h2>
+      <p class="sec__desc">Consumer of DESIGN-01b spec (article-body detail separate). Structure is locked here. Two Hero variants — Default (photo above block) and Overlay (photo-first, H1 overlaid on gradient).</p>
+      <div class="arch">
+        <div class="arch__diagram">
+          <div class="diag-note">Module stack · top → bottom</div>
+          <div class="mod"><span class="mod__name">Header<small>Same as homepage · shrunk to nav-row on sticky</small></span><span class="mod__h">sticky</span></div>
+          <div class="mod"><span class="mod__name">Breadcrumbs<small>Inicio · MLB · <span style="color:var(--navy)">Urías vuelve al bullpen…</span></small></span><span class="mod__h">meta</span></div>
+          <div class="mod mod--hero" style="padding:20px"><span class="mod__name" style="font-family:var(--font-heading);font-size:16px">Article Hero<small style="font-size:11px">Default: 21:9 above block · Overlay: photo-first with H1 overlay</small></span><span class="mod__h">variant: Default / Overlay</small></div>
+          <div class="mod mod--accent"><span class="mod__name">Article Header Block<small>Kicker · H1 · Deck · Metadata row (byline · date · reading time)</small></span><span class="mod__h">cat-border</span></div>
+          <div class="mod"><span class="mod__name">Share bar<small>Sticky on desktop (left rail) · Inline on mobile (below hero)</small></span><span class="mod__h">social</span></div>
+          <div class="mod mod--accent"><span class="mod__name">Article Body<small>Prose 672px · Breakouts to 960px (figures, pull quotes)</small></span><span class="mod__h">prose</span></div>
+          <div class="mod"><span class="mod__name">Author Bio<small>Redacción Beisjoven · short bio · link to author page</small></span><span class="mod__h">/autor</span></div>
+          <div class="mod"><span class="mod__name">Related Articles<small>4-up grid · same category weighted</small></span><span class="mod__h">4-up</span></div>
+          <div class="mod"><span class="mod__name">Newsletter CTA<small>El Diamante · inline before footer</small></span><span class="mod__h">CTA</span></div>
+          <div class="mod"><span class="mod__name">Footer</span><span class="mod__h"></span></div>
+        </div>
+        <div class="arch__notes">
+          <h4>Hero variants</h4>
+          <ul>
+            <li><b>Default</b> — 21:9 photo above the header block. Used by most reporting.</li>
+            <li><b>Overlay</b> — full-bleed photo with kicker + H1 overlaid on bottom-gradient. Reserved for tentpole features and photo-led pieces.</li>
+          </ul>
+          <h4>Width system</h4>
+          <ul>
+            <li>Prose paragraphs: <code>672px</code> (<code>--w-prose</code>)</li>
+            <li>Figures, pull quotes, inline graphics: breakout to <code>960px</code> (<code>--w-break</code>)</li>
+            <li>Hero and full-bleed: <code>1200px</code> page container</li>
+          </ul>
+          <h4>Share bar</h4>
+          <ul>
+            <li>Desktop: sticky left rail at <code>left: calc(50% - 600px - 64px)</code>, top-aligned to article-body.</li>
+            <li>Mobile: inline horizontal row directly below Article Header Block.</li>
+            <li>Services: WhatsApp, X, Copy link. No Facebook in Phase 1.</li>
+          </ul>
+          <h4>Components</h4>
+          <ul>
+            <li><code>&lt;Breadcrumbs/&gt;</code> · <code>&lt;ArticleHero variant/&gt;</code></li>
+            <li><code>&lt;ArticleHeaderBlock/&gt;</code> · <code>&lt;ShareBar/&gt;</code></li>
+            <li><code>&lt;ArticleBody/&gt;</code> w/ <code>&lt;Prose/&gt;</code>, <code>&lt;Figure/&gt;</code>, <code>&lt;PullQuote/&gt;</code></li>
+            <li><code>&lt;AuthorBio/&gt;</code> · <code>&lt;RelatedArticles/&gt;</code></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3c Category -->
+    <section class="sec" id="page-category">
+      <div class="sec__eyebrow">3.3 · Category · /<em>&lt;slug&gt;</em></div>
+      <h2 class="sec__title">Category page</h2>
+      <p class="sec__desc">One per pillar. Inherits all Homepage card rules and type scale. No new components — this is a Homepage-in-miniature, filtered to one pillar.</p>
+      <div class="arch">
+        <div class="arch__diagram">
+          <div class="diag-note">Module stack · top → bottom</div>
+          <div class="mod"><span class="mod__name">Header</span><span class="mod__h">shared</span></div>
+          <div class="mod mod--accent"><span class="mod__name">Category Header<small>Pillar name H1 + short description + total story count</small></span><span class="mod__h">cat-underline</span></div>
+          <div class="mod mod--hero" style="padding:18px"><span class="mod__name" style="font-family:var(--font-heading);font-size:16px">Featured article<small style="font-size:11px">Hero variant · most-recent or editor-pinned</small></span><span class="mod__h">pinned</span></div>
+          <div class="mod"><span class="mod__name">Article grid<small>StoryCard 16:10 · 3-up desktop · 1-up mobile · chronological</small></span><span class="mod__h">3-up</span></div>
+          <div class="mod"><span class="mod__name">Pagination<small>Load more · 12 stories per page</small></span><span class="mod__h">12/page</span></div>
+          <div class="mod"><span class="mod__name">Newsletter CTA</span><span class="mod__h">CTA</span></div>
+          <div class="mod"><span class="mod__name">Footer</span><span class="mod__h"></span></div>
+        </div>
+        <div class="arch__notes">
+          <h4>Inherits</h4>
+          <ul>
+            <li>All typography + color from Part 2.</li>
+            <li><code>&lt;StoryCard/&gt;</code> identical to Homepage mixed-feed cards.</li>
+            <li>Section underline uses category accent color.</li>
+          </ul>
+          <h4>Components</h4>
+          <ul>
+            <li><code>&lt;CategoryHeader cat/&gt;</code></li>
+            <li><code>&lt;FeaturedArticle/&gt;</code> <span style="color:var(--muted)">· reuses ArticleHero Default</span></li>
+            <li><code>&lt;ArticleGrid cat limit=12/&gt;</code></li>
+            <li><code>&lt;LoadMore/&gt;</code></li>
+          </ul>
+          <h4>Routes</h4>
+          <ul>
+            <li><code>/liga-mexicana</code> · <code>/mlb</code> · <code>/softbol</code></li>
+            <li><code>/seleccion</code> · <code>/juvenil</code> · <code>/opinion</code></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3d Author -->
+    <section class="sec" id="page-author">
+      <div class="sec__eyebrow">3.4 · Author · /autor/&lt;slug&gt;</div>
+      <h2 class="sec__title">Author page</h2>
+      <p class="sec__desc">Shipped Sprint 4. One page currently exists (<code>/autor/redaccion-beisjoven</code>) since Phase 1 operates under a single house byline. Structure is ready for Phase 2 personal bylines.</p>
+      <div class="arch">
+        <div class="arch__diagram">
+          <div class="diag-note">Module stack · top → bottom</div>
+          <div class="mod"><span class="mod__name">Header</span><span class="mod__h">shared</span></div>
+          <div class="mod mod--hero" style="padding:18px"><span class="mod__name" style="font-family:var(--font-heading);font-size:16px">Author Hero<small style="font-size:11px">Photo (square) + Name H1 + Role + short bio · 2-col desktop</small></span><span class="mod__h">2-col</span></div>
+          <div class="mod mod--accent"><span class="mod__name">Author stats<small>Articles published · categories covered · join date</small></span><span class="mod__h">meta row</span></div>
+          <div class="mod"><span class="mod__name">Article grid<small>All articles by this author · StoryCard 16:10 · reverse chrono · 3-up</small></span><span class="mod__h">3-up</span></div>
+          <div class="mod"><span class="mod__name">Pagination<small>Load more · 12 per page</small></span><span class="mod__h">12/page</span></div>
+          <div class="mod"><span class="mod__name">Footer</span><span class="mod__h"></span></div>
+        </div>
+        <div class="arch__notes">
+          <h4>Phase 1 reality</h4>
+          <ul>
+            <li>One author page: <code>/autor/redaccion-beisjoven</code>.</li>
+            <li>All bylines link here.</li>
+            <li>Photo slot uses wordmark lockup until Phase 2 opens individual bylines.</li>
+          </ul>
+          <h4>Phase 2 readiness</h4>
+          <ul>
+            <li>Schema supports <code>first_name</code>, <code>last_name</code>, <code>headshot</code>, <code>role</code>, <code>bio_es</code>.</li>
+            <li>Social links optional, not rendered if empty.</li>
+          </ul>
+          <h4>Components</h4>
+          <ul>
+            <li><code>&lt;AuthorHero/&gt;</code> · <code>&lt;AuthorStats/&gt;</code></li>
+            <li><code>&lt;ArticleGrid author/&gt;</code> · <code>&lt;LoadMore/&gt;</code></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </section>
+
+  <!-- ================================================= -->
+  <!-- End -->
+  <!-- ================================================= -->
+  <footer class="end">
+    <span><b>Beisjoven · Product Bible</b> — Parts 1–3</span>
+    <span>Spec: Typography v1.1</span>
+    <span>v1 · 21 Abr 2026</span>
+    <span style="margin-left:auto"><a href="./Spec.html">Spec</a> · <a href="./Homepage Prototype.html">Prototype</a> · <a href="./Bible Summary.html">One-page summary</a></span>
+  </footer>
+</div>
+
+<script>
+  // TOC active-state scrollspy
+  (function() {
+    const links = document.querySelectorAll('.toc a[data-scrollspy]');
+    const sections = Array.from(links).map(a => ({
+      link: a,
+      el: document.getElementById(a.dataset.scrollspy),
+    })).filter(s => s.el);
+    const setActive = () => {
+      const fromTop = window.scrollY + 120;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.el.offsetTop <= fromTop) current = s;
+      }
+      links.forEach(a => a.classList.toggle('active', a === current.link));
+    };
+    document.addEventListener('scroll', setActive, { passive: true });
+    setActive();
+  })();
+</script>
+</body>
+</html>

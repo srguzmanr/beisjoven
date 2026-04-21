@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Beisjoven — Bible Summary (one-page)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="tokens.css"/>
+<style>
+  body { background: #F6F5F1; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .doc {
+    max-width: 880px; margin: 0 auto;
+    padding: 48px 48px 64px;
+    background: #fff;
+    box-shadow: 0 40px 80px -30px rgba(15,27,51,0.15);
+  }
+  @media (max-width: 680px) { .doc { padding: 28px 20px 48px; } }
+
+  .mh {
+    display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end;
+    padding-bottom: 16px; border-bottom: 2px solid var(--navy); margin-bottom: 28px;
+  }
+  .mh__eye { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); font-weight: 700; }
+  .mh__ttl { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.75rem, 1.4rem + 1.3vw, 2.25rem); color: var(--navy); letter-spacing: -0.02em; margin: 8px 0 4px; line-height: 1.1; text-wrap: balance; }
+  .mh__sub { font-size: 14px; color: var(--ink-2); line-height: 1.5; max-width: 500px; margin: 0; }
+  .mh__meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-align: right; line-height: 1.8; }
+  .mh__meta b { color: var(--navy); }
+
+  h2 {
+    font-family: var(--font-heading); font-weight: 700; font-size: 16px;
+    color: var(--navy); margin: 28px 0 6px; letter-spacing: -0.005em;
+  }
+  h2::before {
+    content: ''; display: inline-block; width: 18px; height: 2px;
+    background: var(--red); vertical-align: 5px; margin-right: 10px;
+  }
+  .lede { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; }
+  @media (max-width: 680px) { .two { grid-template-columns: 1fr; } }
+
+  .box { background: #F6F5F1; border: 1px solid var(--rule); padding: 14px 16px; }
+  .box--navy { background: var(--navy); color: #fff; border: 0; }
+  .box--navy h3, .box--navy li { color: #fff; }
+  .box--navy .tag { color: var(--gold); }
+  .box h3 { font-family: var(--font-heading); font-weight: 700; font-size: 14px; color: var(--navy); margin: 0 0 6px; }
+  .box ul, .box ol { padding-left: 18px; margin: 6px 0 0; }
+  .box li { font-size: 12.5px; line-height: 1.55; color: var(--ink); margin-top: 3px; }
+  .box--navy li { color: rgba(255,255,255,0.9); }
+  .box .tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); font-weight: 700; display: inline-block; margin-bottom: 4px; }
+
+  .partbox { display: grid; grid-template-columns: 44px 1fr; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--rule); align-items: start; }
+  .partbox:last-child { border-bottom: 0; }
+  .partbox__num { font-family: var(--font-heading); font-weight: 800; font-size: 32px; letter-spacing: -0.03em; color: var(--red); line-height: 1; }
+  .partbox h3 { font-family: var(--font-heading); font-weight: 700; font-size: 15px; color: var(--navy); margin: 0 0 3px; letter-spacing: -0.005em; }
+  .partbox p { font-size: 12.5px; line-height: 1.55; color: var(--ink-2); margin: 0 0 6px; }
+  .partbox ul { margin: 4px 0 0; padding-left: 18px; }
+  .partbox li { font-size: 12.5px; line-height: 1.55; color: var(--ink); }
+  .partbox li b { color: var(--navy); }
+
+  .pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+  .pillrow .pill { font-size: 10px; padding: 3px 8px; }
+
+  .deferred {
+    background: #FDF6F6; border-left: 4px solid var(--red);
+    padding: 16px 18px; margin: 16px 0 0;
+  }
+  .deferred h3 { font-family: var(--font-heading); font-weight: 700; font-size: 14px; color: var(--red); margin: 0 0 8px; letter-spacing: -0.005em; }
+  .deferred ul { margin: 0; padding-left: 18px; }
+  .deferred li { font-size: 12.5px; line-height: 1.55; color: var(--ink); }
+  .deferred li b { color: var(--navy); }
+  .deferred .hint { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--muted); margin-top: 8px; display: block; }
+
+  .foot { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--rule); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); display: flex; gap: 20px; flex-wrap: wrap; }
+  .foot a { color: var(--navy); text-decoration: underline; text-underline-offset: 2px; }
+  .foot b { color: var(--navy); }
+
+  @media print {
+    @page { size: A4 portrait; margin: 0.5cm; }
+    body { background: #fff; }
+    .doc { box-shadow: none; max-width: none; padding: 0; }
+    .partbox, .box, .deferred { break-inside: avoid; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  }
+</style>
+</head>
+<body>
+<article class="doc">
+  <header class="mh">
+    <div>
+      <div class="mh__eye">Product Bible · one-page summary</div>
+      <h1 class="mh__ttl">What's in Bible.html, what's deferred.</h1>
+      <p class="mh__sub">A reader's map to the Product Bible and a register of what lives elsewhere. One print page.</p>
+    </div>
+    <aside class="mh__meta">
+      <b>v1</b><br/>21 Abr 2026<br/><br/>
+      <b>Reads</b><br/>~8 min<br/><br/>
+      <b>Pairs with</b><br/>Bible.html
+    </aside>
+  </header>
+
+  <h2>What's in Bible.html</h2>
+  <div class="lede">Three parts · canonical · token-live</div>
+
+  <div class="partbox">
+    <div class="partbox__num">01</div>
+    <div>
+      <h3>Product</h3>
+      <p>Who we are, who we serve, how we file stories when pillars collide.</p>
+      <ul>
+        <li><b>Vision</b> — Somos el futuro del beis. Mission block, one line.</li>
+        <li><b>Six pillars</b> with slugs (<code>/liga-mexicana · /mlb · /softbol · /seleccion · /juvenil · /opinion</code>) and display names (Ligas MX, MLB, Softbol, Selección, Juvenil, Opinión). Slugs are SEO-locked.</li>
+        <li><b>7 classification rules</b>, authoritative. Sport beats age (Softbol). MLB institution beats age. WBSC → Selección, WBC → MLB, BCL → Ligas. College baseball → Juvenil, college softball → Softbol.</li>
+        <li><b>Byline rule</b> — Redacción Beisjoven always. Personal name never in Phase 1.</li>
+        <li><b>Audience snapshot</b> — 76.6% mobile, 50/30 US/MX, 47% completion, 8.9% scroll-to-50%, primary viewports 375/412.</li>
+        <li><b>Phase</b> — Phase 1 (content + audience). First sponsor closed Feb 2026.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="partbox">
+    <div class="partbox__num">02</div>
+    <div>
+      <h3>Design System</h3>
+      <p>Tokens from Spec v1.1 applied verbatim. No new tokens introduced.</p>
+      <ul>
+        <li><b>Type scale</b> — fluid clamp table: H1 (30→44) to Overline (11), rendered live.</li>
+        <li><b>Color</b> — Brand (Navy, Red, Gold, White, Off-white, Rule, Muted) + 6 category accents.</li>
+        <li><b>Category pills</b> — solid bg, white text (navy on Juvenil gold), Inter 700 · 11 · 0.08em · 4×10 · radius 2.</li>
+        <li><b>Cards</b> — three variants: Standard 16:10, List 1:1, Hero 21:9. 4px category left border.</li>
+        <li><b>Spacing</b> — gutter 16/32, section 48/64, card gap 16–24, prose 672, breakout 960, page 1200.</li>
+        <li><b>Link states</b> — navy + 1px 40%-opacity underline → hover red → active darkened red → focus gold ring.</li>
+        <li><b>Pull quote</b> — 4px category border, PJS 500 italic, 22/26, no decorative marks.</li>
+        <li><b>Accessibility floors</b> — WCAG AA. Gold-on-white (2.67:1) called out as <b>never body</b>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="partbox">
+    <div class="partbox__num">03</div>
+    <div>
+      <h3>Page Architectures</h3>
+      <p>Four templates. Module order authoritative. Components named; anatomy lives in Part 2.</p>
+      <ul>
+        <li><b>Header</b> (shared) — Brand · Nav · Quick Hits · conditional LIVE. Auto-hide mobile; shrink-on-sticky desktop. Icon-only search.</li>
+        <li><b>Homepage</b> — Hero (Default baseline · HeroSplit first-class · HeroAmbitious unwired) · Sponsor reservation · Mixed feed + Más leídos · Juvenil rail · Gallery · 5 category sections · Newsletter · Footer.</li>
+        <li><b>Article</b> — Breadcrumbs · Article Hero (Default / Overlay) · Header Block (kicker · H1 · deck · metadata) · Share Bar (sticky desktop / inline mobile) · Body (prose 672, breakouts 960) · Author Bio · Related 4-up · Newsletter · Footer.</li>
+        <li><b>Category</b> — Category Header · Featured · 3-up article grid · Load More. Inherits Homepage card rules.</li>
+        <li><b>Author</b> — Author Hero · stats · 3-up grid · Load More. Phase 1: single <code>/autor/redaccion-beisjoven</code>. Schema ready for Phase 2.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="two" style="margin-top:20px">
+    <div class="box">
+      <h3>Structural notes</h3>
+      <ul>
+        <li>Token stack unchanged. <code>tokens.css</code> is shared across Bible, Spec, Prototype.</li>
+        <li>Sticky TOC with Part 1 / 2 / 3 anchors, scrollspy active state.</li>
+        <li>Token-live rendering — colors, type and pills render themselves, not described.</li>
+        <li>Viewports 375 + 1280, matching prototype.</li>
+      </ul>
+    </div>
+    <div class="box box--navy">
+      <h3>Out of scope (held elsewhere)</h3>
+      <ul>
+        <li><b>Dark mode</b> — Q3 2026 exclusion holds.</li>
+        <li><b>Admin panel</b> — separate track.</li>
+        <li><b>Parts 4–6</b> — Locked decisions, stack, principles. PM owns in markdown companion.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Deferred to the markdown companion</h2>
+  <div class="lede">Parts 4–6 · owned by PM · not rendered here</div>
+
+  <div class="deferred">
+    <h3>What the markdown doc carries</h3>
+    <ul>
+      <li><b>Part 4 — Locked decisions.</b> Every resolved-and-binding call: byline rule, slug freeze, WBC→MLB exception, Juvenil reverse-text pill, sponsor-slot reservation pattern, HeroAmbitious-unwired posture. Dated, with owner.</li>
+      <li><b>Part 5 — Stack.</b> Astro SSG + Tailwind config, deployment target, CMS shape (pillar enum + slug map), analytics (GA4), performance budgets (LCP &lt; 2.5s, CLS &lt; 0.1). Zero paid deps rule.</li>
+      <li><b>Part 6 — Editorial principles.</b> Voice, headline heuristics, deck conventions, photo-direction floor, the one-paper-one-voice rule, the "paper of record for a beat that doesn't yet have one" posture. Process for classification edge cases not already covered by Rules 1–7.</li>
+    </ul>
+    <span class="hint">Rationale: 4–6 are product doctrine — they change without visual consequence. Keeping them in markdown keeps Bible.html a pure visual/structural reference that can ship in any handoff without a thinking-out-loud essay attached.</span>
+  </div>
+
+  <h2>Reads in this order</h2>
+  <div class="two">
+    <div class="box">
+      <h3>Daily reference</h3>
+      <ul>
+        <li><b>1.</b> <a href="./Bible.html#classification" style="color:var(--navy);text-decoration:underline">Bible · Part 1 · Classification rules</a></li>
+        <li><b>2.</b> <a href="./Bible.html#cards" style="color:var(--navy);text-decoration:underline">Bible · Part 2 · Card anatomy</a></li>
+        <li><b>3.</b> <a href="./Bible.html#a11y" style="color:var(--navy);text-decoration:underline">Bible · Part 2 · Accessibility</a></li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>Before a new page type</h3>
+      <ul>
+        <li><b>1.</b> <a href="./Bible.html#part-3" style="color:var(--navy);text-decoration:underline">Bible · Part 3 · Page architectures</a></li>
+        <li><b>2.</b> <a href="./Spec.html" style="color:var(--navy);text-decoration:underline">Spec · Type, color, card anatomy</a></li>
+        <li><b>3.</b> Markdown · Part 5 · Stack &amp; performance budgets</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <span><b>Beisjoven · Product Bible</b></span>
+    <span>v1 · 21 Abr 2026</span>
+    <span>Spec v1.1</span>
+    <span style="margin-left:auto"><a href="./Bible.html">Bible</a> · <a href="./Spec.html">Spec</a> · <a href="./Homepage Prototype.html">Prototype</a></span>
+  </footer>
+</article>
+</body>
+</html>
