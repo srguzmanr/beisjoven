@@ -51,6 +51,7 @@ export interface Articulo {
   kicker: string | null;
   photo_credit: string | null;
   imagen_portada_alt: string | null;
+  hero_layout: string | null;
   categoria: Categoria;
   autor: Autor;
 }

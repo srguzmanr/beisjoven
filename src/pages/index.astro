@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import HeroArticle from '@/components/HeroArticle.astro';
+import HeroDefault from '@/components/HeroDefault.astro';
+import HeroSplit from '@/components/HeroSplit.astro';
 import ArticleCard from '@/components/ArticleCard.astro';
 import SectionTitle from '@/components/SectionTitle.astro';
 import MostReadWidget from '@/components/MostReadWidget.astro';
@@ -48,6 +49,9 @@ const eventoActivo = eventosActivos[0] || null;
 const featured = destacados.length > 0 ? destacados : articulos.slice(0, 3);
 const hero = featured[0];
 const secondary = featured.slice(1, 3);
+// hero_layout enum: 'default' | 'split' | 'overlay'. Phase 1: only 'split' deviates;
+// 'overlay' falls back to HeroDefault until HeroAmbitious is wired (Bible Part 4 §2.3).
+const heroVariant = hero?.hero_layout === 'split' ? 'split' : 'default';
 
 // Category sections config for alternating backgrounds
 const categorySections = [
@@ -93,7 +97,10 @@ const categorySections = [
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-5 lg:grid-rows-1">
         <!-- Main Hero (60%) -->
         <div class="lg:col-span-3 h-full">
-          {hero && <HeroArticle article={hero} />}
+          {hero && (heroVariant === 'split'
+            ? <HeroSplit story={hero} />
+            : <HeroDefault story={hero} />
+          )}
         </div>
         <!-- Secondary (40%) -->
         <div class="lg:col-span-2 flex flex-col gap-5">

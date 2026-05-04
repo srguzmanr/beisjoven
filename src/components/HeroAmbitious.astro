@@ -1,0 +1,194 @@
+---
+import type { Articulo } from '@/lib/supabase';
+import { formatDate } from '@/lib/content';
+
+interface Props {
+  story: Articulo;
+}
+
+const { story } = Astro.props;
+
+const catSlug = story.categoria?.slug ?? '';
+const catName = story.categoria?.nombre ?? '';
+const accent = catSlug ? `var(--cat-${catSlug})` : 'var(--gold)';
+const altText = story.imagen_portada_alt ?? '';
+const byline = story.autor?.nombre || 'Redacción Beisjoven';
+const date = story.fecha ? formatDate(story.fecha) : '';
+const href = `/articulo/${story.slug}`;
+---
+
+{story.imagen_url && (
+  <article class="hero-ambitious" style={`--accent:${accent};`}>
+    <a href={href} class="hero-ambitious__link">
+      <img
+        src={story.imagen_url}
+        alt={altText}
+        loading="eager"
+        fetchpriority="high"
+        class="hero-ambitious__image"
+      />
+      <div class="hero-ambitious__gradient" aria-hidden="true"></div>
+      <div class="hero-ambitious__overlay">
+        <div class="hero-ambitious__inner">
+          <div class="hero-ambitious__kicker">
+            <span class="hero-ambitious__rule"></span>
+            <span class="hero-ambitious__cat">{catName}</span>
+            {story.kicker && (
+              <span class="hero-ambitious__sub">· {story.kicker}</span>
+            )}
+          </div>
+          <h1 class="hero-ambitious__h1">{story.titulo}</h1>
+          {story.extracto && (
+            <p class="hero-ambitious__deck">{story.extracto}</p>
+          )}
+          <div class="hero-ambitious__meta">
+            <span>{byline}</span>
+            {date && <><span aria-hidden="true">·</span><span>{date}</span></>}
+          </div>
+        </div>
+      </div>
+      {story.photo_credit && (
+        <span class="hero-ambitious__credit">Foto: {story.photo_credit}</span>
+      )}
+    </a>
+  </article>
+)}
+
+<style>
+  .hero-ambitious {
+    position: relative;
+    overflow: hidden;
+    background: var(--navy);
+  }
+  .hero-ambitious__link {
+    display: block;
+    aspect-ratio: 4 / 5;
+    color: #fff;
+    text-decoration: none;
+  }
+  .hero-ambitious__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+  .hero-ambitious__gradient {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(to top,
+      rgba(15, 27, 51, 0.95) 15%,
+      rgba(15, 27, 51, 0.55) 50%,
+      rgba(15, 27, 51, 0.05) 80%);
+  }
+  .hero-ambitious__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: 20px 16px 28px;
+    display: flex;
+    align-items: flex-end;
+  }
+  .hero-ambitious__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 100%;
+  }
+  .hero-ambitious__kicker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hero-ambitious__rule {
+    display: inline-block;
+    width: 32px;
+    height: 3px;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .hero-ambitious__cat {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .hero-ambitious__sub {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75);
+  }
+  .hero-ambitious__h1 {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+    margin: 0;
+    color: #fff;
+    font-size: clamp(2rem, 1.6rem + 1.2vw, 2.5rem);
+    line-height: 1.05;
+  }
+  .hero-ambitious__deck {
+    font-family: var(--font-body);
+    color: rgba(255, 255, 255, 0.88);
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.55;
+    max-width: 38rem;
+  }
+  .hero-ambitious__meta {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.72);
+  }
+  .hero-ambitious__credit {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    z-index: 2;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    font-family: var(--font-body);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 2px;
+  }
+
+  @media (min-width: 768px) {
+    .hero-ambitious__link {
+      aspect-ratio: 21 / 9;
+    }
+    .hero-ambitious__gradient {
+      background: linear-gradient(to right,
+        rgba(15, 27, 51, 0.92) 0%,
+        rgba(15, 27, 51, 0.6) 40%,
+        rgba(15, 27, 51, 0.1) 75%);
+    }
+    .hero-ambitious__overlay {
+      padding: 56px 48px;
+    }
+    .hero-ambitious__inner {
+      max-width: 720px;
+      gap: 16px;
+    }
+    .hero-ambitious__h1 {
+      font-size: clamp(3rem, 2rem + 2.2vw, 4.25rem);
+    }
+    .hero-ambitious__deck {
+      font-size: 1.1875rem;
+    }
+  }
+</style>

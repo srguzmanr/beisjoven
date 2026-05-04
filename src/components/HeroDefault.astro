@@ -1,0 +1,225 @@
+---
+import type { Articulo } from '@/lib/supabase';
+import { formatDate } from '@/lib/content';
+
+interface Props {
+  story: Articulo;
+}
+
+const { story } = Astro.props;
+
+const catSlug = story.categoria?.slug ?? '';
+const catName = story.categoria?.nombre ?? '';
+const accent = catSlug ? `var(--cat-${catSlug})` : 'var(--gold)';
+// Juvenil gold fails 4.5:1 on white — label text uses navy on light surfaces.
+const labelLight = catSlug === 'juvenil' ? 'var(--navy)' : accent;
+const altText = story.imagen_portada_alt ?? '';
+const byline = story.autor?.nombre || 'Redacción Beisjoven';
+const date = story.fecha ? formatDate(story.fecha) : '';
+const href = `/articulo/${story.slug}`;
+---
+
+{story.imagen_url && (
+  <article class="hero-default" style={`--accent:${accent};--label-light:${labelLight};`}>
+    <a href={href} class="hero-default__link">
+      <div class="hero-default__media">
+        <img
+          src={story.imagen_url}
+          alt={altText}
+          loading="eager"
+          fetchpriority="high"
+          class="hero-default__image"
+        />
+        <div class="hero-default__gradient" aria-hidden="true"></div>
+        <div class="hero-default__overlay">
+          <div class="hero-default__kicker">
+            <span class="hero-default__rule"></span>
+            <span class="hero-default__cat">{catName}</span>
+            {story.kicker && (
+              <span class="hero-default__sub">· {story.kicker}</span>
+            )}
+          </div>
+          <h1 class="hero-default__h1-mobile">{story.titulo}</h1>
+        </div>
+        {story.photo_credit && (
+          <span class="hero-default__credit">Foto: {story.photo_credit}</span>
+        )}
+      </div>
+      <div class="hero-default__prose">
+        <div class="hero-default__kicker hero-default__kicker--desktop">
+          <span class="hero-default__rule"></span>
+          <span class="hero-default__cat hero-default__cat--light">{catName}</span>
+          {story.kicker && (
+            <>
+              <span class="hero-default__dot">·</span>
+              <span class="hero-default__sub hero-default__sub--light">{story.kicker}</span>
+            </>
+          )}
+        </div>
+        <h1 class="hero-default__h1-desktop">{story.titulo}</h1>
+        {story.extracto && (
+          <p class="hero-default__deck">{story.extracto}</p>
+        )}
+        <div class="hero-default__meta">
+          <span class="hero-default__byline">{byline}</span>
+          {date && <><span aria-hidden="true">·</span><span>{date}</span></>}
+        </div>
+      </div>
+    </a>
+  </article>
+)}
+
+<style>
+  .hero-default { background: #fff; }
+  .hero-default__link { display: block; color: inherit; text-decoration: none; }
+
+  .hero-default__media {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+  }
+  .hero-default__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+  .hero-default__gradient {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(to top,
+      rgba(15, 27, 51, 0.92) 0%,
+      rgba(15, 27, 51, 0.55) 40%,
+      rgba(15, 27, 51, 0) 75%);
+  }
+  .hero-default__overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    padding: 20px 16px 22px;
+    color: #fff;
+  }
+  .hero-default__kicker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .hero-default__kicker--desktop { display: none; }
+  .hero-default__rule {
+    display: inline-block;
+    width: 28px;
+    height: 3px;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .hero-default__cat {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .hero-default__sub {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.75);
+  }
+  .hero-default__h1-mobile {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-wrap: balance;
+    margin: 0;
+    font-size: clamp(1.625rem, 1.4rem + 1.2vw, 2.125rem);
+    line-height: 1.15;
+  }
+  .hero-default__h1-desktop { display: none; }
+  .hero-default__credit {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    z-index: 2;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    font-family: var(--font-body);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 2px;
+  }
+
+  .hero-default__prose {
+    padding: 16px 16px 4px;
+    max-width: 60rem;
+    margin: 0 auto;
+  }
+  .hero-default__deck {
+    font-family: var(--font-body);
+    color: #4B5563;
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  .hero-default__meta {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: #6B7280;
+  }
+  .hero-default__byline {
+    font-weight: 600;
+    color: var(--navy);
+  }
+
+  @media (min-width: 768px) {
+    .hero-default__media {
+      aspect-ratio: 16 / 9;
+    }
+    .hero-default__gradient,
+    .hero-default__overlay {
+      display: none;
+    }
+    .hero-default__prose {
+      padding: 28px 32px 0;
+    }
+    .hero-default__kicker--desktop {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .hero-default__cat--light { color: var(--label-light); }
+    .hero-default__dot { color: #6B7280; }
+    .hero-default__sub--light { color: #6B7280; }
+    .hero-default__h1-desktop {
+      display: block;
+      font-family: var(--font-heading);
+      font-weight: 700;
+      color: var(--navy);
+      text-wrap: balance;
+      margin: 0;
+      font-size: clamp(2.25rem, 1.75rem + 1.4vw, 3rem);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .hero-default__deck {
+      margin-top: 14px;
+      font-size: 1.125rem;
+      max-width: 40rem;
+    }
+  }
+</style>
