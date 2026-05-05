@@ -7,16 +7,11 @@ interface Props {
 
 const { name, slug, size = 'sm' } = Astro.props;
 
-const colorMap: Record<string, string> = {
-  'mlb': 'bg-[#1e40af] text-white',
-  'liga-mexicana': 'bg-[#dc2626] text-white',
-  'seleccion': 'bg-[#15803d] text-white',
-  'softbol': 'bg-[#7c3aed] text-white',
-  'juvenil': 'bg-[#ea580c] text-white',
-  'opinion': 'bg-[#374151] text-white',
-};
+const KNOWN_SLUGS = new Set(['mlb', 'liga-mexicana', 'seleccion', 'softbol', 'juvenil', 'opinion']);
+const bg = KNOWN_SLUGS.has(slug) ? `var(--cat-${slug})` : 'var(--navy)';
+// Juvenil gold fails WCAG AA against white text — carve out to navy text.
+const fg = slug === 'juvenil' ? 'var(--navy)' : '#fff';
 
-const colors = colorMap[slug] || 'bg-navy text-white';
 const sizeClasses = size === 'sm'
   ? 'text-[10px] px-1.5 py-0.5 tracking-widest'
   : 'text-[11px] px-2.5 py-1 tracking-widest';
@@ -24,8 +19,8 @@ const sizeClasses = size === 'sm'
 
 <a
   href={`/categoria/${slug}`}
-  class:list={['inline-block font-bold uppercase rounded-sm transition-opacity hover:opacity-80', colors, sizeClasses]}
-  style="letter-spacing: 0.05em;"
+  class:list={['inline-block font-bold uppercase rounded-sm transition-opacity hover:opacity-80', sizeClasses]}
+  style={`letter-spacing: 0.05em; background: ${bg}; color: ${fg};`}
 >
   {name}
 </a>

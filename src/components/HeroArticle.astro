@@ -10,15 +10,11 @@ const { article } = Astro.props;
 const href = `/articulo/${article.slug}`;
 const date = article.fecha ? timeAgo(article.fecha) : '';
 
-const catColorMap: Record<string, string> = {
-  'mlb': 'bg-[#1e40af]',
-  'liga-mexicana': 'bg-[#dc2626]',
-  'seleccion': 'bg-[#15803d]',
-  'softbol': 'bg-[#7c3aed]',
-  'juvenil': 'bg-[#ea580c]',
-  'opinion': 'bg-[#374151]',
-};
-const catBg = article.categoria ? (catColorMap[article.categoria.slug] || 'bg-navy') : 'bg-navy';
+const KNOWN_SLUGS = new Set(['mlb', 'liga-mexicana', 'seleccion', 'softbol', 'juvenil', 'opinion']);
+const catSlug = article.categoria?.slug ?? '';
+const catBg = KNOWN_SLUGS.has(catSlug) ? `var(--cat-${catSlug})` : 'var(--navy)';
+// Juvenil gold fails WCAG AA against white text — carve out to navy text.
+const catFg = catSlug === 'juvenil' ? 'var(--navy)' : '#fff';
 ---
 
 <article class="group relative rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300 h-full lg:min-h-[420px]">
@@ -37,7 +33,7 @@ const catBg = article.categoria ? (catColorMap[article.categoria.slug] || 'bg-na
     <!-- Content overlay -->
     <div class="absolute bottom-0 left-0 right-0 p-5 md:p-8 pointer-events-none">
       {article.categoria && (
-        <span class:list={['inline-block text-white text-[11px] font-bold uppercase tracking-widest rounded-sm px-2.5 py-1', catBg]} style="letter-spacing: 0.05em;">
+        <span class="inline-block text-[11px] font-bold uppercase tracking-widest rounded-sm px-2.5 py-1" style={`letter-spacing: 0.05em; background: ${catBg}; color: ${catFg};`}>
           {article.categoria.nombre}
         </span>
       )}
