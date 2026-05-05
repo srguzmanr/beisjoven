@@ -1,5 +1,6 @@
 ---
 import { getCategorias, getArticuloBySlug } from '@/lib/supabase';
+import SearchOverlay from '@/components/SearchOverlay.astro';
 
 const currentPath = Astro.url.pathname;
 
@@ -134,24 +135,7 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
   </div>
 </header>
 
-<div id="search-overlay" class="search-overlay" hidden>
-  <form class="search-overlay__form" action="/buscar" method="get" role="search">
-    <label for="search-overlay-input" class="sr-only">Buscar</label>
-    <input
-      id="search-overlay-input"
-      type="search"
-      name="q"
-      autocomplete="off"
-      placeholder="Buscar noticias, equipos, jugadores…"
-      required
-    />
-    <button id="search-close" type="button" aria-label="Cerrar búsqueda">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <path d="M6 6l12 12M6 18L18 6" stroke-linecap="round" />
-      </svg>
-    </button>
-  </form>
-</div>
+<SearchOverlay categorias={chips} />
 
 <style>
   .site-header {
@@ -424,62 +408,6 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     .nav-more { display: block; }
   }
 
-  /* Search overlay */
-  .search-overlay {
-    position: fixed;
-    inset: 0 0 auto 0;
-    z-index: 60;
-    background: #ffffff;
-    border-bottom: 1px solid #E7E7EA;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-    padding: 10px 12px;
-  }
-  .search-overlay[hidden] { display: none; }
-  .search-overlay__form {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    max-width: var(--max-width-container, 75rem);
-    margin: 0 auto;
-    height: 48px;
-  }
-  .search-overlay__form input {
-    flex: 1;
-    height: 44px;
-    padding: 0 14px;
-    border: 1px solid rgba(27, 42, 74, 0.18);
-    border-radius: 10px;
-    background: #ffffff;
-    color: var(--navy, #1B2A4A);
-    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
-    font-size: 1rem;
-    outline: none;
-    transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
-  }
-  .search-overlay__form input:focus {
-    border-color: var(--navy, #1B2A4A);
-    box-shadow: 0 0 0 3px rgba(27, 42, 74, 0.12);
-  }
-  .search-overlay__form button {
-    flex-shrink: 0;
-    width: 44px;
-    height: 44px;
-    background: transparent;
-    border: 0;
-    border-radius: 8px;
-    color: var(--navy, #1B2A4A);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .search-overlay__form button svg { width: 22px; height: 22px; }
-  .search-overlay__form button:hover,
-  .search-overlay__form button:focus-visible {
-    background: rgba(27, 42, 74, 0.06);
-    outline: none;
-  }
-
   .sr-only {
     position: absolute;
     width: 1px;
@@ -496,9 +424,6 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
 <script is:inline>
   (() => {
     const header = document.getElementById('site-header');
-    const trigger = document.getElementById('search-trigger');
-    const overlay = document.getElementById('search-overlay');
-    const closeBtn = document.getElementById('search-close');
     const moreTrigger = document.getElementById('nav-more-trigger');
     const morePanel = document.getElementById('nav-more-panel');
 
@@ -545,29 +470,6 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
       }, { passive: true });
 
       onScroll();
-    }
-
-    if (trigger && overlay && closeBtn) {
-      const input = overlay.querySelector('input[name="q"]');
-
-      function open() {
-        overlay.hidden = false;
-        trigger.setAttribute('aria-expanded', 'true');
-        setTimeout(() => { if (input) input.focus(); }, 30);
-      }
-      function close() {
-        overlay.hidden = true;
-        trigger.setAttribute('aria-expanded', 'false');
-      }
-
-      trigger.addEventListener('click', open);
-      closeBtn.addEventListener('click', close);
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !overlay.hidden) {
-          close();
-          trigger.focus();
-        }
-      });
     }
 
     if (moreTrigger && morePanel) {
