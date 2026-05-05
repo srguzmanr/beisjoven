@@ -1,0 +1,151 @@
+---
+// DESIGN-04e — Per-category section. Renders the 3 most-recent published
+// articles for a given category as a 3-up grid of StoryCards. Returns
+// nothing when the category has no published articles, so the parent's
+// flex `gap` collapses cleanly between siblings.
+//
+// Implementation note (Option A from ticket): each instance runs its own
+// query in the frontmatter rather than receiving rows from index.astro.
+// Five lightweight queries with category accent + display name kept inside
+// the component is simpler to reason about than a partition-window query
+// in the homepage, and Astro builds parallelize fetches across the page.
+import StoryCard from '@/components/StoryCard.astro';
+import { supabaseServer } from '@/lib/supabase';
+
+interface Props {
+  slug: string;
+  displayName: string;
+}
+
+const { slug, displayName } = Astro.props;
+
+const KNOWN_ACCENT_TOKENS = new Set([
+  'mlb',
+  'liga-mexicana',
+  'seleccion',
+  'softbol',
+  'opinion',
+  'juvenil',
+]);
+
+if (!KNOWN_ACCENT_TOKENS.has(slug)) {
+  console.warn(`[CategorySection] No --cat-${slug} token; falling back to --navy.`);
+}
+const accent = KNOWN_ACCENT_TOKENS.has(slug) ? `var(--cat-${slug})` : 'var(--navy)';
+
+type Row = {
+  id: number;
+  slug: string;
+  titulo: string;
+  extracto: string | null;
+  imagen_url: string | null;
+  imagen_portada_alt: string | null;
+  fecha: string;
+  categorias: { slug: string; nombre: string } | { slug: string; nombre: string }[] | null;
+  autores: { nombre: string } | { nombre: string }[] | null;
+};
+
+const { data: raw } = await supabaseServer
+  .from('articulos')
+  .select(
+    'id, slug, titulo, extracto, imagen_url, imagen_portada_alt, fecha, categorias!inner(slug, nombre), autores(nombre)'
+  )
+  .eq('categorias.slug', slug)
+  .eq('publicado', true)
+  .order('fecha', { ascending: false })
+  .limit(3);
+
+const stories = ((raw ?? []) as Row[]).map((r) => {
+  const cat = Array.isArray(r.categorias) ? r.categorias[0] : r.categorias;
+  const aut = Array.isArray(r.autores) ? r.autores[0] : r.autores;
+  return {
+    id: r.id,
+    slug: r.slug,
+    titulo: r.titulo,
+    extracto: r.extracto,
+    imagen_url: r.imagen_url,
+    imagen_portada_alt: r.imagen_portada_alt,
+    fecha: r.fecha,
+    categoria_slug: cat?.slug ?? slug,
+    categoria_nombre: cat?.nombre ?? displayName,
+    autor_nombre: aut?.nombre ?? null,
+  };
+});
+---
+
+{stories.length > 0 && (
+  <section class="bj-cat-section" style={`--bj-cat-accent: ${accent};`}>
+    <div class="bj-cat-section__header">
+      <h2 class="bj-cat-section__title">{displayName}</h2>
+      <span class="bj-cat-section__spacer" aria-hidden="true"></span>
+      <a class="bj-cat-section__cta" href={`/categoria/${slug}`}>
+        Ver más en {displayName} <span aria-hidden="true">→</span>
+      </a>
+    </div>
+
+    <div class="bj-cat-section__grid">
+      {stories.map((story) => (
+        <StoryCard story={story} />
+      ))}
+    </div>
+  </section>
+)}
+
+<style>
+  .bj-cat-section {
+    display: block;
+  }
+
+  .bj-cat-section__header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: 4px solid var(--bj-cat-accent);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .bj-cat-section__title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: clamp(1.25rem, 1.05rem + 0.6vw, 1.75rem);
+    color: var(--ink, var(--navy));
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .bj-cat-section__spacer {
+    flex: 1;
+  }
+
+  .bj-cat-section__cta {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--navy);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .bj-cat-section__cta:hover {
+    text-decoration: underline;
+  }
+
+  .bj-cat-section__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-cat-section__grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+  }
+</style>

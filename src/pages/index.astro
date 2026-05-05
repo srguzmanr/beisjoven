@@ -2,18 +2,16 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HeroDefault from '@/components/HeroDefault.astro';
 import HeroSplit from '@/components/HeroSplit.astro';
-import ArticleCard from '@/components/ArticleCard.astro';
-import SectionTitle from '@/components/SectionTitle.astro';
 import QuickHitsBar from '@/components/QuickHitsBar.astro';
 import SponsorReservation from '@/components/SponsorReservation.astro';
 import MixedFeed from '@/components/MixedFeed.astro';
 import JuvenilRail from '@/components/JuvenilRail.astro';
 import Gallery from '@/components/Gallery.astro';
+import CategorySection from '@/components/CategorySection.astro';
 import {
   supabaseServer,
   getArticulos,
   getArticulosDestacados,
-  getArticulosByCategoria,
   getEventosActivos,
   getQuickHitsActivos,
 } from '@/lib/supabase';
@@ -22,23 +20,11 @@ import {
 const [
   articulos,
   destacados,
-  ligaMex,
-  mlb,
-  seleccion,
-  softbol,
-  juvenil,
-  opinion,
   eventosActivos,
   quickHits,
 ] = await Promise.all([
   getArticulos(12),
   getArticulosDestacados(3),
-  getArticulosByCategoria('liga-mexicana', 4),
-  getArticulosByCategoria('mlb', 4),
-  getArticulosByCategoria('seleccion', 4),
-  getArticulosByCategoria('softbol', 4),
-  getArticulosByCategoria('juvenil', 4),
-  getArticulosByCategoria('opinion', 4),
   getEventosActivos(),
   getQuickHitsActivos(3),
 ]);
@@ -168,15 +154,6 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
   };
 });
 
-// Category sections config for alternating backgrounds
-const categorySections = [
-  { data: ligaMex, title: 'Ligas Mexicanas', href: '/categoria/liga-mexicana', color: '#dc2626', bg: 'bg-white' },
-  { data: mlb, title: 'MLB', href: '/categoria/mlb', color: '#1e40af', bg: 'bg-gris-bg' },
-  { data: seleccion, title: 'Selección', href: '/categoria/seleccion', color: '#15803d', bg: 'bg-white' },
-  { data: softbol, title: 'Softbol', href: '/categoria/softbol', color: '#7c3aed', bg: 'bg-gris-bg' },
-  { data: juvenil, title: 'Juvenil', href: '/categoria/juvenil', color: '#ea580c', bg: 'bg-white' },
-  { data: opinion, title: 'Opinión', href: '/categoria/opinion', color: '#92400e', bg: 'bg-gris-bg' },
-];
 ---
 
 <BaseLayout>
@@ -249,19 +226,43 @@ const categorySections = [
   <!-- DESIGN-04d: Gallery — "La semana, en imágenes" -->
   <Gallery />
 
-  <!-- Category Sections -->
-  <div class="max-w-7xl mx-auto px-4">
-    {categorySections.map((section) => (
-      section.data.length > 0 && (
-        <section class:list={[section.bg, 'py-12 -mx-4 px-4']}>
-          <SectionTitle title={section.title} href={section.href} color={section.color} />
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {section.data.map((a, i) => (
-              <ArticleCard article={a} eager={i < 2} />
-            ))}
-          </div>
-        </section>
-      )
-    ))}
-  </div>
+  <!-- DESIGN-04e: Per-category sections — 5 stacked 3-up grids -->
+  <section class="categories-stack">
+    <div class="categories-stack__container">
+      <CategorySection slug="mlb" displayName="MLB" />
+      <CategorySection slug="liga-mexicana" displayName="Ligas Mexicanas" />
+      <CategorySection slug="seleccion" displayName="Selección" />
+      <CategorySection slug="softbol" displayName="Softbol" />
+      <CategorySection slug="opinion" displayName="Opinión" />
+    </div>
+  </section>
+
+  <style>
+    .categories-stack {
+      background: #fff;
+      padding: 16px 0 48px;
+    }
+
+    @media (min-width: 768px) {
+      .categories-stack {
+        padding: 24px 32px 72px;
+      }
+    }
+
+    .categories-stack__container {
+      max-width: var(--w-page);
+      margin: 0 auto;
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    @media (min-width: 768px) {
+      .categories-stack__container {
+        padding: 0;
+        gap: 56px;
+      }
+    }
+  </style>
 </BaseLayout>
