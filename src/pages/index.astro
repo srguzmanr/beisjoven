@@ -8,6 +8,7 @@ import QuickHitsBar from '@/components/QuickHitsBar.astro';
 import SponsorReservation from '@/components/SponsorReservation.astro';
 import MixedFeed from '@/components/MixedFeed.astro';
 import JuvenilRail from '@/components/JuvenilRail.astro';
+import Gallery from '@/components/Gallery.astro';
 import {
   supabaseServer,
   getArticulos,
@@ -244,6 +245,9 @@ const categorySections = [
   <MixedFeed latest={latest} masLeidos={masLeidos} videos={videos} />
 
   {juvenilRail.length > 0 && <JuvenilRail stories={juvenilRail} />}
+
+  <!-- DESIGN-04d: Gallery — "La semana, en imágenes" -->
+  <Gallery />
 
   <!-- Category Sections -->
   <div class="max-w-7xl mx-auto px-4">
