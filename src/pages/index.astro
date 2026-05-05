@@ -7,6 +7,7 @@ import SectionTitle from '@/components/SectionTitle.astro';
 import QuickHitsBar from '@/components/QuickHitsBar.astro';
 import SponsorReservation from '@/components/SponsorReservation.astro';
 import MixedFeed from '@/components/MixedFeed.astro';
+import JuvenilRail from '@/components/JuvenilRail.astro';
 import {
   supabaseServer,
   getArticulos,
@@ -128,6 +129,44 @@ const latest = flatten(latestRes.data as FeedRow[] | null);
 const masLeidos = flatten(masLeidosRaw as FeedRow[]);
 const videos = videosRes.data ?? [];
 
+// DESIGN-04c: Juvenil rail — 3 most-recent juvenil articles for the
+// "Nuestra obsesión" navy module. Separate from the per-category rail
+// (which DESIGN-04e will remove); shape is autor flattened, category
+// is implicit in the module.
+type JuvenilRow = {
+  id: number;
+  slug: string;
+  titulo: string;
+  extracto: string | null;
+  imagen_url: string | null;
+  imagen_portada_alt: string | null;
+  fecha: string;
+  autores: { nombre: string } | { nombre: string }[] | null;
+};
+
+const { data: juvenilRailRaw } = await supabaseServer
+  .from('articulos')
+  .select(
+    'id, slug, titulo, extracto, imagen_url, imagen_portada_alt, fecha, categorias!inner(slug), autores(nombre)'
+  )
+  .eq('categorias.slug', 'juvenil')
+  .eq('publicado', true)
+  .order('fecha', { ascending: false })
+  .limit(3);
+
+const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
+  const aut = Array.isArray(row.autores) ? row.autores[0] : row.autores;
+  return {
+    slug: row.slug,
+    titulo: row.titulo,
+    extracto: row.extracto,
+    imagen_url: row.imagen_url,
+    imagen_portada_alt: row.imagen_portada_alt,
+    fecha: row.fecha,
+    autor_nombre: aut?.nombre ?? 'Redacción Beisjoven',
+  };
+});
+
 // Category sections config for alternating backgrounds
 const categorySections = [
   { data: ligaMex, title: 'Ligas Mexicanas', href: '/categoria/liga-mexicana', color: '#dc2626', bg: 'bg-white' },
@@ -203,6 +242,8 @@ const categorySections = [
   <!-- DESIGN-04b: Sponsor reservation + Mixed Feed -->
   <SponsorReservation />
   <MixedFeed latest={latest} masLeidos={masLeidos} videos={videos} />
+
+  {juvenilRail.length > 0 && <JuvenilRail stories={juvenilRail} />}
 
   <!-- Category Sections -->
   <div class="max-w-7xl mx-auto px-4">
