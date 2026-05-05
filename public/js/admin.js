@@ -395,6 +395,9 @@ var Autosave = {
         var pieFoto = document.getElementById('foto-pie');
         var fotoCredito = document.getElementById('foto-credito');
         var esWbc = document.getElementById('es_wbc2026');
+        var heroLayout = document.getElementById('hero-layout');
+        var heroLayoutVal = heroLayout ? heroLayout.value : '';
+        var heroLayoutNormalized = (heroLayoutVal === 'split' || heroLayoutVal === 'overlay') ? heroLayoutVal : null;
 
         var content = '';
         if (contentEditor) {
@@ -415,6 +418,7 @@ var Autosave = {
             pie_de_foto: pieFoto ? pieFoto.value : '',
             foto_credito: fotoCredito ? fotoCredito.value : '',
             es_wbc2026: esWbc ? esWbc.checked : false,
+            hero_layout: heroLayoutNormalized,
             savedAt: new Date().toISOString()
         };
     },
@@ -485,7 +489,8 @@ var Autosave = {
                 destacado: data.destacado,
                 pie_de_foto: data.pie_de_foto || null,
                 foto_credito: data.foto_credito || null,
-                es_wbc2026: data.es_wbc2026
+                es_wbc2026: data.es_wbc2026,
+                hero_layout: data.hero_layout
             };
 
             if (this._editId) {
@@ -1229,6 +1234,15 @@ const AdminPages = {
                                         </div>
                                     </div>
                                     <div class="form-group" style="margin-top:14px;">
+                                        <label for="hero-layout">Layout del hero</label>
+                                        <select id="hero-layout">
+                                            <option value="default" ${(article?.hero_layout == null || article?.hero_layout === 'default') && !(useDraft && draft && (draft.hero_layout === 'split' || draft.hero_layout === 'overlay')) ? 'selected' : (useDraft && draft && (draft.hero_layout == null || draft.hero_layout === 'default') ? 'selected' : '')}>Default (predeterminado)</option>
+                                            <option value="split" ${article?.hero_layout === 'split' || (useDraft && draft && draft.hero_layout === 'split') ? 'selected' : ''}>Split (dividido)</option>
+                                            <option value="overlay" ${article?.hero_layout === 'overlay' || (useDraft && draft && draft.hero_layout === 'overlay') ? 'selected' : ''}>Overlay (superpuesto)</option>
+                                        </select>
+                                        <small style="display:block;margin-top:6px;font-size:0.8rem;color:#6b7280;font-weight:400;line-height:1.35;">Usa Split si la foto tiene tonos dominantes dentro del 15% de navy, o si no hay zona limpia en el 40% inferior del encuadre.</small>
+                                    </div>
+                                    <div class="form-group" style="margin-top:14px;">
                                         <label>Etiquetas (Tags)</label>
                                         <div id="tag-pill-container" class="tag-pill-container"></div>
                                         <div style="position:relative;margin-top:6px;">
@@ -1753,6 +1767,10 @@ const AdminPages = {
         const pie_de_foto = (document.getElementById('foto-pie')?.value || '').trim();
         const foto_credito = (document.getElementById('foto-credito')?.value || '').trim();
         const es_wbc2026 = document.getElementById('es_wbc2026')?.checked || false;
+        // hero_layout: dropdown values 'default'|'split'|'overlay'.
+        // 'default' coerces to NULL — keeps the column nullable as the schema intends.
+        const heroLayoutVal = document.getElementById('hero-layout')?.value || '';
+        const hero_layout = (heroLayoutVal === 'split' || heroLayoutVal === 'overlay') ? heroLayoutVal : null;
 
         // Get content from Rich Text Editor or fallback to textarea
         let contenidoRaw;
@@ -1820,6 +1838,7 @@ const AdminPages = {
             foto_credito: foto_credito || null,
             es_wbc2026,
             destacado,
+            hero_layout,
             publicado: action === 'publish' || action === 'save'
         };
 
