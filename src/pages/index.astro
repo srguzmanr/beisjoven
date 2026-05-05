@@ -127,13 +127,14 @@ type JuvenilRow = {
   imagen_url: string | null;
   imagen_portada_alt: string | null;
   fecha: string;
+  read_time_minutes: number | null;
   autores: { nombre: string } | { nombre: string }[] | null;
 };
 
 const { data: juvenilRailRaw } = await supabaseServer
   .from('articulos')
   .select(
-    'id, slug, titulo, extracto, imagen_url, imagen_portada_alt, fecha, categorias!inner(slug), autores(nombre)'
+    'id, slug, titulo, extracto, imagen_url, imagen_portada_alt, fecha, read_time_minutes, categorias!inner(slug), autores(nombre)'
   )
   .eq('categorias.slug', 'juvenil')
   .eq('publicado', true)
@@ -149,6 +150,7 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
     imagen_url: row.imagen_url,
     imagen_portada_alt: row.imagen_portada_alt,
     fecha: row.fecha,
+    read_time_minutes: row.read_time_minutes ?? 1,
     autor_nombre: aut?.nombre ?? 'Redacción Beisjoven',
   };
 });

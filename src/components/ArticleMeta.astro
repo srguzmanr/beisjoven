@@ -1,0 +1,82 @@
+---
+// Single source of truth for article meta line (BJ-008-FOLLOW-UP-01).
+// Replaces parallel meta-line implementations in StoryCard, ListCard,
+// JuvenilRail, ArticleCard and the article-page byline.
+import AvatarBJ from '@/components/AvatarBJ.astro';
+import { formatCardDate, formatArticleDate } from '@/utils/formatDate.js';
+
+interface Props {
+  fecha: string;
+  autorNombre?: string | null;
+  readMinutes?: number | null;
+  variant?: 'card' | 'article';
+  showAvatar?: boolean;
+  inverse?: boolean;
+}
+
+const {
+  fecha,
+  autorNombre,
+  readMinutes,
+  variant = 'card',
+  showAvatar = true,
+  inverse = false,
+} = Astro.props;
+
+const isArticle = variant === 'article';
+const dateLabel = fecha ? (isArticle ? formatArticleDate(fecha) : formatCardDate(fecha)) : '';
+const byline = autorNombre || 'Redacción Beisjoven';
+const readMin = typeof readMinutes === 'number' && readMinutes > 0 ? readMinutes : 1;
+const readLabel = isArticle ? `${readMin} min lectura` : `${readMin} min`;
+---
+
+<div
+  class:list={[
+    'bj-meta',
+    `bj-meta--${variant}`,
+    { 'bj-meta--inverse': inverse },
+  ]}
+>
+  {showAvatar && <AvatarBJ size={isArticle ? 22 : 20} />}
+  <span class="bj-meta__byline">{byline}</span>
+  {dateLabel && (
+    <>
+      <span aria-hidden="true">·</span>
+      <time datetime={fecha}>{dateLabel}</time>
+    </>
+  )}
+  <span aria-hidden="true">·</span>
+  <span>{readLabel}</span>
+</div>
+
+<style>
+  .bj-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-body);
+    font-style: normal;
+    font-weight: 500;
+    color: var(--gray-medium);
+    min-width: 0;
+  }
+
+  .bj-meta__byline {
+    font-style: normal;
+  }
+
+  .bj-meta--card {
+    font-size: var(--text-metadata);
+    line-height: var(--lh-metadata);
+  }
+
+  .bj-meta--article {
+    font-size: 0.875rem;
+    line-height: var(--lh-metadata);
+  }
+
+  .bj-meta--inverse {
+    color: rgba(255, 255, 255, 0.7);
+  }
+</style>

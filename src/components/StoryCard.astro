@@ -1,6 +1,6 @@
 ---
 import { getCategoryAccent, getCategoryLabel } from '@/lib/categoryAccents.js';
-import AvatarBJ from '@/components/AvatarBJ.astro';
+import ArticleMeta from '@/components/ArticleMeta.astro';
 
 interface Story {
   id: number;
@@ -32,16 +32,7 @@ const padLeft = size === 'sm' ? '12px' : '14px';
 const headingSize = size === 'sm' ? 'var(--text-h4)' : 'var(--text-h3)';
 const headingLh = size === 'sm' ? '1.3' : '1.25';
 
-const dateLabel = story.fecha
-  ? new Intl.DateTimeFormat('es-MX', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }).format(new Date(story.fecha))
-  : '';
-
 const imgAlt = story.imagen_portada_alt || story.titulo;
-const readMin = story.read_time_minutes ?? 1;
 ---
 
 <a href={href} class="bj-story-card" style={`--bj-accent: ${accent};`}>
@@ -67,14 +58,12 @@ const readMin = story.read_time_minutes ?? 1;
     {size === 'md' && story.extracto && (
       <p class="bj-story-card__deck">{story.extracto}</p>
     )}
-    <div class="bj-story-card__meta">
-      <AvatarBJ size={20} />
-      <span>Redacción Beisjoven</span>
-      <span aria-hidden="true">·</span>
-      <time datetime={story.fecha}>{dateLabel}</time>
-      <span aria-hidden="true">·</span>
-      <span>{readMin} min</span>
-    </div>
+    <ArticleMeta
+      fecha={story.fecha}
+      autorNombre={story.autor_nombre}
+      readMinutes={story.read_time_minutes}
+      variant="card"
+    />
   </div>
 </a>
 
@@ -128,16 +117,5 @@ const readMin = story.read_time_minutes ?? 1;
     line-height: var(--lh-body-sm);
     color: var(--gray-medium);
     margin: 0;
-  }
-
-  .bj-story-card__meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-body);
-    font-size: var(--text-metadata);
-    line-height: var(--lh-metadata);
-    color: var(--gray-medium);
-    font-weight: 500;
   }
 </style>
