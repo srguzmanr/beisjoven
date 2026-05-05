@@ -1,0 +1,52 @@
+---
+// Single source of truth for the Beisjoven logo across surfaces.
+// `variant="default"` renders the colored lockup as-is for light backgrounds.
+// `variant="inverse"` wraps the lockup in a white card so brand colors stay
+// legible on dark surfaces (footer over navy) without distorting the asset.
+// `format="lockup"` is the wide horizontal mark; `format="mark"` is the BJ
+// shield used at narrow widths.
+type Variant = 'default' | 'inverse';
+type Format = 'lockup' | 'mark';
+
+interface Props {
+  variant?: Variant;
+  format?: Format;
+  height?: number;
+  width?: number;
+  alt?: string;
+  class?: string;
+}
+
+const {
+  variant = 'default',
+  format = 'lockup',
+  height = 40,
+  width,
+  alt = 'Beisjoven',
+  class: className = '',
+} = Astro.props;
+
+const src = format === 'mark' ? '/brand/logo-mark.png' : '/brand/logo-lockup.png';
+---
+
+{variant === 'inverse' ? (
+  <span class="bj-logo-inverse">
+    <img src={src} alt={alt} height={height} width={width} class={className} />
+  </span>
+) : (
+  <img src={src} alt={alt} height={height} width={width} class={className} />
+)}
+
+<style>
+  .bj-logo-inverse {
+    display: inline-flex;
+    align-items: center;
+    background: #ffffff;
+    padding: 6px 10px;
+    border-radius: 6px;
+  }
+  .bj-logo-inverse img {
+    width: auto;
+    display: block;
+  }
+</style>

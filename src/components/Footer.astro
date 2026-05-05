@@ -1,4 +1,6 @@
 ---
+import Logo from '@/components/Logo.astro';
+
 const year = new Date().getFullYear();
 
 const categories = [
@@ -32,11 +34,7 @@ const site = [
       <!-- Columna 1: Marca -->
       <div class="md:col-span-2 lg:col-span-1 flex flex-col items-center md:items-start text-center md:text-left">
         <a href="/" aria-label="Beisjoven — inicio" class="inline-block mb-4">
-          <img
-            src="/brand/logo-lockup.png"
-            alt="Beisjoven"
-            class="h-10 w-auto"
-          />
+          <Logo variant="inverse" format="lockup" height={40} class="footer-logo-img" />
         </a>
         <p class="footer-tagline mb-3">Somos el futuro del beis</p>
         <p class="footer-signature">
@@ -111,6 +109,10 @@ const site = [
 </footer>
 
 <style>
+  .footer-logo-img {
+    height: 40px;
+  }
+
   .footer-tagline {
     font-family: var(--font-heading);
     font-weight: 600;

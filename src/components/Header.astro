@@ -1,6 +1,7 @@
 ---
 import { getCategorias, getArticuloBySlug } from '@/lib/supabase';
 import SearchOverlay from '@/components/SearchOverlay.astro';
+import Logo from '@/components/Logo.astro';
 
 const currentPath = Astro.url.pathname;
 
@@ -52,8 +53,8 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
 <header id="site-header" class="site-header">
   <div class="site-header__bar">
     <a href="/" class="site-header__logo" aria-label="Beisjoven — Inicio">
-      <img class="site-header__logo--mobile" src="/brand/logo-mark.png" alt="Beisjoven" width="40" height="40" />
-      <img class="site-header__logo--desktop" src="/brand/logo-lockup.png" alt="Beisjoven" height="40" />
+      <Logo class="site-header__logo--mobile" format="mark" height={40} width={40} />
+      <Logo class="site-header__logo--desktop" format="lockup" height={40} />
     </a>
 
     <nav class="site-header__nav-desktop" aria-label="Navegación principal">
