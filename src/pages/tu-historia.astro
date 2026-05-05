@@ -6,27 +6,34 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   title="Tu Historia - Beisjoven"
   description="¿Tienes una historia de béisbol o sóftbol que merece ser contada? Cuéntanos y nuestro equipo editorial la llevará a toda la comunidad."
 >
-  <!-- Hero (no se toca en este ticket — BJ-003b) -->
+  <!-- Hero -->
   <section class="bg-navy text-white">
     <div class="max-w-4xl mx-auto px-4 py-12 md:py-16">
-      <h1 class="text-4xl md:text-5xl font-extrabold mb-4" style="font-family: 'Plus Jakarta Sans', sans-serif;">
-        Tu Historia
+      <p class="text-sm md:text-base font-semibold uppercase tracking-[0.14em] text-[#D4A843] mb-3" style="font-family: 'Inter', sans-serif;">
+        Cuéntanos tu historia
+      </p>
+      <h1 class="text-4xl md:text-5xl font-extrabold mb-4 leading-tight" style="font-family: 'Plus Jakarta Sans', sans-serif;">
+        El béisbol mexicano se cuenta mejor desde la cancha.
       </h1>
       <p class="text-lg md:text-xl text-white/90 leading-relaxed mb-6 max-w-2xl">
-        ¿Tienes una historia de béisbol o sóftbol que merece ser contada? Cuéntanos y nuestro equipo editorial la llevará a toda la comunidad.
+        Si tú, tu hijo, tu equipo o tu liga vivieron un momento que merece publicarse, queremos conocerlo. Lee nuestra redacción cada historia. Te confirmamos al instante y respondemos en 1 a 3 días hábiles.
       </p>
       <ul class="space-y-2 text-white/90 text-base">
         <li class="flex items-start gap-3">
           <span aria-hidden="true" style="color: #D4A843;" class="font-bold flex-shrink-0 mt-0.5">●</span>
-          <span>Ligas juveniles, torneos, logros de jugadores</span>
+          <span>Confirmación inmediata por correo</span>
         </li>
         <li class="flex items-start gap-3">
           <span aria-hidden="true" style="color: #D4A843;" class="font-bold flex-shrink-0 mt-0.5">●</span>
-          <span>Sóftbol, béisbol universitario, ligas municipales</span>
+          <span>Respuesta editorial en 1 a 3 días hábiles</span>
         </li>
         <li class="flex items-start gap-3">
           <span aria-hidden="true" style="color: #D4A843;" class="font-bold flex-shrink-0 mt-0.5">●</span>
-          <span>Tú nos cuentas, nosotros escribimos la nota</span>
+          <span>Si publicamos, pedimos tu permiso primero</span>
+        </li>
+        <li class="flex items-start gap-3">
+          <span aria-hidden="true" style="color: #D4A843;" class="font-bold flex-shrink-0 mt-0.5">●</span>
+          <span>Editamos para claridad, nunca cambiamos los hechos</span>
         </li>
       </ul>
     </div>
@@ -238,7 +245,6 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <!-- Photo upload -->
             <div class="field">
               <label>Fotos del momento <span class="optional">(opcional pero muy recomendado)</span></label>
-              <p class="hint" data-hint-default="Hasta 5 imágenes. JPG, PNG, WebP o HEIC. Máximo 10MB cada una.">Hasta 5 imágenes. JPG, PNG, WebP o HEIC. Máximo 10MB cada una.</p>
 
               <input
                 type="file"
@@ -249,9 +255,24 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 class="sr-only"
               />
 
-              <div id="th-fotos-grid" class="th-photo-grid" aria-live="polite">
+              <!-- Large drop zone (visible only when 0 files) -->
+              <button type="button" id="th-fotos-dropzone" class="th-photo-dropzone" aria-label="Arrastra tus fotos aquí o haz click para seleccionar">
+                <svg class="th-photo-dropzone-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 7.5m0 0L7.5 12M12 7.5v9" />
+                </svg>
+                <span class="th-photo-dropzone-primary">Arrastra tus fotos aquí o haz click para seleccionar</span>
+                <span class="th-photo-dropzone-secondary">Hasta 5 imágenes · JPG, PNG, WebP o HEIC · Máx 10MB cada una</span>
+              </button>
+
+              <!-- Thumbnails grid (visible only when 1+ files) -->
+              <div id="th-fotos-grid" class="th-photo-grid" aria-live="polite" hidden>
                 <!-- Slots rendered by JS -->
               </div>
+
+              <!-- Limit reached message (visible only when 5 files) -->
+              <p id="th-fotos-limit" class="hidden mt-2 text-xs" style="color: var(--th-ink-muted);">
+                Máximo de 5 fotos alcanzado. Quita una para agregar otra.
+              </p>
 
               <p id="th-fotos-error" class="hidden mt-2 text-xs" style="color: #C8102E;"></p>
               <p id="th-fotos-readout" class="mt-2 text-xs" style="color: var(--muted);"></p>
@@ -321,6 +342,10 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               </div>
             </fieldset>
 
+            <aside class="th-editorial-note">
+              <strong>Antes de publicar:</strong> nuestra redacción revisa y puede editar para claridad. Nunca cambiamos los hechos. Si decidimos publicar, te contactamos primero para confirmar.
+            </aside>
+
             <div class="th-nav">
               <button type="button" class="th-btn-secondary" data-step-prev="2">← Volver a editar</button>
               <button
@@ -341,29 +366,44 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
         </div>
       </form>
 
-      <!-- Success panel (hidden by default) -->
-      <div id="th-success" class="hidden bg-white rounded-xl shadow-sm p-8 md:p-10 text-center">
-        <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-green-100 flex items-center justify-center">
-          <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
+      <!-- Success surface (hidden by default) -->
+      <div id="th-success" class="hidden">
+        <!-- Hero band, navy, matches form hero -->
+        <div class="th-success-hero">
+          <p class="th-success-eyebrow">Recibimos tu historia</p>
+          <h2 class="th-success-h1">
+            Gracias, <span id="th-success-name">amigo</span>.
+          </h2>
+          <p class="th-success-deck">
+            Te enviamos un correo de confirmación a <span id="th-success-email" class="th-success-email"></span>. Nuestra redacción la revisará en los próximos 1 a 3 días hábiles.
+          </p>
         </div>
-        <h2 class="text-2xl md:text-3xl font-bold text-navy mb-3" style="font-family: 'Plus Jakarta Sans', sans-serif;">
-          ¡Gracias por compartir tu historia!
-        </h2>
-        <p id="th-success-subtext" class="text-gris-text leading-relaxed mb-3 max-w-md mx-auto">
-          Nuestro equipo editorial la revisará. Si tu historia se publica, aparecerá en beisjoven.com con tu crédito como colaborador.
-        </p>
-        <p class="text-sm text-gris-muted mb-6 max-w-md mx-auto">
-          Si necesitamos más detalles, te contactaremos por WhatsApp o email.
-        </p>
-        <button
-          type="button"
-          id="th-reset"
-          class="inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 bg-navy hover:bg-navy-dark text-white font-medium rounded-md transition-colors"
-        >
-          Enviar otra historia
-        </button>
+
+        <!-- "What's next" card -->
+        <div class="th-success-card">
+          <h3 class="th-success-card-title">¿Qué sigue?</h3>
+          <ol class="th-success-steps">
+            <li>
+              <span class="th-success-step-num">1</span>
+              <span>Recibirás un correo de confirmación en los próximos minutos.</span>
+            </li>
+            <li>
+              <span class="th-success-step-num">2</span>
+              <span>Nuestra redacción evaluará tu historia (1 a 3 días hábiles).</span>
+            </li>
+            <li>
+              <span class="th-success-step-num">3</span>
+              <span>Si decidimos publicarla, te contactamos por correo para confirmar antes.</span>
+            </li>
+            <li>
+              <span class="th-success-step-num">4</span>
+              <span>Si no la publicamos, te avisamos también — toda historia merece respuesta.</span>
+            </li>
+          </ol>
+          <div class="th-success-cta-row">
+            <a href="/" class="th-btn-primary th-success-cta">Volver al inicio</a>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -579,6 +619,64 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       flex-shrink: 0;
       accent-color: var(--th-red);
       cursor: pointer;
+    }
+
+    /* ===== Photo drop zone (large, when 0 files) ===== */
+    .th-photo-dropzone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      margin-top: 8px;
+      padding: 32px 24px;
+      background: var(--bg-2, #F6F5F1);
+      border: 2px dashed var(--th-rule-strong);
+      border-radius: 4px;
+      color: var(--th-ink);
+      cursor: pointer;
+      text-align: center;
+      transition: background-color var(--t-fast), border-color var(--t-fast), border-style var(--t-fast);
+    }
+    .th-photo-dropzone:hover {
+      background: var(--bg-3, #FAFAF7);
+      border-color: var(--th-ink);
+    }
+    .th-photo-dropzone.th-dnd-over {
+      background: #EFF2F8;
+      border-color: var(--th-ink);
+      border-style: solid;
+    }
+    .th-photo-dropzone-icon {
+      width: 40px;
+      height: 40px;
+      color: var(--th-ink-muted);
+      margin-bottom: 4px;
+    }
+    .th-photo-dropzone-primary {
+      font: 600 15px/1.4 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink);
+    }
+    .th-photo-dropzone-secondary {
+      font: 400 13px/1.4 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink-muted);
+      margin-top: 2px;
+    }
+
+    /* ===== Editorial trust note (Step 3) ===== */
+    .th-editorial-note {
+      padding: 14px 16px;
+      background: var(--bg-2, #F6F5F1);
+      border-left: 3px solid var(--th-ink);
+      border-radius: 2px;
+      font: 400 13px/1.55 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink);
+      margin: 0 0 20px;
+    }
+    .th-editorial-note strong {
+      color: var(--th-ink);
+      font-weight: 700;
     }
 
     /* ===== Photo grid: 5 horizontal slots ===== */
@@ -860,6 +958,93 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       color: #FFFFFF;
       font-weight: 700;
       border: 0;
+    }
+
+    /* ===== Success surface ===== */
+    .th-success-hero {
+      background: var(--th-ink);
+      color: var(--th-white);
+      border-radius: 12px 12px 0 0;
+      padding: 32px 28px 28px;
+    }
+    .th-success-eyebrow {
+      font: 600 13px/1.4 var(--font-body, "Inter", sans-serif);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--th-gold);
+      margin: 0 0 10px;
+    }
+    .th-success-h1 {
+      font: 800 28px/1.2 var(--font-heading, "Plus Jakarta Sans", sans-serif);
+      color: var(--th-white);
+      margin: 0 0 12px;
+    }
+    @media (min-width: 768px) {
+      .th-success-h1 { font-size: 34px; }
+    }
+    .th-success-deck {
+      font: 400 16px/1.55 var(--font-body, "Inter", sans-serif);
+      color: rgba(255, 255, 255, 0.92);
+      margin: 0;
+      max-width: 60ch;
+    }
+    .th-success-email {
+      font-weight: 600;
+      color: var(--th-white);
+      word-break: break-all;
+    }
+    .th-success-card {
+      background: var(--th-white);
+      border: 1px solid var(--th-rule);
+      border-top: 0;
+      border-radius: 0 0 12px 12px;
+      padding: 24px;
+    }
+    @media (min-width: 768px) {
+      .th-success-card { padding: 28px; }
+    }
+    .th-success-card-title {
+      font: 700 18px/1.3 var(--font-heading, "Plus Jakarta Sans", sans-serif);
+      color: var(--th-ink);
+      margin: 0 0 16px;
+    }
+    .th-success-steps {
+      list-style: none;
+      margin: 0 0 24px;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+    .th-success-steps li {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      align-items: start;
+      gap: 12px;
+      font: 400 14px/1.55 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink);
+    }
+    .th-success-step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--th-ink);
+      color: var(--th-white);
+      font: 700 13px/1 var(--font-body, "Inter", sans-serif);
+      flex: 0 0 auto;
+    }
+    .th-success-cta-row {
+      display: flex;
+      justify-content: flex-start;
+      padding-top: 4px;
+      border-top: 1px solid var(--th-rule);
+      margin-top: 4px;
+      padding-top: 20px;
+    }
+    .th-success-cta {
+      text-decoration: none;
     }
 
     /* ===== Draft pill ===== */
