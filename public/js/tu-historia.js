@@ -24,20 +24,22 @@
 
   const DESCRIPCION_MIN = 50;
 
-  // Required field IDs per step. Step 3's only required is the general auth
-  // checkbox — autorizacion_menores only appears when photos include minors.
+  // Required field IDs per step. Step 3 requires all 3 legal consent checkboxes
+  // (BJ-007 ADENDA). autorizacion_menores is conditional on photo uploads, not required.
   const REQUIRED_BY_STEP = {
     1: ['th-nombre', 'th-email', 'th-relacion', 'th-ciudad'],
     2: ['th-categoria', 'th-titulo', 'th-descripcion'],
-    3: ['th-auth-general'],
+    3: ['th-consent-age', 'th-consent-third-party', 'th-consent-terms'],
   };
 
   // Scalar fields persisted to localStorage. File objects are intentionally
   // excluded — they aren't serializable and would bloat storage.
+  // Legal consent checkboxes are intentionally NOT persisted — users must
+  // actively re-check them each session.
   const PERSISTED_FIELDS = [
     'nombre', 'email', 'telefono', 'relacion', 'ciudad_estado', 'liga_organizacion',
     'categoria_sugerida', 'titulo', 'descripcion', 'permitir_credito',
-    'autorizacion_general', 'autorizacion_menores',
+    'autorizacion_menores',
   ];
 
   const RELACION_LABELS = {
@@ -184,7 +186,9 @@
       menoresCheckbox: document.getElementById('th-auth-menores'),
       menoresNote: document.getElementById('th-menores-note'),
 
-      authGeneral: document.getElementById('th-auth-general'),
+      consentAge: document.getElementById('th-consent-age'),
+      consentThirdParty: document.getElementById('th-consent-third-party'),
+      consentTerms: document.getElementById('th-consent-terms'),
 
       review: document.getElementById('th-review'),
 
@@ -1133,7 +1137,9 @@
           liga_organizacion: (f.liga_organizacion.value || '').trim() || null,
           ciudad_estado: (f.ciudad_estado.value || '').trim(),
           fotos: photoPaths,
-          autorizacion_general: f.autorizacion_general.checked,
+          autorizacion_general: !!(els.consentAge && els.consentAge.checked &&
+            els.consentThirdParty && els.consentThirdParty.checked &&
+            els.consentTerms && els.consentTerms.checked),
           autorizacion_menores: state.files.length > 0 ? els.menoresCheckbox.checked : null,
           permitir_credito: f.permitir_credito.checked,
         };

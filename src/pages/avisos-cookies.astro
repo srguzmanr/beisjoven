@@ -1,0 +1,29 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+---
+
+<BaseLayout
+  title="Preferencias de Cookies — Beisjoven"
+  description="Gestiona tus preferencias de cookies en Beisjoven."
+  noIndex={true}
+>
+  <Breadcrumb items={[
+    { text: 'Inicio', href: '/' },
+    { text: 'Preferencias de cookies' },
+  ]} />
+
+  <div class="max-w-[42rem] mx-auto px-4 py-12">
+    <h1 class="text-3xl font-bold text-navy mb-4">Preferencias de Cookies</h1>
+    {/* TODO JURIDICO-02: implementar banner de consentimiento de cookies con opciones granulares */}
+    <p class="text-gris-text leading-relaxed">
+      Esta sección estará disponible próximamente. Por el momento, el Sitio solo usa cookies de
+      Google Analytics 4 con fines analíticos. Puedes deshabilitarlas desde la configuración de
+      tu navegador.
+    </p>
+    <p class="text-gris-text leading-relaxed mt-4">
+      Para más información, consulta nuestra{' '}
+      <a href="/privacidad" class="text-steel-blue hover:underline">Política de Privacidad</a>.
+    </p>
+  </div>
+</BaseLayout>

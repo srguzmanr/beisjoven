@@ -1,0 +1,128 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+---
+
+<BaseLayout
+  title="Términos de Uso — Beisjoven"
+  description="Términos y condiciones de uso del sitio Beisjoven. Lee sobre propiedad intelectual, contenido enviado por usuarios y ley aplicable."
+>
+  <Breadcrumb items={[
+    { text: 'Inicio', href: '/' },
+    { text: 'Términos de Uso' },
+  ]} />
+
+  <div class="max-w-[42rem] mx-auto px-4 py-12">
+    <h1 class="text-3xl font-bold text-navy mb-2">Términos de Uso</h1>
+    <p class="text-sm text-gris-muted mb-10">Última actualización: 5 de mayo de 2026</p>
+
+    <div class="prose max-w-none">
+
+      <p>
+        Bienvenido a Beisjoven. Al usar este sitio (en adelante, "el Sitio"), aceptas estos
+        términos. Si no estás de acuerdo con alguno de ellos, te pedimos no usar el Sitio.
+      </p>
+
+      <h2>1. Operador</h2>
+
+      <p>
+        El Sitio es operado por Noboru LLC, una sociedad constituida en los Estados Unidos. Para
+        fines legales, las comunicaciones deben dirigirse a{' '}
+        <a href="mailto:hola@beisjoven.com">hola@beisjoven.com</a>.
+      </p>
+      <p>
+        <strong>Domicilio EE.&nbsp;UU.:</strong> 110 E Houston St, Fl&nbsp;3, San Antonio, Texas 78205<br />
+        <strong>Domicilio México:</strong> Aniceto Ortega 1314, Colonia del Valle, Benito Juárez, CDMX 03100
+      </p>
+
+      <h2>2. Propiedad intelectual</h2>
+
+      <p>
+        Todo el contenido editorial publicado en el Sitio (artículos, fotos, videos, gráficos,
+        diseño y código) es propiedad de Beisjoven, salvo que se indique lo contrario o se trate de
+        contenido de terceros usado bajo licencia o crédito.
+      </p>
+
+      <p>
+        No puedes reproducir, distribuir ni usar comercialmente este contenido sin autorización
+        escrita previa. Para solicitar permiso, escríbenos a{' '}
+        <a href="mailto:hola@beisjoven.com">hola@beisjoven.com</a>.
+      </p>
+
+      <p>
+        El uso editorial limitado con cita y enlace a la fuente original está permitido bajo
+        principios de cita justa.
+      </p>
+
+      <h2>3. Contenido enviado por usuarios</h2>
+
+      <p>
+        Cuando envías contenido a Beisjoven a través de Tu Historia, formularios de contacto o
+        cualquier otro medio, nos otorgas una licencia no exclusiva, mundial y libre de regalías
+        para publicar, editar y distribuir ese contenido en nuestras plataformas editoriales y
+        redes sociales.
+      </p>
+
+      <p>
+        Tú conservas la autoría y propiedad de tu contenido. Beisjoven se reserva el derecho de
+        editar contenido por claridad, longitud o estilo editorial, y de no publicarlo si no cumple
+        con nuestros estándares.
+      </p>
+
+      <p>
+        Al enviar contenido, declaras que es original tuyo o que tienes derecho a compartirlo, y
+        que no infringe derechos de terceros.
+      </p>
+
+      <h2>4. Conducta del usuario</h2>
+
+      <p>Al usar el Sitio, aceptas no:</p>
+      <ul>
+        <li>Enviar contenido falso, difamatorio, ofensivo o ilegal.</li>
+        <li>Suplantar la identidad de otra persona.</li>
+        <li>Intentar acceder sin autorización a partes restringidas del Sitio.</li>
+        <li>Usar el Sitio para fines fraudulentos o comerciales no autorizados.</li>
+      </ul>
+
+      <h2>5. Limitación de responsabilidad</h2>
+
+      <p>
+        El Sitio se ofrece "tal cual". Hacemos esfuerzos razonables para mantener la información
+        precisa y el Sitio operativo, pero no garantizamos disponibilidad ininterrumpida ni
+        exactitud total del contenido.
+      </p>
+
+      <p>
+        Beisjoven no es responsable por daños derivados del uso del Sitio o de contenido enviado
+        por terceros.
+      </p>
+
+      <h2>6. Enlaces externos</h2>
+
+      <p>
+        El Sitio contiene enlaces a sitios de terceros. No controlamos esos sitios y no somos
+        responsables de su contenido o políticas.
+      </p>
+
+      <h2>7. Cambios a estos términos</h2>
+
+      <p>
+        Podemos actualizar estos términos. Cuando lo hagamos, actualizaremos la fecha al inicio del
+        documento. El uso continuado del Sitio implica aceptación de los términos vigentes.
+      </p>
+
+      <h2>8. Ley aplicable</h2>
+
+      <p>
+        Estos términos se rigen por las leyes de los Estados Unidos Mexicanos. Cualquier disputa se
+        resolverá en los tribunales competentes de la Ciudad de México.
+      </p>
+
+      <h2>9. Contacto</h2>
+
+      <p>Para cualquier pregunta sobre estos términos, escríbenos a:</p>
+      <p><a href="mailto:hola@beisjoven.com">hola@beisjoven.com</a></p>
+
+    </div>
+  </div>
+</BaseLayout>

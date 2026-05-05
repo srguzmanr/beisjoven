@@ -305,23 +305,73 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
               <!-- Rendered by JS when entering step 3 -->
             </div>
 
-            <!-- Autorizaciones -->
+            <!-- Aviso de Privacidad Simplificado -->
+            <div class="th-aviso-simplificado">
+              <strong>Aviso de Privacidad Simplificado.</strong> Beisjoven (operado por Noboru LLC,
+              EE.&nbsp;UU.) recaba el nombre, correo electrónico, historia y, en su caso, fotografías
+              o videos que envíe, para fines editoriales (publicación en el Sitio, redes sociales y
+              boletines). No tratamos datos personales sensibles. Para limitar el uso, oponerse a
+              finalidades secundarias o ejercer sus derechos ARCO, escriba a{' '}
+              <a href="mailto:privacidad@beisjoven.com">privacidad@beisjoven.com</a>
+              (alterno temporal: <a href="mailto:hola@beisjoven.com">hola@beisjoven.com</a> con asunto
+              "Privacidad"). Consulte el Aviso Integral en{' '}
+              <a href="/privacidad" target="_blank" rel="noopener">beisjoven.com/privacidad</a>.
+            </div>
+
+            <!-- Consentimientos obligatorios -->
             <fieldset class="th-auth">
-              <legend class="th-step-title" style="font-size: 1.125rem;">Autorización</legend>
+              <legend class="th-step-title" style="font-size: 1.125rem;">Confirmaciones obligatorias</legend>
 
               <div class="field">
                 <label class="th-checkbox">
                   <input
                     type="checkbox"
-                    id="th-auth-general"
-                    name="autorizacion_general"
+                    id="th-consent-age"
+                    name="consent_age"
                     required
                     data-required="true"
-                    data-error-empty="Debes aceptar los términos para enviar tu historia"
+                    data-error-empty="Debes confirmar tu edad para continuar"
+                  />
+                  {/* TODO JURIDICO-03: si el usuario indica ser menor, requerir email del tutor + verificación */}
+                  <span>
+                    Soy mayor de 18 años, o cuento con consentimiento de mi padre, madre o tutor legal. <span class="req">*</span>
+                  </span>
+                </label>
+                <p class="hint th-auth-hint" data-hint-default="">&nbsp;</p>
+              </div>
+
+              <div class="field">
+                <label class="th-checkbox">
+                  <input
+                    type="checkbox"
+                    id="th-consent-third-party"
+                    name="consent_third_party"
+                    required
+                    data-required="true"
+                    data-error-empty="Debes confirmar el consentimiento de personas identificables"
                   />
                   <span>
-                    Autorizo a Beisjoven a utilizar la información y fotografías que envío con fines editoriales, incluyendo artículos, redes sociales y newsletters. Confirmo que tengo relación directa con el evento o las personas que aparecen en las fotografías y que he leído los
-                    <a href="/tu-historia/terminos" target="_blank" rel="noopener" style="color: #B8892E;" class="hover:underline font-medium">Términos de Envío</a>. <span class="req">*</span>
+                    Si mi historia incluye personas identificables, declaro contar con su consentimiento (y, si son menores, con el de su padre, madre o tutor legal). <span class="req">*</span>
+                  </span>
+                </label>
+                <p class="hint th-auth-hint" data-hint-default="">&nbsp;</p>
+              </div>
+
+              <div class="field">
+                <label class="th-checkbox">
+                  <input
+                    type="checkbox"
+                    id="th-consent-terms"
+                    name="consent_terms"
+                    required
+                    data-required="true"
+                    data-error-empty="Debes aceptar el Aviso de Privacidad y los Términos de Uso"
+                  />
+                  <span>
+                    He leído y acepto el{' '}
+                    <a href="/privacidad" target="_blank" rel="noopener" style="color: #B8892E;" class="hover:underline font-medium">Aviso de Privacidad</a>
+                    {' '}y los{' '}
+                    <a href="/terminos" target="_blank" rel="noopener" style="color: #B8892E;" class="hover:underline font-medium">Términos de Uso</a>. <span class="req">*</span>
                   </span>
                 </label>
                 <p class="hint th-auth-hint" data-hint-default="">&nbsp;</p>
@@ -662,6 +712,27 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       font: 400 13px/1.4 var(--font-body, "Inter", sans-serif);
       color: var(--th-ink-muted);
       margin-top: 2px;
+    }
+
+    /* ===== Simplified privacy notice (Step 3) ===== */
+    .th-aviso-simplificado {
+      padding: 12px 16px;
+      background: var(--bg-2, #F6F5F1);
+      border-left: 3px solid var(--th-gold);
+      border-radius: 2px;
+      font: 400 12px/1.55 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink-muted);
+      margin: 0 0 20px;
+    }
+    .th-aviso-simplificado strong {
+      color: var(--th-ink);
+    }
+    .th-aviso-simplificado a {
+      color: var(--th-ink-muted);
+      text-decoration: underline;
+    }
+    .th-aviso-simplificado a:hover {
+      color: var(--th-ink);
     }
 
     /* ===== Editorial trust note (Step 3) ===== */
