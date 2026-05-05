@@ -1,0 +1,373 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumb from '@/components/Breadcrumb.astro';
+import BackToTop from '@/components/BackToTop.astro';
+import { supabase, supabaseServer } from '@/lib/supabase';
+
+interface PhotoRow {
+  nombre: string;
+  pie_de_foto: string | null;
+  credito: string | null;
+}
+
+export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
+  const { data: rows } = await supabaseServer
+    .from('imagenes_metadata')
+    .select('nombre, pie_de_foto, credito')
+    .not('nombre', 'like', '%-og.jpg')
+    .not('nombre', 'like', '%-og.jpeg')
+    .order('created_at', { ascending: false });
+
+  const photos = (rows ?? []).map((p: PhotoRow) => {
+    const { data } = supabase.storage.from('imagenes').getPublicUrl(p.nombre);
+    return {
+      nombre: p.nombre,
+      pie_de_foto: p.pie_de_foto,
+      credito: p.credito,
+      url: data.publicUrl,
+    };
+  });
+
+  return paginate(photos, { pageSize: 12 });
+};
+
+const { page } = Astro.props;
+const totalPages = page.lastPage;
+const currentPage = page.currentPage;
+const hasMore = !!page.url.next;
+
+const pageTitle = currentPage > 1
+  ? `Galería - Página ${currentPage} - Beisjoven`
+  : 'Galería - Beisjoven';
+const description = 'Fotografía editorial Beisjoven: béisbol y softbol mexicano en imágenes.';
+const galeriaUrl = currentPage > 1
+  ? `https://beisjoven.com/galeria/${currentPage}`
+  : 'https://beisjoven.com/galeria';
+---
+
+<BaseLayout title={pageTitle} description={description} url={galeriaUrl}>
+  <Breadcrumb items={[
+    { text: 'Inicio', href: '/' },
+    { text: 'Galería' },
+  ]} />
+
+  <div class="gallery-hub">
+    <div class="gallery-hub__container">
+      <header class="gallery-hub__header">
+        <span class="gallery-hub__eyebrow">Fotografía Beisjoven</span>
+        <h1 class="gallery-hub__title">Galería</h1>
+      </header>
+
+      {page.data.length > 0 ? (
+        <div class="gallery-hub__grid" data-gallery-hub>
+          {page.data.map((p, i) => (
+            <button
+              type="button"
+              class="gallery-hub__cell"
+              data-gallery-index={i}
+              data-src={p.url}
+              data-caption={p.pie_de_foto ?? ''}
+              data-credit={p.credito ?? ''}
+            >
+              <div class="gallery-hub__media">
+                <img
+                  src={p.url}
+                  alt={p.pie_de_foto ?? ''}
+                  loading="lazy"
+                  decoding="async"
+                  class="gallery-hub__img"
+                />
+              </div>
+              {p.credito && (
+                <span class="gallery-hub__credit">{p.credito}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p class="gallery-hub__empty">No hay fotos disponibles todavía.</p>
+      )}
+
+      <div class="gallery-hub__pagination">
+        {hasMore ? (
+          <a href={page.url.next} class="gallery-hub__load-more">
+            Cargar más
+          </a>
+        ) : totalPages > 1 ? (
+          <p class="gallery-hub__end">Has visto todas las fotos</p>
+        ) : null}
+        {totalPages > 1 && (
+          <p class="gallery-hub__page-indicator">
+            Página {currentPage} de {totalPages}
+          </p>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    (function() {
+      var hub = document.querySelector('[data-gallery-hub]');
+      if (!hub) return;
+
+      var cells = Array.from(hub.querySelectorAll('.gallery-hub__cell'));
+      if (!cells.length) return;
+
+      var images = cells.map(function(c) {
+        return {
+          src: c.getAttribute('data-src') || '',
+          caption: c.getAttribute('data-caption') || '',
+          credit: c.getAttribute('data-credit') || ''
+        };
+      });
+
+      var overlay, imgEl, captionEl, counterEl, current;
+
+      function createLightbox() {
+        overlay = document.createElement('div');
+        overlay.className = 'lightbox-overlay';
+        overlay.innerHTML =
+          '<button class="lightbox-close" aria-label="Cerrar">&times;</button>' +
+          '<div class="lightbox-counter"></div>' +
+          '<button class="lightbox-arrow lightbox-arrow--prev" aria-label="Anterior">&#8249;</button>' +
+          '<button class="lightbox-arrow lightbox-arrow--next" aria-label="Siguiente">&#8250;</button>' +
+          '<div class="lightbox-img-wrap"><img src="" alt="" /></div>' +
+          '<div class="lightbox-caption"></div>';
+        document.body.appendChild(overlay);
+
+        imgEl = overlay.querySelector('.lightbox-img-wrap img');
+        captionEl = overlay.querySelector('.lightbox-caption');
+        counterEl = overlay.querySelector('.lightbox-counter');
+
+        overlay.querySelector('.lightbox-close').addEventListener('click', close);
+        overlay.querySelector('.lightbox-arrow--prev').addEventListener('click', function() { navigate(-1); });
+        overlay.querySelector('.lightbox-arrow--next').addEventListener('click', function() { navigate(1); });
+        overlay.addEventListener('click', function(e) {
+          if (e.target === overlay || e.target.classList.contains('lightbox-img-wrap')) close();
+        });
+
+        document.addEventListener('keydown', function(e) {
+          if (!overlay.classList.contains('is-visible')) return;
+          if (e.key === 'Escape') close();
+          if (e.key === 'ArrowLeft') navigate(-1);
+          if (e.key === 'ArrowRight') navigate(1);
+        });
+
+        var touchStartX = 0, touchEndX = 0, touchStartY = 0, touchEndY = 0;
+        overlay.addEventListener('touchstart', function(e) {
+          touchStartX = e.changedTouches[0].screenX;
+          touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+        overlay.addEventListener('touchend', function(e) {
+          touchEndX = e.changedTouches[0].screenX;
+          touchEndY = e.changedTouches[0].screenY;
+          var diffX = touchStartX - touchEndX;
+          var diffY = touchStartY - touchEndY;
+          if (Math.abs(diffY) > Math.abs(diffX)) {
+            if (diffY < -80) close();
+          } else if (Math.abs(diffX) > 50) {
+            navigate(diffX > 0 ? 1 : -1);
+          }
+        }, { passive: true });
+      }
+
+      function open(index) {
+        if (!overlay) createLightbox();
+        current = index;
+        show();
+        overlay.classList.add('is-visible');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function close() {
+        overlay.classList.remove('is-visible');
+        document.body.style.overflow = '';
+      }
+
+      function navigate(dir) {
+        current = (current + dir + images.length) % images.length;
+        show();
+      }
+
+      function show() {
+        var img = images[current];
+        imgEl.src = img.src;
+        imgEl.alt = img.caption || '';
+        var captionHtml = '';
+        if (img.caption) captionHtml += img.caption;
+        if (img.credit) captionHtml += ' <span>' + img.credit + '</span>';
+        captionEl.innerHTML = captionHtml;
+        captionEl.style.display = captionHtml ? '' : 'none';
+        counterEl.textContent = (current + 1) + '/' + images.length;
+      }
+
+      cells.forEach(function(cell, i) {
+        cell.addEventListener('click', function() { open(i); });
+      });
+    })();
+  </script>
+
+  <BackToTop />
+</BaseLayout>
+
+<style>
+  .gallery-hub {
+    background: #fff;
+    padding: 24px 0 48px;
+  }
+
+  @media (min-width: 768px) {
+    .gallery-hub {
+      padding: 40px 32px 64px;
+    }
+  }
+
+  .gallery-hub__container {
+    max-width: var(--w-page);
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+
+  @media (min-width: 768px) {
+    .gallery-hub__container {
+      padding: 0;
+    }
+  }
+
+  .gallery-hub__header {
+    border-bottom: 2px solid var(--navy);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+
+  .gallery-hub__eyebrow {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .gallery-hub__title {
+    font-family: var(--font-heading);
+    font-size: var(--text-h2);
+    letter-spacing: var(--tracking-h2);
+    line-height: var(--lh-h2);
+    color: var(--navy);
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .gallery-hub__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  @media (min-width: 768px) {
+    .gallery-hub__grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+  }
+
+  .gallery-hub__cell {
+    display: block;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
+    width: 100%;
+  }
+
+  .gallery-hub__media {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: var(--rule, #eee);
+  }
+
+  .gallery-hub__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 200ms ease;
+  }
+
+  @media (min-width: 768px) {
+    .gallery-hub__cell:hover .gallery-hub__img {
+      transform: scale(1.02);
+    }
+  }
+
+  .gallery-hub__credit {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .gallery-hub__empty {
+    font-family: var(--font-body);
+    color: var(--muted);
+    text-align: center;
+    padding: 48px 0;
+  }
+
+  .gallery-hub__pagination {
+    margin-top: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .gallery-hub__load-more {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--navy);
+    background: #fff;
+    border: 1px solid var(--navy);
+    padding: 10px 20px;
+    text-decoration: none;
+    transition: background 150ms ease, color 150ms ease;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gallery-hub__load-more:hover {
+    background: var(--navy);
+    color: #fff;
+  }
+
+  .gallery-hub__end {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .gallery-hub__page-indicator {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0;
+  }
+</style>
