@@ -1,0 +1,291 @@
+---
+// DESIGN-04d — Gallery module "La semana, en imágenes".
+// Reads the 5 most-recent rows from imagenes_metadata (excluding the
+// build-generated -og.jpg/.jpeg variants), renders an asymmetric magazine
+// grid, and overlays "+N fotos" on the last desktop cell linking to /galeria
+// (placeholder until GALERIA-HUB-01 ships).
+import { supabase, supabaseServer } from '@/lib/supabase';
+
+const [{ data: rows }, { count: totalCount }] = await Promise.all([
+  supabaseServer
+    .from('imagenes_metadata')
+    .select('nombre, pie_de_foto, credito')
+    .not('nombre', 'like', '%-og.jpg')
+    .not('nombre', 'like', '%-og.jpeg')
+    .order('created_at', { ascending: false })
+    .limit(5),
+  supabaseServer
+    .from('imagenes_metadata')
+    .select('nombre', { count: 'exact', head: true })
+    .not('nombre', 'like', '%-og.jpg')
+    .not('nombre', 'like', '%-og.jpeg'),
+]);
+
+const photos = rows ?? [];
+const total = totalCount ?? photos.length;
+const overflow = Math.max(0, total - 5);
+
+// Reuse the same Storage helper Media Library uses (see public/js/supabase.js
+// SupabaseStorage.obtenerUrl) so URL construction has a single source of truth.
+const photosWithUrl = photos.map((p) => {
+  const { data } = supabase.storage.from('imagenes').getPublicUrl(p.nombre);
+  return {
+    nombre: p.nombre,
+    pie_de_foto: p.pie_de_foto,
+    credito: p.credito,
+    url: data.publicUrl,
+  };
+});
+---
+
+{photosWithUrl.length > 0 && (
+  <section class="bj-gallery">
+    <div class="bj-gallery__container">
+      <div class="bj-gallery__header">
+        <span class="bj-gallery__eyebrow">Fotografía Beisjoven</span>
+        <h2 class="bj-gallery__title">La semana, en imágenes</h2>
+        <span class="bj-gallery__spacer" aria-hidden="true"></span>
+        <a class="bj-gallery__cta" href="/galeria">
+          Ver galería <span aria-hidden="true">→</span>
+        </a>
+      </div>
+
+      <div class="bj-gallery__grid">
+        {photosWithUrl.map((p, i) => {
+          const isLast = i === photosWithUrl.length - 1;
+          const showOverlay = isLast && overflow > 0;
+          return (
+            <a
+              class:list={['bj-gallery__cell', `bj-gallery__cell--${i + 1}`]}
+              href="/galeria"
+            >
+              <div class="bj-gallery__media">
+                <img
+                  src={p.url}
+                  alt={p.pie_de_foto ?? ''}
+                  loading="lazy"
+                  decoding="async"
+                  class="bj-gallery__img"
+                />
+                {showOverlay && (
+                  <div class="bj-gallery__overlay" aria-hidden="false">
+                    <span class="bj-gallery__overlay-text">+{overflow} fotos</span>
+                  </div>
+                )}
+              </div>
+              {p.credito && (
+                <span class="bj-gallery__credit">{p.credito}</span>
+              )}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+)}
+
+<style>
+  .bj-gallery {
+    background: #fff;
+    padding: 40px 0;
+  }
+
+  @media (min-width: 768px) {
+    .bj-gallery {
+      padding: 56px 32px;
+    }
+  }
+
+  .bj-gallery__container {
+    max-width: var(--w-page);
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-gallery__container {
+      padding: 0;
+    }
+  }
+
+  .bj-gallery__header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: 2px solid var(--navy);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .bj-gallery__eyebrow {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .bj-gallery__title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: clamp(1.25rem, 1.05rem + 0.6vw, 1.75rem);
+    color: var(--navy);
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .bj-gallery__spacer {
+    flex: 1;
+  }
+
+  .bj-gallery__cta {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--navy);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .bj-gallery__cta:hover {
+    text-decoration: underline;
+  }
+
+  /* === Mobile grid (< 768px) ===
+     2 cols × 3 rows, 4 visible cells. The 5th row is hidden on mobile to
+     preserve the asymmetric magazine read. */
+  .bj-gallery__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: auto;
+    gap: 8px;
+  }
+
+  .bj-gallery__cell {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+  }
+
+  .bj-gallery__cell--1 {
+    grid-row: span 2;
+  }
+
+  .bj-gallery__cell--1 .bj-gallery__media {
+    aspect-ratio: 3 / 4;
+  }
+
+  .bj-gallery__cell--2 .bj-gallery__media,
+  .bj-gallery__cell--3 .bj-gallery__media {
+    aspect-ratio: 1 / 1;
+  }
+
+  .bj-gallery__cell--4 {
+    grid-column: span 2;
+  }
+
+  .bj-gallery__cell--4 .bj-gallery__media {
+    aspect-ratio: 2 / 1;
+  }
+
+  .bj-gallery__cell--5 {
+    display: none;
+  }
+
+  .bj-gallery__media {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+  }
+
+  .bj-gallery__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 200ms ease;
+  }
+
+  .bj-gallery__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(27, 42, 74, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bj-gallery__overlay-text {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 20px;
+    color: #fff;
+  }
+
+  .bj-gallery__credit {
+    display: none;
+  }
+
+  /* === Desktop grid (≥ 768px) ===
+     3 cols × 2 rows, 480px tall, 5 visible cells. Cell 1 spans both rows;
+     cells 2–5 fill the remaining 2×2 quadrant. */
+  @media (min-width: 768px) {
+    .bj-gallery__grid {
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: 1fr 1fr;
+      grid-auto-rows: unset;
+      height: 480px;
+      gap: 12px;
+    }
+
+    .bj-gallery__cell {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .bj-gallery__cell--1 {
+      grid-row: span 2;
+      grid-column: 1;
+    }
+
+    .bj-gallery__cell--1 .bj-gallery__media,
+    .bj-gallery__cell--2 .bj-gallery__media,
+    .bj-gallery__cell--3 .bj-gallery__media,
+    .bj-gallery__cell--4 .bj-gallery__media,
+    .bj-gallery__cell--5 .bj-gallery__media {
+      aspect-ratio: auto;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .bj-gallery__cell--4 {
+      grid-column: auto;
+    }
+
+    .bj-gallery__cell--5 {
+      display: flex;
+    }
+
+    .bj-gallery__cell:hover .bj-gallery__img {
+      transform: scale(1.02);
+    }
+
+    .bj-gallery__credit {
+      display: block;
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+  }
+</style>
