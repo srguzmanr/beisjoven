@@ -1,0 +1,264 @@
+---
+// DESIGN-04f: Newsletter signup ("El Diamante") — last module of homepage stack.
+// Reuses the established direct-insert pattern from public/js/pages.js
+// (submitNewsletter): anon client → suscriptores.insert, with 23505 handling
+// for duplicate emails. No RPC, no new lib helper — anon RLS policy already
+// permits the insert (same row was being written by the legacy newsletter page).
+---
+
+<div class="bj-newsletter">
+  <div class="bj-newsletter__copy">
+    <span class="bj-newsletter__eyebrow">NEWSLETTER</span>
+    <h3 class="bj-newsletter__title">
+      El Diamante &mdash; Lo esencial del beis mexicano, cada mañana.
+    </h3>
+    <p class="bj-newsletter__subtitle">
+      7 minutos de lectura. Gratis. En español.
+    </p>
+  </div>
+
+  <form id="newsletter-form" class="bj-newsletter__form" novalidate>
+    <input
+      type="email"
+      name="email"
+      required
+      placeholder="tu@email.com"
+      autocomplete="email"
+      aria-label="Correo electrónico"
+      class="bj-newsletter__input"
+    />
+    <button type="submit" class="bj-newsletter__button">Suscribirse</button>
+    <div class="bj-newsletter__status form-status" role="status" aria-live="polite"></div>
+  </form>
+</div>
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script is:inline>
+  (function () {
+    var form = document.getElementById('newsletter-form');
+    if (!form) return;
+
+    var SUPABASE_URL = 'https://yulkbjpotfmwqkzzfegg.supabase.co';
+    var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1bGtianBvdGZtd3FrenpmZWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2OTk3NTYsImV4cCI6MjA4NTI3NTc1Nn0.PK8mq4CeQkTdurdJ1EV_GOkrY2X4SCsst8O1NnoBWAU';
+
+    var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    var input = form.querySelector('input[name="email"]');
+    var button = form.querySelector('button[type="submit"]');
+    var status = form.querySelector('.form-status');
+
+    function setStatus(message, tone) {
+      status.textContent = message;
+      status.dataset.tone = tone || '';
+    }
+
+    function setBusy(busy) {
+      button.disabled = busy;
+      button.textContent = busy ? 'Enviando...' : 'Suscribirse';
+    }
+
+    function showSuccess() {
+      var parent = form.parentNode;
+      var done = document.createElement('p');
+      done.className = 'bj-newsletter__success';
+      done.textContent = '¡Listo! Cuando arranquemos los envíos te avisamos.';
+      parent.replaceChild(done, form);
+    }
+
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      try {
+        var email = (input.value || '').trim();
+        if (!email || !EMAIL_RE.test(email)) {
+          setStatus('Ingresa un correo válido.', 'error');
+          return;
+        }
+
+        if (!window.supabase || !window.supabase.createClient) {
+          setStatus('Algo falló. Intenta de nuevo.', 'error');
+          console.error('[NewsletterBlock] Supabase client not loaded');
+          return;
+        }
+
+        setBusy(true);
+        setStatus('', '');
+
+        var client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        var result = await client
+          .from('suscriptores')
+          .insert([{ email: email, activo: true }]);
+
+        var error = result && result.error;
+        if (error) {
+          var isDuplicate =
+            error.code === '23505' ||
+            (error.message && error.message.toLowerCase().indexOf('duplicate') !== -1);
+          if (isDuplicate) {
+            setStatus('Ya estás suscrito a El Diamante.', 'muted');
+          } else {
+            setStatus('Algo falló. Intenta de nuevo.', 'error');
+            console.error('[NewsletterBlock] Insert failed:', error);
+          }
+          setBusy(false);
+          return;
+        }
+
+        showSuccess();
+      } catch (err) {
+        console.error('[NewsletterBlock] Submit threw:', err);
+        setStatus('Algo falló. Intenta de nuevo.', 'error');
+        setBusy(false);
+      }
+    });
+  })();
+</script>
+
+<style>
+  .bj-newsletter {
+    background: var(--bg-2, #F6F5F1);
+    border: 1px solid var(--rule);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-newsletter {
+      flex-direction: row;
+      align-items: center;
+      gap: 32px;
+      padding: 28px;
+    }
+  }
+
+  .bj-newsletter__copy {
+    display: block;
+  }
+
+  @media (min-width: 768px) {
+    .bj-newsletter__copy {
+      flex: 1;
+    }
+  }
+
+  .bj-newsletter__eyebrow {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 6px;
+  }
+
+  .bj-newsletter__title {
+    font-family: var(--font-heading);
+    font-size: var(--text-h4, clamp(1.125rem, 1rem + 0.5vw, 1.375rem));
+    line-height: 1.25;
+    color: var(--navy);
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .bj-newsletter__subtitle {
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--muted);
+    margin: 6px 0 0;
+  }
+
+  .bj-newsletter__form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  @media (min-width: 768px) {
+    .bj-newsletter__form {
+      width: auto;
+      flex: 0 0 auto;
+    }
+  }
+
+  .bj-newsletter__input {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid var(--rule-strong);
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--navy);
+    border-radius: 0;
+  }
+
+  .bj-newsletter__input:focus {
+    outline: 2px solid var(--navy);
+    outline-offset: 1px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-newsletter__input {
+      flex: 0 0 240px;
+      width: 240px;
+    }
+  }
+
+  .bj-newsletter__button {
+    min-height: 44px;
+    padding: 10px 18px;
+    background: var(--navy);
+    color: #fff;
+    border: 1px solid var(--navy);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border-radius: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .bj-newsletter__button:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  .bj-newsletter__button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .bj-newsletter__status {
+    flex-basis: 100%;
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 1.4;
+    min-height: 0;
+    color: var(--muted);
+  }
+
+  .bj-newsletter__status:empty {
+    display: none;
+  }
+
+  .bj-newsletter__status[data-tone='error'] {
+    color: var(--red);
+  }
+
+  .bj-newsletter__status[data-tone='muted'] {
+    color: var(--muted);
+  }
+
+  .bj-newsletter__success {
+    flex: 1;
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--navy);
+    margin: 0;
+  }
+</style>
