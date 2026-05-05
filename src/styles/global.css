@@ -396,6 +396,25 @@ div[data-youtube-video] {
   border-top: 1px solid var(--color-gris-border);
 }
 
+/* ==================== FORM MICROCOPY (BJ-007) ====================
+   Single source of truth for legal microcopy under form actions.
+   Replaces the older "Aviso de Privacidad Simplificado" framed blocks. */
+.form-microcopy {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  font-weight: 400;
+  margin-top: 12px;
+}
+.form-microcopy a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.form-microcopy a:hover {
+  color: var(--navy);
+}
+
 /* ==================== ANIMATIONS ==================== */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
