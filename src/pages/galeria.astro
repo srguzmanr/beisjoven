@@ -1,7 +1,5 @@
 ---
-import type { GetStaticPaths } from 'astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import Breadcrumb from '@/components/Breadcrumb.astro';
 import BackToTop from '@/components/BackToTop.astro';
 import { supabase, supabaseServer } from '@/lib/supabase';
 
@@ -11,69 +9,69 @@ interface PhotoRow {
   credito: string | null;
 }
 
-export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
-  const { data: rows } = await supabaseServer
-    .from('imagenes_metadata')
-    .select('nombre, pie_de_foto, credito')
-    .not('nombre', 'like', '%-og.jpg')
-    .not('nombre', 'like', '%-og.jpeg')
-    .order('created_at', { ascending: false });
+const INITIAL_BATCH = 12;
+const BATCH_SIZE = 12;
 
-  const photos = (rows ?? []).map((p: PhotoRow) => {
-    const { data } = supabase.storage.from('imagenes').getPublicUrl(p.nombre);
-    return {
-      nombre: p.nombre,
-      pie_de_foto: p.pie_de_foto,
-      credito: p.credito,
-      url: data.publicUrl,
-    };
-  });
+const { data: rows } = await supabaseServer
+  .from('imagenes_metadata')
+  .select('nombre, pie_de_foto, credito')
+  .not('nombre', 'like', '%-og.jpg')
+  .not('nombre', 'like', '%-og.jpeg')
+  .order('created_at', { ascending: false });
 
-  return paginate(photos, { pageSize: 12 });
-};
+const photos = (rows ?? []).map((p: PhotoRow) => {
+  const { data } = supabase.storage.from('imagenes').getPublicUrl(p.nombre);
+  return {
+    url: data.publicUrl,
+    pie_de_foto: p.pie_de_foto ?? '',
+    credito: p.credito ?? '',
+  };
+});
 
-const { page } = Astro.props;
-const totalPages = page.lastPage;
-const currentPage = page.currentPage;
-const hasMore = !!page.url.next;
+const initialPhotos = photos.slice(0, INITIAL_BATCH);
+const remainingPhotos = photos.slice(INITIAL_BATCH);
+const totalPhotos = photos.length;
 
-const pageTitle = currentPage > 1
-  ? `Galería - Página ${currentPage} - Beisjoven`
-  : 'Galería - Beisjoven';
+// Safe JSON embedding inside <script type="application/json">: escape `<` so
+// captions or credits containing "</script>" or HTML-like text cannot break out.
+const remainingJson = JSON.stringify(remainingPhotos)
+  .replace(/</g, '\\u003c')
+  .replace(/-->/g, '--\\u003e');
+
+const pageTitle = 'Galería - Beisjoven';
 const description = 'Fotografía editorial Beisjoven: béisbol y softbol mexicano en imágenes.';
-const galeriaUrl = currentPage > 1
-  ? `https://beisjoven.com/galeria/${currentPage}`
-  : 'https://beisjoven.com/galeria';
+const galeriaUrl = 'https://beisjoven.com/galeria';
 ---
 
 <BaseLayout title={pageTitle} description={description} url={galeriaUrl}>
-  <Breadcrumb items={[
-    { text: 'Inicio', href: '/' },
-    { text: 'Galería' },
-  ]} />
-
   <div class="gallery-hub">
     <div class="gallery-hub__container">
       <header class="gallery-hub__header">
         <span class="gallery-hub__eyebrow">Fotografía Beisjoven</span>
         <h1 class="gallery-hub__title">Galería</h1>
+        <span class="gallery-hub__spacer" aria-hidden="true"></span>
       </header>
 
-      {page.data.length > 0 ? (
-        <div class="gallery-hub__grid" data-gallery-hub>
-          {page.data.map((p, i) => (
+      {totalPhotos > 0 ? (
+        <div
+          class="gallery-hub__grid"
+          data-gallery-grid
+          data-loaded={initialPhotos.length}
+          data-total={totalPhotos}
+          data-batch-size={BATCH_SIZE}
+        >
+          {initialPhotos.map((p) => (
             <button
               type="button"
               class="gallery-hub__cell"
-              data-gallery-index={i}
               data-src={p.url}
-              data-caption={p.pie_de_foto ?? ''}
-              data-credit={p.credito ?? ''}
+              data-caption={p.pie_de_foto}
+              data-credit={p.credito}
             >
               <div class="gallery-hub__media">
                 <img
                   src={p.url}
-                  alt={p.pie_de_foto ?? ''}
+                  alt={p.pie_de_foto}
                   loading="lazy"
                   decoding="async"
                   class="gallery-hub__img"
@@ -89,40 +87,105 @@ const galeriaUrl = currentPage > 1
         <p class="gallery-hub__empty">No hay fotos disponibles todavía.</p>
       )}
 
-      <div class="gallery-hub__pagination">
-        {hasMore ? (
-          <a href={page.url.next} class="gallery-hub__load-more">
+      {remainingPhotos.length > 0 && (
+        <script id="gallery-data" type="application/json" set:html={remainingJson} />
+      )}
+
+      {remainingPhotos.length > 0 && (
+        <div class="gallery-hub__pagination">
+          <button type="button" class="gallery-hub__load-more" data-gallery-load-more>
             Cargar más
-          </a>
-        ) : totalPages > 1 ? (
-          <p class="gallery-hub__end">Has visto todas las fotos</p>
-        ) : null}
-        {totalPages > 1 && (
-          <p class="gallery-hub__page-indicator">
-            Página {currentPage} de {totalPages}
-          </p>
-        )}
-      </div>
+          </button>
+        </div>
+      )}
     </div>
   </div>
 
   <script is:inline>
-    (function() {
-      var hub = document.querySelector('[data-gallery-hub]');
-      if (!hub) return;
+    (function () {
+      var grid = document.querySelector('[data-gallery-grid]');
+      if (!grid) return;
 
-      var cells = Array.from(hub.querySelectorAll('.gallery-hub__cell'));
-      if (!cells.length) return;
+      var loadMoreBtn = document.querySelector('[data-gallery-load-more]');
+      var dataNode = document.getElementById('gallery-data');
+      var remaining = [];
+      if (dataNode && dataNode.textContent) {
+        try {
+          remaining = JSON.parse(dataNode.textContent);
+        } catch (err) {
+          console.error('[galeria] failed to parse gallery-data', err);
+        }
+      }
 
-      var images = cells.map(function(c) {
-        return {
-          src: c.getAttribute('data-src') || '',
-          caption: c.getAttribute('data-caption') || '',
-          credit: c.getAttribute('data-credit') || ''
-        };
-      });
+      var batchSize = parseInt(grid.getAttribute('data-batch-size') || '12', 10);
+      var total = parseInt(grid.getAttribute('data-total') || '0', 10);
+      var cursor = 0;
 
-      var overlay, imgEl, captionEl, counterEl, current;
+      function escapeAttr(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+
+      function renderCell(p) {
+        var credit = p.credito || '';
+        var caption = p.pie_de_foto || '';
+        var html =
+          '<div class="gallery-hub__media">' +
+            '<img src="' + escapeAttr(p.url) + '" alt="' + escapeAttr(caption) + '" loading="lazy" decoding="async" class="gallery-hub__img" />' +
+          '</div>' +
+          (credit ? '<span class="gallery-hub__credit">' + escapeHtml(credit) + '</span>' : '');
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'gallery-hub__cell';
+        btn.setAttribute('data-src', p.url);
+        btn.setAttribute('data-caption', caption);
+        btn.setAttribute('data-credit', credit);
+        btn.innerHTML = html;
+        return btn;
+      }
+
+      function loadNextBatch() {
+        var slice = remaining.slice(cursor, cursor + batchSize);
+        if (!slice.length) return;
+        var frag = document.createDocumentFragment();
+        slice.forEach(function (p) { frag.appendChild(renderCell(p)); });
+        grid.appendChild(frag);
+        cursor += slice.length;
+        var loaded = parseInt(grid.getAttribute('data-loaded') || '0', 10) + slice.length;
+        grid.setAttribute('data-loaded', String(loaded));
+        if (cursor >= remaining.length && loadMoreBtn) {
+          loadMoreBtn.style.display = 'none';
+        }
+      }
+
+      if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', loadNextBatch);
+      }
+
+      // Lightbox — single delegated listener on grid; image list rebuilt
+      // per-open from current DOM so appended cells are included automatically.
+      var overlay, imgEl, captionEl, counterEl, current = 0, images = [];
+
+      function buildImagesFromGrid() {
+        images = Array.from(grid.querySelectorAll('.gallery-hub__cell')).map(function (c) {
+          return {
+            src: c.getAttribute('data-src') || '',
+            caption: c.getAttribute('data-caption') || '',
+            credit: c.getAttribute('data-credit') || '',
+          };
+        });
+      }
 
       function createLightbox() {
         overlay = document.createElement('div');
@@ -140,39 +203,39 @@ const galeriaUrl = currentPage > 1
         captionEl = overlay.querySelector('.lightbox-caption');
         counterEl = overlay.querySelector('.lightbox-counter');
 
-        overlay.querySelector('.lightbox-close').addEventListener('click', close);
-        overlay.querySelector('.lightbox-arrow--prev').addEventListener('click', function() { navigate(-1); });
-        overlay.querySelector('.lightbox-arrow--next').addEventListener('click', function() { navigate(1); });
-        overlay.addEventListener('click', function(e) {
-          if (e.target === overlay || e.target.classList.contains('lightbox-img-wrap')) close();
+        overlay.querySelector('.lightbox-close').addEventListener('click', closeLightbox);
+        overlay.querySelector('.lightbox-arrow--prev').addEventListener('click', function () { navigate(-1); });
+        overlay.querySelector('.lightbox-arrow--next').addEventListener('click', function () { navigate(1); });
+        overlay.addEventListener('click', function (e) {
+          if (e.target === overlay || e.target.classList.contains('lightbox-img-wrap')) closeLightbox();
         });
 
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
           if (!overlay.classList.contains('is-visible')) return;
-          if (e.key === 'Escape') close();
+          if (e.key === 'Escape') closeLightbox();
           if (e.key === 'ArrowLeft') navigate(-1);
           if (e.key === 'ArrowRight') navigate(1);
         });
 
         var touchStartX = 0, touchEndX = 0, touchStartY = 0, touchEndY = 0;
-        overlay.addEventListener('touchstart', function(e) {
+        overlay.addEventListener('touchstart', function (e) {
           touchStartX = e.changedTouches[0].screenX;
           touchStartY = e.changedTouches[0].screenY;
         }, { passive: true });
-        overlay.addEventListener('touchend', function(e) {
+        overlay.addEventListener('touchend', function (e) {
           touchEndX = e.changedTouches[0].screenX;
           touchEndY = e.changedTouches[0].screenY;
           var diffX = touchStartX - touchEndX;
           var diffY = touchStartY - touchEndY;
           if (Math.abs(diffY) > Math.abs(diffX)) {
-            if (diffY < -80) close();
+            if (diffY < -80) closeLightbox();
           } else if (Math.abs(diffX) > 50) {
             navigate(diffX > 0 ? 1 : -1);
           }
         }, { passive: true });
       }
 
-      function open(index) {
+      function openLightbox(index) {
         if (!overlay) createLightbox();
         current = index;
         show();
@@ -180,18 +243,20 @@ const galeriaUrl = currentPage > 1
         document.body.style.overflow = 'hidden';
       }
 
-      function close() {
+      function closeLightbox() {
         overlay.classList.remove('is-visible');
         document.body.style.overflow = '';
       }
 
       function navigate(dir) {
+        if (!images.length) return;
         current = (current + dir + images.length) % images.length;
         show();
       }
 
       function show() {
         var img = images[current];
+        if (!img) return;
         imgEl.src = img.src;
         imgEl.alt = img.caption || '';
         var captionHtml = '';
@@ -202,8 +267,13 @@ const galeriaUrl = currentPage > 1
         counterEl.textContent = (current + 1) + '/' + images.length;
       }
 
-      cells.forEach(function(cell, i) {
-        cell.addEventListener('click', function() { open(i); });
+      grid.addEventListener('click', function (e) {
+        var cell = e.target.closest('.gallery-hub__cell');
+        if (!cell || !grid.contains(cell)) return;
+        buildImagesFromGrid();
+        var index = Array.from(grid.querySelectorAll('.gallery-hub__cell')).indexOf(cell);
+        if (index < 0) return;
+        openLightbox(index);
       });
     })();
   </script>
@@ -236,30 +306,36 @@ const galeriaUrl = currentPage > 1
   }
 
   .gallery-hub__header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
     border-bottom: 2px solid var(--navy);
     padding-bottom: 10px;
     margin-bottom: 20px;
+    flex-wrap: wrap;
   }
 
   .gallery-hub__eyebrow {
-    display: block;
     font-family: var(--font-body);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 4px;
   }
 
   .gallery-hub__title {
     font-family: var(--font-heading);
+    font-weight: 600;
     font-size: var(--text-h2);
     letter-spacing: var(--tracking-h2);
     line-height: var(--lh-h2);
     color: var(--navy);
     margin: 0;
-    font-weight: 700;
+  }
+
+  .gallery-hub__spacer {
+    flex: 1;
   }
 
   .gallery-hub__grid {
@@ -329,9 +405,7 @@ const galeriaUrl = currentPage > 1
   .gallery-hub__pagination {
     margin-top: 32px;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
+    justify-content: center;
   }
 
   .gallery-hub__load-more {
@@ -344,8 +418,8 @@ const galeriaUrl = currentPage > 1
     background: #fff;
     border: 1px solid var(--navy);
     padding: 10px 20px;
-    text-decoration: none;
-    transition: background 150ms ease, color 150ms ease;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
     min-height: 44px;
     display: inline-flex;
     align-items: center;
@@ -355,19 +429,5 @@ const galeriaUrl = currentPage > 1
   .gallery-hub__load-more:hover {
     background: var(--navy);
     color: #fff;
-  }
-
-  .gallery-hub__end {
-    font-family: var(--font-body);
-    font-size: 13px;
-    color: var(--muted);
-    margin: 0;
-  }
-
-  .gallery-hub__page-indicator {
-    font-family: var(--font-body);
-    font-size: 12px;
-    color: var(--muted);
-    margin: 0;
   }
 </style>
