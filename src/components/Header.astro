@@ -102,6 +102,13 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     </nav>
 
     <div class="site-header__actions">
+      <a class="header-cta" href="/tu-historia" aria-label="Comparte tu historia con Beisjoven">
+        <svg class="header-cta__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+        </svg>
+        <span class="header-cta__label">Cuéntanos</span>
+      </a>
       <button
         id="search-trigger"
         class="site-header__search"
@@ -176,7 +183,38 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 4px;
+    gap: 8px;
+  }
+
+  .header-cta {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border: 1px solid var(--red, #C8102E);
+    border-radius: 999px;
+    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: var(--red, #C8102E);
+    text-decoration: none;
+    transition: background-color 120ms ease, color 120ms ease;
+    white-space: nowrap;
+  }
+  .header-cta:hover {
+    background: var(--red, #C8102E);
+    color: #ffffff;
+  }
+  .header-cta:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.35);
+  }
+  .header-cta__icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
   }
 
   .site-header__search {
@@ -309,6 +347,8 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     .site-header__actions {
       min-width: 72px;
     }
+
+    .header-cta { display: inline-flex; }
 
     /* Nav pill — desktop primary nav */
     .nav-pill {
