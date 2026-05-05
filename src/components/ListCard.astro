@@ -12,6 +12,7 @@ interface Story {
   categoria_slug: string;
   categoria_nombre: string;
   autor_nombre: string | null;
+  read_time_minutes?: number;
 }
 
 interface Props {
@@ -37,6 +38,7 @@ const dateLabel = story.fecha
     }).format(new Date(story.fecha))
   : '';
 
+const readMin = story.read_time_minutes ?? 1;
 const imgAlt = story.imagen_portada_alt || story.titulo;
 ---
 
@@ -59,7 +61,13 @@ const imgAlt = story.imagen_portada_alt || story.titulo;
   <div class="bj-list-card__body">
     <span class="bj-list-card__pill" style={`color: ${pillFg};`}>{label}</span>
     <h4 class="bj-list-card__title">{story.titulo}</h4>
-    <div class="bj-list-card__meta">{dateLabel}</div>
+    <div class="bj-list-card__meta">
+      <span>Redacción Beisjoven</span>
+      <span aria-hidden="true">·</span>
+      <time datetime={story.fecha}>{dateLabel}</time>
+      <span aria-hidden="true">·</span>
+      <span>{readMin} min</span>
+    </div>
   </div>
 </a>
 
@@ -136,11 +144,16 @@ const imgAlt = story.imagen_portada_alt || story.titulo;
   }
 
   .bj-list-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
     margin-top: 6px;
     font-family: var(--font-body);
-    font-size: 13px;
+    font-size: 12px;
     color: var(--gray-medium);
     font-weight: 500;
+    min-width: 0;
   }
 
   .bj-list-card--inverse .bj-list-card__meta {

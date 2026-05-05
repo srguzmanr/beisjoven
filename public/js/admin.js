@@ -1824,6 +1824,9 @@ const AdminPages = {
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)/g, '');
 
+        const _rtWords = (contenido || '').replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean);
+        const read_time_minutes = Math.max(1, Math.ceil(_rtWords.length / 200));
+
         const articulo = {
             titulo: sanitizeHtmlBasic(titulo),
             slug,
@@ -1837,7 +1840,8 @@ const AdminPages = {
             es_wbc2026,
             destacado,
             hero_layout,
-            publicado: action === 'publish' || action === 'save'
+            publicado: action === 'publish' || action === 'save',
+            read_time_minutes,
         };
 
         // Track which auth user created the article

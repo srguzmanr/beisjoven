@@ -7,6 +7,7 @@ import ShareButtons from '@/components/ShareButtons.astro';
 import MostReadWidget from '@/components/MostReadWidget.astro';
 import SectionTitle from '@/components/SectionTitle.astro';
 import TuHistoriaCTA from '@/components/TuHistoriaCTA.astro';
+import AvatarBJ from '@/components/AvatarBJ.astro';
 import {
   getAllArticuloSlugs,
   getArticuloBySlug,
@@ -15,7 +16,7 @@ import {
   incrementVistas,
   getTagsByArticuloId,
 } from '@/lib/supabase';
-import { renderContent, formatDate, readTime } from '@/lib/content';
+import { renderContent, formatDate } from '@/lib/content';
 import { ensureOgImage } from '@/lib/og-image-generator';
 
 export async function getStaticPaths() {
@@ -50,7 +51,7 @@ const masLeidosScope = {
 const articleUrl = `https://beisjoven.com/articulo/${articulo.slug}`;
 const renderedBody = renderContent(articulo.contenido);
 const formattedDate = formatDate(articulo.fecha);
-const readingTime = readTime(articulo.contenido);
+const readMin = articulo.read_time_minutes ?? 1;
 
 // Detect which embed scripts are needed at build time
 const needsTwitterScript = renderedBody.includes('class="twitter-embed"')
@@ -131,16 +132,13 @@ const articleJsonLd = {
       <h1 class="text-2xl md:text-4xl font-extrabold text-navy mt-3 mb-4 leading-tight" style="letter-spacing: -0.02em;">
         {articulo.titulo}
       </h1>
-      <div class="flex flex-wrap items-center gap-3 text-sm">
-        {articulo.autor && (
-          <a href={`/autor/${articulo.autor.slug}`} class="font-medium text-navy hover:text-steel-blue transition-colors">
-            {articulo.autor.nombre}
-          </a>
-        )}
-        <span class="text-gris-muted">&middot;</span>
-        <time datetime={articulo.fecha} class="text-gris-muted">{formattedDate}</time>
-        <span class="text-gris-muted">&middot;</span>
-        <span class="text-gris-muted">{readingTime}</span>
+      <div class="flex flex-wrap items-center gap-2 text-sm text-gris-muted font-medium">
+        <AvatarBJ size={20} />
+        <span>Redacción Beisjoven</span>
+        <span aria-hidden="true">&middot;</span>
+        <time datetime={articulo.fecha}>{formattedDate}</time>
+        <span aria-hidden="true">&middot;</span>
+        <span>{readMin} min lectura</span>
       </div>
     </header>
 
