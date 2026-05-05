@@ -220,6 +220,28 @@ export async function getMasLeidos(limite = 5) {
   return (data as Articulo[]) || [];
 }
 
+export async function getMasLeidosByCategoria(
+  categoriaSlug: string,
+  limite = 5,
+  excludeArticuloId?: number,
+) {
+  const cat = await getCategoriaBySlug(categoriaSlug);
+  if (!cat) return [];
+  let query = supabaseServer
+    .from('articulos')
+    .select(ARTICLE_SELECT)
+    .eq('categoria_id', cat.id)
+    .eq('publicado', true);
+  if (typeof excludeArticuloId === 'number') {
+    query = query.neq('id', excludeArticuloId);
+  }
+  const { data } = await query
+    .order('vistas', { ascending: false })
+    .order('fecha', { ascending: false })
+    .limit(limite);
+  return (data as Articulo[]) || [];
+}
+
 export async function getArticulosByAutor(autorSlug: string, limite = 20) {
   const autor = await getAutorBySlug(autorSlug);
   if (!autor) return [];

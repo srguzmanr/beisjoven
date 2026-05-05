@@ -11,7 +11,7 @@ import {
   getAllArticuloSlugs,
   getArticuloBySlug,
   getRelatedArticulos,
-  getMasLeidos,
+  getMasLeidosByCategoria,
   incrementVistas,
   getTagsByArticuloId,
 } from '@/lib/supabase';
@@ -36,10 +36,17 @@ const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY
 
 const [related, masLeidos, tags, ogImageUrl] = await Promise.all([
   getRelatedArticulos(articulo.id, articulo.categoria_id),
-  getMasLeidos(5),
+  getMasLeidosByCategoria(articulo.categoria.slug, 5, articulo.id),
   getTagsByArticuloId(articulo.id),
   ensureOgImage(articulo.imagen_url),
 ]);
+
+const masLeidosScope = {
+  type: 'article-context' as const,
+  articleId: articulo.id,
+  categorySlug: articulo.categoria.slug,
+  categoryDisplayName: articulo.categoria.nombre,
+};
 const articleUrl = `https://beisjoven.com/articulo/${articulo.slug}`;
 const renderedBody = renderContent(articulo.contenido);
 const formattedDate = formatDate(articulo.fecha);
@@ -199,7 +206,7 @@ const articleJsonLd = {
       <!-- Sticky Sidebar -->
       <aside>
         <div class="sticky top-20 space-y-6">
-          <MostReadWidget articles={masLeidos} />
+          <MostReadWidget articles={masLeidos} scope={masLeidosScope} />
         </div>
       </aside>
     </div>

@@ -1,25 +1,62 @@
 ---
 import type { Articulo } from '@/lib/supabase';
 
+type MostReadScope =
+  | { type: 'global' }
+  | { type: 'category'; slug: string; displayName: string }
+  | {
+      type: 'article-context';
+      articleId: number;
+      categorySlug: string;
+      categoryDisplayName: string;
+    };
+
 interface Props {
   articles: Articulo[];
+  scope?: MostReadScope;
 }
 
-const { articles } = Astro.props;
+const { articles, scope = { type: 'global' } } = Astro.props;
+
+const headline =
+  scope.type === 'global'
+    ? 'Más leídos'
+    : scope.type === 'category'
+      ? `Lo más leído en ${scope.displayName}`
+      : `Lo más leído en ${scope.categoryDisplayName}`;
+
+const categorySlug =
+  scope.type === 'category'
+    ? scope.slug
+    : scope.type === 'article-context'
+      ? scope.categorySlug
+      : null;
+
+// Juvenil gold (#D4A843) on white fails WCAG even for large text — fall back
+// to navy, matching the inactive Juvenil pill carve-out in tokens.css.
+const rankColor =
+  !categorySlug || categorySlug === 'juvenil'
+    ? 'var(--navy)'
+    : `var(--cat-${categorySlug})`;
 ---
 
-<aside class="bg-gris-bg rounded-lg p-5">
-  <h3 class="text-sm font-extrabold uppercase tracking-wider text-navy mb-4 pb-2 border-b border-gris-border">
-    Más leídos
-  </h3>
-  <ol class="space-y-4">
-    {articles.map((a, i) => (
-      <li class="flex gap-3 group">
-        <span class="text-2xl font-black text-rojo/25 leading-none w-6 flex-shrink-0 tabular-nums">{i + 1}</span>
-        <a href={`/articulo/${a.slug}`} class="text-sm font-medium text-navy leading-snug line-clamp-2 group-hover:text-steel-blue transition-colors">
-          {a.titulo}
-        </a>
-      </li>
-    ))}
-  </ol>
-</aside>
+{articles.length > 0 && (
+  <aside class="bg-gris-bg rounded-lg p-5">
+    <h3 class="text-sm font-extrabold uppercase tracking-wider text-navy mb-4 pb-2 border-b border-gris-border">
+      {headline}
+    </h3>
+    <ol class="space-y-4">
+      {articles.map((a, i) => (
+        <li class="flex gap-3 group">
+          <span
+            class="text-2xl font-black leading-none w-6 flex-shrink-0 tabular-nums"
+            style={`color: ${rankColor};`}
+          >{i + 1}</span>
+          <a href={`/articulo/${a.slug}`} class="text-sm font-medium text-navy leading-snug line-clamp-2 group-hover:text-steel-blue transition-colors">
+            {a.titulo}
+          </a>
+        </li>
+      ))}
+    </ol>
+  </aside>
+)}
