@@ -4,6 +4,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import Breadcrumb from '@/components/Breadcrumb.astro';
 import ArticleCard from '@/components/ArticleCard.astro';
 import MostReadWidget from '@/components/MostReadWidget.astro';
+import type { Articulo } from '@/lib/supabase';
 import {
   getCategorias,
   getCategoriaBySlug,
@@ -56,6 +57,42 @@ const categoryDescriptions: Record<string, string> = {
 
 const description = categoryDescriptions[slug!] || `Noticias y artículos de ${categoria.nombre} en Beisjoven.`;
 const categoryUrl = `https://beisjoven.com/categoria/${slug}`;
+
+// ── Date bucket grouping ──────────────────────────────────────────────────────
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+
+function dateBucketLabel(fechaStr: string): string {
+  if (!fechaStr) return 'Sin fecha';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [yr, mo, dy] = fechaStr.split('T')[0].split('-').map(Number);
+  const d = new Date(yr, mo - 1, dy);
+  const diffDays = Math.round((today.getTime() - d.getTime()) / 86400000);
+  if (diffDays === 0) return 'Hoy';
+  if (diffDays === 1) return 'Ayer';
+  if (diffDays <= 6) return `${DIAS_SEMANA[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`;
+  return `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+interface ArticleEntry { article: Articulo; eager: boolean; }
+interface ArticleGroup { label: string; articles: ArticleEntry[]; }
+
+let eagerIdx = 0;
+const groupedArticles: ArticleGroup[] = [];
+for (const article of page.data) {
+  const label = dateBucketLabel(article.fecha);
+  const last = groupedArticles[groupedArticles.length - 1];
+  if (last && last.label === label) {
+    last.articles.push({ article, eager: eagerIdx++ < 4 });
+  } else {
+    groupedArticles.push({ label, articles: [{ article, eager: eagerIdx++ < 4 }] });
+  }
+}
+
+const lastBucketLabel = groupedArticles.at(-1)?.label ?? '';
+const PAGE_SIZE = 20;
+const hasMore = !!page.url.next;
 ---
 
 <BaseLayout
@@ -75,36 +112,68 @@ const categoryUrl = `https://beisjoven.com/categoria/${slug}`;
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Articles Grid -->
+      <!-- Articles Feed -->
       <div class="lg:col-span-2">
         {page.data.length > 0 ? (
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {page.data.map((a, i) => (
-              <ArticleCard article={a} eager={i < 4} />
+          <div
+            id="articles-grid"
+            class="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            data-category-slug={slug}
+            data-category-name={categoria.nombre}
+            data-page-size={PAGE_SIZE}
+            data-next-offset={page.currentPage * PAGE_SIZE}
+            data-total-pages={page.lastPage}
+            data-current-page={page.currentPage}
+            data-last-bucket={lastBucketLabel}
+          >
+            {groupedArticles.map((group, gi) => (
+              <Fragment>
+                <div
+                  class="col-span-full"
+                  style={`margin:${gi === 0 ? '0' : '32px'} 0 20px;padding-bottom:8px;border-bottom:1px solid var(--rule)`}
+                >
+                  <h3
+                    class="uppercase font-semibold text-navy"
+                    style="font-size:11px;line-height:1;letter-spacing:0.08em;font-family:var(--font-body)"
+                  >{group.label}</h3>
+                </div>
+                {group.articles.map(({ article, eager }) => (
+                  <ArticleCard article={article} eager={eager} />
+                ))}
+              </Fragment>
             ))}
           </div>
         ) : (
           <p class="text-gris-text py-8 text-center">No hay artículos en esta categoría todavía.</p>
         )}
 
-        <!-- Pagination -->
-        {page.lastPage > 1 && (
-          <nav class="flex justify-center gap-2 mt-8" aria-label="Paginación">
-            {page.url.prev && (
-              <a href={page.url.prev} class="px-4 py-2 text-sm font-medium rounded-lg bg-gris-bg text-navy hover:bg-gray-200 transition-colors">
-                &larr; Anterior
+        <!-- Load More / Pagination -->
+        <div id="load-more-container" class="mt-8 flex flex-col items-center gap-3">
+          {hasMore ? (
+            <Fragment>
+              <button
+                id="load-more-btn"
+                type="button"
+                class="w-full sm:w-auto rounded-full font-semibold text-white transition-opacity hover:opacity-90"
+                style="background:var(--navy);font-family:var(--font-body);font-size:14px;padding:14px 28px;border:none;cursor:pointer"
+              >
+                Cargar más artículos
+              </button>
+              <a
+                id="next-page-link"
+                href={page.url.next}
+                class="text-gris-muted hover:text-navy hover:underline transition-colors"
+                style="font-family:var(--font-body);font-size:12px;font-weight:400"
+              >
+                Página {page.currentPage} de {page.lastPage} &middot; Ver siguiente página
               </a>
-            )}
-            <span class="px-4 py-2 text-sm text-gris-muted">
-              Página {page.currentPage} de {page.lastPage}
-            </span>
-            {page.url.next && (
-              <a href={page.url.next} class="px-4 py-2 text-sm font-medium rounded-lg bg-gris-bg text-navy hover:bg-gray-200 transition-colors">
-                Siguiente &rarr;
-              </a>
-            )}
-          </nav>
-        )}
+            </Fragment>
+          ) : page.lastPage > 1 ? (
+            <p class="text-sm text-gris-muted text-center py-2">
+              Has visto todos los artículos de {categoria.nombre}
+            </p>
+          ) : null}
+        </div>
       </div>
 
       <!-- Sidebar -->
@@ -113,4 +182,11 @@ const categoryUrl = `https://beisjoven.com/categoria/${slug}`;
       </aside>
     </div>
   </div>
+
+  {hasMore && (
+    <Fragment>
+      <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+      <script is:inline src="/js/category-load-more.js"></script>
+    </Fragment>
+  )}
 </BaseLayout>
