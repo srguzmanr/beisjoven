@@ -6,7 +6,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   title="Tu Historia - Beisjoven"
   description="¿Tienes una historia de béisbol o sóftbol que merece ser contada? Cuéntanos y nuestro equipo editorial la llevará a toda la comunidad."
 >
-  <!-- Hero -->
+  <!-- Hero (no se toca en este ticket — BJ-003b) -->
   <section class="bg-navy text-white">
     <div class="max-w-4xl mx-auto px-4 py-12 md:py-16">
       <h1 class="text-4xl md:text-5xl font-extrabold mb-4" style="font-family: 'Plus Jakarta Sans', sans-serif;">
@@ -35,6 +35,15 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
   <!-- Form -->
   <section class="bg-gris-bg py-10 md:py-14">
     <div class="max-w-3xl mx-auto px-4">
+      <!-- Draft restore pill (hidden by default) -->
+      <div id="th-draft-pill" class="hidden mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-gris-border bg-white px-4 py-3 text-sm">
+        <span class="text-gris-text">Tienes un borrador guardado. ¿Recuperar?</span>
+        <span class="flex gap-2">
+          <button type="button" id="th-draft-restore" class="th-btn-secondary">Sí, recuperar</button>
+          <button type="button" id="th-draft-discard" class="th-btn-ghost">Descartar</button>
+        </span>
+      </div>
+
       <!-- Rate limit banner (hidden by default) -->
       <div id="th-rate-limit" class="hidden mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 text-sm">
         Has enviado varias historias recientemente. Por favor espera antes de enviar otra.
@@ -46,276 +55,289 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>
 
       <!-- Form card -->
-      <form id="th-form" class="bg-white rounded-xl shadow-sm p-6 md:p-8 space-y-10" novalidate>
-        <!-- Honeypot (hidden) -->
-        <div aria-hidden="true" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;opacity:0;overflow:hidden;">
-          <label for="th-website">Website</label>
-          <input type="text" id="th-website" name="website" tabindex="-1" autocomplete="off" />
-        </div>
+      <form id="th-form" class="bg-white rounded-xl shadow-sm" novalidate>
+        <!-- Sticky 3-step progress -->
+        <ol id="th-steps" class="th-steps" aria-label="Pasos del formulario">
+          <li class="th-step" data-step="1" data-state="current">
+            <span class="th-step-num">1</span>
+            <span class="th-step-label">Tus datos</span>
+          </li>
+          <li class="th-step-line" aria-hidden="true"></li>
+          <li class="th-step" data-step="2" data-state="pending">
+            <span class="th-step-num">2</span>
+            <span class="th-step-label">Tu historia</span>
+          </li>
+          <li class="th-step-line" aria-hidden="true"></li>
+          <li class="th-step" data-step="3" data-state="pending">
+            <span class="th-step-num">3</span>
+            <span class="th-step-label">Revisión</span>
+          </li>
+        </ol>
 
-        <!-- Section 1: Tus datos -->
-        <fieldset class="space-y-5">
-          <legend class="block w-full text-xl font-bold text-navy pb-2 border-b border-gris-border mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">
-            Tus datos
-          </legend>
-
-          <div>
-            <label for="th-nombre" class="block text-sm font-medium text-navy mb-1.5">
-              Nombre completo <span class="text-rojo">*</span>
-            </label>
-            <input
-              type="text"
-              id="th-nombre"
-              name="nombre"
-              required
-              minlength="3"
-              autocomplete="name"
-              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
-            />
-            <p class="th-error-msg hidden mt-1 text-xs text-rojo" data-for="th-nombre"></p>
+        <div class="p-6 md:p-8">
+          <!-- Honeypot (hidden) -->
+          <div aria-hidden="true" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;opacity:0;overflow:hidden;">
+            <label for="th-website">Website</label>
+            <input type="text" id="th-website" name="website" tabindex="-1" autocomplete="off" />
           </div>
 
-          <div>
-            <label for="th-email" class="block text-sm font-medium text-navy mb-1.5">
-              Email <span class="text-rojo">*</span>
-            </label>
-            <input
-              type="email"
-              id="th-email"
-              name="email"
-              required
-              autocomplete="email"
-              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
-            />
-            <p class="th-error-msg hidden mt-1 text-xs text-rojo" data-for="th-email"></p>
-          </div>
+          <!-- ============ STEP 1: Tus datos ============ -->
+          <section class="th-step-panel" data-step-content="1">
+            <h2 class="th-step-title">Tus datos</h2>
+            <p class="th-step-subtitle">Datos básicos para contactarte si necesitamos más información.</p>
 
-          <div>
-            <label for="th-telefono" class="block text-sm font-medium text-navy mb-1.5">
-              Teléfono / WhatsApp
-            </label>
-            <input
-              type="tel"
-              id="th-telefono"
-              name="telefono"
-              autocomplete="tel"
-              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
-            />
-          </div>
-
-          <div>
-            <label for="th-relacion" class="block text-sm font-medium text-navy mb-1.5">
-              Tu relación con la historia <span class="text-rojo">*</span>
-            </label>
-            <select
-              id="th-relacion"
-              name="relacion"
-              required
-              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
-            >
-              <option value="">Selecciona una opción</option>
-              <option value="entrenador">Entrenador/a</option>
-              <option value="jugador">Jugador/a</option>
-              <option value="padre_madre">Padre / Madre de familia</option>
-              <option value="directivo_liga">Directivo/a de liga</option>
-              <option value="periodista">Periodista</option>
-              <option value="aficionado">Aficionado/a</option>
-              <option value="otro">Otro</option>
-            </select>
-            <p class="th-error-msg hidden mt-1 text-xs text-rojo" data-for="th-relacion"></p>
-          </div>
-        </fieldset>
-
-        <!-- Section 2: La historia -->
-        <fieldset class="space-y-5">
-          <legend class="block w-full text-xl font-bold text-navy pb-2 border-b border-gris-border mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">
-            La historia
-          </legend>
-
-          <div>
-            <label for="th-categoria" class="block text-sm font-medium text-navy mb-1.5">
-              Categoría sugerida <span class="text-rojo">*</span>
-            </label>
-            <select
-              id="th-categoria"
-              name="categoria_sugerida"
-              required
-              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
-            >
-              <option value="">Selecciona una categoría</option>
-              <option value="juvenil">Juvenil</option>
-              <option value="softbol">Softbol</option>
-              <option value="liga-mexicana">Ligas Mexicanas</option>
-              <option value="mlb">MLB</option>
-              <option value="seleccion">Selección</option>
-              <option value="opinion">Opinión</option>
-            </select>
-            <p class="th-error-msg hidden mt-1 text-xs text-rojo" data-for="th-categoria"></p>
-          </div>
-
-          <div>
-            <label for="th-titulo" class="block text-sm font-medium text-navy mb-1.5">
-              Título o tema <span class="text-rojo">*</span>
-            </label>
-            <input
-              type="text"
-              id="th-titulo"
-              name="titulo"
-              required
-              maxlength="200"
-              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
-            />
-            <div class="flex items-center justify-between mt-1">
-              <p class="th-error-msg hidden text-xs text-rojo" data-for="th-titulo"></p>
-              <span id="th-titulo-count" class="text-xs text-gris-muted ml-auto">0 / 200</span>
-            </div>
-          </div>
-
-          <div>
-            <label for="th-descripcion" class="block text-sm font-medium text-navy mb-1.5">
-              ¿Qué pasó? <span class="text-rojo">*</span>
-            </label>
-            <textarea
-              id="th-descripcion"
-              name="descripcion"
-              required
-              maxlength="3000"
-              rows="8"
-              placeholder="Cuéntanos los detalles: ¿Qué pasó? ¿Quiénes participaron? ¿Cuándo y dónde fue? ¿Por qué es importante? Entre más detalles nos des, mejor podremos contar la historia."
-              class="w-full px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
-            ></textarea>
-            <div class="flex items-center justify-between mt-1">
-              <p class="th-error-msg hidden text-xs text-rojo" data-for="th-descripcion"></p>
-              <span id="th-descripcion-count" class="text-xs text-gris-muted ml-auto">0 / 3000</span>
-            </div>
-          </div>
-
-          <div>
-            <label for="th-liga" class="block text-sm font-medium text-navy mb-1.5">
-              Liga / Organización
-            </label>
-            <input
-              type="text"
-              id="th-liga"
-              name="liga_organizacion"
-              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
-            />
-          </div>
-
-          <div>
-            <label for="th-ciudad" class="block text-sm font-medium text-navy mb-1.5">
-              Ciudad y Estado <span class="text-rojo">*</span>
-            </label>
-            <input
-              type="text"
-              id="th-ciudad"
-              name="ciudad_estado"
-              required
-              class="w-full min-h-[44px] px-3 py-2 border border-gris-border rounded-md focus:outline-none focus:ring-2 focus:ring-steel-blue focus:border-steel-blue"
-            />
-            <p class="th-error-msg hidden mt-1 text-xs text-rojo" data-for="th-ciudad"></p>
-          </div>
-        </fieldset>
-
-        <!-- Section 3: Fotos -->
-        <fieldset class="space-y-4">
-          <legend class="block w-full text-xl font-bold text-navy pb-2 border-b border-gris-border mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">
-            Fotos <span class="text-sm font-normal text-gris-muted">(opcional)</span>
-          </legend>
-          <p class="text-sm text-gris-text">
-            Agrega hasta 5 fotos en formato JPG, PNG o WebP. Tamaño máximo: 5MB por archivo.
-          </p>
-
-          <input
-            type="file"
-            id="th-fotos"
-            name="fotos"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            class="sr-only"
-          />
-          <label
-            id="th-fotos-label"
-            for="th-fotos"
-            class="inline-flex items-center justify-center gap-2 w-full min-h-[44px] px-4 py-2.5 bg-white border-2 border-dashed border-steel-blue/50 text-steel-blue font-medium rounded-md cursor-pointer hover:bg-steel-blue/5 transition-colors"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Agregar fotos
-          </label>
-
-          <p id="th-fotos-error" class="hidden text-xs text-rojo"></p>
-
-          <div id="th-fotos-preview" class="hidden grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
-        </fieldset>
-
-        <!-- Section 4: Autorización -->
-        <fieldset class="space-y-4">
-          <legend class="block w-full text-xl font-bold text-navy pb-2 border-b border-gris-border mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif;">
-            Autorización
-          </legend>
-
-          <label class="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              id="th-auth-general"
-              name="autorizacion_general"
-              required
-              class="mt-1 h-5 w-5 flex-shrink-0 accent-rojo cursor-pointer"
-            />
-            <span class="text-sm text-gris-text leading-relaxed">
-              Autorizo a Beisjoven a utilizar la información y fotografías que envío con fines editoriales, incluyendo artículos, redes sociales y newsletters. Confirmo que tengo relación directa con el evento o las personas que aparecen en las fotografías y que he leído los
-              <a href="/tu-historia/terminos" target="_blank" rel="noopener" style="color: #B8892E;" class="hover:underline font-medium">Términos de Envío</a>. <span class="text-rojo">*</span>
-            </span>
-          </label>
-          <p class="th-error-msg hidden text-xs text-rojo ml-8" data-for="th-auth-general"></p>
-
-          <div id="th-menores-wrapper" class="hidden">
-            <label class="flex items-start gap-3 cursor-pointer">
+            <div class="field">
+              <label for="th-nombre">Nombre completo <span class="req">*</span></label>
               <input
-                type="checkbox"
-                id="th-auth-menores"
-                name="autorizacion_menores"
-                class="mt-1 h-5 w-5 flex-shrink-0 accent-rojo cursor-pointer"
+                type="text"
+                id="th-nombre"
+                name="nombre"
+                required
+                minlength="3"
+                autocomplete="name"
+                data-required="true"
+                data-error-empty="Falta tu nombre"
+                data-error-min="Ingresa tu nombre completo (mínimo 3 caracteres)"
               />
-              <span class="text-sm text-gris-text leading-relaxed">
-                Las fotografías incluyen menores de edad y confirmo que cuento con la autorización del padre, madre o tutor legal para su uso editorial.
-              </span>
-            </label>
-            <p id="th-menores-note" class="hidden mt-2 ml-8 text-xs text-gris-muted italic">
-              Si tus fotos incluyen menores de edad, necesitamos esta confirmación para poder usarlas.
-            </p>
-          </div>
+              <p class="hint" data-hint-default="Tu nombre completo, como aparecería en el crédito.">Tu nombre completo, como aparecería en el crédito.</p>
+            </div>
 
-          <label class="flex items-start gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              id="th-credito"
-              name="permitir_credito"
-              checked
-              class="mt-1 h-5 w-5 flex-shrink-0 accent-rojo cursor-pointer"
-            />
-            <span class="text-sm text-gris-text leading-relaxed">
-              Deseo que mi nombre aparezca como colaborador si se publica una nota basada en mi envío.
-            </span>
-          </label>
-        </fieldset>
+            <div class="field">
+              <label for="th-email">Correo electrónico <span class="req">*</span></label>
+              <input
+                type="email"
+                id="th-email"
+                name="email"
+                required
+                autocomplete="email"
+                data-required="true"
+                data-error-empty="El correo electrónico es obligatorio"
+                data-error-format="Ingresa un correo válido (ejemplo@dominio.com)"
+              />
+              <p class="hint" data-hint-default="Te contactaremos aquí si necesitamos más detalles.">Te contactaremos aquí si necesitamos más detalles.</p>
+            </div>
 
-        <!-- Submit -->
-        <div class="pt-2">
-          <button
-            type="submit"
-            id="th-submit"
-            disabled
-            class="w-full min-h-[52px] px-6 py-3 bg-rojo hover:bg-rojo-dark text-white font-bold text-base rounded-md transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <span id="th-submit-label">Enviar mi historia</span>
-            <svg id="th-submit-spinner" class="hidden animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-            </svg>
-          </button>
+            <div class="field">
+              <label for="th-telefono">Teléfono / WhatsApp <span class="optional">(opcional)</span></label>
+              <input
+                type="tel"
+                id="th-telefono"
+                name="telefono"
+                autocomplete="tel"
+              />
+              <p class="hint" data-hint-default="Útil si queremos coordinar más rápido.">Útil si queremos coordinar más rápido.</p>
+            </div>
+
+            <div class="field">
+              <label for="th-relacion">Tu relación con la historia <span class="req">*</span></label>
+              <select
+                id="th-relacion"
+                name="relacion"
+                required
+                data-required="true"
+                data-error-empty="Selecciona tu relación con la historia"
+              >
+                <option value="">Selecciona una opción</option>
+                <option value="entrenador">Entrenador/a</option>
+                <option value="jugador">Jugador/a</option>
+                <option value="padre_madre">Padre / Madre de familia</option>
+                <option value="directivo_liga">Directivo/a de liga</option>
+                <option value="periodista">Periodista</option>
+                <option value="aficionado">Aficionado/a</option>
+                <option value="otro">Otro</option>
+              </select>
+              <p class="hint" data-hint-default="Para contextualizar de quién viene la historia.">Para contextualizar de quién viene la historia.</p>
+            </div>
+
+            <div class="field">
+              <label for="th-ciudad">Ciudad y Estado <span class="req">*</span></label>
+              <input
+                type="text"
+                id="th-ciudad"
+                name="ciudad_estado"
+                required
+                data-required="true"
+                data-error-empty="Falta tu ciudad y estado"
+              />
+              <p class="hint" data-hint-default="Ej. Hermosillo, Sonora.">Ej. Hermosillo, Sonora.</p>
+            </div>
+
+            <div class="field">
+              <label for="th-liga">Liga / Organización <span class="optional">(opcional)</span></label>
+              <input
+                type="text"
+                id="th-liga"
+                name="liga_organizacion"
+              />
+              <p class="hint" data-hint-default="Si aplica: nombre de la liga, club o institución.">Si aplica: nombre de la liga, club o institución.</p>
+            </div>
+
+            <div class="th-nav">
+              <span></span>
+              <button type="button" class="th-btn-primary" data-step-next="2">Continuar →</button>
+            </div>
+          </section>
+
+          <!-- ============ STEP 2: La historia ============ -->
+          <section class="th-step-panel" data-step-content="2" hidden>
+            <h2 class="th-step-title">Tu historia</h2>
+            <p class="th-step-subtitle">Cuéntanos qué pasó, con todos los detalles que puedas.</p>
+
+            <div class="field">
+              <label for="th-categoria">Categoría sugerida <span class="req">*</span></label>
+              <select
+                id="th-categoria"
+                name="categoria_sugerida"
+                required
+                data-required="true"
+                data-error-empty="Selecciona una categoría"
+              >
+                <option value="">Selecciona una categoría</option>
+                <option value="juvenil">Juvenil</option>
+                <option value="softbol">Softbol</option>
+                <option value="liga-mexicana">Ligas Mexicanas</option>
+                <option value="mlb">MLB</option>
+                <option value="seleccion">Selección</option>
+                <option value="opinion">Opinión</option>
+              </select>
+              <p class="hint" data-hint-default="Nuestro equipo puede reasignar la categoría final.">Nuestro equipo puede reasignar la categoría final.</p>
+            </div>
+
+            <div class="field">
+              <label for="th-titulo">Título o tema <span class="req">*</span></label>
+              <input
+                type="text"
+                id="th-titulo"
+                name="titulo"
+                required
+                maxlength="200"
+                data-required="true"
+                data-error-empty="Falta el título de tu historia"
+                data-error-max="Máximo 200 caracteres"
+              />
+              <p class="hint" data-hint-default="Una frase corta que resuma de qué se trata."><span data-hint-text>Una frase corta que resuma de qué se trata.</span> <span class="th-counter" id="th-titulo-count">0 / 200</span></p>
+            </div>
+
+            <div class="field">
+              <label for="th-descripcion">¿Qué pasó? <span class="req">*</span></label>
+              <textarea
+                id="th-descripcion"
+                name="descripcion"
+                required
+                maxlength="3000"
+                rows="8"
+                placeholder="Cuéntanos los detalles: ¿Qué pasó? ¿Quiénes participaron? ¿Cuándo y dónde fue? ¿Por qué es importante? Entre más detalles nos des, mejor podremos contar la historia."
+                data-required="true"
+                data-error-empty="Cuéntanos qué pasó"
+                data-error-min="Da al menos 50 caracteres para que podamos entender la historia"
+                data-error-max="Máximo 3000 caracteres"
+              ></textarea>
+              <p class="hint" data-hint-default="Mínimo 50 caracteres. Más detalles = mejor nota."><span data-hint-text>Mínimo 50 caracteres. Más detalles = mejor nota.</span> <span class="th-counter" id="th-descripcion-count">0 / 3000</span></p>
+            </div>
+
+            <!-- Photo upload -->
+            <div class="field">
+              <label>Fotos del momento <span class="optional">(opcional pero muy recomendado)</span></label>
+              <p class="hint" data-hint-default="Hasta 5 imágenes. JPG, PNG, WebP o HEIC. Máximo 10MB cada una.">Hasta 5 imágenes. JPG, PNG, WebP o HEIC. Máximo 10MB cada una.</p>
+
+              <input
+                type="file"
+                id="th-fotos"
+                name="fotos"
+                accept="image/jpeg,image/png,image/webp,image/heic"
+                multiple
+                class="sr-only"
+              />
+
+              <div id="th-fotos-grid" class="th-photo-grid" aria-live="polite">
+                <!-- Slots rendered by JS -->
+              </div>
+
+              <p id="th-fotos-error" class="hidden mt-2 text-xs" style="color: #C8102E;"></p>
+              <p id="th-fotos-readout" class="mt-2 text-xs" style="color: var(--muted);"></p>
+            </div>
+
+            <div class="field">
+              <label class="th-checkbox">
+                <input
+                  type="checkbox"
+                  id="th-credito"
+                  name="permitir_credito"
+                  checked
+                />
+                <span>Deseo que mi nombre aparezca como colaborador si se publica una nota basada en mi envío.</span>
+              </label>
+            </div>
+
+            <div class="th-nav">
+              <button type="button" class="th-btn-secondary" data-step-prev="1">← Volver</button>
+              <button type="button" class="th-btn-primary" data-step-next="3">Continuar →</button>
+            </div>
+          </section>
+
+          <!-- ============ STEP 3: Revisión ============ -->
+          <section class="th-step-panel" data-step-content="3" hidden>
+            <h2 class="th-step-title">Revisión</h2>
+            <p class="th-step-subtitle">Revisa tu envío antes de mandarlo. Si necesitas cambiar algo, vuelve a editar.</p>
+
+            <div id="th-review" class="th-review">
+              <!-- Rendered by JS when entering step 3 -->
+            </div>
+
+            <!-- Autorizaciones -->
+            <fieldset class="th-auth">
+              <legend class="th-step-title" style="font-size: 1.125rem;">Autorización</legend>
+
+              <div class="field">
+                <label class="th-checkbox">
+                  <input
+                    type="checkbox"
+                    id="th-auth-general"
+                    name="autorizacion_general"
+                    required
+                    data-required="true"
+                    data-error-empty="Debes aceptar los términos para enviar tu historia"
+                  />
+                  <span>
+                    Autorizo a Beisjoven a utilizar la información y fotografías que envío con fines editoriales, incluyendo artículos, redes sociales y newsletters. Confirmo que tengo relación directa con el evento o las personas que aparecen en las fotografías y que he leído los
+                    <a href="/tu-historia/terminos" target="_blank" rel="noopener" style="color: #B8892E;" class="hover:underline font-medium">Términos de Envío</a>. <span class="req">*</span>
+                  </span>
+                </label>
+                <p class="hint th-auth-hint" data-hint-default="">&nbsp;</p>
+              </div>
+
+              <div id="th-menores-wrapper" class="field hidden">
+                <label class="th-checkbox">
+                  <input
+                    type="checkbox"
+                    id="th-auth-menores"
+                    name="autorizacion_menores"
+                  />
+                  <span>Las fotografías incluyen menores de edad y confirmo que cuento con la autorización del padre, madre o tutor legal para su uso editorial.</span>
+                </label>
+                <p id="th-menores-note" class="hidden hint" style="color: #C8102E;">
+                  Si tus fotos incluyen menores de edad, necesitamos esta confirmación para poder usarlas.
+                </p>
+              </div>
+            </fieldset>
+
+            <div class="th-nav">
+              <button type="button" class="th-btn-secondary" data-step-prev="2">← Volver a editar</button>
+              <button
+                type="submit"
+                id="th-submit"
+                class="th-btn-submit"
+                data-state="disabled"
+                disabled
+              >
+                <span id="th-submit-label">Enviar mi historia</span>
+                <svg id="th-submit-spinner" class="hidden animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+              </button>
+            </div>
+          </section>
         </div>
       </form>
 
@@ -345,6 +367,522 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       </div>
     </div>
   </section>
+
+  <style>
+    /* ===== Tu Historia form spec (BJ-003a) ===== */
+
+    /* Token fallbacks if not present */
+    :root {
+      --t-fast: 120ms;
+      --th-white: #fff;
+      --th-ink: #1B2A4A;
+      --th-ink-muted: #6B7280;
+      --th-rule: rgba(27, 42, 74, 0.10);
+      --th-rule-strong: rgba(27, 42, 74, 0.28);
+      --th-red: #C8102E;
+      --th-red-dark: #9A0C23;
+      --th-green: #059669;
+      --th-gold: #D4A843;
+    }
+
+    /* ===== Sticky step progress ===== */
+    .th-steps {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: auto 1fr auto 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px;
+      margin: 0;
+      list-style: none;
+      background: var(--th-white);
+      border-bottom: 1px solid var(--th-rule);
+      border-radius: 12px 12px 0 0;
+    }
+    .th-step {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font: 600 14px/1.4 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink-muted);
+      min-height: 44px;
+    }
+    .th-step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--th-white);
+      color: var(--th-ink-muted);
+      border: 1.5px solid var(--th-rule-strong);
+      font-weight: 700;
+      flex: 0 0 auto;
+      transition: background-color var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+    }
+    .th-step-label {
+      white-space: nowrap;
+    }
+    .th-step[data-state="current"] {
+      color: var(--th-ink);
+    }
+    .th-step[data-state="current"] .th-step-num {
+      background: var(--th-ink);
+      color: var(--th-white);
+      border-color: var(--th-ink);
+    }
+    .th-step[data-state="completed"] {
+      color: var(--th-green);
+    }
+    .th-step[data-state="completed"] .th-step-num {
+      background: var(--th-green);
+      color: var(--th-white);
+      border-color: var(--th-green);
+    }
+    .th-step[data-state="completed"] .th-step-num {
+      font-size: 14px;
+    }
+
+    .th-step-line {
+      height: 2px;
+      background: var(--th-rule);
+      list-style: none;
+      transition: background-color var(--t-fast);
+    }
+    .th-step-line[data-state="completed"] {
+      background: var(--th-green);
+    }
+
+    /* Mobile: compact steps. Show "1 / 3" + only current label. */
+    @media (max-width: 640px) {
+      .th-steps {
+        grid-template-columns: auto 1fr auto 1fr auto;
+        padding: 12px;
+      }
+      .th-step {
+        font-size: 13px;
+      }
+      .th-step .th-step-label {
+        display: none;
+      }
+      .th-step[data-state="current"] .th-step-label {
+        display: inline;
+      }
+    }
+
+    /* ===== Step panels ===== */
+    .th-step-panel {
+      animation: thFadeIn 180ms ease-out;
+    }
+    .th-step-panel[hidden] {
+      display: none !important;
+    }
+    @keyframes thFadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .th-step-title {
+      font: 700 1.5rem/1.25 var(--font-heading, "Plus Jakarta Sans", sans-serif);
+      color: var(--th-ink);
+      margin: 0 0 4px;
+    }
+    .th-step-subtitle {
+      font: 400 14px/1.5 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink-muted);
+      margin: 0 0 24px;
+    }
+
+    /* ===== Field component (per Claude Design §7.3) ===== */
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+    .field label {
+      font: 600 14px/1.4 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink);
+    }
+    .field label .req {
+      color: var(--th-red);
+      margin-left: 2px;
+    }
+    .field label .optional {
+      color: var(--th-ink-muted);
+      font-weight: 400;
+      margin-left: 4px;
+    }
+    .field input[type="text"],
+    .field input[type="email"],
+    .field input[type="tel"],
+    .field textarea,
+    .field select {
+      font: 400 16px/1.5 var(--font-body, "Inter", sans-serif); /* 16px to prevent iOS zoom */
+      color: var(--th-ink);
+      background: var(--th-white);
+      border: 1px solid var(--th-rule-strong);
+      border-radius: 2px;
+      padding: 10px 12px;
+      min-height: 44px;
+      width: 100%;
+      transition: border-color var(--t-fast), box-shadow var(--t-fast);
+    }
+    .field textarea {
+      min-height: 160px;
+      resize: vertical;
+    }
+    .field input:focus-visible,
+    .field textarea:focus-visible,
+    .field select:focus-visible {
+      outline: none;
+      border-color: var(--th-ink);
+      box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.35);
+    }
+    .field[data-state="error"] input:not([type="checkbox"]):not([type="file"]),
+    .field[data-state="error"] textarea,
+    .field[data-state="error"] select {
+      border-color: var(--th-red);
+    }
+    .field .hint {
+      font: 400 12px/1.4 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink-muted);
+      margin: 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .field[data-state="error"] .hint {
+      color: var(--th-red);
+    }
+    .th-counter {
+      color: var(--th-ink-muted);
+      font-variant-numeric: tabular-nums;
+      flex: 0 0 auto;
+    }
+
+    /* Checkbox row */
+    .th-checkbox {
+      display: flex !important;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+      font: 400 14px/1.5 var(--font-body, "Inter", sans-serif) !important;
+      color: var(--th-ink) !important;
+    }
+    .th-checkbox input[type="checkbox"] {
+      margin-top: 3px;
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      accent-color: var(--th-red);
+      cursor: pointer;
+    }
+
+    /* ===== Photo grid: 5 horizontal slots ===== */
+    .th-photo-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 80px);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    @media (max-width: 420px) {
+      .th-photo-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    .th-photo-slot {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--bg-2, #F6F5F1);
+      border: 1px solid var(--th-rule);
+    }
+    @media (max-width: 420px) {
+      .th-photo-slot {
+        width: 100%;
+        height: 0;
+        padding-bottom: 100%;
+      }
+      .th-photo-slot > * {
+        position: absolute;
+        inset: 0;
+      }
+    }
+    .th-photo-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .th-photo-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      line-height: 1;
+      border: 0;
+      cursor: pointer;
+      padding: 0;
+    }
+    .th-photo-remove:hover {
+      background: rgba(0, 0, 0, 0.85);
+    }
+    .th-photo-add {
+      width: 100%;
+      height: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 2px;
+      background: var(--th-white);
+      border: 1px dashed var(--th-rule-strong);
+      border-radius: 4px;
+      color: var(--th-ink-muted);
+      font: 600 11px/1.2 var(--font-body, "Inter", sans-serif);
+      cursor: pointer;
+      transition: border-color var(--t-fast), color var(--t-fast), background-color var(--t-fast);
+    }
+    .th-photo-add:hover,
+    .th-photo-add.th-dnd-over {
+      border-color: var(--th-ink);
+      color: var(--th-ink);
+      background: rgba(212, 168, 67, 0.08);
+    }
+    .th-photo-add svg {
+      width: 22px;
+      height: 22px;
+    }
+    .th-photo-progress {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.6);
+    }
+    .th-photo-progress-bar {
+      height: 100%;
+      background: var(--th-ink);
+      transition: width 200ms ease-out;
+    }
+
+    /* ===== Step 3 review ===== */
+    .th-review {
+      border: 1px solid var(--th-rule);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      background: var(--bg-2, #F6F5F1);
+    }
+    .th-review-section + .th-review-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--th-rule);
+    }
+    .th-review-section h3 {
+      font: 700 14px/1.3 var(--font-heading, "Plus Jakarta Sans", sans-serif);
+      color: var(--th-ink);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 10px;
+    }
+    .th-review dl {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 6px 16px;
+      margin: 0;
+    }
+    @media (max-width: 480px) {
+      .th-review dl {
+        grid-template-columns: 1fr;
+        gap: 2px 0;
+      }
+      .th-review dt {
+        margin-top: 8px;
+      }
+    }
+    .th-review dt {
+      font: 600 13px/1.4 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink-muted);
+    }
+    .th-review dd {
+      font: 400 14px/1.5 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink);
+      margin: 0;
+      word-break: break-word;
+    }
+    .th-review dd.th-review-empty {
+      color: var(--th-ink-muted);
+      font-style: italic;
+    }
+    .th-review .th-review-title {
+      font: 700 18px/1.3 var(--font-heading, "Plus Jakarta Sans", sans-serif);
+      color: var(--th-ink);
+      margin: 0 0 8px;
+    }
+    .th-review .th-review-desc {
+      font: 400 14px/1.6 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink);
+      white-space: pre-wrap;
+      margin: 0;
+    }
+    .th-review-chip {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--th-ink);
+      color: var(--th-white);
+      font: 600 12px/1 var(--font-body, "Inter", sans-serif);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .th-review-photos {
+      display: grid;
+      grid-template-columns: repeat(5, 64px);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    @media (max-width: 420px) {
+      .th-review-photos {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    .th-review-photos img {
+      width: 100%;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid var(--th-rule);
+    }
+    @media (max-width: 420px) {
+      .th-review-photos img {
+        height: auto;
+        aspect-ratio: 1 / 1;
+      }
+    }
+
+    /* ===== Step navigation row ===== */
+    .th-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--th-rule);
+      flex-wrap: wrap;
+    }
+    .th-nav > * {
+      min-height: 44px;
+    }
+
+    /* ===== Buttons ===== */
+    .th-btn-primary,
+    .th-btn-secondary,
+    .th-btn-submit,
+    .th-btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 10px 18px;
+      border-radius: 4px;
+      font: 700 15px/1 var(--font-body, "Inter", sans-serif);
+      cursor: pointer;
+      border: 0;
+      transition: background-color var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+    }
+    .th-btn-primary {
+      background: var(--th-ink);
+      color: var(--th-white);
+    }
+    .th-btn-primary:hover {
+      background: #14213A;
+    }
+    .th-btn-secondary {
+      background: var(--th-white);
+      color: var(--th-ink);
+      border: 1px solid var(--th-rule-strong);
+    }
+    .th-btn-secondary:hover {
+      border-color: var(--th-ink);
+    }
+    .th-btn-ghost {
+      background: transparent;
+      color: var(--th-ink-muted);
+      padding: 10px 12px;
+    }
+    .th-btn-ghost:hover {
+      color: var(--th-ink);
+    }
+
+    /* Submit button — 5 explicit states (BJ-003a spec) */
+    .th-btn-submit[data-state="default"] {
+      background: #C8102E;
+      color: #FFFFFF;
+      font-weight: 700;
+      border: 0;
+    }
+    .th-btn-submit[data-state="default"]:hover {
+      background: #9A0C23;
+    }
+    .th-btn-submit[data-state="loading"] {
+      background: #9A0C23;
+      color: #FFFFFF;
+      font-weight: 700;
+      border: 0;
+      cursor: progress;
+    }
+    .th-btn-submit[data-state="disabled"] {
+      background: #E5E7EB;
+      color: #6B7280;
+      font-weight: 600;
+      border: 1px solid #CBD2DA;
+      cursor: not-allowed;
+    }
+    .th-btn-submit[data-state="success"] {
+      background: #059669;
+      color: #FFFFFF;
+      font-weight: 700;
+      border: 0;
+    }
+
+    /* ===== Draft pill ===== */
+    #th-draft-pill .th-btn-secondary,
+    #th-draft-pill .th-btn-ghost {
+      min-height: 36px;
+      padding: 8px 14px;
+      font-size: 13px;
+    }
+
+    /* Hide native file input visually but keep it focusable */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
 
   <!-- Supabase -->
   <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
