@@ -8,6 +8,15 @@ const currentPath = Astro.url.pathname;
 const CHIP_ORDER = ['mlb', 'liga-mexicana', 'seleccion', 'juvenil', 'softbol', 'opinion'];
 // Pills that collapse into the "Más" dropdown below 1100px.
 const COLLAPSE_SLUGS = new Set(['softbol', 'opinion']);
+// Short labels for the mobile chip rail (per HEADER-FIX-01 spec).
+const MOBILE_SHORT_LABELS: Record<string, string> = {
+  'mlb': 'MLB',
+  'liga-mexicana': 'Ligas MX',
+  'seleccion': 'Selección',
+  'juvenil': 'Juvenil',
+  'softbol': 'Softbol',
+  'opinion': 'Opinión',
+};
 
 const categorias = await getCategorias();
 const bySlug = new Map(categorias.map((c) => [c.slug, c]));
@@ -43,7 +52,7 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
 <header id="site-header" class="site-header">
   <div class="site-header__bar">
     <a href="/" class="site-header__logo" aria-label="Beisjoven — Inicio">
-      <img class="site-header__logo--mobile" src="/brand/logo-mark.png" alt="Beisjoven" width="32" height="32" />
+      <img class="site-header__logo--mobile" src="/brand/logo-mark.png" alt="Beisjoven" width="40" height="40" />
       <img class="site-header__logo--desktop" src="/brand/logo-lockup.png" alt="Beisjoven" height="40" />
     </a>
 
@@ -125,21 +134,31 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     </div>
   </div>
 
-  <div class="site-header__chips-mobile">
-    <div class="site-header__chips-scroll" role="navigation" aria-label="Categorías">
-      {chips.map((c) => (
-        <a
-          href={`/categoria/${c.slug}`}
-          class="chip"
-          data-category={c.slug}
-          data-active={isCategoryActive(c.slug) ? 'true' : 'false'}
-          aria-current={isCategoryActive(c.slug) ? 'page' : undefined}
-        >
-          {c.nombre}
-        </a>
-      ))}
+  <nav class="site-header__chips-mobile" aria-label="Categorías">
+    <div class="site-header__chips-scroll">
+      <ul class="site-header__chips-list">
+        <li class="chip-item">
+          <a
+            href="/"
+            class="chip-link"
+            data-active={isHomeActive ? 'true' : 'false'}
+            aria-current={isHomeActive ? 'page' : undefined}
+          >Inicio</a>
+        </li>
+        {chips.map((c) => (
+          <li class="chip-item">
+            <a
+              href={`/categoria/${c.slug}`}
+              class="chip-link"
+              data-category={c.slug}
+              data-active={isCategoryActive(c.slug) ? 'true' : 'false'}
+              aria-current={isCategoryActive(c.slug) ? 'page' : undefined}
+            >{MOBILE_SHORT_LABELS[c.slug] ?? c.nombre}</a>
+          </li>
+        ))}
+      </ul>
     </div>
-  </div>
+  </nav>
 </header>
 
 <SearchOverlay categorias={chips} />
@@ -159,9 +178,9 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
   .site-header__bar {
     display: flex;
     align-items: center;
-    gap: 12px;
-    height: 56px;
-    padding: 0 16px;
+    gap: 8px;
+    height: 52px;
+    padding: 0 8px 0 16px;
     max-width: var(--max-width-container, 75rem);
     margin: 0 auto;
   }
@@ -173,7 +192,7 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     text-decoration: none;
   }
   .site-header__logo img { width: auto; }
-  .site-header__logo--mobile { display: block; max-height: 32px; }
+  .site-header__logo--mobile { display: block; height: 40px; max-height: 40px; }
   .site-header__logo--desktop { display: none; }
 
   .site-header__nav-desktop { display: none; }
@@ -240,74 +259,81 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
   }
   .site-header__search svg { width: 20px; height: 20px; }
 
-  /* Mobile chips row — UNCHANGED */
+  /* Mobile chips row — flat nav-text with 2px underline indicator (HEADER-FIX-01) */
   .site-header__chips-mobile {
     position: relative;
-    height: 40px;
-    border-bottom: 1px solid #F1F1F3;
     background: #ffffff;
+    border-bottom: 1px solid var(--rule, #F1F1F3);
   }
   .site-header__chips-scroll {
-    display: flex;
-    gap: 8px;
-    height: 100%;
-    padding: 4px 16px;
     overflow-x: auto;
     overflow-y: hidden;
-    scroll-snap-type: x proximity;
     scrollbar-width: none;
     -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
   }
   .site-header__chips-scroll::-webkit-scrollbar { display: none; }
-  .site-header__chips-scroll > .chip { scroll-snap-align: start; }
+  .site-header__chips-list {
+    list-style: none;
+    margin: 0;
+    padding: 10px 28px 10px 16px;
+    display: flex;
+    gap: 20px;
+    white-space: nowrap;
+  }
+  .chip-item {
+    flex: 0 0 auto;
+    position: relative;
+  }
+  .chip-link {
+    display: inline-block;
+    padding-bottom: 5px;
+    color: var(--ink-2, #3A4660);
+    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: color 120ms ease-out;
+  }
+  .chip-link:focus-visible {
+    outline: 2px solid var(--navy, #1B2A4A);
+    outline-offset: 2px;
+  }
+  .chip-link[data-active="true"] {
+    color: var(--navy, #1B2A4A);
+    font-weight: 700;
+  }
+  .chip-link[data-active="true"]::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: var(--cat-color, var(--red, #C8102E));
+  }
+  .chip-link[data-category="mlb"][data-active="true"]           { --cat-color: var(--cat-mlb); }
+  .chip-link[data-category="liga-mexicana"][data-active="true"] { --cat-color: var(--cat-liga-mexicana); }
+  .chip-link[data-category="seleccion"][data-active="true"]     { --cat-color: var(--cat-seleccion); }
+  .chip-link[data-category="juvenil"][data-active="true"]       { --cat-color: var(--cat-juvenil); }
+  .chip-link[data-category="softbol"][data-active="true"]       { --cat-color: var(--cat-softbol); }
+  .chip-link[data-category="opinion"][data-active="true"]       { --cat-color: var(--cat-opinion); }
   .site-header__chips-mobile::after {
     content: '';
     position: absolute;
     top: 0;
     right: 0;
-    width: 24px;
+    width: 32px;
     height: 100%;
     pointer-events: none;
-    background: linear-gradient(to right, rgba(255, 255, 255, 0), #ffffff);
+    background: linear-gradient(to right, transparent, #ffffff);
   }
 
-  /* Mobile chip — UNCHANGED */
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    flex-shrink: 0;
-    height: 32px;
-    padding: 0 12px;
-    border: 1px solid rgba(27, 42, 74, 0.14);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--navy, #1B2A4A);
-    font-family: var(--font-heading, "Plus Jakarta Sans"), system-ui, sans-serif;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    line-height: 1;
-    letter-spacing: 0.01em;
-    text-decoration: none;
-    white-space: nowrap;
-    transition:
-      background-color 120ms ease-out,
-      color 120ms ease-out,
-      border-color 120ms ease-out;
-  }
-  .chip:hover { border-color: rgba(27, 42, 74, 0.28); }
-  .chip:focus-visible { outline: 2px solid var(--navy, #1B2A4A); outline-offset: 2px; }
-
-  .chip[data-active="true"] { color: #ffffff; border-color: transparent; }
-  .chip[data-active="true"][data-category="mlb"]            { background: var(--cat-mlb); }
-  .chip[data-active="true"][data-category="liga-mexicana"]  { background: var(--cat-liga-mexicana); }
-  .chip[data-active="true"][data-category="seleccion"]      { background: var(--cat-seleccion); }
-  .chip[data-active="true"][data-category="juvenil"]        { background: var(--cat-juvenil); }
-  .chip[data-active="true"][data-category="softbol"]        { background: var(--cat-softbol); }
-  .chip[data-active="true"][data-category="opinion"]        { background: var(--cat-opinion); }
-
-  /* Desktop / tablet (>= 768px): nav row + scroll border */
-  @media (min-width: 768px) {
+  /* Desktop (>= 1024px): nav row + scroll border. Below this, mobile pattern (logo mark + underline chips) applies. */
+  @media (min-width: 1024px) {
     .site-header {
       border-bottom: 2px solid transparent;
       transition: border-color 150ms ease-out, transform 200ms ease-out;
@@ -442,8 +468,8 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     }
   }
 
-  /* Tablet narrow (768–1099): collapse Softbol + Opinión into "Más" */
-  @media (min-width: 768px) and (max-width: 1099px) {
+  /* Narrow desktop (1024–1099): collapse Softbol + Opinión into "Más" */
+  @media (min-width: 1024px) and (max-width: 1099px) {
     .site-header__nav-desktop .nav-pill[data-collapse="true"] { display: none; }
     .nav-more { display: block; }
   }
@@ -470,7 +496,7 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     if (header) {
       const COMPACT_THRESHOLD = 80;
       const SCROLL_BORDER_THRESHOLD = 40;
-      const desktopMql = window.matchMedia('(min-width: 768px)');
+      const desktopMql = window.matchMedia('(min-width: 1024px)');
       let lastY = window.scrollY;
       let ticking = false;
 
