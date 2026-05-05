@@ -29,6 +29,13 @@
     />
     <button type="submit" class="bj-newsletter__button">Suscribirse</button>
     <div class="bj-newsletter__status form-status" role="status" aria-live="polite"></div>
+    <p class="bj-newsletter__aviso">
+      <strong>Aviso de Privacidad Simplificado.</strong> Beisjoven (operado por Noboru LLC, EE.&nbsp;UU.)
+      recaba su correo electrónico para enviarle el boletín informativo. Puede darse de baja en
+      cualquier momento desde el enlace incluido en cada correo o escribiendo a
+      <a href="mailto:privacidad@beisjoven.com">privacidad@beisjoven.com</a>.
+      Consulte el Aviso Integral en <a href="/privacidad">beisjoven.com/privacidad</a>.
+    </p>
   </form>
 </div>
 
@@ -260,5 +267,18 @@
     font-size: 14px;
     color: var(--navy);
     margin: 0;
+  }
+
+  .bj-newsletter__aviso {
+    flex-basis: 100%;
+    font-family: var(--font-body);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--muted);
+    margin: 4px 0 0;
+  }
+  .bj-newsletter__aviso a {
+    color: inherit;
+    text-decoration: underline;
   }
 </style>
