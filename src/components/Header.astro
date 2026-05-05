@@ -1,10 +1,12 @@
 ---
-import { getCategorias } from '@/lib/supabase';
+import { getCategorias, getArticuloBySlug } from '@/lib/supabase';
 
 const currentPath = Astro.url.pathname;
 
 // Hardcoded chip order (not DB-driven). Names/slugs come from categorias rows.
 const CHIP_ORDER = ['mlb', 'liga-mexicana', 'seleccion', 'juvenil', 'softbol', 'opinion'];
+// Pills that collapse into the "Más" dropdown below 1100px.
+const COLLAPSE_SLUGS = new Set(['softbol', 'opinion']);
 
 const categorias = await getCategorias();
 const bySlug = new Map(categorias.map((c) => [c.slug, c]));
@@ -12,7 +14,29 @@ const chips = CHIP_ORDER
   .map((slug) => bySlug.get(slug))
   .filter((c): c is NonNullable<typeof c> => Boolean(c));
 
-const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
+const isHomeActive = currentPath === '/' || currentPath === '';
+
+let activeCategorySlug: string | null = null;
+const categoriaMatch = currentPath.match(/^\/categoria\/([^/]+)/);
+if (categoriaMatch) {
+  activeCategorySlug = categoriaMatch[1];
+} else if (currentPath.startsWith('/articulo/')) {
+  const articleSlug = currentPath.replace(/^\/articulo\//, '').replace(/\/$/, '');
+  if (articleSlug) {
+    try {
+      const articulo = await getArticuloBySlug(articleSlug);
+      if (articulo?.categoria?.slug) {
+        activeCategorySlug = articulo.categoria.slug;
+      }
+    } catch (err) {
+      console.error('[Header] failed to resolve active category for article:', err);
+    }
+  }
+}
+
+const collapsedItems = chips.filter((c) => COLLAPSE_SLUGS.has(c.slug));
+const moreHasActive = activeCategorySlug !== null && COLLAPSE_SLUGS.has(activeCategorySlug);
+const isCategoryActive = (slug: string) => activeCategorySlug === slug;
 ---
 
 <header id="site-header" class="site-header">
@@ -22,33 +46,75 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
       <img class="site-header__logo--desktop" src="/brand/logo-lockup.png" alt="Beisjoven" height="40" />
     </a>
 
-    <nav class="site-header__chips-desktop" aria-label="Categorías">
+    <nav class="site-header__nav-desktop" aria-label="Navegación principal">
+      <a
+        href="/"
+        class="nav-pill"
+        data-nav="inicio"
+        aria-current={isHomeActive ? 'page' : undefined}
+      >
+        Inicio
+      </a>
       {chips.map((c) => (
         <a
           href={`/categoria/${c.slug}`}
-          class="chip"
+          class="nav-pill"
           data-category={c.slug}
-          data-active={isActive(c.slug) ? 'true' : 'false'}
-          aria-current={isActive(c.slug) ? 'page' : undefined}
+          data-collapse={COLLAPSE_SLUGS.has(c.slug) ? 'true' : undefined}
+          aria-current={isCategoryActive(c.slug) ? 'page' : undefined}
         >
           {c.nombre}
         </a>
       ))}
+
+      <div class="nav-more" data-has-active={moreHasActive ? 'true' : undefined}>
+        <button
+          id="nav-more-trigger"
+          class="nav-pill nav-pill--more"
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          aria-controls="nav-more-panel"
+        >
+          Más <span class="nav-more__caret" aria-hidden="true">▾</span>
+        </button>
+        <div
+          id="nav-more-panel"
+          class="nav-more__panel"
+          role="menu"
+          aria-labelledby="nav-more-trigger"
+          hidden
+        >
+          {collapsedItems.map((c) => (
+            <a
+              href={`/categoria/${c.slug}`}
+              class="nav-more__item"
+              role="menuitem"
+              data-category={c.slug}
+              aria-current={isCategoryActive(c.slug) ? 'page' : undefined}
+            >
+              {c.nombre}
+            </a>
+          ))}
+        </div>
+      </div>
     </nav>
 
-    <button
-      id="search-trigger"
-      class="site-header__search"
-      type="button"
-      aria-label="Buscar"
-      aria-expanded="false"
-      aria-controls="search-overlay"
-    >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <circle cx="11" cy="11" r="7" />
-        <path d="M21 21l-4.35-4.35" stroke-linecap="round" />
-      </svg>
-    </button>
+    <div class="site-header__actions">
+      <button
+        id="search-trigger"
+        class="site-header__search"
+        type="button"
+        aria-label="Buscar"
+        aria-expanded="false"
+        aria-controls="search-overlay"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.35-4.35" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
   </div>
 
   <div class="site-header__chips-mobile">
@@ -58,8 +124,8 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
           href={`/categoria/${c.slug}`}
           class="chip"
           data-category={c.slug}
-          data-active={isActive(c.slug) ? 'true' : 'false'}
-          aria-current={isActive(c.slug) ? 'page' : undefined}
+          data-active={isCategoryActive(c.slug) ? 'true' : 'false'}
+          aria-current={isCategoryActive(c.slug) ? 'page' : undefined}
         >
           {c.nombre}
         </a>
@@ -119,7 +185,15 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
   .site-header__logo--mobile { display: block; max-height: 32px; }
   .site-header__logo--desktop { display: none; }
 
-  .site-header__chips-desktop { display: none; }
+  .site-header__nav-desktop { display: none; }
+
+  .site-header__actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+  }
 
   .site-header__search {
     flex-shrink: 0;
@@ -144,7 +218,7 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
   }
   .site-header__search svg { width: 20px; height: 20px; }
 
-  /* Mobile chips row */
+  /* Mobile chips row — UNCHANGED */
   .site-header__chips-mobile {
     position: relative;
     height: 40px;
@@ -176,7 +250,7 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
     background: linear-gradient(to right, rgba(255, 255, 255, 0), #ffffff);
   }
 
-  /* Chip base */
+  /* Mobile chip — UNCHANGED */
   .chip {
     display: inline-flex;
     align-items: center;
@@ -202,7 +276,6 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
   .chip:hover { border-color: rgba(27, 42, 74, 0.28); }
   .chip:focus-visible { outline: 2px solid var(--navy, #1B2A4A); outline-offset: 2px; }
 
-  /* Active: background in category color, white text */
   .chip[data-active="true"] { color: #ffffff; border-color: transparent; }
   .chip[data-active="true"][data-category="mlb"]            { background: var(--cat-mlb); }
   .chip[data-active="true"][data-category="liga-mexicana"]  { background: var(--cat-liga-mexicana); }
@@ -211,8 +284,16 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
   .chip[data-active="true"][data-category="softbol"]        { background: var(--cat-softbol); }
   .chip[data-active="true"][data-category="opinion"]        { background: var(--cat-opinion); }
 
-  /* Desktop: single bar, chips center, no mobile row */
+  /* Desktop / tablet (>= 768px): nav row + scroll border */
   @media (min-width: 768px) {
+    .site-header {
+      border-bottom: 2px solid transparent;
+      transition: border-color 150ms ease-out, transform 200ms ease-out;
+    }
+    .site-header[data-scrolled="true"] {
+      border-bottom-color: var(--navy, #1B2A4A);
+    }
+
     .site-header__bar {
       height: 64px;
       padding: 0 24px;
@@ -228,17 +309,119 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
       max-height: 40px;
       transition: max-height 200ms ease-out;
     }
-
     .site-header.is-compact .site-header__logo--desktop { max-height: 28px; }
 
-    .site-header__chips-desktop {
+    .site-header__nav-desktop {
       display: flex;
       flex: 1;
       gap: 6px;
       justify-content: center;
+      align-items: center;
+      flex-wrap: nowrap;
     }
 
     .site-header__chips-mobile { display: none; }
+
+    .site-header__actions {
+      min-width: 72px;
+    }
+
+    /* Nav pill — desktop primary nav */
+    .nav-pill {
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+      padding: 7px 16px;
+      border: 1px solid var(--rule-strong, rgba(27, 42, 74, 0.28));
+      border-radius: 999px;
+      background: transparent;
+      color: var(--ink, var(--navy, #1B2A4A));
+      font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+      transition:
+        background-color 120ms ease-out,
+        color 120ms ease-out,
+        border-color 120ms ease-out;
+    }
+    .nav-pill:hover {
+      border-color: var(--navy, #1B2A4A);
+      color: var(--navy, #1B2A4A);
+    }
+    .nav-pill:focus-visible {
+      outline: 2px solid var(--navy, #1B2A4A);
+      outline-offset: 2px;
+    }
+    .nav-pill[aria-current="page"] {
+      background: var(--cat-color, var(--navy, #1B2A4A));
+      color: #ffffff;
+      border-color: transparent;
+    }
+    .nav-pill[aria-current="page"][data-category="mlb"]           { --cat-color: var(--cat-mlb); }
+    .nav-pill[aria-current="page"][data-category="liga-mexicana"] { --cat-color: var(--cat-liga-mexicana); }
+    .nav-pill[aria-current="page"][data-category="seleccion"]     { --cat-color: var(--cat-seleccion); }
+    .nav-pill[aria-current="page"][data-category="juvenil"]       { --cat-color: var(--cat-juvenil); }
+    .nav-pill[aria-current="page"][data-category="softbol"]       { --cat-color: var(--cat-softbol); }
+    .nav-pill[aria-current="page"][data-category="opinion"]       { --cat-color: var(--cat-opinion); }
+
+    /* "Más" dropdown */
+    .nav-more {
+      position: relative;
+      display: none;
+    }
+    .nav-more[data-has-active="true"] .nav-pill--more {
+      border-color: var(--navy, #1B2A4A);
+      color: var(--navy, #1B2A4A);
+    }
+    .nav-more__caret {
+      margin-left: 4px;
+      font-size: 0.75em;
+    }
+    .nav-more__panel {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      min-width: 180px;
+      padding: 8px 0;
+      background: #ffffff;
+      border: 1px solid var(--rule-strong, rgba(27, 42, 74, 0.28));
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
+      z-index: 60;
+    }
+    .nav-more__panel[hidden] { display: none; }
+    .nav-more__item {
+      display: block;
+      padding: 10px 14px;
+      color: var(--ink, var(--navy, #1B2A4A));
+      font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.3;
+      text-decoration: none;
+      transition: background-color 120ms ease-out;
+    }
+    .nav-more__item:hover,
+    .nav-more__item:focus-visible {
+      background: var(--surface-tinted, #F6F5F1);
+      outline: none;
+    }
+    .nav-more__item[aria-current="page"] {
+      color: var(--navy, #1B2A4A);
+      background: var(--surface-tinted, #F6F5F1);
+    }
+  }
+
+  /* Tablet narrow (768–1099): collapse Softbol + Opinión into "Más" */
+  @media (min-width: 768px) and (max-width: 1099px) {
+    .site-header__nav-desktop .nav-pill[data-collapse="true"] { display: none; }
+    .nav-more { display: block; }
   }
 
   /* Search overlay */
@@ -316,9 +499,12 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
     const trigger = document.getElementById('search-trigger');
     const overlay = document.getElementById('search-overlay');
     const closeBtn = document.getElementById('search-close');
+    const moreTrigger = document.getElementById('nav-more-trigger');
+    const morePanel = document.getElementById('nav-more-panel');
 
     if (header) {
-      const THRESHOLD = 80;
+      const COMPACT_THRESHOLD = 80;
+      const SCROLL_BORDER_THRESHOLD = 40;
       const desktopMql = window.matchMedia('(min-width: 768px)');
       let lastY = window.scrollY;
       let ticking = false;
@@ -327,7 +513,13 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
         const y = window.scrollY;
         const isDesktop = desktopMql.matches;
 
-        if (y <= THRESHOLD) {
+        if (y > SCROLL_BORDER_THRESHOLD) {
+          header.setAttribute('data-scrolled', 'true');
+        } else {
+          header.removeAttribute('data-scrolled');
+        }
+
+        if (y <= COMPACT_THRESHOLD) {
           header.classList.remove('is-hidden');
           header.classList.remove('is-compact');
         } else if (isDesktop) {
@@ -351,6 +543,8 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
           ticking = true;
         }
       }, { passive: true });
+
+      onScroll();
     }
 
     if (trigger && overlay && closeBtn) {
@@ -374,6 +568,52 @@ const isActive = (slug: string) => currentPath.startsWith(`/categoria/${slug}`);
           trigger.focus();
         }
       });
+    }
+
+    if (moreTrigger && morePanel) {
+      let isOpen = false;
+
+      const openMenu = () => {
+        isOpen = true;
+        morePanel.hidden = false;
+        moreTrigger.setAttribute('aria-expanded', 'true');
+      };
+      const closeMenu = () => {
+        isOpen = false;
+        morePanel.hidden = true;
+        moreTrigger.setAttribute('aria-expanded', 'false');
+      };
+
+      try {
+        moreTrigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (isOpen) closeMenu(); else openMenu();
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!isOpen) return;
+          const target = e.target;
+          if (!(target instanceof Node)) return;
+          if (morePanel.contains(target) || moreTrigger.contains(target)) return;
+          closeMenu();
+        });
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && isOpen) {
+            closeMenu();
+            moreTrigger.focus();
+          }
+        });
+
+        morePanel.addEventListener('click', (e) => {
+          const target = e.target;
+          if (target instanceof Element && target.closest('a[role="menuitem"]')) {
+            closeMenu();
+          }
+        });
+      } catch (err) {
+        console.error('[Header] more-menu init failed:', err);
+      }
     }
   })();
 </script>
