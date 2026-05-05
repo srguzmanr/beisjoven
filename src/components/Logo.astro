@@ -1,5 +1,5 @@
 ---
-type Format = 'lockup' | 'mark';
+type Format = 'lockup' | 'mark' | 'lockup-mono';
 
 interface Props {
   format?: Format;
@@ -17,7 +17,11 @@ const {
   class: className = '',
 } = Astro.props;
 
-const src = format === 'mark' ? '/brand/logo-mark.png' : '/brand/logo-lockup.png';
+const src = format === 'mark'
+  ? '/brand/logo-mark.png'
+  : format === 'lockup-mono'
+  ? '/brand/logo-lockup-mono.png'
+  : '/brand/logo-lockup.png';
 ---
 
 <img src={src} alt={alt} height={height} width={width} class={className} />
