@@ -136,7 +136,6 @@
     bindAutosave(els, state, storage);
     bindDraftRestore(els, state, storage);
     bindSubmit(els, state, storage);
-    bindReset(els, state, storage);
 
     // Initial UI sync
     renderPhotoGrid(els, state);
@@ -169,13 +168,15 @@
       submitSpinner: document.getElementById('th-submit-spinner'),
 
       successPanel: document.getElementById('th-success'),
-      successSubtext: document.getElementById('th-success-subtext'),
+      successName: document.getElementById('th-success-name'),
+      successEmail: document.getElementById('th-success-email'),
       errorBanner: document.getElementById('th-error'),
       rateLimitBanner: document.getElementById('th-rate-limit'),
-      resetBtn: document.getElementById('th-reset'),
 
       fileInput: document.getElementById('th-fotos'),
       photoGrid: document.getElementById('th-fotos-grid'),
+      photoDropzone: document.getElementById('th-fotos-dropzone'),
+      photoLimitMsg: document.getElementById('th-fotos-limit'),
       photoError: document.getElementById('th-fotos-error'),
       photoReadout: document.getElementById('th-fotos-readout'),
 
@@ -494,6 +495,96 @@
         console.error('[TuHistoriaForm] file-change failed:', err);
       }
     });
+
+    // Large drop zone: click + drag-and-drop. Also reacts to global drag so
+    // the user gets visual feedback the moment they drag a file into the page.
+    if (els.photoDropzone) {
+      try {
+        els.photoDropzone.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (state.submitting) return;
+          els.fileInput.click();
+        });
+        els.photoDropzone.addEventListener('dragenter', (e) => {
+          e.preventDefault();
+          if (state.submitting) return;
+          els.photoDropzone.classList.add('th-dnd-over');
+        });
+        els.photoDropzone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          if (state.submitting) return;
+          if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+          els.photoDropzone.classList.add('th-dnd-over');
+        });
+        els.photoDropzone.addEventListener('dragleave', (e) => {
+          // Only clear when the cursor leaves the zone itself, not when moving
+          // between child elements.
+          if (e.relatedTarget && els.photoDropzone.contains(e.relatedTarget)) return;
+          els.photoDropzone.classList.remove('th-dnd-over');
+        });
+        els.photoDropzone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          els.photoDropzone.classList.remove('th-dnd-over');
+          if (state.submitting) return;
+          try {
+            const dropped = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+            addFiles(els, state, dropped);
+          } catch (err) {
+            console.error('[TuHistoriaForm] dropzone-drop failed:', err);
+          }
+        });
+      } catch (err) {
+        console.error('[TuHistoriaForm] dropzone bind failed:', err);
+      }
+    }
+
+    // Window-level drag listeners — activate the zone visually whenever a file
+    // is being dragged anywhere on the page, so the affordance is obvious.
+    try {
+      let dragDepth = 0;
+      const setGlobalDragOver = (on) => {
+        if (state.submitting) return;
+        if (state.files.length >= MAX_FILES) return;
+        if (els.photoDropzone && !els.photoDropzone.hidden) {
+          els.photoDropzone.classList.toggle('th-dnd-over', !!on);
+        }
+        const miniAdd = els.photoGrid && els.photoGrid.querySelector('#th-photo-add');
+        if (miniAdd) miniAdd.classList.toggle('th-dnd-over', !!on);
+      };
+      const isFileDrag = (e) => {
+        if (!e.dataTransfer) return false;
+        const types = e.dataTransfer.types;
+        if (!types) return false;
+        return Array.prototype.indexOf.call(types, 'Files') !== -1;
+      };
+      window.addEventListener('dragenter', (e) => {
+        if (!isFileDrag(e)) return;
+        dragDepth++;
+        setGlobalDragOver(true);
+      });
+      window.addEventListener('dragleave', (e) => {
+        if (!isFileDrag(e)) return;
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (dragDepth === 0) setGlobalDragOver(false);
+      });
+      window.addEventListener('dragover', (e) => {
+        // Prevent the browser from opening the image if the user misses the zone.
+        if (isFileDrag(e)) e.preventDefault();
+      });
+      window.addEventListener('drop', (e) => {
+        if (isFileDrag(e)) {
+          // If the drop is outside our zone, prevent the browser from
+          // navigating to / opening the dropped file.
+          const onZone = els.photoDropzone && els.photoDropzone.contains(e.target);
+          const onMini = els.photoGrid && els.photoGrid.contains(e.target);
+          if (!onZone && !onMini) e.preventDefault();
+        }
+        dragDepth = 0;
+        setGlobalDragOver(false);
+      });
+    } catch (err) {
+      console.error('[TuHistoriaForm] window-drag bind failed:', err);
+    }
   }
 
   function addFiles(els, state, newFiles) {
@@ -555,6 +646,19 @@
   function renderPhotoGrid(els, state) {
     if (!els.photoGrid) return;
 
+    const count = state.files.length;
+
+    // Toggle large dropzone (only when 0 files), grid (when >=1 file),
+    // limit message (when 5 files).
+    if (els.photoDropzone) {
+      els.photoDropzone.hidden = count > 0;
+      if (count > 0) els.photoDropzone.classList.remove('th-dnd-over');
+    }
+    els.photoGrid.hidden = count === 0;
+    if (els.photoLimitMsg) {
+      els.photoLimitMsg.classList.toggle('hidden', count < MAX_FILES);
+    }
+
     const slots = state.files.map((f) => `
       <div class="th-photo-slot" data-file-id="${escapeHtml(f.id)}">
         <img src="${escapeHtml(f.previewUrl)}" alt="${escapeHtml(f.file.name)}" />
@@ -567,15 +671,15 @@
       </div>
     `).join('');
 
+    // Mini "+" slot at end of grid only when 1..(MAX-1) photos. At 0 photos
+    // the large dropzone takes over; at MAX, no add affordance is shown.
     let addSlot = '';
-    if (state.files.length < MAX_FILES) {
-      const label = state.files.length === 0 ? 'Agregar fotos' : '+ agregar';
+    if (count > 0 && count < MAX_FILES) {
       addSlot = `
-        <button type="button" class="th-photo-add" id="th-photo-add" aria-label="${escapeHtml(label)}">
+        <button type="button" class="th-photo-add" id="th-photo-add" aria-label="Agregar otra foto">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          <span>${escapeHtml(label)}</span>
         </button>
       `;
     }
@@ -968,7 +1072,11 @@
         const honeypot = els.form.elements.website && els.form.elements.website.value;
         if (honeypot) {
           console.warn('[TuHistoriaForm] honeypot triggered — silent success');
-          showSuccess(els, state, !!els.form.elements.permitir_credito.checked, storage);
+          const f = els.form.elements;
+          showSuccess(els, state, {
+            nombre: (f.nombre.value || '').trim(),
+            email: (f.email.value || '').trim(),
+          }, storage);
           return;
         }
 
@@ -1036,12 +1144,14 @@
         if (isRateLimited(storage)) els.rateLimitBanner.classList.remove('hidden');
 
         // Fire-and-forget email notification — never blocks success.
+        // Sends BOTH the internal editorial notification AND the user confirmation.
         try {
           fetch('/api/notify-historia', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               nombre: payload.nombre,
+              email: payload.email,
               titulo: payload.titulo,
               categoria: payload.categoria_sugerida,
               ciudad: payload.ciudad_estado,
@@ -1062,7 +1172,7 @@
         setSubmitState(els, 'success');
 
         // Brief success-state pause, then swap to the success panel.
-        setTimeout(() => showSuccess(els, state, payload.permitir_credito, storage), 600);
+        setTimeout(() => showSuccess(els, state, payload, storage), 600);
       } catch (err) {
         console.error('[TuHistoriaForm] submit failed:', err);
         els.errorBanner.classList.remove('hidden');
@@ -1076,80 +1186,22 @@
     });
   }
 
-  function showSuccess(els, state, withCredit, storage) {
+  function showSuccess(els, state, payload, storage) {
     els.form.classList.add('hidden');
     els.errorBanner.classList.add('hidden');
-    if (els.successSubtext) {
-      els.successSubtext.textContent = withCredit
-        ? 'Nuestro equipo editorial la revisará. Si tu historia se publica, aparecerá en beisjoven.com con tu crédito como colaborador.'
-        : 'Nuestro equipo editorial la revisará. Si tu historia se publica, aparecerá en beisjoven.com.';
-    }
+    if (els.draftPill) els.draftPill.classList.add('hidden');
+
+    // Personalize: first name + email. Falls back to "amigo" if anything missing.
+    const fullName = (payload && payload.nombre) ? String(payload.nombre).trim() : '';
+    const firstName = fullName ? fullName.split(/\s+/)[0] : 'amigo';
+    const email = (payload && payload.email) ? String(payload.email).trim() : '';
+
+    if (els.successName) els.successName.textContent = firstName;
+    if (els.successEmail) els.successEmail.textContent = email || 'tu correo';
+
     if (els.successPanel) {
       els.successPanel.classList.remove('hidden');
       els.successPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }
-
-  // ==================== RESET ====================
-
-  function bindReset(els, state, storage) {
-    if (!els.resetBtn) return;
-    els.resetBtn.addEventListener('click', () => {
-      try {
-        // Clear form
-        els.form.reset();
-
-        // Revoke any object URLs and clear file state
-        state.files.forEach((f) => {
-          try { if (f.previewUrl) URL.revokeObjectURL(f.previewUrl); } catch (_) { /* ignore */ }
-        });
-        state.files = [];
-        state.restoredFileNames = [];
-        state.currentStep = 1;
-        state.submitted = false;
-        state.submitting = false;
-
-        // Clear all error states
-        document.querySelectorAll('.field[data-state="error"]').forEach((w) => {
-          w.removeAttribute('data-state');
-          const hint = w.querySelector('.hint');
-          if (!hint) return;
-          const def = hint.getAttribute('data-hint-default') || '';
-          const textNode = hint.querySelector('[data-hint-text]');
-          if (textNode) textNode.textContent = def;
-          else if (def) hint.textContent = def;
-        });
-
-        // Reset photo grid + counters
-        renderPhotoGrid(els, state);
-        if (els.tituloCount) els.tituloCount.textContent = '0 / 200';
-        if (els.descCount) els.descCount.textContent = '0 / 3000';
-        if (els.photoError) {
-          els.photoError.textContent = '';
-          els.photoError.classList.add('hidden');
-        }
-        if (els.photoReadout) els.photoReadout.textContent = '';
-
-        // Reset default-checked credit box
-        const credito = document.getElementById('th-credito');
-        if (credito) credito.checked = true;
-
-        // Hide menores wrapper (no files)
-        updateMenoresVisibility(els, state);
-
-        // Banners
-        els.errorBanner.classList.add('hidden');
-
-        // Swap panels
-        els.successPanel.classList.add('hidden');
-        els.form.classList.remove('hidden');
-
-        updateStepUI(els, state);
-        updateSubmitState(els, state);
-        els.form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } catch (err) {
-        console.error('[TuHistoriaForm] reset failed:', err);
-      }
-    });
   }
 })();
