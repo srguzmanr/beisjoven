@@ -166,3 +166,15 @@
     transparent 16px
   );
 }
+
+/* Dark variant for placeholders rendered on navy surfaces (DESIGN-04c). */
+.ph--dark {
+  background-color: #14213A;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.06) 0,
+    rgba(255, 255, 255, 0.06) 8px,
+    transparent 8px,
+    transparent 16px
+  );
+}

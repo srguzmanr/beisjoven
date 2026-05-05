@@ -1,0 +1,221 @@
+---
+interface Story {
+  slug: string;
+  titulo: string;
+  extracto: string | null;
+  imagen_url: string | null;
+  imagen_portada_alt: string | null;
+  fecha: string;
+  autor_nombre: string | null;
+}
+
+interface Props {
+  stories: Story[];
+}
+
+const { stories } = Astro.props;
+
+const dateFmt = new Intl.DateTimeFormat('es-MX', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
+const cards = stories.map((s) => ({
+  ...s,
+  href: `/articulo/${s.slug}`,
+  imgAlt: s.imagen_portada_alt || s.titulo,
+  byline: s.autor_nombre || 'Redacción Beisjoven',
+  dateLabel: s.fecha ? dateFmt.format(new Date(s.fecha)) : '',
+}));
+---
+
+<section class="bj-juvenil-rail">
+  <div class="bj-juvenil-rail__container">
+    <div class="bj-juvenil-rail__header">
+      <span class="bj-juvenil-rail__eyebrow">Nuestra obsesión</span>
+      <h2 class="bj-juvenil-rail__title">Juvenil</h2>
+      <span class="bj-juvenil-rail__spacer" aria-hidden="true"></span>
+      <a class="bj-juvenil-rail__cta" href="/categoria/juvenil">
+        Toda la cobertura <span aria-hidden="true">→</span>
+      </a>
+    </div>
+
+    <div class="bj-juvenil-rail__grid">
+      {cards.map((c) => (
+        <a class="bj-juvenil-rail__card" href={c.href}>
+          {c.imagen_url ? (
+            <img
+              src={c.imagen_url}
+              alt={c.imgAlt}
+              loading="lazy"
+              class="bj-juvenil-rail__img"
+            />
+          ) : (
+            <div class="bj-juvenil-rail__img ph ph--dark" aria-hidden="true"></div>
+          )}
+          <div class="bj-juvenil-rail__body">
+            <span class="bj-juvenil-rail__pill">JUVENIL</span>
+            <h3 class="bj-juvenil-rail__headline">{c.titulo}</h3>
+            {c.extracto && (
+              <p class="bj-juvenil-rail__deck">{c.extracto}</p>
+            )}
+            <div class="bj-juvenil-rail__meta">
+              <span>{c.byline}</span>
+              <span aria-hidden="true">·</span>
+              <span>{c.dateLabel}</span>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .bj-juvenil-rail {
+    background: var(--navy);
+    color: #fff;
+    padding: 40px 0;
+  }
+
+  @media (min-width: 768px) {
+    .bj-juvenil-rail {
+      padding: 56px 32px;
+    }
+  }
+
+  .bj-juvenil-rail__container {
+    max-width: var(--w-page);
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-juvenil-rail__container {
+      padding: 0;
+    }
+  }
+
+  .bj-juvenil-rail__header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: 2px solid var(--cat-juvenil);
+    padding-bottom: 10px;
+    margin-bottom: 24px;
+  }
+
+  .bj-juvenil-rail__eyebrow {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cat-juvenil);
+  }
+
+  .bj-juvenil-rail__title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: clamp(1.5rem, 1.2rem + 0.8vw, 2rem);
+    color: #fff;
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .bj-juvenil-rail__spacer {
+    flex: 1;
+  }
+
+  .bj-juvenil-rail__cta {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #fff;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .bj-juvenil-rail__cta:hover {
+    text-decoration: underline;
+  }
+
+  .bj-juvenil-rail__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  @media (min-width: 1024px) {
+    .bj-juvenil-rail__grid {
+      grid-template-columns: 1.4fr 1fr 1fr;
+      gap: 36px;
+    }
+  }
+
+  .bj-juvenil-rail__card {
+    display: block;
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .bj-juvenil-rail__img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+
+  .bj-juvenil-rail__body {
+    border-left: 4px solid var(--cat-juvenil);
+    padding-left: 14px;
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .bj-juvenil-rail__pill {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cat-juvenil);
+  }
+
+  .bj-juvenil-rail__headline {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: var(--text-h3);
+    line-height: var(--lh-h3);
+    letter-spacing: var(--tracking-h3);
+    color: #fff;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .bj-juvenil-rail__deck {
+    font-family: var(--font-body);
+    font-size: var(--text-body-sm);
+    line-height: var(--lh-body-sm);
+    color: rgba(255, 255, 255, 0.78);
+    margin: 0;
+  }
+
+  .bj-juvenil-rail__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
+  }
+</style>
