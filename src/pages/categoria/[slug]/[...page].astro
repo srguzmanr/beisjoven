@@ -4,6 +4,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import Breadcrumb from '@/components/Breadcrumb.astro';
 import ArticleCard from '@/components/ArticleCard.astro';
 import MostReadWidget from '@/components/MostReadWidget.astro';
+import BackToTop from '@/components/BackToTop.astro';
 import type { Articulo } from '@/lib/supabase';
 import {
   getCategorias,
@@ -189,4 +190,6 @@ const hasMore = !!page.url.next;
       <script is:inline src="/js/category-load-more.js"></script>
     </Fragment>
   )}
+
+  <BackToTop />
 </BaseLayout>
