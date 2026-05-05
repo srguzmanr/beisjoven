@@ -1,0 +1,79 @@
+---
+// Structural reservation for the first sponsor slot. No data binding — when
+// Sprint 5 wires the first sponsor, this component swaps internals while its
+// position and dimensions stay identical (Bible Part 4 §3.4).
+---
+
+<section class="bj-sponsor">
+  <div class="bj-sponsor__inner">
+    <span class="bj-sponsor__caption">Sponsor · Phase 1</span>
+    <span class="bj-sponsor__divider" aria-hidden="true"></span>
+    <div class="bj-sponsor__slot">
+      SPONSOR SLOT · 970×90 desktop / 320×50 mobile · Sprint 5
+    </div>
+  </div>
+</section>
+
+<style>
+  .bj-sponsor {
+    background: var(--bg-2);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .bj-sponsor__inner {
+    max-width: var(--w-page);
+    margin: 0 auto;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-sponsor__inner {
+      padding: 18px 32px;
+    }
+  }
+
+  .bj-sponsor__caption {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex: 0 0 auto;
+  }
+
+  .bj-sponsor__divider {
+    width: 1px;
+    height: 14px;
+    background: var(--rule-strong);
+    flex: 0 0 auto;
+  }
+
+  .bj-sponsor__slot {
+    flex: 1;
+    height: 56px;
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(27, 42, 74, 0.04) 0 10px,
+      transparent 10px 20px
+    );
+    border: 1px dashed var(--rule-strong);
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-align: center;
+    padding: 0 8px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-sponsor__slot {
+      height: 72px;
+    }
+  }
+</style>

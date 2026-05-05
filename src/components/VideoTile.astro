@@ -1,0 +1,99 @@
+---
+interface Video {
+  id: number;
+  slug: string;
+  titulo: string;
+  thumbnail_url: string | null;
+  youtube_id?: string;
+}
+
+interface Props {
+  video: Video;
+}
+
+const { video } = Astro.props;
+const thumb =
+  video.thumbnail_url ||
+  (video.youtube_id ? `https://img.youtube.com/vi/${video.youtube_id}/mqdefault.jpg` : null);
+---
+
+<a href={`/video/${video.slug}`} class="bj-video-tile">
+  <div class="bj-video-tile__thumb">
+    {thumb ? (
+      <img src={thumb} alt={video.titulo} loading="lazy" />
+    ) : (
+      <div class="bj-video-tile__placeholder ph" aria-hidden="true"></div>
+    )}
+    <span class="bj-video-tile__play" aria-hidden="true">
+      <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor">
+        <path d="M0 0L10 6L0 12V0Z" />
+      </svg>
+    </span>
+  </div>
+  <h4 class="bj-video-tile__title">{video.titulo}</h4>
+</a>
+
+<style>
+  .bj-video-tile {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 12px;
+    align-items: start;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .bj-video-tile:last-child {
+    border-bottom: 0;
+  }
+
+  .bj-video-tile__thumb {
+    position: relative;
+    width: 96px;
+    height: 54px;
+    overflow: hidden;
+    background: #000;
+  }
+
+  .bj-video-tile__thumb img,
+  .bj-video-tile__placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .bj-video-tile__play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+  }
+
+  .bj-video-tile__play svg {
+    margin-left: 2px;
+  }
+
+  .bj-video-tile__title {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.3;
+    color: var(--navy);
+    text-wrap: balance;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
