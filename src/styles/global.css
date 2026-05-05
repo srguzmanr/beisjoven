@@ -16,14 +16,6 @@
   --color-gris-text: #4a5568;
   --color-gris-muted: #9ca3af;
 
-  /* Category colors */
-  --color-cat-mlb: #1e40af;
-  --color-cat-liga-mexicana: #dc2626;
-  --color-cat-seleccion: #15803d;
-  --color-cat-softbol: #7c3aed;
-  --color-cat-juvenil: #ea580c;
-  --color-cat-opinion: #374151;
-
   --font-headline: 'Plus Jakarta Sans', 'Inter', 'Helvetica Neue', Arial, sans-serif;
   --font-body: 'Inter', 'Helvetica Neue', Arial, sans-serif;
 }
@@ -394,14 +386,6 @@ div[data-youtube-video] {
   .lightbox-arrow { display: none; }
   .lightbox-img-wrap { padding: 3.5rem 0.5rem 4.5rem; }
 }
-
-/* ==================== CATEGORY COLORS ==================== */
-.cat-mlb { --cat-color: var(--color-cat-mlb); }
-.cat-liga-mexicana { --cat-color: var(--color-cat-liga-mexicana); }
-.cat-seleccion { --cat-color: var(--color-cat-seleccion); }
-.cat-softbol { --cat-color: var(--color-cat-softbol); }
-.cat-juvenil { --cat-color: var(--color-cat-juvenil); }
-.cat-opinion { --cat-color: var(--color-cat-opinion); }
 
 /* ==================== SECTION DIVIDERS ==================== */
 .section-alt {
