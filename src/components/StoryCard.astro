@@ -1,5 +1,6 @@
 ---
 import { getCategoryAccent, getCategoryLabel } from '@/lib/categoryAccents.js';
+import AvatarBJ from '@/components/AvatarBJ.astro';
 
 interface Story {
   id: number;
@@ -12,6 +13,7 @@ interface Story {
   categoria_slug: string;
   categoria_nombre: string;
   autor_nombre: string | null;
+  read_time_minutes?: number;
 }
 
 interface Props {
@@ -38,8 +40,8 @@ const dateLabel = story.fecha
     }).format(new Date(story.fecha))
   : '';
 
-const byline = story.autor_nombre || 'Redacción Beisjoven';
 const imgAlt = story.imagen_portada_alt || story.titulo;
+const readMin = story.read_time_minutes ?? 1;
 ---
 
 <a href={href} class="bj-story-card" style={`--bj-accent: ${accent};`}>
@@ -66,9 +68,12 @@ const imgAlt = story.imagen_portada_alt || story.titulo;
       <p class="bj-story-card__deck">{story.extracto}</p>
     )}
     <div class="bj-story-card__meta">
-      <span>{byline}</span>
+      <AvatarBJ size={20} />
+      <span>Redacción Beisjoven</span>
       <span aria-hidden="true">·</span>
-      <span>{dateLabel}</span>
+      <time datetime={story.fecha}>{dateLabel}</time>
+      <span aria-hidden="true">·</span>
+      <span>{readMin} min</span>
     </div>
   </div>
 </a>

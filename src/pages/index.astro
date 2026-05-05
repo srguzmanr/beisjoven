@@ -38,7 +38,7 @@ const heroId = hero?.id ?? -1;
 // MixedFeed data (DESIGN-04b). Joined select returns categorias/autores as
 // nested objects; we flatten to the StoryCard / ListCard prop shape below.
 const FEED_SELECT =
-  'id, slug, titulo, extracto, imagen_url, imagen_portada_alt, fecha, categorias!inner(slug, nombre), autores(nombre)';
+  'id, slug, titulo, extracto, imagen_url, imagen_portada_alt, fecha, read_time_minutes, categorias!inner(slug, nombre), autores(nombre)';
 
 const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   .toISOString()
@@ -86,6 +86,7 @@ type FeedRow = {
   imagen_url: string | null;
   imagen_portada_alt: string | null;
   fecha: string;
+  read_time_minutes: number;
   categorias: { slug: string; nombre: string } | { slug: string; nombre: string }[] | null;
   autores: { nombre: string } | { nombre: string }[] | null;
 };
@@ -102,6 +103,7 @@ function flatten(rows: FeedRow[] | null) {
       imagen_url: r.imagen_url,
       imagen_portada_alt: r.imagen_portada_alt,
       fecha: r.fecha,
+      read_time_minutes: r.read_time_minutes ?? 1,
       categoria_slug: cat?.slug ?? '',
       categoria_nombre: cat?.nombre ?? '',
       autor_nombre: aut?.nombre ?? null,

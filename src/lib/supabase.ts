@@ -52,6 +52,7 @@ export interface Articulo {
   photo_credit: string | null;
   imagen_portada_alt: string | null;
   hero_layout: string | null;
+  read_time_minutes: number;
   categoria: Categoria;
   autor: Autor;
 }
