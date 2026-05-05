@@ -1,6 +1,6 @@
 ---
 import type { Articulo } from '@/lib/supabase';
-import { formatDate } from '@/lib/content';
+import ArticleMeta from '@/components/ArticleMeta.astro';
 
 interface Props {
   story: Articulo;
@@ -14,8 +14,6 @@ const accent = catSlug ? `var(--cat-${catSlug})` : 'var(--gold)';
 // Juvenil gold fails 4.5:1 on white — label text uses navy on light surfaces.
 const labelLight = catSlug === 'juvenil' ? 'var(--navy)' : accent;
 const altText = story.imagen_portada_alt ?? '';
-const byline = story.autor?.nombre || 'Redacción Beisjoven';
-const date = story.fecha ? formatDate(story.fecha) : '';
 const href = `/articulo/${story.slug}`;
 ---
 
@@ -39,30 +37,34 @@ const href = `/articulo/${story.slug}`;
               <span class="hero-default__sub">· {story.kicker}</span>
             )}
           </div>
-          <h1 class="hero-default__h1-mobile">{story.titulo}</h1>
+          <h1 class="hero-default__h1">{story.titulo}</h1>
+          <div class="hero-default__overlay-meta">
+            <ArticleMeta
+              fecha={story.fecha}
+              autorNombre={story.autor?.nombre ?? null}
+              readMinutes={story.read_time_minutes}
+              variant="card"
+              inverse={true}
+              showAvatar={false}
+            />
+          </div>
         </div>
         {story.photo_credit && (
           <span class="hero-default__credit">Foto: {story.photo_credit}</span>
         )}
       </div>
       <div class="hero-default__prose">
-        <div class="hero-default__kicker hero-default__kicker--desktop">
-          <span class="hero-default__rule"></span>
-          <span class="hero-default__cat hero-default__cat--light">{catName}</span>
-          {story.kicker && (
-            <>
-              <span class="hero-default__dot">·</span>
-              <span class="hero-default__sub hero-default__sub--light">{story.kicker}</span>
-            </>
-          )}
-        </div>
-        <h1 class="hero-default__h1-desktop">{story.titulo}</h1>
         {story.extracto && (
           <p class="hero-default__deck">{story.extracto}</p>
         )}
-        <div class="hero-default__meta">
-          <span class="hero-default__byline">{byline}</span>
-          {date && <><span aria-hidden="true">·</span><span>{date}</span></>}
+        <div class="hero-default__meta-mobile">
+          <ArticleMeta
+            fecha={story.fecha}
+            autorNombre={story.autor?.nombre ?? null}
+            readMinutes={story.read_time_minutes}
+            variant="card"
+            showAvatar={false}
+          />
         </div>
       </div>
     </a>
@@ -92,9 +94,9 @@ const href = `/articulo/${story.slug}`;
     z-index: 1;
     pointer-events: none;
     background: linear-gradient(to top,
-      rgba(15, 27, 51, 0.92) 0%,
-      rgba(15, 27, 51, 0.55) 40%,
-      rgba(15, 27, 51, 0) 75%);
+      rgba(15, 27, 51, 0.78) 0%,
+      rgba(15, 27, 51, 0.4) 18%,
+      rgba(15, 27, 51, 0) 38%);
   }
   .hero-default__overlay {
     position: absolute;
@@ -111,7 +113,6 @@ const href = `/articulo/${story.slug}`;
     gap: 10px;
     margin-bottom: 10px;
   }
-  .hero-default__kicker--desktop { display: none; }
   .hero-default__rule {
     display: inline-block;
     width: 28px;
@@ -135,7 +136,7 @@ const href = `/articulo/${story.slug}`;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.75);
   }
-  .hero-default__h1-mobile {
+  .hero-default__h1 {
     font-family: var(--font-heading);
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -145,7 +146,10 @@ const href = `/articulo/${story.slug}`;
     font-size: clamp(1.625rem, 1.4rem + 1.2vw, 2.125rem);
     line-height: 1.15;
   }
-  .hero-default__h1-desktop { display: none; }
+  .hero-default__overlay-meta {
+    display: none;
+    margin-top: 12px;
+  }
   .hero-default__credit {
     position: absolute;
     right: 8px;
@@ -171,55 +175,29 @@ const href = `/articulo/${story.slug}`;
     font-size: 1rem;
     line-height: 1.6;
   }
-  .hero-default__meta {
+  .hero-default__meta-mobile {
     margin-top: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--font-body);
-    font-size: 0.875rem;
-    color: #6B7280;
-  }
-  .hero-default__byline {
-    font-weight: 600;
-    color: var(--navy);
   }
 
   @media (min-width: 768px) {
     .hero-default__media {
       aspect-ratio: 16 / 9;
     }
-    .hero-default__gradient,
     .hero-default__overlay {
-      display: none;
+      padding: 28px 32px 30px;
+    }
+    .hero-default__kicker {
+      margin-bottom: 14px;
+    }
+    .hero-default__h1 {
+      font-size: clamp(2rem, 1.55rem + 1.4vw, 2.75rem);
+      line-height: 1.1;
+    }
+    .hero-default__overlay-meta {
+      display: block;
     }
     .hero-default__prose {
-      padding: 28px 32px 0;
-    }
-    .hero-default__kicker--desktop {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-    .hero-default__cat--light { color: var(--label-light); }
-    .hero-default__dot { color: #6B7280; }
-    .hero-default__sub--light { color: #6B7280; }
-    .hero-default__h1-desktop {
-      display: block;
-      font-family: var(--font-heading);
-      font-weight: 700;
-      color: var(--navy);
-      text-wrap: balance;
-      margin: 0;
-      font-size: clamp(2.25rem, 1.75rem + 1.4vw, 3rem);
-      line-height: 1.1;
-      letter-spacing: -0.02em;
-    }
-    .hero-default__deck {
-      margin-top: 14px;
-      font-size: 1.125rem;
-      max-width: 40rem;
+      display: none;
     }
   }
 </style>
