@@ -397,7 +397,7 @@ var Autosave = {
         var esWbc = document.getElementById('es_wbc2026');
         var heroLayout = document.getElementById('hero-layout');
         var heroLayoutVal = heroLayout ? heroLayout.value : '';
-        var heroLayoutNormalized = (heroLayoutVal === 'split' || heroLayoutVal === 'overlay') ? heroLayoutVal : null;
+        var heroLayoutNormalized = heroLayoutVal === 'split' ? 'split' : null;
 
         var content = '';
         if (contentEditor) {
@@ -1236,11 +1236,10 @@ const AdminPages = {
                                     <div class="form-group" style="margin-top:14px;">
                                         <label for="hero-layout">Layout del hero</label>
                                         <select id="hero-layout">
-                                            <option value="default" ${(article?.hero_layout == null || article?.hero_layout === 'default') && !(useDraft && draft && (draft.hero_layout === 'split' || draft.hero_layout === 'overlay')) ? 'selected' : (useDraft && draft && (draft.hero_layout == null || draft.hero_layout === 'default') ? 'selected' : '')}>Default (predeterminado)</option>
+                                            <option value="default" ${(article?.hero_layout == null || article?.hero_layout === 'default') && !(useDraft && draft && draft.hero_layout === 'split') ? 'selected' : (useDraft && draft && (draft.hero_layout == null || draft.hero_layout === 'default') ? 'selected' : '')}>Default (predeterminado)</option>
                                             <option value="split" ${article?.hero_layout === 'split' || (useDraft && draft && draft.hero_layout === 'split') ? 'selected' : ''}>Split (dividido)</option>
-                                            <option value="overlay" ${article?.hero_layout === 'overlay' || (useDraft && draft && draft.hero_layout === 'overlay') ? 'selected' : ''}>Overlay (superpuesto)</option>
                                         </select>
-                                        <small style="display:block;margin-top:6px;font-size:0.8rem;color:#6b7280;font-weight:400;line-height:1.35;">Usa Split si la foto tiene tonos dominantes dentro del 15% de navy, o si no hay zona limpia en el 40% inferior del encuadre.</small>
+                                        <small style="display:block;margin-top:6px;font-size:0.8rem;color:#6b7280;font-weight:400;line-height:1.35;">Define cómo se ve el hero en la página individual del artículo. No afecta cómo aparece en el homepage.</small>
                                     </div>
                                     <div class="form-group" style="margin-top:14px;">
                                         <label>Etiquetas (Tags)</label>
@@ -1767,10 +1766,9 @@ const AdminPages = {
         const pie_de_foto = (document.getElementById('foto-pie')?.value || '').trim();
         const foto_credito = (document.getElementById('foto-credito')?.value || '').trim();
         const es_wbc2026 = document.getElementById('es_wbc2026')?.checked || false;
-        // hero_layout: dropdown values 'default'|'split'|'overlay'.
-        // 'default' coerces to NULL — keeps the column nullable as the schema intends.
+        // hero_layout: dropdown values 'default'|'split'. 'default' coerces to NULL.
         const heroLayoutVal = document.getElementById('hero-layout')?.value || '';
-        const hero_layout = (heroLayoutVal === 'split' || heroLayoutVal === 'overlay') ? heroLayoutVal : null;
+        const hero_layout = heroLayoutVal === 'split' ? 'split' : null;
 
         // Get content from Rich Text Editor or fallback to textarea
         let contenidoRaw;
