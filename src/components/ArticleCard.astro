@@ -1,6 +1,7 @@
 ---
 import CategoryPill from './CategoryPill.astro';
-import { timeAgo } from '@/lib/content';
+import ArticleMeta from '@/components/ArticleMeta.astro';
+import { formatCardDate } from '@/utils/formatDate.js';
 import type { Articulo } from '@/lib/supabase';
 
 interface Props {
@@ -14,7 +15,7 @@ const { article, size = 'default', showExcerpt = true, eager = false } = Astro.p
 
 const href = `/articulo/${article.slug}`;
 const imgAlt = article.titulo;
-const date = article.fecha ? timeAgo(article.fecha) : '';
+const compactDate = article.fecha ? formatCardDate(article.fecha) : '';
 ---
 
 {size === 'horizontal' ? (
@@ -40,11 +41,12 @@ const date = article.fecha ? timeAgo(article.fecha) : '';
       {showExcerpt && article.extracto && (
         <p class="text-sm text-[#6b7280] line-clamp-2 mb-2">{article.extracto}</p>
       )}
-      <div class="flex items-center gap-2 text-xs text-[#9ca3af]">
-        {article.autor && <span>{article.autor.nombre}</span>}
-        {article.autor && <span>&middot;</span>}
-        <span>{date}</span>
-      </div>
+      <ArticleMeta
+        fecha={article.fecha}
+        autorNombre={article.autor?.nombre}
+        readMinutes={article.read_time_minutes}
+        variant="card"
+      />
     </div>
   </article>
 ) : size === 'small' ? (
@@ -64,7 +66,7 @@ const date = article.fecha ? timeAgo(article.fecha) : '';
           {article.titulo}
         </h4>
       </a>
-      <span class="text-xs text-[#9ca3af] mt-1 block">{date}</span>
+      <span class="text-xs text-[#9ca3af] mt-1 block">{compactDate}</span>
     </div>
   </article>
 ) : (
@@ -92,11 +94,12 @@ const date = article.fecha ? timeAgo(article.fecha) : '';
       {showExcerpt && article.extracto && (
         <p class="text-sm text-[#6b7280] line-clamp-2 mb-2">{article.extracto}</p>
       )}
-      <div class="flex items-center gap-2 text-xs text-[#9ca3af]">
-        {article.autor && <span>{article.autor.nombre}</span>}
-        {article.autor && <span>&middot;</span>}
-        <span>{date}</span>
-      </div>
+      <ArticleMeta
+        fecha={article.fecha}
+        autorNombre={article.autor?.nombre}
+        readMinutes={article.read_time_minutes}
+        variant="card"
+      />
     </div>
   </article>
 )}

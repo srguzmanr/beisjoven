@@ -1,4 +1,6 @@
 ---
+import ArticleMeta from '@/components/ArticleMeta.astro';
+
 interface Story {
   slug: string;
   titulo: string;
@@ -7,6 +9,7 @@ interface Story {
   imagen_portada_alt: string | null;
   fecha: string;
   autor_nombre: string | null;
+  read_time_minutes?: number;
 }
 
 interface Props {
@@ -15,18 +18,10 @@ interface Props {
 
 const { stories } = Astro.props;
 
-const dateFmt = new Intl.DateTimeFormat('es-MX', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-});
-
 const cards = stories.map((s) => ({
   ...s,
   href: `/articulo/${s.slug}`,
   imgAlt: s.imagen_portada_alt || s.titulo,
-  byline: s.autor_nombre || 'Redacción Beisjoven',
-  dateLabel: s.fecha ? dateFmt.format(new Date(s.fecha)) : '',
 }));
 ---
 
@@ -60,11 +55,14 @@ const cards = stories.map((s) => ({
             {c.extracto && (
               <p class="bj-juvenil-rail__deck">{c.extracto}</p>
             )}
-            <div class="bj-juvenil-rail__meta">
-              <span>{c.byline}</span>
-              <span aria-hidden="true">·</span>
-              <span>{c.dateLabel}</span>
-            </div>
+            <ArticleMeta
+              fecha={c.fecha}
+              autorNombre={c.autor_nombre}
+              readMinutes={c.read_time_minutes}
+              variant="card"
+              showAvatar={false}
+              inverse={true}
+            />
           </div>
         </a>
       ))}
@@ -209,13 +207,4 @@ const cards = stories.map((s) => ({
     margin: 0;
   }
 
-  .bj-juvenil-rail__meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.6);
-  }
 </style>
