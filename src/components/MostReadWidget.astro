@@ -32,12 +32,10 @@ const categorySlug =
       ? scope.categorySlug
       : null;
 
-// Juvenil gold (#D4A843) on white fails WCAG even for large text — fall back
-// to navy, matching the inactive Juvenil pill carve-out in tokens.css.
-const rankColor =
-  !categorySlug || categorySlug === 'juvenil'
-    ? 'var(--navy)'
-    : `var(--cat-${categorySlug})`;
+// Global scope → navy; any category scope (including Juvenil) → category color.
+// Numerals render at text-2xl font-black (24px/900) — WCAG large text, 3:1 threshold.
+// Gold #D4A843 on white ≈ 3.2:1, passes. Carve-out only applies to small/body text.
+const rankColor = !categorySlug ? 'var(--navy)' : `var(--cat-${categorySlug})`;
 ---
 
 {articles.length > 0 && (
