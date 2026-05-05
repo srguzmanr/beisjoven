@@ -8,7 +8,7 @@ import {
   getCategorias,
   getCategoriaBySlug,
   getAllArticulosByCategoria,
-  getMasLeidos,
+  getMasLeidosByCategoria,
 } from '@/lib/supabase';
 
 export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
@@ -32,12 +32,18 @@ const { slug } = Astro.params;
 const { page } = Astro.props;
 const [categoria, masLeidos] = await Promise.all([
   getCategoriaBySlug(slug!),
-  getMasLeidos(5),
+  getMasLeidosByCategoria(slug!, 5),
 ]);
 
 if (!categoria) {
   return Astro.redirect('/404');
 }
+
+const masLeidosScope = {
+  type: 'category' as const,
+  slug: categoria.slug,
+  displayName: categoria.nombre,
+};
 
 const categoryDescriptions: Record<string, string> = {
   'mlb': 'Mexicanos en Grandes Ligas, estadísticas, trades y más del béisbol de las mayores.',
@@ -103,7 +109,7 @@ const categoryUrl = `https://beisjoven.com/categoria/${slug}`;
 
       <!-- Sidebar -->
       <aside class="space-y-6">
-        <MostReadWidget articles={masLeidos} />
+        <MostReadWidget articles={masLeidos} scope={masLeidosScope} />
       </aside>
     </div>
   </div>
