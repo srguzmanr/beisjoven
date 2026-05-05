@@ -65,6 +65,16 @@
   --cat-juvenil: #D4A843;
   --cat-softbol: #7C3AED;
   --cat-opinion: #6B7280;
+
+  /* === SURFACE / RULE / TYPOGRAPHY UTILITY TOKENS (DESIGN-04b) ===
+     Used by Sponsor reservation, MixedFeed and other below-fold modules.
+     Kept here so DESIGN-04c/d/e can share a single source of truth. */
+  --w-page: 1200px;
+  --bg-2: #F6F5F1;
+  --rule: rgba(27, 42, 74, 0.10);
+  --rule-strong: rgba(27, 42, 74, 0.28);
+  --muted: #6B7280;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
 /* Spec v1.1: H1 tightens to 1.15 at the ≥768px breakpoint. */

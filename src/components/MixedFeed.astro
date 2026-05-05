@@ -1,0 +1,130 @@
+---
+import StoryCard from '@/components/StoryCard.astro';
+import ListCard from '@/components/ListCard.astro';
+import SectionHead from '@/components/SectionHead.astro';
+import VideoTile from '@/components/VideoTile.astro';
+
+interface Story {
+  id: number;
+  slug: string;
+  titulo: string;
+  extracto: string | null;
+  imagen_url: string | null;
+  imagen_portada_alt: string | null;
+  fecha: string;
+  categoria_slug: string;
+  categoria_nombre: string;
+  autor_nombre: string | null;
+}
+
+interface Video {
+  id: number;
+  slug: string;
+  titulo: string;
+  thumbnail_url: string | null;
+  youtube_id?: string;
+}
+
+interface Props {
+  latest: Story[];
+  masLeidos: Story[];
+  videos?: Video[];
+}
+
+const { latest, masLeidos, videos = [] } = Astro.props;
+const hasVideos = videos.length > 0;
+---
+
+<section class="bj-mixed-feed">
+  <div class="bj-mixed-feed__container">
+    <div class="bj-mixed-feed__grid">
+      <div class="bj-mixed-feed__main">
+        <SectionHead title="Lo último" />
+        <div class="bj-mixed-feed__cards">
+          {latest.map((story) => (
+            <StoryCard story={story} size="md" />
+          ))}
+        </div>
+      </div>
+
+      <aside class="bj-mixed-feed__rail">
+        <div class="bj-mixed-feed__block">
+          <SectionHead title="Más leídos" />
+          <div>
+            {masLeidos.map((story, i) => (
+              <ListCard story={story} rank={i + 1} />
+            ))}
+          </div>
+        </div>
+
+        {hasVideos && (
+          <div class="bj-mixed-feed__block">
+            <SectionHead title="Videos" href="/videos" moreLabel="Ver más" />
+            <div>
+              {videos.map((video) => (
+                <VideoTile video={video} />
+              ))}
+            </div>
+          </div>
+        )}
+      </aside>
+    </div>
+  </div>
+</section>
+
+<style>
+  .bj-mixed-feed {
+    background: #fff;
+    padding: 40px 0 8px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-mixed-feed {
+      padding: 56px 32px 24px;
+    }
+  }
+
+  .bj-mixed-feed__container {
+    max-width: var(--w-page);
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-mixed-feed__container {
+      padding: 0;
+    }
+  }
+
+  .bj-mixed-feed__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  @media (min-width: 1024px) {
+    .bj-mixed-feed__grid {
+      grid-template-columns: 1.55fr 1fr;
+      gap: 48px;
+    }
+  }
+
+  .bj-mixed-feed__cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-mixed-feed__cards {
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+  }
+
+  .bj-mixed-feed__rail {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+</style>

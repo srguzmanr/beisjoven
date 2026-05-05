@@ -4,14 +4,14 @@ import HeroDefault from '@/components/HeroDefault.astro';
 import HeroSplit from '@/components/HeroSplit.astro';
 import ArticleCard from '@/components/ArticleCard.astro';
 import SectionTitle from '@/components/SectionTitle.astro';
-import MostReadWidget from '@/components/MostReadWidget.astro';
 import QuickHitsBar from '@/components/QuickHitsBar.astro';
+import SponsorReservation from '@/components/SponsorReservation.astro';
+import MixedFeed from '@/components/MixedFeed.astro';
 import {
+  supabaseServer,
   getArticulos,
   getArticulosDestacados,
-  getMasLeidos,
   getArticulosByCategoria,
-  getVideosDestacados,
   getEventosActivos,
   getQuickHitsActivos,
 } from '@/lib/supabase';
@@ -20,27 +20,23 @@ import {
 const [
   articulos,
   destacados,
-  masLeidos,
   ligaMex,
   mlb,
   seleccion,
   softbol,
   juvenil,
   opinion,
-  videos,
   eventosActivos,
   quickHits,
 ] = await Promise.all([
   getArticulos(12),
   getArticulosDestacados(3),
-  getMasLeidos(5),
   getArticulosByCategoria('liga-mexicana', 4),
   getArticulosByCategoria('mlb', 4),
   getArticulosByCategoria('seleccion', 4),
   getArticulosByCategoria('softbol', 4),
   getArticulosByCategoria('juvenil', 4),
   getArticulosByCategoria('opinion', 4),
-  getVideosDestacados(4),
   getEventosActivos(),
   getQuickHitsActivos(3),
 ]);
@@ -52,6 +48,85 @@ const secondary = featured.slice(1, 3);
 // hero_layout enum: 'default' | 'split' | 'overlay'. Phase 1: only 'split' deviates;
 // 'overlay' falls back to HeroDefault until HeroAmbitious is wired (Bible Part 4 §2.3).
 const heroVariant = hero?.hero_layout === 'split' ? 'split' : 'default';
+const heroId = hero?.id ?? -1;
+
+// MixedFeed data (DESIGN-04b). Joined select returns categorias/autores as
+// nested objects; we flatten to the StoryCard / ListCard prop shape below.
+const FEED_SELECT =
+  'id, slug, titulo, extracto, imagen_url, imagen_portada_alt, fecha, categorias!inner(slug, nombre), autores(nombre)';
+
+const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  .toISOString()
+  .split('T')[0];
+
+const [latestRes, masLeidosWindowRes, videosRes] = await Promise.all([
+  supabaseServer
+    .from('articulos')
+    .select(FEED_SELECT)
+    .eq('publicado', true)
+    .neq('id', heroId)
+    .order('fecha', { ascending: false })
+    .limit(4),
+  supabaseServer
+    .from('articulos')
+    .select(FEED_SELECT)
+    .eq('publicado', true)
+    .gte('fecha', thirtyDaysAgo)
+    .order('vistas', { ascending: false })
+    .limit(4),
+  supabaseServer
+    .from('videos')
+    .select('id, slug, titulo, thumbnail_url, youtube_id')
+    .eq('publicado', true)
+    .order('fecha', { ascending: false })
+    .limit(4),
+]);
+
+let masLeidosRaw = masLeidosWindowRes.data ?? [];
+if (masLeidosRaw.length < 4) {
+  const { data: fallback } = await supabaseServer
+    .from('articulos')
+    .select(FEED_SELECT)
+    .eq('publicado', true)
+    .order('vistas', { ascending: false })
+    .limit(4);
+  masLeidosRaw = fallback ?? [];
+}
+
+type FeedRow = {
+  id: number;
+  slug: string;
+  titulo: string;
+  extracto: string | null;
+  imagen_url: string | null;
+  imagen_portada_alt: string | null;
+  fecha: string;
+  categorias: { slug: string; nombre: string } | { slug: string; nombre: string }[] | null;
+  autores: { nombre: string } | { nombre: string }[] | null;
+};
+
+function flatten(rows: FeedRow[] | null) {
+  return (rows ?? []).map((r) => {
+    const cat = Array.isArray(r.categorias) ? r.categorias[0] : r.categorias;
+    const aut = Array.isArray(r.autores) ? r.autores[0] : r.autores;
+    return {
+      id: r.id,
+      slug: r.slug,
+      titulo: r.titulo,
+      extracto: r.extracto,
+      imagen_url: r.imagen_url,
+      imagen_portada_alt: r.imagen_portada_alt,
+      fecha: r.fecha,
+      categoria_slug: cat?.slug ?? '',
+      categoria_nombre: cat?.nombre ?? '',
+      autor_nombre: aut?.nombre ?? null,
+    };
+  });
+}
+
+const latest = flatten(latestRes.data as FeedRow[] | null);
+const masLeidos = flatten(masLeidosRaw as FeedRow[]);
+const videos = videosRes.data ?? [];
 
 // Category sections config for alternating backgrounds
 const categorySections = [
@@ -125,84 +200,23 @@ const categorySections = [
     </section>
   </div>
 
-  <!-- Category Sections + Sticky Sidebar -->
+  <!-- DESIGN-04b: Sponsor reservation + Mixed Feed -->
+  <SponsorReservation />
+  <MixedFeed latest={latest} masLeidos={masLeidos} videos={videos} />
+
+  <!-- Category Sections -->
   <div class="max-w-7xl mx-auto px-4">
-    <div class="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
-      <!-- Left column: ALL category sections -->
-      <div>
-        {categorySections.map((section) => (
-          section.data.length > 0 && (
-            <section class:list={[section.bg, 'py-12 -mx-4 px-4']}>
-              <SectionTitle title={section.title} href={section.href} color={section.color} />
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {section.data.map((a, i) => (
-                  <ArticleCard article={a} eager={i < 2} />
-                ))}
-              </div>
-            </section>
-          )
-        ))}
-      </div>
-
-      <!-- Right column: ONE sticky sidebar (desktop only) -->
-      <aside class="hidden lg:block">
-        <div class="sticky top-20 space-y-6 py-12">
-          <MostReadWidget articles={masLeidos} />
-          {videos.length > 0 && (
-            <div class="bg-gris-bg rounded-lg p-4">
-              <h3 class="text-sm font-bold uppercase tracking-wider text-navy mb-3 pb-2 border-b border-gris-border">
-                Videos
-              </h3>
-              <div class="space-y-3">
-                {videos.map((v) => (
-                  <a href={`/video/${v.slug}`} class="flex gap-3 group">
-                    <img
-                      src={v.thumbnail_url || `https://img.youtube.com/vi/${v.youtube_id}/mqdefault.jpg`}
-                      alt={v.titulo}
-                      loading="lazy"
-                      class="w-24 h-16 object-cover rounded flex-shrink-0"
-                    />
-                    <div class="flex-1 min-w-0">
-                      <h4 class="text-sm font-medium text-navy line-clamp-2 group-hover:text-steel-blue transition-colors">
-                        {v.titulo}
-                      </h4>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </aside>
-    </div>
-  </div>
-
-  <!-- Mobile Sidebar — only on mobile, after all sections -->
-  <div class="lg:hidden max-w-7xl mx-auto px-4 py-8 space-y-6">
-    <MostReadWidget articles={masLeidos} />
-    {videos.length > 0 && (
-      <div class="bg-gris-bg rounded-lg p-4">
-        <h3 class="text-sm font-bold uppercase tracking-wider text-navy mb-3 pb-2 border-b border-gris-border">
-          Videos
-        </h3>
-        <div class="space-y-3">
-          {videos.map((v) => (
-            <a href={`/video/${v.slug}`} class="flex gap-3 group">
-              <img
-                src={v.thumbnail_url || `https://img.youtube.com/vi/${v.youtube_id}/mqdefault.jpg`}
-                alt={v.titulo}
-                loading="lazy"
-                class="w-24 h-16 object-cover rounded flex-shrink-0"
-              />
-              <div class="flex-1 min-w-0">
-                <h4 class="text-sm font-medium text-navy line-clamp-2 group-hover:text-steel-blue transition-colors">
-                  {v.titulo}
-                </h4>
-              </div>
-            </a>
-          ))}
-        </div>
-      </div>
-    )}
+    {categorySections.map((section) => (
+      section.data.length > 0 && (
+        <section class:list={[section.bg, 'py-12 -mx-4 px-4']}>
+          <SectionTitle title={section.title} href={section.href} color={section.color} />
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {section.data.map((a, i) => (
+              <ArticleCard article={a} eager={i < 2} />
+            ))}
+          </div>
+        </section>
+      )
+    ))}
   </div>
 </BaseLayout>
