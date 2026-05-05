@@ -8,6 +8,7 @@ import MixedFeed from '@/components/MixedFeed.astro';
 import JuvenilRail from '@/components/JuvenilRail.astro';
 import Gallery from '@/components/Gallery.astro';
 import CategorySection from '@/components/CategorySection.astro';
+import NewsletterBlock from '@/components/NewsletterBlock.astro';
 import {
   supabaseServer,
   getArticulos,
@@ -234,6 +235,7 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
       <CategorySection slug="seleccion" displayName="Selección" />
       <CategorySection slug="softbol" displayName="Softbol" />
       <CategorySection slug="opinion" displayName="Opinión" />
+      <NewsletterBlock />
     </div>
   </section>
 
