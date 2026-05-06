@@ -11,14 +11,14 @@ const { story } = Astro.props;
 const catSlug = story.categoria?.slug ?? '';
 const catName = story.categoria?.nombre ?? '';
 const accent = catSlug ? `var(--cat-${catSlug})` : 'var(--gold)';
-// Juvenil gold fails 4.5:1 on white — label text uses navy on light surfaces.
-const labelLight = catSlug === 'juvenil' ? 'var(--navy)' : accent;
+// Juvenil pill stays gold; pill text must render in navy for contrast.
+const pillText = catSlug === 'juvenil' ? 'var(--navy)' : '#fff';
 const altText = story.imagen_portada_alt ?? '';
 const href = `/articulo/${story.slug}`;
 ---
 
 {story.imagen_url && (
-  <article class="hero-default" style={`--accent:${accent};--label-light:${labelLight};`}>
+  <article class="hero-default" style={`--accent:${accent};--pill-text:${pillText};`}>
     <a href={href} class="hero-default__link">
       <div class="hero-default__media">
         <img
@@ -30,13 +30,7 @@ const href = `/articulo/${story.slug}`;
         />
         <div class="hero-default__gradient" aria-hidden="true"></div>
         <div class="hero-default__overlay">
-          <div class="hero-default__kicker">
-            <span class="hero-default__rule"></span>
-            <span class="hero-default__cat">{catName}</span>
-            {story.kicker && (
-              <span class="hero-default__sub">· {story.kicker}</span>
-            )}
-          </div>
+          <span class="hero-default__pill">{catName}</span>
           <h1 class="hero-default__h1">{story.titulo}</h1>
           <div class="hero-default__overlay-meta">
             <ArticleMeta
@@ -107,34 +101,20 @@ const href = `/articulo/${story.slug}`;
     padding: 20px 16px 22px;
     color: #fff;
   }
-  .hero-default__kicker {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  .hero-default__rule {
+  .hero-default__pill {
+    align-self: flex-start;
     display: inline-block;
-    width: 28px;
-    height: 3px;
     background: var(--accent);
-    flex-shrink: 0;
-  }
-  .hero-default__cat {
+    color: var(--pill-text);
     font-family: var(--font-body);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--accent);
-  }
-  .hero-default__sub {
-    font-family: var(--font-body);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.75);
+    padding: 4px 8px;
+    border-radius: 2px;
+    line-height: 1;
+    margin-bottom: 10px;
   }
   .hero-default__h1 {
     font-family: var(--font-heading);
@@ -186,7 +166,7 @@ const href = `/articulo/${story.slug}`;
     .hero-default__overlay {
       padding: 28px 32px 30px;
     }
-    .hero-default__kicker {
+    .hero-default__pill {
       margin-bottom: 14px;
     }
     .hero-default__h1 {

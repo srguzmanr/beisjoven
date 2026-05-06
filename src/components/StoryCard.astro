@@ -1,6 +1,7 @@
 ---
 import { getCategoryAccent, getCategoryLabel } from '@/lib/categoryAccents.js';
 import ArticleMeta from '@/components/ArticleMeta.astro';
+import { formatCardDate } from '@/utils/formatDate.js';
 
 interface Story {
   id: number;
@@ -58,12 +59,20 @@ const imgAlt = story.imagen_portada_alt || story.titulo;
     {size === 'md' && story.extracto && (
       <p class="bj-story-card__deck">{story.extracto}</p>
     )}
-    <ArticleMeta
-      fecha={story.fecha}
-      autorNombre={story.autor_nombre}
-      readMinutes={story.read_time_minutes}
-      variant="card"
-    />
+    {size === 'md' ? (
+      <ArticleMeta
+        fecha={story.fecha}
+        autorNombre={story.autor_nombre}
+        readMinutes={story.read_time_minutes}
+        variant="card"
+      />
+    ) : (
+      story.fecha && (
+        <time datetime={story.fecha} class="bj-story-card__date">
+          {formatCardDate(story.fecha)}
+        </time>
+      )
+    )}
   </div>
 </a>
 
@@ -117,5 +126,13 @@ const imgAlt = story.imagen_portada_alt || story.titulo;
     line-height: var(--lh-body-sm);
     color: var(--gray-medium);
     margin: 0;
+  }
+
+  .bj-story-card__date {
+    font-family: var(--font-body);
+    font-size: var(--text-metadata);
+    line-height: var(--lh-metadata);
+    font-weight: 500;
+    color: var(--gray-medium);
   }
 </style>
