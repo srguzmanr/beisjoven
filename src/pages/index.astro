@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HeroDefault from '@/components/HeroDefault.astro';
-import StoryCard from '@/components/StoryCard.astro';
 import QuickHitsBar from '@/components/QuickHitsBar.astro';
 import SponsorReservation from '@/components/SponsorReservation.astro';
 import MixedFeed from '@/components/MixedFeed.astro';
@@ -33,19 +32,6 @@ const [
 const eventoActivo = eventosActivos[0] || null;
 const featured = destacados.length > 0 ? destacados : articulos.slice(0, 3);
 const hero = featured[0];
-const secondary = featured.slice(1, 3).map((a) => ({
-  id: a.id,
-  slug: a.slug,
-  titulo: a.titulo,
-  extracto: a.extracto,
-  imagen_url: a.imagen_url,
-  imagen_portada_alt: a.imagen_portada_alt,
-  fecha: a.fecha,
-  read_time_minutes: a.read_time_minutes ?? 1,
-  categoria_slug: a.categoria?.slug ?? '',
-  categoria_nombre: a.categoria?.nombre ?? '',
-  autor_nombre: a.autor?.nombre ?? null,
-}));
 const heroId = hero?.id ?? -1;
 
 // MixedFeed data (DESIGN-04b). Joined select returns categorias/autores as
@@ -200,18 +186,7 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
   <!-- Hero Section -->
   <div class="max-w-7xl mx-auto px-4 py-8">
     <section class="mb-12">
-      <div class="grid grid-cols-1 lg:grid-cols-5 gap-5 lg:items-start">
-        <!-- Main Hero (60%) -->
-        <div class="lg:col-span-3">
-          {hero && <HeroDefault story={hero} />}
-        </div>
-        <!-- Secondary (40%) -->
-        <div class="lg:col-span-2 flex flex-col gap-6">
-          {secondary.map((a) => (
-            <StoryCard story={a} size="sm" />
-          ))}
-        </div>
-      </div>
+      {hero && <HeroDefault story={hero} />}
     </section>
   </div>
 
