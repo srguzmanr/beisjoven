@@ -12,7 +12,7 @@ const ACCENTS = {
 };
 
 const LABELS = {
-  'liga-mexicana': 'LIGAS',
+  'liga-mexicana': 'LIGAS MEXICANAS',
   'mlb': 'MLB',
   'softbol': 'SOFTBOL',
   'seleccion': 'SELECCIÓN',
