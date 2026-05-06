@@ -17,11 +17,9 @@
   var offset     = parseInt(grid.dataset.nextOffset, 10);
   var totalPages = parseInt(grid.dataset.totalPages, 10);
   var loadedPage = parseInt(grid.dataset.currentPage, 10);
-  var lastBucket = grid.dataset.lastBucket;
   var busy       = false;
 
   var MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  var DIA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   var CATS = {
     mlb:            'var(--cat-mlb)',
     'liga-mexicana':'var(--cat-liga-mexicana)',
@@ -30,18 +28,6 @@
     juvenil:        'var(--cat-juvenil)',
     opinion:        'var(--cat-opinion)'
   };
-
-  function bucket(s) {
-    if (!s) return 'Sin fecha';
-    var t = new Date(); t.setHours(0, 0, 0, 0);
-    var p = s.split('T')[0].split('-');
-    var d = new Date(+p[0], +p[1] - 1, +p[2]);
-    var n = Math.round((t - d) / 86400000);
-    if (n === 0) return 'Hoy';
-    if (n === 1) return 'Ayer';
-    if (n <= 6)  return DIA[d.getDay()] + ' ' + d.getDate() + ' ' + MES[d.getMonth()];
-    return d.getDate() + ' ' + MES[d.getMonth()] + ' ' + d.getFullYear();
-  }
 
   function relDate(s) {
     var ms = Date.now() - new Date(s).getTime();
@@ -59,18 +45,6 @@
     var e = document.createElement('div');
     e.textContent = s || '';
     return e.innerHTML;
-  }
-
-  function mkDivider(label) {
-    var w = document.createElement('div');
-    w.className = 'col-span-full';
-    w.style.cssText = 'margin:32px 0 20px;padding-bottom:8px;border-bottom:1px solid var(--rule)';
-    var h = document.createElement('h3');
-    h.className = 'uppercase font-semibold text-navy';
-    h.style.cssText = 'font-size:11px;line-height:1;letter-spacing:0.08em;font-family:var(--font-body)';
-    h.textContent = label;
-    w.appendChild(h);
-    return w;
   }
 
   function mkCard(a) {
@@ -130,11 +104,6 @@
 
       var arts = r.data || [];
       arts.forEach(function (a) {
-        var b = bucket(a.fecha);
-        if (b !== lastBucket) {
-          grid.appendChild(mkDivider(b));
-          lastBucket = b;
-        }
         grid.appendChild(mkCard(a));
       });
 
