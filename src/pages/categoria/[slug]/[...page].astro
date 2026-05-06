@@ -5,7 +5,6 @@ import Breadcrumb from '@/components/Breadcrumb.astro';
 import ArticleCard from '@/components/ArticleCard.astro';
 import MostReadWidget from '@/components/MostReadWidget.astro';
 import BackToTop from '@/components/BackToTop.astro';
-import type { Articulo } from '@/lib/supabase';
 import {
   getCategorias,
   getCategoriaBySlug,
@@ -59,39 +58,6 @@ const categoryDescriptions: Record<string, string> = {
 const description = categoryDescriptions[slug!] || `Noticias y artículos de ${categoria.nombre} en Beisjoven.`;
 const categoryUrl = `https://beisjoven.com/categoria/${slug}`;
 
-// ── Date bucket grouping ──────────────────────────────────────────────────────
-const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-
-function dateBucketLabel(fechaStr: string): string {
-  if (!fechaStr) return 'Sin fecha';
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const [yr, mo, dy] = fechaStr.split('T')[0].split('-').map(Number);
-  const d = new Date(yr, mo - 1, dy);
-  const diffDays = Math.round((today.getTime() - d.getTime()) / 86400000);
-  if (diffDays === 0) return 'Hoy';
-  if (diffDays === 1) return 'Ayer';
-  if (diffDays <= 6) return `${DIAS_SEMANA[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`;
-  return `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-interface ArticleEntry { article: Articulo; eager: boolean; }
-interface ArticleGroup { label: string; articles: ArticleEntry[]; }
-
-let eagerIdx = 0;
-const groupedArticles: ArticleGroup[] = [];
-for (const article of page.data) {
-  const label = dateBucketLabel(article.fecha);
-  const last = groupedArticles[groupedArticles.length - 1];
-  if (last && last.label === label) {
-    last.articles.push({ article, eager: eagerIdx++ < 4 });
-  } else {
-    groupedArticles.push({ label, articles: [{ article, eager: eagerIdx++ < 4 }] });
-  }
-}
-
-const lastBucketLabel = groupedArticles.at(-1)?.label ?? '';
 const PAGE_SIZE = 20;
 const hasMore = !!page.url.next;
 ---
@@ -125,23 +91,9 @@ const hasMore = !!page.url.next;
             data-next-offset={page.currentPage * PAGE_SIZE}
             data-total-pages={page.lastPage}
             data-current-page={page.currentPage}
-            data-last-bucket={lastBucketLabel}
           >
-            {groupedArticles.map((group, gi) => (
-              <Fragment>
-                <div
-                  class="col-span-full"
-                  style={`margin:${gi === 0 ? '0' : '32px'} 0 20px;padding-bottom:8px;border-bottom:1px solid var(--rule)`}
-                >
-                  <h3
-                    class="uppercase font-semibold text-navy"
-                    style="font-size:11px;line-height:1;letter-spacing:0.08em;font-family:var(--font-body)"
-                  >{group.label}</h3>
-                </div>
-                {group.articles.map(({ article, eager }) => (
-                  <ArticleCard article={article} eager={eager} />
-                ))}
-              </Fragment>
+            {page.data.map((article, idx) => (
+              <ArticleCard article={article} eager={idx < 4} />
             ))}
           </div>
         ) : (
