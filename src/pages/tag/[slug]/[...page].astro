@@ -1,43 +1,31 @@
 ---
-import type { GetStaticPaths } from 'astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Breadcrumb from '@/components/Breadcrumb.astro';
 import ArticleCard from '@/components/ArticleCard.astro';
 import MostReadWidget from '@/components/MostReadWidget.astro';
 import {
-  getTags,
   getTagBySlug,
-  getAllArticulosByTag,
+  getArticulosByTagPaginados,
   getMasLeidos,
 } from '@/lib/supabase';
+import { buildPage, parsePageParam } from '@/lib/pagination';
 
-export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
-  const tags = await getTags();
-  const allData = await Promise.all(
-    tags.map(async (tag) => {
-      const articulos = await getAllArticulosByTag(tag.slug);
-      return { tag, articulos };
-    })
-  );
-
-  return allData.flatMap(({ tag, articulos }) =>
-    paginate(articulos, {
-      params: { slug: tag.slug },
-      pageSize: 20,
-    })
-  );
-};
-
+const PAGE_SIZE = 20;
 const { slug } = Astro.params;
-const { page } = Astro.props;
-const [tag, masLeidos] = await Promise.all([
-  getTagBySlug(slug!),
+
+const currentPage = parsePageParam(Astro.params.page);
+if (currentPage === null) return Astro.redirect('/404');
+
+const tag = await getTagBySlug(slug!);
+if (!tag) return Astro.redirect('/404');
+
+const [{ articulos, total }, masLeidos] = await Promise.all([
+  getArticulosByTagPaginados(slug!, PAGE_SIZE, (currentPage - 1) * PAGE_SIZE),
   getMasLeidos(5),
 ]);
 
-if (!tag) {
-  return Astro.redirect('/404');
-}
+const page = buildPage(articulos, total, currentPage, PAGE_SIZE, `/tag/${slug}`);
+if (currentPage > page.lastPage) return Astro.redirect('/404');
 
 const description = `Artículos etiquetados con "${tag.nombre}" en Beisjoven. Béisbol y softbol mexicano.`;
 const tagUrl = `https://beisjoven.com/tag/${slug}`;

@@ -9,20 +9,13 @@ import SectionTitle from '@/components/SectionTitle.astro';
 import TuHistoriaCTA from '@/components/TuHistoriaCTA.astro';
 import ArticleMeta from '@/components/ArticleMeta.astro';
 import {
-  getAllArticuloSlugs,
   getArticuloBySlug,
   getRelatedArticulos,
   getMasLeidosByCategoria,
-  incrementVistas,
   getTagsByArticuloId,
 } from '@/lib/supabase';
 import { renderContent } from '@/lib/content';
 import { ensureOgImage } from '@/lib/og-image-generator';
-
-export async function getStaticPaths() {
-  const slugs = await getAllArticuloSlugs();
-  return slugs.map((slug: string) => ({ params: { slug } }));
-}
 
 const { slug } = Astro.params;
 const articulo = await getArticuloBySlug(slug!);

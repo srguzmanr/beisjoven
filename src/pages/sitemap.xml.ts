@@ -97,10 +97,13 @@ export const GET: APIRoute = async () => {
     }
   }
 
-  // 6. Tag pages (with pagination)
-  for (const tag of tags) {
-    const tagArticles = await getAllArticulosByTag(tag.slug);
-    const totalTagPages = Math.max(1, Math.ceil(tagArticles.length / PAGE_SIZE));
+  // 6. Tag pages (with pagination). Counts are fetched in parallel so the
+  //    endpoint stays well within the serverless time budget at runtime (ISR).
+  const tagCounts = await Promise.all(
+    tags.map(async (tag) => ({ tag, count: (await getAllArticulosByTag(tag.slug)).length })),
+  );
+  for (const { tag, count } of tagCounts) {
+    const totalTagPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
     addUrl(`${SITE}/tag/${tag.slug}`, { priority: '0.7', changefreq: 'weekly' });
     for (let p = 2; p <= totalTagPages; p++) {
       addUrl(`${SITE}/tag/${tag.slug}/${p}`, { priority: '0.5', changefreq: 'weekly' });

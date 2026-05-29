@@ -1916,12 +1916,6 @@ const AdminPages = {
             }
         }
 
-        // Trigger Vercel rebuild only for publish and save (already published)
-        // Drafts and unpublish do NOT trigger rebuild
-        if (action === 'publish' || action === 'save') {
-            AdminPages._triggerVercelRebuild();
-        }
-
         // If this editor session was seeded from a Tu Historia submission,
         // mark that submission as publicada and link it to the new article.
         // Non-fatal: a failure here must not block the save.
@@ -1946,22 +1940,6 @@ const AdminPages = {
         // Existing articles: back to articles list (unchanged behavior).
         var redirectPath = editId ? '/admin/articulos' : '/admin/editar/' + savedArticleId;
         setTimeout(function() { Router.navigate(redirectPath); }, 800);
-    },
-
-    // Trigger a Vercel deploy so static pages regenerate with the new content
-    _triggerVercelRebuild: function() {
-        var hookUrl = window.VERCEL_DEPLOY_HOOK_URL || '';
-        if (!hookUrl) {
-            console.warn('Deploy hook URL not configured — set window.VERCEL_DEPLOY_HOOK_URL');
-            return;
-        }
-        fetch(hookUrl, { method: 'POST' })
-            .then(function() {
-                showToast('El sitio se actualizará en ~2 minutos.');
-            })
-            .catch(function(err) {
-                console.error('Rebuild trigger failed:', err);
-            });
     },
 
     // ==================== ARTÍCULOS: SERVER-SIDE QUERY STATE (ADMIN35-01a) ====================
@@ -2567,18 +2545,6 @@ const AdminPages = {
 
     // ==================== ARTÍCULOS: BULK ACTIONS (ADMIN35-02) ====================
 
-    // Debounced deploy hook — fires once per batch even if multiple ops run quickly
-    _debouncedDeploy: null, // initialized lazily below
-
-    _triggerDebouncedDeploy: function() {
-        if (!AdminPages._debouncedDeploy) {
-            AdminPages._debouncedDeploy = AdminPages._debounce(function() {
-                AdminPages._triggerVercelRebuild();
-            }, 5000);
-        }
-        AdminPages._debouncedDeploy();
-    },
-
     _wireRowCheckboxes: function() {
         document.querySelectorAll('.art-row-check').forEach(function(cb) {
             cb.addEventListener('change', function() {
@@ -2638,8 +2604,7 @@ const AdminPages = {
                     showToast('Error al agregar tags: ' + error.message, 'error');
                     return;
                 }
-                showToast(ids.length + ' artículos actualizados. El sitio se actualizará en ~2 min.');
-                AdminPages._triggerDebouncedDeploy();
+                showToast(ids.length + ' artículos actualizados.');
                 AdminPages._refreshArticulosTabCounts();
             }
         });
@@ -2692,8 +2657,7 @@ const AdminPages = {
                     showToast('Error al quitar tags: ' + error.message, 'error');
                     return;
                 }
-                showToast(ids.length + ' artículos actualizados. El sitio se actualizará en ~2 min.');
-                AdminPages._triggerDebouncedDeploy();
+                showToast(ids.length + ' artículos actualizados.');
                 AdminPages._refreshArticulosTabCounts();
             }
         });
@@ -2723,8 +2687,7 @@ const AdminPages = {
                     showToast('Error al cambiar categoría: ' + error.message, 'error');
                     return;
                 }
-                showToast(ids.length + ' artículos actualizados. El sitio se actualizará en ~2 min.');
-                AdminPages._triggerDebouncedDeploy();
+                showToast(ids.length + ' artículos actualizados.');
                 AdminPages._reloadArticulos();
             }
         });
@@ -2743,8 +2706,7 @@ const AdminPages = {
             return;
         }
         const accion = publicado ? 'publicados' : 'despublicados';
-        showToast(ids.length + ' artículos ' + accion + '. El sitio se actualizará en ~2 min.');
-        AdminPages._triggerDebouncedDeploy();
+        showToast(ids.length + ' artículos ' + accion + '.');
         AdminPages._reloadArticulos();
     },
 
@@ -2800,8 +2762,7 @@ const AdminPages = {
             }
             AdminPages._seleccionados.clear();
             AdminPages._updateBulkBar();
-            showToast(ids.length + ' artículos eliminados. El sitio se actualizará en ~2 min.');
-            AdminPages._triggerDebouncedDeploy();
+            showToast(ids.length + ' artículos eliminados.');
             AdminPages._reloadArticulos();
         });
     },
@@ -3574,7 +3535,6 @@ const AdminPages = {
 
         AdminPages._quickHitsState.editingId = null;
         await AdminPages._loadQuickHits();
-        AdminPages._triggerVercelRebuild();
     },
 
     _deleteQuickHit: async function(id) {
@@ -3590,7 +3550,6 @@ const AdminPages = {
             AdminPages._quickHitsState.editingId = null;
         }
         await AdminPages._loadQuickHits();
-        AdminPages._triggerVercelRebuild();
     },
 
     // ==================== TU HISTORIA — ADMIN REVIEW PANEL ====================

@@ -4,16 +4,10 @@ import Breadcrumb from '@/components/Breadcrumb.astro';
 import CategoryPill from '@/components/CategoryPill.astro';
 import ArticleCard from '@/components/ArticleCard.astro';
 import {
-  getAllEventoSlugs,
   getEventoBySlug,
   getArticulosByEvento,
 } from '@/lib/supabase';
 import { formatDate } from '@/lib/content';
-
-export async function getStaticPaths() {
-  const slugs = await getAllEventoSlugs();
-  return slugs.map((slug: string) => ({ params: { slug } }));
-}
 
 const { slug } = Astro.params;
 const evento = await getEventoBySlug(slug!);
@@ -33,7 +27,7 @@ const fechaDisplay = fechaFin ? `${fechaInicio} – ${fechaFin}` : fechaInicio;
 <BaseLayout
   title={`${evento.nombre} - Beisjoven`}
   description={evento.descripcion || `Cobertura especial: ${evento.nombre}`}
-  image={evento.imagen_url}
+  image={evento.imagen_url ?? undefined}
   url={eventUrl}
 >
   <Breadcrumb items={[
