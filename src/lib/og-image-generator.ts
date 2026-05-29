@@ -1,4 +1,3 @@
-import sharp from 'sharp';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://yulkbjpotfmwqkzzfegg.supabase.co';
@@ -15,7 +14,12 @@ function deriveOgStoragePath(imageUrl: string): string | null {
 
 /**
  * Ensures a 1200×630 center-cropped JPEG exists in Supabase Storage alongside
- * the original article image. Runs at build time (prerendered pages).
+ * the original article image. Runs on demand at request time (SSR + ISR): the
+ * fast path is a cheap HEAD check for an already-generated variant; the slow
+ * path (download + Sharp + upload) only runs once per image, then the result is
+ * served from Storage and the page is cached by ISR. `sharp` is imported
+ * dynamically so a load failure degrades to the original image instead of
+ * breaking article rendering.
  *
  * Returns the public URL of the -og.jpg file, or null if generation is not
  * possible (non-Supabase URL, missing service key, download/upload failure).
@@ -44,6 +48,7 @@ export async function ensureOgImage(imageUrl: string | null | undefined): Promis
   }
 
   try {
+    const { default: sharp } = await import('sharp');
     const res = await fetch(imageUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${imageUrl}`);
     const originalBuffer = Buffer.from(await res.arrayBuffer());

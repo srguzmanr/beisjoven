@@ -198,6 +198,72 @@ export async function getArticulosByCategoriaPaginados(categoriaSlug: string, li
   return { articulos: (data as Articulo[]) || [], total: count || 0 };
 }
 
+/** Paginated published articles for an author (offset/limit + exact total). SSR. */
+export async function getArticulosByAutorPaginados(autorSlug: string, limite = 20, offset = 0) {
+  const autor = await getAutorBySlug(autorSlug);
+  if (!autor) return { articulos: [] as Articulo[], total: 0 };
+
+  const [{ data }, { count }] = await Promise.all([
+    supabaseServer
+      .from('articulos')
+      .select(ARTICLE_SELECT)
+      .eq('autor_id', autor.id)
+      .eq('publicado', true)
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limite - 1),
+    supabaseServer
+      .from('articulos')
+      .select('id', { count: 'exact', head: true })
+      .eq('autor_id', autor.id)
+      .eq('publicado', true),
+  ]);
+  return { articulos: (data as Articulo[]) || [], total: count || 0 };
+}
+
+/** Paginated published articles for a tag (offset/limit + exact total). SSR. */
+export async function getArticulosByTagPaginados(tagSlug: string, limite = 20, offset = 0) {
+  const tag = await getTagBySlug(tagSlug);
+  if (!tag) return { articulos: [] as Articulo[], total: 0 };
+
+  const [{ data }, { count }] = await Promise.all([
+    supabaseServer
+      .from('articulos')
+      .select(`${ARTICLE_SELECT}, articulo_tags!inner(tag_id)`)
+      .eq('articulo_tags.tag_id', tag.id)
+      .eq('publicado', true)
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limite - 1),
+    supabaseServer
+      .from('articulos')
+      .select('id, articulo_tags!inner(tag_id)', { count: 'exact', head: true })
+      .eq('articulo_tags.tag_id', tag.id)
+      .eq('publicado', true),
+  ]);
+  return { articulos: (data as Articulo[]) || [], total: count || 0 };
+}
+
+/** Paginated published WBC 2026 articles (offset/limit + exact total). SSR. */
+export async function getArticulosWbc2026Paginados(limite = 20, offset = 0) {
+  const [{ data }, { count }] = await Promise.all([
+    supabaseServer
+      .from('articulos')
+      .select(ARTICLE_SELECT)
+      .eq('publicado', true)
+      .eq('es_wbc2026', true)
+      .order('fecha', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limite - 1),
+    supabaseServer
+      .from('articulos')
+      .select('id', { count: 'exact', head: true })
+      .eq('publicado', true)
+      .eq('es_wbc2026', true),
+  ]);
+  return { articulos: (data as Articulo[]) || [], total: count || 0 };
+}
+
 export async function getArticulosDestacados(limite = 5) {
   const { data } = await supabaseServer
     .from('articulos')

@@ -1,18 +1,23 @@
 ---
-import type { GetStaticPaths } from 'astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Breadcrumb from '@/components/Breadcrumb.astro';
 import ArticleCard from '@/components/ArticleCard.astro';
 import MostReadWidget from '@/components/MostReadWidget.astro';
-import { getAllArticulosWbc2026, getMasLeidos } from '@/lib/supabase';
+import { getArticulosWbc2026Paginados, getMasLeidos } from '@/lib/supabase';
+import { buildPage, parsePageParam } from '@/lib/pagination';
 
-export const getStaticPaths: GetStaticPaths = async ({ paginate }) => {
-  const articulos = await getAllArticulosWbc2026();
-  return paginate(articulos, { pageSize: 20 });
-};
+const PAGE_SIZE = 20;
 
-const { page } = Astro.props;
-const masLeidos = await getMasLeidos(5);
+const currentPage = parsePageParam(Astro.params.page);
+if (currentPage === null) return Astro.redirect('/404');
+
+const [{ articulos, total }, masLeidos] = await Promise.all([
+  getArticulosWbc2026Paginados(PAGE_SIZE, (currentPage - 1) * PAGE_SIZE),
+  getMasLeidos(5),
+]);
+
+const page = buildPage(articulos, total, currentPage, PAGE_SIZE, `/wbc-2026`);
+if (currentPage > page.lastPage) return Astro.redirect('/404');
 
 const title = 'World Baseball Classic 2026 - Beisjoven';
 const description = 'Cobertura completa del World Baseball Classic 2026. Noticias, análisis, roster de México y más.';
