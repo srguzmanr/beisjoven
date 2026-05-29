@@ -699,3 +699,40 @@ export async function getQuickHitsActivos(limite = 3) {
     .limit(limite);
   return (data as QuickHit[]) || [];
 }
+
+// ==================== ANUNCIOS (HOUSE-ADS-01) ====================
+
+export type AnuncioTipo = 'propia' | 'aliado' | 'casa' | 'placeholder';
+
+export interface Anuncio {
+  id: string;
+  imagen_url: string | null;
+  alt_text: string;
+  target_url: string | null;
+  slot_id: string;
+  tipo: AnuncioTipo;
+  activo: boolean;
+  prioridad: number;
+  marca: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Active creatives for a slot, ordered by occupancy priority (lower first).
+ * AdSlot uses this to rotate; an empty result is fine — AdSlot falls back to
+ * the hardcoded "Tu marca aquí" placeholder so the slot never collapses.
+ */
+export async function getAnunciosBySlot(slotId: string): Promise<Anuncio[]> {
+  const { data, error } = await supabaseServer
+    .from('anuncios')
+    .select('*')
+    .eq('slot_id', slotId)
+    .eq('activo', true)
+    .order('prioridad', { ascending: true });
+  if (error) {
+    console.error(`[getAnunciosBySlot] Failed for ${slotId}:`, error.message);
+    return [];
+  }
+  return (data as Anuncio[]) || [];
+}

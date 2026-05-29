@@ -8,6 +8,7 @@ import JuvenilRail from '@/components/JuvenilRail.astro';
 import Gallery from '@/components/Gallery.astro';
 import CategorySection from '@/components/CategorySection.astro';
 import NewsletterBlock from '@/components/NewsletterBlock.astro';
+import AdSlot from '@/components/AdSlot.astro';
 import {
   supabaseServer,
   getArticulos,
@@ -194,6 +195,13 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
   <SponsorReservation />
   <MixedFeed latest={latest} masLeidos={masLeidos} videos={videos} />
 
+  {/* HOUSE-ADS-01 — Slot B: homepage in-feed, between blocks. */}
+  <section class="bj-adslot-feed">
+    <div class="bj-adslot-feed__container">
+      <AdSlot slotId="slot-b" variant="card" />
+    </div>
+  </section>
+
   {juvenilRail.length > 0 && <JuvenilRail stories={juvenilRail} />}
 
   <!-- DESIGN-04d: Gallery — "La semana, en imágenes" -->
@@ -212,6 +220,32 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
   </section>
 
   <style>
+    /* HOUSE-ADS-01 — Slot B in-feed wrapper (card footprint, centered). */
+    .bj-adslot-feed {
+      background: #fff;
+      padding: 8px 0 24px;
+    }
+
+    @media (min-width: 768px) {
+      .bj-adslot-feed {
+        padding: 16px 32px 32px;
+      }
+    }
+
+    .bj-adslot-feed__container {
+      max-width: var(--w-page);
+      margin: 0 auto;
+      padding: 0 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    @media (min-width: 768px) {
+      .bj-adslot-feed__container {
+        padding: 0;
+      }
+    }
+
     .categories-stack {
       background: #fff;
       padding: 16px 0 48px;

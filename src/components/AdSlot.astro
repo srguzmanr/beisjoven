@@ -1,0 +1,263 @@
+---
+// HOUSE-ADS-01 — AdSlot: position-agnostic, reusable ad container.
+// Creatives are served from the `anuncios` table (CMS-managed). The slot
+// reserves a 300×250 box (aspect-ratio) so it NEVER collapses and CLS = 0.
+//
+// Disclosure labels are CLOSED by Legal (HOUSE-ADS-LEGAL-01) — hardcoded in
+// labelFor() below. The label is clear-and-conspicuous: rendered at the same
+// time as the creative (never behind hover/click), AA contrast, all devices.
+import { getAnunciosBySlot, type Anuncio, type AnuncioTipo } from '@/lib/supabase';
+
+interface Props {
+  /** 'slot-a' (in-article) | 'slot-b' (homepage feed) | 'slot-c' (end-of-article, Phase 2). */
+  slotId: string;
+  /** false = pre-architected inactive render for Phase 2 (Slot C). No fetch, no GA4. */
+  active?: boolean;
+  /** Layout footprint: 'prose' (Slot A) or 'card' (Slot B). Cosmetic only. */
+  variant?: 'prose' | 'card';
+  /** UI language for the disclosure label. Site default is ES. */
+  lang?: 'es' | 'en';
+}
+
+const { slotId, active = true, variant = 'card', lang = 'es' } = Astro.props;
+
+// --- Disclosure labels — CLOSED by Legal. Do NOT add cases. ---
+// casa        → "De Beisjoven" / "By Beisjoven"
+// placeholder → "Publicidad — Tu marca aquí" / "Advertisement — Your brand here"
+// everything else (propia | aliado) → "Publicidad" / "Advertisement"
+function labelFor(tipo: AnuncioTipo, l: 'es' | 'en'): string {
+  if (tipo === 'casa') return l === 'en' ? 'By Beisjoven' : 'De Beisjoven';
+  if (tipo === 'placeholder') {
+    return l === 'en' ? 'Advertisement — Your brand here' : 'Publicidad — Tu marca aquí';
+  }
+  return l === 'en' ? 'Advertisement' : 'Publicidad';
+}
+
+// Commercial stopgap until /publicidad exists.
+const COMMERCIAL_HREF = 'mailto:contacto@beisjoven.com?subject=Publicidad%20en%20Beisjoven';
+const PLACEHOLDER_CTA = lang === 'en' ? 'Your brand here' : 'Tu marca aquí';
+
+// --- Select the creative to serve -------------------------------------------
+// Rotate among active non-placeholder creatives; the placeholder is the
+// last resort (anti-collapse) and only serves when nothing real is active.
+let chosen: Anuncio | null = null;
+if (active) {
+  const anuncios = await getAnunciosBySlot(slotId);
+  const real = anuncios.filter((a) => a.tipo !== 'placeholder');
+  const pool = real.length > 0 ? real : anuncios;
+  if (pool.length > 0) {
+    chosen = pool[Math.floor(Math.random() * pool.length)];
+  }
+}
+
+// A served creative needs both an image and a destination; otherwise we fall
+// back to the branded "Tu marca aquí" placeholder frame.
+const hasCreative = !!(chosen && chosen.imagen_url && chosen.target_url);
+const tipo: AnuncioTipo = hasCreative ? chosen!.tipo : 'placeholder';
+const label = labelFor(tipo, lang);
+const anunciante = hasCreative ? chosen!.marca ?? chosen!.tipo : 'placeholder';
+const href = hasCreative ? chosen!.target_url! : COMMERCIAL_HREF;
+const isExternal = href.startsWith('http');
+---
+
+{active ? (
+  <aside
+    class:list={['bj-adslot', `bj-adslot--${variant}`]}
+    aria-label={label}
+    data-ad-slot={slotId}
+    data-ad-active="true"
+    data-ad-tipo={tipo}
+    data-ad-anunciante={anunciante}
+  >
+    <span class="bj-adslot__label">{label}</span>
+    <a
+      class="bj-adslot__frame"
+      href={href}
+      data-ad-cta
+      {...isExternal ? { target: '_blank', rel: 'noopener sponsored' } : {}}
+    >
+      {hasCreative ? (
+        <img
+          class="bj-adslot__img"
+          src={chosen!.imagen_url!}
+          alt={chosen!.alt_text}
+          width="300"
+          height="250"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <span class="bj-adslot__placeholder">
+          <span class="bj-adslot__ph-cta">{PLACEHOLDER_CTA}</span>
+          <span class="bj-adslot__ph-sub">{lang === 'en' ? 'Advertise on Beisjoven' : 'Anúnciate en Beisjoven'}</span>
+        </span>
+      )}
+    </a>
+  </aside>
+) : (
+  /* Slot C — pre-architected INACTIVE render for Phase 2. Visible, reserved,
+     non-interactive, no fetch, no GA4. */
+  <aside
+    class:list={['bj-adslot', 'bj-adslot--inactive', `bj-adslot--${variant}`]}
+    aria-label={label}
+    data-ad-slot={slotId}
+    data-ad-active="false"
+  >
+    <span class="bj-adslot__label">{label}</span>
+    <div class="bj-adslot__frame bj-adslot__frame--inactive">
+      <span class="bj-adslot__placeholder">
+        <span class="bj-adslot__ph-cta">{PLACEHOLDER_CTA}</span>
+        <span class="bj-adslot__ph-sub">{lang === 'en' ? 'Coming soon' : 'Próximamente'}</span>
+      </span>
+    </div>
+  </aside>
+)}
+
+<style>
+  /* Neutral / navy frame — NEVER a category color. */
+  .bj-adslot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .bj-adslot--prose {
+    max-width: var(--max-width-prose, 42rem);
+  }
+
+  .bj-adslot__label {
+    align-self: stretch;
+    text-align: left;
+    font-family: var(--font-body, system-ui, sans-serif);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    /* AA contrast on white: #4B5563 ≈ 7:1 */
+    color: #4B5563;
+    max-width: 300px;
+    width: 100%;
+  }
+
+  .bj-adslot__frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 300px;
+    max-width: 100%;
+    /* Reserve the box → CLS = 0 even before the lazy image loads. */
+    aspect-ratio: 300 / 250;
+    border: 1px solid var(--rule-strong, rgba(27, 42, 74, 0.28));
+    background: var(--bg-2, #F6F5F1);
+    overflow: hidden;
+    text-decoration: none;
+  }
+
+  .bj-adslot__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Branded "Tu marca aquí" placeholder (navy, neutral). */
+  .bj-adslot__placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    height: 100%;
+    /* ≥44px touch target guaranteed by the 250px-tall frame. */
+    padding: 12px;
+    text-align: center;
+    background: var(--navy, #1B2A4A);
+  }
+
+  .bj-adslot__ph-cta {
+    font-family: var(--font-heading, system-ui, sans-serif);
+    font-weight: 700;
+    font-size: 17px;
+    line-height: 1.2;
+    color: #fff;
+  }
+
+  .bj-adslot__ph-sub {
+    font-family: var(--font-body, system-ui, sans-serif);
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--gold, #D4A843);
+  }
+
+  /* Inactive (Slot C / Phase 2): visibly reserved, muted, non-interactive. */
+  .bj-adslot__frame--inactive {
+    cursor: default;
+    border-style: dashed;
+  }
+
+  .bj-adslot__frame--inactive .bj-adslot__placeholder {
+    background: var(--bg-2, #F6F5F1);
+  }
+
+  .bj-adslot__frame--inactive .bj-adslot__ph-cta {
+    color: var(--navy, #1B2A4A);
+  }
+
+  .bj-adslot__frame--inactive .bj-adslot__ph-sub {
+    color: var(--muted, #6B7280);
+  }
+</style>
+
+<script is:inline>
+  // HOUSE-ADS-01 — GA4 instrumentation for live ad slots.
+  // ad_impression fires once when the slot enters the viewport; ad_click on
+  // click. Payload: slot_id, tipo, anunciante. Inactive slots are skipped.
+  (function () {
+    if (window.__bjAdSlotInit) return;
+    window.__bjAdSlotInit = true;
+
+    function emit(name, el) {
+      if (typeof window.gtag !== 'function') return;
+      window.gtag('event', name, {
+        slot_id: el.getAttribute('data-ad-slot'),
+        tipo: el.getAttribute('data-ad-tipo'),
+        anunciante: el.getAttribute('data-ad-anunciante'),
+      });
+    }
+
+    function init() {
+      var slots = document.querySelectorAll('.bj-adslot[data-ad-active="true"]');
+      if (!slots.length) return;
+
+      var io = 'IntersectionObserver' in window
+        ? new IntersectionObserver(function (entries, obs) {
+            entries.forEach(function (entry) {
+              if (entry.isIntersecting) {
+                emit('ad_impression', entry.target);
+                obs.unobserve(entry.target);
+              }
+            });
+          }, { threshold: 0.5 })
+        : null;
+
+      slots.forEach(function (el) {
+        if (el.__bjAdBound) return;
+        el.__bjAdBound = true;
+        if (io) io.observe(el);
+        else emit('ad_impression', el); // no IO support → count on render
+        var cta = el.querySelector('[data-ad-cta]');
+        if (cta) cta.addEventListener('click', function () { emit('ad_click', el); });
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+</script>

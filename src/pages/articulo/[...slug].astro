@@ -8,6 +8,7 @@ import MostReadWidget from '@/components/MostReadWidget.astro';
 import SectionTitle from '@/components/SectionTitle.astro';
 import TuHistoriaCTA from '@/components/TuHistoriaCTA.astro';
 import ArticleMeta from '@/components/ArticleMeta.astro';
+import AdSlot from '@/components/AdSlot.astro';
 import {
   getArticuloBySlug,
   getRelatedArticulos,
@@ -43,6 +44,19 @@ const masLeidosScope = {
 };
 const articleUrl = `https://beisjoven.com/articulo/${articulo.slug}`;
 const renderedBody = renderContent(articulo.contenido);
+
+// HOUSE-ADS-01 — Slot A: split the body at a natural break (~mid-article)
+// so the in-article ad sits between top-level paragraphs. Short articles
+// (fewer than 4 paragraphs) render uninterrupted — no mid-slot.
+function splitAtMidParagraph(html: string): [string, string] {
+  const parts = html.split('</p>');
+  if (parts.length < 4) return [html, ''];
+  const mid = Math.floor(parts.length / 2);
+  const first = parts.slice(0, mid).join('</p>') + '</p>';
+  const second = parts.slice(mid).join('</p>');
+  return [first, second];
+}
+const [bodyFirst, bodySecond] = splitAtMidParagraph(renderedBody);
 
 // Detect which embed scripts are needed at build time
 const needsTwitterScript = renderedBody.includes('class="twitter-embed"')
@@ -155,7 +169,18 @@ const articleJsonLd = {
         </figure>
 
         <!-- Content -->
-        <div class="prose max-w-none" set:html={renderedBody} />
+        {bodySecond ? (
+          <>
+            <div class="prose max-w-none" set:html={bodyFirst} />
+            {/* HOUSE-ADS-01 — Slot A: in-article, prose width. */}
+            <div class="bj-adslot-inarticle">
+              <AdSlot slotId="slot-a" variant="prose" />
+            </div>
+            <div class="prose max-w-none" set:html={bodySecond} />
+          </>
+        ) : (
+          <div class="prose max-w-none" set:html={renderedBody} />
+        )}
 
         <!-- Tags -->
         {tags.length > 0 && (
@@ -188,6 +213,13 @@ const articleJsonLd = {
             </div>
           </section>
         )}
+
+        {/* HOUSE-ADS-01 — Slot C: end-of-note. Pre-architected INACTIVE for
+            Phase 2. (No NewsletterCTA exists on the article page yet; placed
+            at the end of the note. When one lands, move this below it.) */}
+        <div class="bj-adslot-endnote">
+          <AdSlot slotId="slot-c" variant="prose" active={false} />
+        </div>
       </div>
 
       <!-- Sticky Sidebar -->
@@ -384,4 +416,15 @@ const articleJsonLd = {
       window.addEventListener('scroll', onScroll, { passive: true });
     })();
   </script>
+
+  <style>
+    /* HOUSE-ADS-01 — in-article (Slot A) and end-of-note (Slot C) spacing. */
+    .bj-adslot-inarticle {
+      margin: 32px 0;
+    }
+
+    .bj-adslot-endnote {
+      margin-top: 40px;
+    }
+  </style>
 </BaseLayout>
