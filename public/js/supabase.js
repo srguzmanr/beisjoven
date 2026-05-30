@@ -739,11 +739,27 @@ const SupabaseHistorias = {
     },
 
     // Public URL for a stored photo path.
+    // NOTE: only resolves while the bucket is public. Kept for the publish
+    // flow (article main image). The admin panel uses obtenerUrlFotoFirmada.
     obtenerUrlFoto(path) {
         const { data } = supabaseClient.storage
             .from(this.BUCKET)
             .getPublicUrl(path);
         return data.publicUrl;
+    },
+
+    // Signed URL for a stored photo path (private bucket). Async.
+    // Read is admin-only at the RLS layer (is_admin()); see the P1 storage
+    // migration. Default TTL 1h — enough for an admin review session.
+    async obtenerUrlFotoFirmada(path, expiresIn = 3600) {
+        const { data, error } = await supabaseClient.storage
+            .from(this.BUCKET)
+            .createSignedUrl(path, expiresIn);
+        if (error) {
+            console.error('[obtenerUrlFotoFirmada] Failed:', error);
+            throw error;
+        }
+        return data.signedUrl;
     },
 
     // Admin: list submissions, optionally filtered by estado.
