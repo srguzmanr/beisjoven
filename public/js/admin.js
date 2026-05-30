@@ -3875,11 +3875,12 @@ const AdminPages = {
 
         var fotosHtml = '';
         if (h.fotos && h.fotos.length) {
+            // Bucket privado: el src/href se rellena tras el render con una
+            // signed URL (ver _firmarFotosHistoria). Cada thumb lleva su path.
             fotosHtml = '<div class="hist-fotos-grid">' +
                 h.fotos.map(function(path) {
-                    var url = SupabaseHistorias.obtenerUrlFoto(path);
-                    return '<a href="' + escAttr(url) + '" target="_blank" rel="noopener" class="hist-foto-thumb">' +
-                        '<img src="' + escAttr(url) + '" alt="Foto de la historia" loading="lazy">' +
+                    return '<a target="_blank" rel="noopener" class="hist-foto-thumb hist-foto-loading" data-foto-path="' + escAttr(path) + '">' +
+                        '<img alt="Foto de la historia" loading="lazy">' +
                     '</a>';
                 }).join('') +
             '</div>';
@@ -4010,6 +4011,9 @@ const AdminPages = {
         // Scroll panel to top
         panel.scrollTop = 0;
 
+        // Bucket privado: firmar las URLs de las fotos tras el render.
+        self._firmarFotosHistoria(panel);
+
         // --- Wire checklist behavior (en_revision only; verificada is read-only) ---
         if (estado === 'en_revision') {
             var checkboxes = panel.querySelectorAll('.hist-checklist input[type="checkbox"]');
@@ -4029,6 +4033,36 @@ const AdminPages = {
                 self._guardarChecklistHistoria(h.id);
             }
         }
+    },
+
+    // Bucket tu-historia es privado: las fotos se sirven con signed URLs
+    // generadas tras el render. Cada thumb lleva su path en data-foto-path;
+    // aquí firmamos y rellenamos src/href, con fallback si la firma falla.
+    _firmarFotosHistoria: function(panel) {
+        if (!panel) return;
+        var thumbs = panel.querySelectorAll('a.hist-foto-thumb[data-foto-path]');
+        thumbs.forEach(function(thumb) {
+            var path = thumb.getAttribute('data-foto-path');
+            SupabaseHistorias.obtenerUrlFotoFirmada(path).then(function(url) {
+                thumb.href = url;
+                var img = thumb.querySelector('img');
+                if (img) img.src = url;
+                thumb.classList.remove('hist-foto-loading');
+            }).catch(function(err) {
+                console.error('[_firmarFotosHistoria] Falló firmar foto:', path, err);
+                thumb.classList.remove('hist-foto-loading');
+                thumb.classList.add('hist-foto-error');
+                thumb.removeAttribute('href');
+                var img = thumb.querySelector('img');
+                if (img) img.remove();
+                if (!thumb.querySelector('.hist-foto-error-msg')) {
+                    var span = document.createElement('span');
+                    span.className = 'hist-foto-error-msg';
+                    span.textContent = 'Foto no disponible';
+                    thumb.appendChild(span);
+                }
+            });
+        });
     },
 
     // Persist checklist state for a submission in en_revision. Debounced 500ms.
