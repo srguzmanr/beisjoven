@@ -41,38 +41,43 @@ const tagUrl = `https://beisjoven.com/tag/${slug}`;
     { text: `Tag: ${tag.nombre}` },
   ]} />
 
-  <div class="max-w-7xl mx-auto px-4 py-6">
-    <header class="mb-6">
-      <h1 class="text-2xl md:text-3xl font-bold text-navy uppercase tracking-wide">{tag.nombre}</h1>
-      <p class="text-gris-text mt-1">{description}</p>
-    </header>
+  <!-- Tag header band -->
+  <div class="archive-header">
+    <div class="bj-container">
+      <span class="bj-kicker mb-3">ETIQUETA</span>
+      <h1 class="font-heading text-h2 text-navy" style="font-weight:800;">{tag.nombre}</h1>
+      <p class="archive-header__desc">{description}</p>
+    </div>
+  </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Articles Grid -->
-      <div class="lg:col-span-2">
+  <div class="bj-container py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-10 xl:gap-14 items-start">
+
+      <!-- Articles grid -->
+      <div>
         {page.data.length > 0 ? (
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
             {page.data.map((a, i) => (
               <ArticleCard article={a} eager={i < 4} />
             ))}
           </div>
         ) : (
-          <p class="text-gris-text py-8 text-center">No hay artículos con este tag todavía.</p>
+          <p class="text-[color:var(--ink-3)] py-12 text-center font-body">No hay artículos con este tag todavía.</p>
         )}
 
         <!-- Pagination -->
         {page.lastPage > 1 && (
-          <nav class="flex justify-center gap-2 mt-8" aria-label="Paginación">
+          <nav class="flex flex-wrap justify-center gap-3 mt-10" aria-label="Paginación">
             {page.url.prev && (
-              <a href={page.url.prev} class="px-4 py-2 text-sm font-medium rounded-lg bg-gris-bg text-navy hover:bg-gray-200 transition-colors">
+              <a href={page.url.prev} class="archive-page-btn">
                 &larr; Anterior
               </a>
             )}
-            <span class="px-4 py-2 text-sm text-gris-muted">
+            <span class="archive-page-info">
               Página {page.currentPage} de {page.lastPage}
             </span>
             {page.url.next && (
-              <a href={page.url.next} class="px-4 py-2 text-sm font-medium rounded-lg bg-gris-bg text-navy hover:bg-gray-200 transition-colors">
+              <a href={page.url.next} class="archive-page-btn">
                 Siguiente &rarr;
               </a>
             )}
@@ -81,9 +86,72 @@ const tagUrl = `https://beisjoven.com/tag/${slug}`;
       </div>
 
       <!-- Sidebar -->
-      <aside class="space-y-6">
-        <MostReadWidget articles={masLeidos} />
+      <aside class="archive-sidebar">
+        <div class="sticky top-24">
+          <MostReadWidget articles={masLeidos} />
+        </div>
       </aside>
+
     </div>
   </div>
+
+  <style>
+    .archive-header {
+      padding-top: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .archive-header__desc {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--ink-2);
+      margin-top: 0.5rem;
+      max-width: 56ch;
+    }
+
+    .archive-page-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 1.5rem;
+      border-radius: var(--radius-pill);
+      background: var(--surface-2);
+      border: 1px solid var(--rule-strong);
+      color: var(--navy);
+      font-family: var(--font-body);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .archive-page-btn:hover {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: #fff;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .archive-page-info {
+      display: inline-flex;
+      align-items: center;
+      min-height: 48px;
+      padding: 0 1rem;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      color: var(--ink-3);
+    }
+
+    /* Sidebar: only show on lg+ */
+    .archive-sidebar {
+      display: none;
+    }
+    @media (min-width: 1024px) {
+      .archive-sidebar {
+        display: block;
+      }
+    }
+  </style>
 </BaseLayout>

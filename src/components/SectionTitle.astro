@@ -7,16 +7,95 @@ interface Props {
 }
 
 const { title, href, linkText = 'Ver más', color } = Astro.props;
+const accentVar = color || 'var(--red)';
 ---
 
-<div class="flex items-center justify-between mb-6 pb-3 border-b border-gris-border">
-  <h2 class="text-xl md:text-2xl font-extrabold uppercase tracking-wide text-navy flex items-center gap-2.5">
-    {color && <span class="w-1.5 h-6 rounded-full inline-block" style={`background-color: ${color}`}></span>}
-    {title}
-  </h2>
+<div
+  class="bj-section-title"
+  style={`--bj-st-accent: ${accentVar};`}
+>
+  <div class="bj-section-title__left">
+    {color && (
+      <span class="bj-section-title__bar" aria-hidden="true"></span>
+    )}
+    <h2 class="bj-section-title__text">{title}</h2>
+  </div>
   {href && (
-    <a href={href} class="text-sm font-semibold text-rojo hover:text-rojo-dark transition-colors">
-      {linkText} &rarr;
+    <a href={href} class="bj-section-title__link">
+      {linkText}
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="5" y1="12" x2="19" y2="12" />
+        <polyline points="12 5 19 12 12 19" />
+      </svg>
     </a>
   )}
 </div>
+
+<style>
+  .bj-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--rule, rgba(27, 42, 74, 0.10));
+    position: relative;
+  }
+
+  .bj-section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: var(--bj-st-accent);
+    border-radius: 3px;
+  }
+
+  .bj-section-title__left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .bj-section-title__bar {
+    display: inline-block;
+    width: 4px;
+    height: 22px;
+    border-radius: 3px;
+    background: var(--bj-st-accent);
+    flex-shrink: 0;
+  }
+
+  .bj-section-title__text {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: clamp(1.125rem, 1rem + 0.42vw, 1.375rem);
+    letter-spacing: -0.015em;
+    text-transform: uppercase;
+    color: var(--navy, #1B2A4A);
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .bj-section-title__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--bj-st-accent);
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+  }
+
+  .bj-section-title__link:hover {
+    opacity: 0.75;
+  }
+</style>

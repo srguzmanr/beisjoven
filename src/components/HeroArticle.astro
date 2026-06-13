@@ -1,55 +1,331 @@
 ---
 import { timeAgo } from '@/lib/content';
 import type { Articulo } from '@/lib/supabase';
+import { getCategoryAccent } from '@/lib/categoryAccents.js';
 
 interface Props {
   article: Articulo;
+  secondaries?: Articulo[];
 }
 
-const { article } = Astro.props;
+const { article, secondaries = [] } = Astro.props;
 const href = `/articulo/${article.slug}`;
 const date = article.fecha ? timeAgo(article.fecha) : '';
-
-const KNOWN_SLUGS = new Set(['mlb', 'liga-mexicana', 'seleccion', 'softbol', 'juvenil', 'opinion']);
+const accent = getCategoryAccent(article.categoria?.slug);
 const catSlug = article.categoria?.slug ?? '';
-const catBg = KNOWN_SLUGS.has(catSlug) ? `var(--cat-${catSlug})` : 'var(--navy)';
-// Juvenil gold fails WCAG AA against white text — carve out to navy text.
-const catFg = catSlug === 'juvenil' ? 'var(--navy)' : '#fff';
+// Juvenil gold fails WCAG AA on white — use navy text for the pill only
+const pillFg = catSlug === 'juvenil' ? 'var(--navy)' : '#fff';
 ---
 
-<article class="group relative rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300 h-full lg:min-h-[420px]">
-  <a href={href} class="block relative h-full">
-    <div class="aspect-[4/3] lg:aspect-auto lg:absolute lg:inset-0">
-      <img
-        src={article.imagen_url}
-        alt={article.titulo}
-        loading="eager"
-        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-      />
-    </div>
-    <!-- Gradient overlay — concentrated at bottom 60% for legibility -->
-    <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 35%, rgba(0,0,0,0.15) 60%, transparent 100%);"></div>
-
-    <!-- Content overlay -->
-    <div class="absolute bottom-0 left-0 right-0 p-5 md:p-8 pointer-events-none">
-      {article.categoria && (
-        <span class="inline-block text-[11px] font-bold uppercase tracking-widest rounded-sm px-2.5 py-1" style={`letter-spacing: 0.05em; background: ${catBg}; color: ${catFg};`}>
-          {article.categoria.nombre}
-        </span>
-      )}
-      <h2 class="text-white text-xl md:text-3xl lg:text-4xl font-extrabold mt-2 mb-2 line-clamp-3 leading-tight" style="letter-spacing: -0.02em; text-shadow: 0 2px 8px rgba(0,0,0,0.6);">
-        {article.titulo}
-      </h2>
-      {article.extracto && (
-        <p class="text-white/80 text-sm md:text-base line-clamp-2 mb-3 max-w-2xl">
-          {article.extracto}
-        </p>
-      )}
-      <div class="flex items-center gap-2 text-xs md:text-sm text-white/60">
-        {article.autor && <span class="font-medium text-white/80">{article.autor.nombre}</span>}
-        <span>&middot;</span>
-        <span>{date}</span>
+<div class="bj-hero-wrap">
+  <!-- Lead story -->
+  <article class="bj-hero-lead group" style={`--accent:${accent};`}>
+    <a href={href} class="block relative h-full overflow-hidden" aria-label={article.titulo}>
+      <div class="bj-hero-lead__media">
+        {article.imagen_url ? (
+          <img
+            src={article.imagen_url}
+            alt={article.imagen_portada_alt || article.titulo}
+            loading="eager"
+            fetchpriority="high"
+            class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        ) : (
+          <div class="w-full h-full ph"></div>
+        )}
       </div>
+      <!-- Gradient overlay -->
+      <div class="bj-hero-lead__gradient" aria-hidden="true"></div>
+      <!-- Content overlay -->
+      <div class="bj-hero-lead__content">
+        {article.categoria && (
+          <span class="bj-hero-lead__pill" style={`background:${accent};color:${pillFg};`}>
+            {article.categoria.nombre}
+          </span>
+        )}
+        <h1 class="bj-hero-lead__title">{article.titulo}</h1>
+        {article.extracto && (
+          <p class="bj-hero-lead__deck">{article.extracto}</p>
+        )}
+        <div class="bj-hero-lead__meta">
+          {article.autor && (
+            <span class="font-semibold text-white/90">{article.autor.nombre}</span>
+          )}
+          {article.autor && <span class="text-white/50" aria-hidden="true">&middot;</span>}
+          <span class="text-white/60">{date}</span>
+          {article.read_time_minutes && (
+            <>
+              <span class="text-white/50" aria-hidden="true">&middot;</span>
+              <span class="text-white/60">{article.read_time_minutes} min</span>
+            </>
+          )}
+        </div>
+      </div>
+      {article.photo_credit && (
+        <span class="bj-hero-lead__credit">Foto: {article.photo_credit}</span>
+      )}
+    </a>
+    <!-- Category accent bar at top -->
+    <span class="absolute inset-x-0 top-0 h-1 z-10" style={`background:${accent};`}></span>
+  </article>
+
+  <!-- Secondary stories grid (optional) -->
+  {secondaries.length > 0 && (
+    <div class="bj-hero-secondaries">
+      {secondaries.map((s) => {
+        const sAccent = getCategoryAccent(s.categoria?.slug);
+        const sCatSlug = s.categoria?.slug ?? '';
+        const sPillFg = sCatSlug === 'juvenil' ? 'var(--navy)' : '#fff';
+        return (
+          <article class="bj-hero-sec group" style={`--accent:${sAccent};`}>
+            <a href={`/articulo/${s.slug}`} class="block relative overflow-hidden h-full" aria-label={s.titulo}>
+              <div class="bj-hero-sec__media">
+                {s.imagen_url ? (
+                  <img
+                    src={s.imagen_url}
+                    alt={s.imagen_portada_alt || s.titulo}
+                    loading="eager"
+                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div class="w-full h-full ph"></div>
+                )}
+              </div>
+              <div class="bj-hero-sec__gradient" aria-hidden="true"></div>
+              <div class="bj-hero-sec__content">
+                {s.categoria && (
+                  <span class="bj-hero-sec__pill" style={`background:${sAccent};color:${sPillFg};`}>
+                    {s.categoria.nombre}
+                  </span>
+                )}
+                <h2 class="bj-hero-sec__title">{s.titulo}</h2>
+              </div>
+              <span class="absolute inset-x-0 top-0 h-0.5 z-10" style={`background:${sAccent};`}></span>
+            </a>
+          </article>
+        );
+      })}
     </div>
-  </a>
-</article>
+  )}
+</div>
+
+<style>
+  .bj-hero-wrap {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  @media (min-width: 1024px) {
+    .bj-hero-wrap {
+      grid-template-columns: 1.65fr 1fr;
+      gap: 20px;
+    }
+  }
+
+  /* Lead */
+  .bj-hero-lead {
+    position: relative;
+    border-radius: var(--radius-lg, 16px);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+  }
+
+  .bj-hero-lead__media {
+    aspect-ratio: 4 / 5;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  @media (min-width: 768px) {
+    .bj-hero-lead__media {
+      aspect-ratio: 16 / 9;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .bj-hero-lead__media {
+      aspect-ratio: auto;
+      position: absolute;
+      inset: 0;
+      min-height: 520px;
+    }
+    .bj-hero-lead {
+      min-height: 520px;
+    }
+  }
+
+  .bj-hero-lead__gradient {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      to top,
+      rgba(10, 20, 45, 0.92) 0%,
+      rgba(10, 20, 45, 0.55) 30%,
+      rgba(10, 20, 45, 0.1) 60%,
+      transparent 100%
+    );
+  }
+
+  .bj-hero-lead__content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    padding: 24px 20px;
+    pointer-events: none;
+  }
+
+  @media (min-width: 768px) {
+    .bj-hero-lead__content {
+      padding: 36px 36px;
+    }
+  }
+
+  .bj-hero-lead__pill {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 3px;
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+
+  .bj-hero-lead__title {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: #fff;
+    text-wrap: balance;
+    margin: 0 0 10px;
+    line-height: 1.12;
+    font-size: clamp(1.625rem, 1.3rem + 1.6vw, 2.625rem);
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .bj-hero-lead__deck {
+    font-family: var(--font-body);
+    font-size: clamp(0.875rem, 0.85rem + 0.12vw, 1rem);
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.78);
+    margin: 0 0 12px;
+    max-width: 52ch;
+  }
+
+  .bj-hero-lead__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-family: var(--font-body);
+    font-size: 12px;
+  }
+
+  .bj-hero-lead__credit {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 3;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(0, 0, 0, 0.5);
+    font-family: var(--font-body);
+    font-size: 10px;
+    padding: 3px 7px;
+    border-radius: 3px;
+  }
+
+  /* Secondaries */
+  .bj-hero-secondaries {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  @media (min-width: 1024px) {
+    .bj-hero-secondaries {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
+
+  .bj-hero-sec {
+    position: relative;
+    border-radius: var(--radius, 10px);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .bj-hero-sec__media {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+  }
+
+  @media (min-width: 1024px) {
+    .bj-hero-sec__media {
+      aspect-ratio: auto;
+      position: absolute;
+      inset: 0;
+      min-height: 140px;
+    }
+    .bj-hero-sec {
+      min-height: 140px;
+    }
+  }
+
+  .bj-hero-sec__gradient {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background: linear-gradient(
+      to top,
+      rgba(10, 20, 45, 0.88) 0%,
+      rgba(10, 20, 45, 0.4) 50%,
+      transparent 100%
+    );
+  }
+
+  .bj-hero-sec__content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    padding: 12px 14px;
+    pointer-events: none;
+  }
+
+  .bj-hero-sec__pill {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 2px;
+    line-height: 1;
+    margin-bottom: 7px;
+  }
+
+  .bj-hero-sec__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: #fff;
+    text-wrap: balance;
+    margin: 0;
+    line-height: 1.2;
+    font-size: clamp(0.875rem, 0.82rem + 0.28vw, 1.0625rem);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+  }
+</style>

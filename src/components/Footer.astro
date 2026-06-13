@@ -3,104 +3,148 @@ import Logo from '@/components/Logo.astro';
 
 const year = new Date().getFullYear();
 
-const categories = [
+const secciones = [
   { name: 'MLB', href: '/categoria/mlb' },
-  { name: 'Ligas Mexicanas', href: '/categoria/liga-mexicana' },
+  { name: 'Liga Mexicana', href: '/categoria/liga-mexicana' },
   { name: 'Selección', href: '/categoria/seleccion' },
   { name: 'Juvenil', href: '/categoria/juvenil' },
   { name: 'Softbol', href: '/categoria/softbol' },
   { name: 'Opinión', href: '/categoria/opinion' },
 ];
 
+const ligas = [
+  { name: 'Posiciones', href: '/posiciones' },
+  { name: 'Liga Mexicana de Béisbol', href: '/categoria/liga-mexicana' },
+  { name: 'Major League Baseball', href: '/categoria/mlb' },
+];
+
 const editorial = [
+  { name: 'Nosotros', href: '/nosotros' },
   { name: 'Tu Historia', href: '/tu-historia' },
   { name: 'Newsletter', href: '/#newsletter-form' },
   { name: 'Nuestra Política Editorial', href: '/nosotros' },
+  { name: 'Contacto', href: '/contacto' },
 ];
 
-const site = [
-  { name: 'Nosotros', href: '/nosotros' },
-  { name: 'Contacto', href: '/contacto' },
+const legal = [
   { name: 'Política de Privacidad', href: '/privacidad' },
   { name: 'Términos de Uso', href: '/terminos' },
+  { name: 'Preferencias de cookies', href: '/avisos-cookies' },
+];
+
+const socials = [
+  {
+    name: 'Facebook',
+    href: 'https://facebook.com/beisjoven',
+    icon: `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`,
+  },
+  {
+    name: 'Instagram',
+    href: 'https://instagram.com/beisjoven',
+    icon: `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>`,
+  },
+  {
+    name: 'X (Twitter)',
+    href: 'https://x.com/beisjoven',
+    icon: `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
+  },
 ];
 ---
 
-<footer class="bg-navy text-white mt-auto">
-  <div class="max-w-[1200px] mx-auto px-6 py-16">
+<footer class="site-footer">
+  <!-- Main grid -->
+  <div class="site-footer__inner bj-container">
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+    <!-- Row 1: Brand + 4-column nav grid -->
+    <div class="site-footer__grid">
 
-      <!-- Columna 1: Marca -->
-      <div class="md:col-span-2 lg:col-span-1 flex flex-col items-center md:items-start text-center md:text-left">
-        <a href="/" aria-label="Beisjoven — inicio" class="footer-logo-link inline-block mb-4">
-          <Logo format="lockup-mono" />
+      <!-- Brand column -->
+      <div class="site-footer__brand">
+        <a href="/" aria-label="Beisjoven — inicio" class="footer-logo-link">
+          <Logo format="lockup-mono" height={32} />
         </a>
-        <p class="footer-tagline mb-3">Somos el futuro del beis</p>
+        <p class="footer-tagline">Somos el futuro del beis</p>
         <p class="footer-signature">
-          Beisjoven · Cobertura editorial del béisbol y softbol en español. Desde 2012.
+          Cobertura editorial del béisbol y softbol en español. Desde 2012.
         </p>
-        <div class="flex gap-4 mt-5 justify-center md:justify-start">
-          <a href="https://facebook.com/beisjoven" target="_blank" rel="noopener" aria-label="Facebook" class="footer-social">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-          </a>
-          <a href="https://instagram.com/beisjoven" target="_blank" rel="noopener" aria-label="Instagram" class="footer-social">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-          </a>
-          <a href="https://x.com/beisjoven" target="_blank" rel="noopener" aria-label="X (Twitter)" class="footer-social">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-          </a>
+        <!-- Social links inside brand column on mobile, separate row on desktop -->
+        <div class="footer-socials" aria-label="Redes sociales">
+          {socials.map((s) => (
+            <a href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.name} class="footer-social">
+              <Fragment set:html={s.icon} />
+            </a>
+          ))}
         </div>
       </div>
 
-      <!-- Columna 2: Categorías -->
-      <nav aria-label="Categorías editoriales">
-        <h4 class="footer-col-heading">Categorías</h4>
-        <ul class="space-y-3">
-          {categories.map((item) => (
-            <li>
-              <a href={item.href} class="footer-link">{item.name}</a>
-            </li>
+      <!-- Secciones -->
+      <nav aria-label="Secciones editoriales" class="footer-col">
+        <h4 class="footer-col__heading">Secciones</h4>
+        <ul class="footer-col__list">
+          {secciones.map((item) => (
+            <li><a href={item.href} class="footer-link">{item.name}</a></li>
           ))}
         </ul>
       </nav>
 
-      <!-- Columna 3: Editorial -->
-      <nav aria-label="Recursos editoriales">
-        <h4 class="footer-col-heading">Editorial</h4>
-        <ul class="space-y-3">
+      <!-- Ligas -->
+      <nav aria-label="Ligas y posiciones" class="footer-col">
+        <h4 class="footer-col__heading">Ligas</h4>
+        <ul class="footer-col__list">
+          {ligas.map((item) => (
+            <li><a href={item.href} class="footer-link">{item.name}</a></li>
+          ))}
+        </ul>
+      </nav>
+
+      <!-- Editorial -->
+      <nav aria-label="Información editorial" class="footer-col">
+        <h4 class="footer-col__heading">Editorial</h4>
+        <ul class="footer-col__list">
           {editorial.map((item) => (
-            <li>
-              <a href={item.href} class="footer-link">{item.name}</a>
-            </li>
+            <li><a href={item.href} class="footer-link">{item.name}</a></li>
           ))}
         </ul>
       </nav>
 
-      <!-- Columna 4: Sitio -->
-      <nav aria-label="Información del sitio">
-        <h4 class="footer-col-heading">Sitio</h4>
-        <ul class="space-y-3">
-          {site.map((item) => (
-            <li>
-              <a href={item.href} class="footer-link">{item.name}</a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <!-- Legal + Síguenos -->
+      <div class="footer-col footer-col--legal-social">
+        <nav aria-label="Información legal">
+          <h4 class="footer-col__heading">Legal</h4>
+          <ul class="footer-col__list">
+            {legal.map((item) => (
+              <li><a href={item.href} class="footer-link">{item.name}</a></li>
+            ))}
+          </ul>
+        </nav>
+        <div class="footer-col__siguenos">
+          <h4 class="footer-col__heading" style="margin-top: 1.5rem;">Síguenos</h4>
+          <div class="footer-socials footer-socials--col" aria-label="Redes sociales">
+            {socials.map((s) => (
+              <a href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.name} class="footer-social footer-social--labeled">
+                <Fragment set:html={s.icon} />
+                <span class="footer-social__name">{s.name}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
 
     </div>
 
-    <!-- Bottom bar -->
-    <div class="footer-bottom mt-12 pt-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 text-center sm:text-left">
+    <!-- Hairline divider -->
+    <div class="footer-rule" aria-hidden="true"></div>
+
+    <!-- Bottom bar: copyright + legal links -->
+    <div class="footer-bottom">
       <p class="footer-copyright">&copy; {year} Noboru LLC, operando como Beisjoven. Todos los derechos reservados.</p>
-      <ul class="footer-legal-links flex flex-wrap justify-center sm:justify-end items-center gap-x-3 gap-y-1">
-        <li><a href="/privacidad" class="footer-legal-link">Política de Privacidad</a></li>
-        <li aria-hidden="true" class="footer-separator">·</li>
+      <ul class="footer-legal-links" aria-label="Vínculos legales">
+        <li><a href="/privacidad" class="footer-legal-link">Privacidad</a></li>
+        <li class="footer-sep" aria-hidden="true">&middot;</li>
         <li><a href="/terminos" class="footer-legal-link">Términos</a></li>
-        <li aria-hidden="true" class="footer-separator">·</li>
-        <li><a href="/avisos-cookies" class="footer-legal-link">Preferencias de cookies</a></li>
-        <li aria-hidden="true" class="footer-separator">·</li>
+        <li class="footer-sep" aria-hidden="true">&middot;</li>
+        <li><a href="/avisos-cookies" class="footer-legal-link">Cookies</a></li>
+        <li class="footer-sep" aria-hidden="true">&middot;</li>
         <li><a href="/contacto" class="footer-legal-link">Contacto</a></li>
       </ul>
     </div>
@@ -109,108 +153,265 @@ const site = [
 </footer>
 
 <style>
+  /* ================================================================
+     SITE FOOTER — Dark navy, gold accents, multi-column
+     ================================================================ */
+  .site-footer {
+    background: var(--navy-900, #14213A);
+    color: rgba(255, 255, 255, 0.85);
+    margin-top: auto;
+  }
+
+  .site-footer__inner {
+    padding-top: 3.5rem;
+    padding-bottom: 2rem;
+  }
+
+  /* ---- Grid: Brand + 4 nav columns ---- */
+  .site-footer__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .site-footer__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .site-footer__brand {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .site-footer__grid {
+      grid-template-columns: 1.6fr 1fr 1fr 1fr 1.2fr;
+      gap: 2rem;
+      align-items: start;
+    }
+    .site-footer__brand {
+      grid-column: auto;
+    }
+  }
+
+  /* ---- Brand column ---- */
+  .site-footer__brand {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .footer-logo-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    opacity: 0.90;
+    transition: opacity 150ms ease;
+  }
+  .footer-logo-link:hover { opacity: 1; }
+  .footer-logo-link:focus-visible {
+    outline: 2px solid var(--gold, #D4A843);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+  .footer-logo-link img {
+    height: 32px;
+    width: auto;
+    display: block;
+  }
+
   .footer-tagline {
-    font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: 15px;
-    color: #ffffff;
+    font-family: var(--font-heading, "Plus Jakarta Sans"), system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: var(--gold, #D4A843);
     line-height: 1.4;
+    margin: 0 0 0.5rem;
   }
 
   .footer-signature {
-    font-family: var(--font-body);
-    font-size: 14px;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.7);
+    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+    font-size: 0.8125rem;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.50);
+    margin: 0 0 1.25rem;
+    max-width: 22ch;
   }
 
+  /* Social icons row (inside brand on mobile) */
+  .footer-socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 0;
+  }
   .footer-social {
-    color: rgba(255, 255, 255, 0.55);
-    transition: color 0.15s ease;
-    /* 44px touch target */
     display: inline-flex;
     align-items: center;
     justify-content: center;
     min-width: 44px;
     min-height: 44px;
+    color: rgba(255, 255, 255, 0.45);
+    border-radius: var(--radius-sm, 6px);
+    transition: color 150ms ease, background 150ms ease;
+    text-decoration: none;
   }
   .footer-social:hover {
-    color: rgba(255, 255, 255, 1);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .footer-social:focus-visible {
+    outline: 2px solid var(--gold, #D4A843);
+    outline-offset: 2px;
   }
 
-  .footer-col-heading {
-    font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: 11px;
-    letter-spacing: 0.08em;
+  /* Labeled social links in the desktop Legal/Síguenos column */
+  .footer-socials--col {
+    flex-direction: column;
+    gap: 0;
+  }
+  .footer-social--labeled {
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 0 8px;
+    min-width: 0;
+    width: 100%;
+    color: rgba(255, 255, 255, 0.60);
+  }
+  .footer-social--labeled:hover { color: #ffffff; }
+  .footer-social__name {
+    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  /* ---- Nav columns ---- */
+  .footer-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .footer-col__heading {
+    font-family: var(--font-heading, "Plus Jakarta Sans"), system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.625rem;
+    letter-spacing: 0.10em;
     text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 1rem;
+    color: var(--gold, #D4A843);
+    margin: 0 0 0.875rem;
     line-height: 1.4;
   }
 
-  .footer-link {
-    font-family: var(--font-body);
-    font-size: 15px;
-    color: rgba(255, 255, 255, 0.85);
-    text-decoration: none;
-    transition: color 0.15s ease;
-    /* 44px touch target */
-    display: inline-block;
-    padding: 4px 0;
-    min-height: 44px;
-    line-height: 36px;
-  }
-  .footer-link:hover {
-    color: rgba(255, 255, 255, 1);
-    text-decoration: underline;
+  .footer-col__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
   }
 
+  .footer-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.68);
+    text-decoration: none;
+    transition: color 150ms ease;
+    padding: 2px 0;
+  }
+  .footer-link:hover {
+    color: #ffffff;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: rgba(255, 255, 255, 0.35);
+  }
+  .footer-link:focus-visible {
+    outline: 2px solid var(--gold, #D4A843);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Ensure 44px touch targets on mobile */
+  @media (max-width: 639px) {
+    .footer-link { min-height: 44px; }
+    .footer-social--labeled { min-height: 44px; }
+  }
+
+  /* Legal+Síguenos combined column: hide desktop Síguenos on mobile
+     (already shown in brand column) */
+  .footer-col--legal-social .footer-col__siguenos {
+    display: none;
+  }
+  @media (min-width: 1024px) {
+    .footer-col--legal-social .footer-col__siguenos {
+      display: block;
+    }
+    /* Hide the brand-column socials on desktop (they appear in Síguenos column) */
+    .site-footer__brand .footer-socials {
+      display: none;
+    }
+  }
+
+  /* ---- Hairline rule ---- */
+  .footer-rule {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.10);
+    margin: 2.5rem 0 1.5rem;
+  }
+
+  /* ---- Bottom bar ---- */
   .footer-bottom {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  @media (min-width: 640px) {
+    .footer-bottom {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
   }
 
   .footer-copyright {
-    font-family: var(--font-body);
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.6);
+    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.40);
+    margin: 0;
   }
 
+  .footer-legal-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+  }
   .footer-legal-link {
-    font-family: var(--font-body);
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
+    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.38);
     text-decoration: none;
-    transition: color 0.15s ease;
     padding: 4px 0;
+    transition: color 150ms ease;
   }
   .footer-legal-link:hover {
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(255, 255, 255, 0.75);
   }
-
-  .footer-separator {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.3);
+  .footer-legal-link:focus-visible {
+    outline: 2px solid var(--gold, #D4A843);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
-
-  .footer-logo-link img {
-    max-height: 32px;
-    width: auto;
-    display: block;
-  }
-
-  @media (min-width: 768px) {
-    .footer-logo-link img {
-      max-height: 40px;
-    }
-  }
-
-  /* Mobile: stack, gap, marca centrada */
-  @media (max-width: 767px) {
-    .footer-link {
-      /* reduce height slightly on small screens, but keep ≥44px */
-      line-height: 26px;
-      min-height: 44px;
-    }
+  .footer-sep {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.20);
+    padding: 0 6px;
   }
 </style>

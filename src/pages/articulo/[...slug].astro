@@ -17,6 +17,7 @@ import {
 } from '@/lib/supabase';
 import { renderContent } from '@/lib/content';
 import { ensureOgImage } from '@/lib/og-image-generator';
+import { getCategoryAccent, getCategoryLabel } from '@/lib/categoryAccents.js';
 
 const { slug } = Astro.params;
 const articulo = await getArticuloBySlug(slug!);
@@ -44,6 +45,10 @@ const masLeidosScope = {
 };
 const articleUrl = `https://beisjoven.com/articulo/${articulo.slug}`;
 const renderedBody = renderContent(articulo.contenido);
+
+// Category accent for the kicker
+const categoryAccent = getCategoryAccent(articulo.categoria?.slug);
+const categoryLabel = getCategoryLabel(articulo.categoria?.slug);
 
 // HOUSE-ADS-01 — Slot A: split the body at a natural break (~mid-article)
 // so the in-article ad sits between top-level paragraphs. Short articles
@@ -128,85 +133,111 @@ const articleJsonLd = {
     { text: articulo.titulo },
   ]} />
 
-  <article class="max-w-7xl mx-auto px-4 py-6">
-    <!-- Article Header -->
-    <header class="max-w-3xl mx-auto mb-6 lg:mx-0">
-      {articulo.categoria && (
-        <CategoryPill name={articulo.categoria.nombre} slug={articulo.categoria.slug} size="md" />
-      )}
-      <h1 class="text-2xl md:text-4xl font-extrabold text-navy mt-3 mb-4 leading-tight" style="letter-spacing: -0.02em;">
-        {articulo.titulo}
-      </h1>
-      <ArticleMeta
-        fecha={articulo.fecha}
-        autorNombre={articulo.autor?.nombre}
-        readMinutes={articulo.read_time_minutes}
-        variant="article"
-      />
-    </header>
+  <div class="bj-container py-6 lg:py-10">
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-10 xl:gap-14 items-start">
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Article Body -->
-      <div class="lg:col-span-2">
-        <!-- Hero Image — full-width on mobile -->
-        <figure class="mb-6 -mx-4 md:mx-0">
-          <img
-            src={articulo.imagen_url}
-            alt={articulo.titulo}
-            loading="eager"
-            class="w-full md:rounded-lg"
-          />
-          {(articulo.pie_de_foto || articulo.foto_credito) && (
-            <figcaption class="flex flex-wrap justify-between gap-x-3 gap-y-0.5 px-4 md:px-0 pt-1.5">
-              {articulo.pie_de_foto && (
-                <span class="text-sm text-gray-500 italic leading-snug">{articulo.pie_de_foto}</span>
-              )}
-              {articulo.foto_credito && (
-                <span class="text-xs text-gray-400 italic leading-snug flex-shrink-0">{articulo.foto_credito}</span>
-              )}
-            </figcaption>
-          )}
-        </figure>
-
-        <!-- Content -->
-        {bodySecond ? (
-          <>
-            <div class="prose max-w-none" set:html={bodyFirst} />
-            {/* HOUSE-ADS-01 — Slot A: in-article, prose width. */}
-            <div class="bj-adslot-inarticle">
-              <AdSlot slotId="slot-a" variant="prose" />
+      <!-- ── Main column ── -->
+      <main>
+        <!-- Article masthead -->
+        <header class="mb-6 lg:mb-8" style={`--accent:${categoryAccent}`}>
+          <!-- Category kicker -->
+          {articulo.categoria && (
+            <div class="mb-3">
+              <a
+                href={`/categoria/${articulo.categoria.slug}`}
+                class="bj-kicker"
+                style={`--kicker:${categoryAccent}`}
+              >{categoryLabel}</a>
             </div>
-            <div class="prose max-w-none" set:html={bodySecond} />
-          </>
-        ) : (
-          <div class="prose max-w-none" set:html={renderedBody} />
+          )}
+
+          <!-- Headline -->
+          <h1 class="font-heading text-h1 text-navy mb-4" style="font-weight:800;letter-spacing:-0.02em;text-wrap:balance;">
+            {articulo.titulo}
+          </h1>
+
+          <!-- Standfirst / excerpt -->
+          {articulo.extracto && (
+            <p class="article-standfirst">{articulo.extracto}</p>
+          )}
+
+          <!-- Meta row with hairline -->
+          <div class="article-meta-row">
+            <ArticleMeta
+              fecha={articulo.fecha}
+              autorNombre={articulo.autor?.nombre}
+              readMinutes={articulo.read_time_minutes}
+              variant="article"
+            />
+          </div>
+        </header>
+
+        <!-- Hero image — full-width on mobile, rounded on md+ -->
+        {articulo.imagen_url && (
+          <figure class="article-hero">
+            <img
+              src={articulo.imagen_url}
+              alt={articulo.titulo}
+              loading="eager"
+              class="article-hero__img"
+            />
+            {(articulo.pie_de_foto || articulo.foto_credito) && (
+              <figcaption class="article-hero__caption">
+                {articulo.pie_de_foto && (
+                  <span class="article-hero__caption-text">{articulo.pie_de_foto}</span>
+                )}
+                {articulo.foto_credito && (
+                  <span class="article-hero__caption-credit">{articulo.foto_credito}</span>
+                )}
+              </figcaption>
+            )}
+          </figure>
         )}
+
+        <!-- Article body -->
+        <div class="article-body">
+          {bodySecond ? (
+            <>
+              <div class="prose" style="max-width:var(--max-width-prose);" set:html={bodyFirst} />
+              {/* HOUSE-ADS-01 — Slot A: in-article, prose width. */}
+              <div class="bj-adslot-inarticle">
+                <AdSlot slotId="slot-a" variant="prose" />
+              </div>
+              <div class="prose" style="max-width:var(--max-width-prose);" set:html={bodySecond} />
+            </>
+          ) : (
+            <div class="prose" style="max-width:var(--max-width-prose);" set:html={renderedBody} />
+          )}
+        </div>
 
         <!-- Tags -->
         {tags.length > 0 && (
-          <div class="flex flex-wrap gap-2 mt-6">
+          <div class="flex flex-wrap gap-2 mt-8">
             {tags.map((tag) => (
               <a
                 href={`/tag/${tag.slug}`}
-                class="inline-block text-xs font-semibold px-3 py-1 rounded-full border border-navy text-navy hover:bg-navy hover:text-white transition-colors"
+                class="inline-block text-xs font-semibold px-3 py-1.5 rounded-full border border-[color:var(--rule-strong)] text-[color:var(--ink-2)] hover:border-navy hover:bg-navy hover:text-white transition-colors duration-150"
+                style="font-family:var(--font-body);"
               >
-                {tag.nombre}
+                #{tag.nombre}
               </a>
             ))}
           </div>
         )}
 
         <!-- Share -->
-        <ShareButtons url={articleUrl} title={articulo.titulo} />
+        <div class="mt-8 pt-6 border-t border-[color:var(--rule)]">
+          <ShareButtons url={articleUrl} title={articulo.titulo} />
+        </div>
 
         <!-- Tu Historia CTA -->
         <TuHistoriaCTA />
 
         <!-- Related Articles -->
         {related.length > 0 && (
-          <section class="mt-10">
+          <section class="mt-10 pt-8 border-t border-[color:var(--rule)]">
             <SectionTitle title="Artículos relacionados" />
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-5">
               {related.map((a) => (
                 <ArticleCard article={a} />
               ))}
@@ -220,16 +251,18 @@ const articleJsonLd = {
         <div class="bj-adslot-endnote">
           <AdSlot slotId="slot-c" variant="prose" active={false} />
         </div>
-      </div>
+      </main>
 
-      <!-- Sticky Sidebar -->
-      <aside>
-        <div class="sticky top-20 space-y-6">
+      <!-- ── Sticky sidebar ── -->
+      <aside class="article-sidebar">
+        <div class="sticky top-24 space-y-6">
+          <AdSlot slotId="slot-a" variant="sidebar" />
           <MostReadWidget articles={masLeidos} scope={masLeidosScope} />
         </div>
       </aside>
+
     </div>
-  </article>
+  </div>
 
   <!-- Embed scripts: only included when the article actually has that embed type -->
   {needsTwitterScript && (
@@ -418,13 +451,98 @@ const articleJsonLd = {
   </script>
 
   <style>
+    /* ── Article masthead ── */
+    .article-standfirst {
+      font-family: var(--font-body);
+      font-size: 1.15rem;
+      line-height: 1.65;
+      color: var(--ink-2);
+      margin-bottom: 1.25rem;
+      max-width: var(--max-width-prose);
+    }
+
+    .article-meta-row {
+      padding-top: 1rem;
+      border-top: 1px solid var(--rule);
+      max-width: var(--max-width-prose);
+    }
+
+    /* ── Hero image ── */
+    .article-hero {
+      margin-bottom: 2rem;
+      /* Bleed to edge on mobile */
+      margin-left: -1rem;
+      margin-right: -1rem;
+    }
+    @media (min-width: 768px) {
+      .article-hero {
+        margin-left: 0;
+        margin-right: 0;
+      }
+    }
+
+    .article-hero__img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+    }
+    @media (min-width: 768px) {
+      .article-hero__img {
+        border-radius: var(--radius-lg);
+      }
+    }
+
+    .article-hero__caption {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.25rem 0.75rem;
+      padding: 0.5rem 1rem 0;
+      font-family: var(--font-body);
+    }
+    @media (min-width: 768px) {
+      .article-hero__caption { padding-left: 0; padding-right: 0; }
+    }
+
+    .article-hero__caption-text {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      color: var(--ink-3);
+      font-style: italic;
+    }
+
+    .article-hero__caption-credit {
+      font-size: 0.75rem;
+      line-height: 1.5;
+      color: var(--ink-3);
+      opacity: 0.7;
+      font-style: italic;
+      flex-shrink: 0;
+    }
+
+    /* ── Article body ── */
+    .article-body {
+      margin-bottom: 0;
+    }
+
     /* HOUSE-ADS-01 — in-article (Slot A) and end-of-note (Slot C) spacing. */
     .bj-adslot-inarticle {
-      margin: 32px 0;
+      margin: 2rem 0;
     }
 
     .bj-adslot-endnote {
-      margin-top: 40px;
+      margin-top: 2.5rem;
+    }
+
+    /* ── Sidebar: only show on lg+ ── */
+    .article-sidebar {
+      display: none;
+    }
+    @media (min-width: 1024px) {
+      .article-sidebar {
+        display: block;
+      }
     }
   </style>
 </BaseLayout>

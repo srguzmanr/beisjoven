@@ -1,6 +1,7 @@
 ---
 import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
+import AdSlot from '@/components/AdSlot.astro';
 import '@/styles/global.css';
 
 interface Props {
@@ -117,6 +118,12 @@ const orgJsonLd = {
 </head>
 <body class="min-h-screen flex flex-col bg-white text-gray-900">
   <Header />
+
+  <!-- Top leaderboard ad (970×90 / 320×50). CMS-managed via the `anuncios`
+       table; renders the "Tu marca aquí" placeholder until a creative is live. -->
+  <div class="bj-container py-3 flex justify-center">
+    <AdSlot slotId="slot-top" variant="leaderboard" />
+  </div>
 
   <main class="flex-1">
     <slot />

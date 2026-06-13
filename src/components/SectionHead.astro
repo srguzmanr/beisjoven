@@ -11,7 +11,7 @@ const {
   title,
   href,
   moreLabel = 'Ver todo',
-  accent = 'var(--navy)',
+  accent = 'var(--red)',
   inverse = false,
 } = Astro.props;
 ---
@@ -20,15 +20,17 @@ const {
   class:list={['bj-section-head', { 'bj-section-head--inverse': inverse }]}
   style={`--bj-section-accent: ${accent};`}
 >
-  <h2 class="bj-section-head__title">{title}</h2>
+  <div class="bj-section-head__left">
+    <span class="bj-kicker" style="--kicker: var(--bj-section-accent);">{title}</span>
+  </div>
   <span class="bj-section-head__spacer" aria-hidden="true"></span>
   {href && (
     <a class="bj-section-head__more" href={href}>
       {moreLabel}
       <svg
         class="bj-section-head__arrow"
-        width="14"
-        height="14"
+        width="13"
+        height="13"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -47,25 +49,38 @@ const {
 <style>
   .bj-section-head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 12px;
-    border-bottom: 2px solid var(--bj-section-accent);
-    padding-bottom: 10px;
+    padding-bottom: 12px;
     margin-bottom: 20px;
+    border-bottom: 1px solid var(--rule, rgba(27, 42, 74, 0.10));
+    position: relative;
   }
 
-  .bj-section-head__title {
-    font-family: var(--font-heading);
-    font-weight: 800;
-    font-size: clamp(1.25rem, 1.05rem + 0.6vw, 1.75rem);
-    line-height: var(--lh-h2);
-    letter-spacing: -0.015em;
-    color: var(--navy);
-    margin: 0;
+  /* Accent rule under kicker text */
+  .bj-section-head::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: var(--bj-section-accent);
+    border-radius: 3px;
   }
 
-  .bj-section-head--inverse .bj-section-head__title {
+  .bj-section-head__left {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .bj-section-head--inverse .bj-kicker {
     color: #fff;
+  }
+
+  .bj-section-head--inverse .bj-kicker::before {
+    background: currentColor;
   }
 
   .bj-section-head__spacer {
@@ -75,21 +90,32 @@ const {
   .bj-section-head__more {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     font-family: var(--font-body);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: var(--navy);
+    color: var(--bj-section-accent);
     text-decoration: none;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
   }
 
   .bj-section-head--inverse .bj-section-head__more {
-    color: #fff;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .bj-section-head__more:hover {
+    opacity: 0.75;
   }
 
   .bj-section-head__arrow {
     flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+
+  .bj-section-head__more:hover .bj-section-head__arrow {
+    transform: translateX(2px);
   }
 </style>

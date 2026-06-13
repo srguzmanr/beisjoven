@@ -26,6 +26,7 @@ const chips = CHIP_ORDER
   .filter((c): c is NonNullable<typeof c> => Boolean(c));
 
 const isHomeActive = currentPath === '/' || currentPath === '';
+const isPosicionesActive = currentPath.startsWith('/posiciones');
 
 let activeCategorySlug: string | null = null;
 const categoriaMatch = currentPath.match(/^\/categoria\/([^/]+)/);
@@ -54,17 +55,17 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
   <div class="site-header__bar">
     <a href="/" class="site-header__logo" aria-label="Beisjoven — Inicio">
       <span class="site-header__logo--mobile">
-        <Logo format="mark" height={40} width={40} />
+        <Logo format="mark" height={36} width={36} />
       </span>
       <span class="site-header__logo--desktop">
-        <Logo format="lockup" height={40} class="header-logo-img" />
+        <Logo format="lockup-mono" height={36} class="header-logo-img" />
       </span>
     </a>
 
     <nav class="site-header__nav-desktop" aria-label="Navegación principal">
       <a
         href="/"
-        class="nav-pill"
+        class="nav-link"
         data-nav="inicio"
         aria-current={isHomeActive ? 'page' : undefined}
       >
@@ -73,7 +74,7 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
       {chips.map((c) => (
         <a
           href={`/categoria/${c.slug}`}
-          class="nav-pill"
+          class="nav-link"
           data-category={c.slug}
           data-collapse={COLLAPSE_SLUGS.has(c.slug) ? 'true' : undefined}
           aria-current={isCategoryActive(c.slug) ? 'page' : undefined}
@@ -81,11 +82,19 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
           {c.nombre}
         </a>
       ))}
+      <a
+        href="/posiciones"
+        class="nav-link"
+        data-nav="posiciones"
+        aria-current={isPosicionesActive ? 'page' : undefined}
+      >
+        Posiciones
+      </a>
 
       <div class="nav-more" data-has-active={moreHasActive ? 'true' : undefined}>
         <button
           id="nav-more-trigger"
-          class="nav-pill nav-pill--more"
+          class="nav-link nav-link--more"
           type="button"
           aria-haspopup="menu"
           aria-expanded="false"
@@ -136,9 +145,22 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
           <path d="M21 21l-4.35-4.35" stroke-linecap="round" />
         </svg>
       </button>
+      <button
+        id="mobile-menu-trigger"
+        class="site-header__hamburger"
+        type="button"
+        aria-label="Abrir menú"
+        aria-expanded="false"
+        aria-controls="mobile-menu-panel"
+      >
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+        <span class="hamburger-bar"></span>
+      </button>
     </div>
   </div>
 
+  <!-- Mobile: scrollable chip bar (hidden when mobile drawer is open) -->
   <nav class="site-header__chips-mobile" aria-label="Categorías">
     <div class="site-header__chips-scroll">
       <ul class="site-header__chips-list">
@@ -161,85 +183,127 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
             >{MOBILE_SHORT_LABELS[c.slug] ?? c.nombre}</a>
           </li>
         ))}
+        <li class="chip-item">
+          <a
+            href="/posiciones"
+            class="chip-link"
+            data-active={isPosicionesActive ? 'true' : 'false'}
+            aria-current={isPosicionesActive ? 'page' : undefined}
+          >Posiciones</a>
+        </li>
       </ul>
     </div>
   </nav>
 </header>
 
+<!-- Mobile drawer panel (outside header so it can overlay page content) -->
+<div
+  id="mobile-menu-panel"
+  class="mobile-drawer"
+  aria-label="Menú principal"
+  aria-hidden="true"
+  hidden
+>
+  <nav class="mobile-drawer__nav" aria-label="Navegación móvil">
+    <a href="/" class="mobile-drawer__link" data-nav="inicio" aria-current={isHomeActive ? 'page' : undefined}>Inicio</a>
+    {chips.map((c) => (
+      <a
+        href={`/categoria/${c.slug}`}
+        class="mobile-drawer__link"
+        data-category={c.slug}
+        aria-current={isCategoryActive(c.slug) ? 'page' : undefined}
+      >{c.nombre}</a>
+    ))}
+    <a href="/posiciones" class="mobile-drawer__link" data-nav="posiciones" aria-current={isPosicionesActive ? 'page' : undefined}>Posiciones</a>
+    <div class="mobile-drawer__divider" aria-hidden="true"></div>
+    <a href="/tu-historia" class="mobile-drawer__link mobile-drawer__link--accent">✏ Cuéntanos</a>
+  </nav>
+</div>
+<!-- Scrim -->
+<div id="mobile-menu-scrim" class="mobile-drawer-scrim" aria-hidden="true" hidden></div>
+
 <SearchOverlay categorias={chips} />
 
 <style>
+  /* ================================================================
+     SITE HEADER — Navy bar + dark chip row
+     ================================================================ */
   .site-header {
     position: sticky;
     top: 0;
     z-index: 50;
-    background: #ffffff;
-    border-bottom: 1px solid #F1F1F3;
-    transition: transform 200ms ease-out;
+    background: var(--navy-800, #1B2A4A);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: none;
+    transition: box-shadow 200ms ease-out, transform 200ms ease-out;
     will-change: transform;
   }
   .site-header.is-hidden { transform: translateY(-100%); }
+  .site-header[data-scrolled="true"] {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  }
 
+  /* ---- Top bar ---- */
   .site-header__bar {
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 52px;
+    height: 56px;
     padding: 0 8px 0 16px;
     max-width: var(--max-width-container, 75rem);
     margin: 0 auto;
   }
 
+  /* ---- Logo ---- */
   .site-header__logo {
     display: flex;
     align-items: center;
     margin-right: auto;
     text-decoration: none;
+    flex-shrink: 0;
   }
   .site-header__logo--mobile { display: inline-flex; align-items: center; }
   .site-header__logo--desktop { display: none; }
 
+  /* ---- Desktop nav (hidden on mobile) ---- */
   .site-header__nav-desktop { display: none; }
 
+  /* ---- Actions cluster ---- */
   .site-header__actions {
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 4px;
   }
 
+  /* "Cuéntanos" CTA */
   .header-cta {
     display: none;
     align-items: center;
     gap: 6px;
     padding: 7px 14px;
-    border: 1px solid var(--red, #C8102E);
-    border-radius: 999px;
-    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
+    background: var(--red, #C8102E);
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill, 999px);
+    font-family: var(--font-heading, "Plus Jakarta Sans"), system-ui, sans-serif;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1;
     letter-spacing: 0.02em;
-    color: var(--red, #C8102E);
+    color: #ffffff;
     text-decoration: none;
-    transition: background-color 120ms ease, color 120ms ease;
+    transition: background-color 120ms ease, opacity 120ms ease;
     white-space: nowrap;
   }
-  .header-cta:hover {
-    background: var(--red, #C8102E);
-    color: #ffffff;
-  }
+  .header-cta:hover { background: var(--red-dark, #9A0C23); }
   .header-cta:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.35);
+    outline: 2px solid var(--gold, #D4A843);
+    outline-offset: 2px;
   }
-  .header-cta__icon {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-  }
+  .header-cta__icon { width: 14px; height: 14px; flex-shrink: 0; }
 
+  /* Search button */
   .site-header__search {
     flex-shrink: 0;
     display: inline-flex;
@@ -247,27 +311,70 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     justify-content: center;
     width: 44px;
     height: 44px;
-    margin: 0;
     padding: 0;
+    margin: 0;
     background: transparent;
     border: 0;
-    border-radius: 8px;
-    color: var(--navy, #1B2A4A);
+    border-radius: var(--radius-sm, 6px);
+    color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
-    transition: background-color 120ms ease-out;
+    transition: color 120ms ease-out, background-color 120ms ease-out;
   }
   .site-header__search:hover,
   .site-header__search:focus-visible {
-    background-color: rgba(27, 42, 74, 0.06);
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.10);
     outline: none;
   }
   .site-header__search svg { width: 20px; height: 20px; }
 
-  /* Mobile chips row — flat nav-text with 2px underline indicator (HEADER-FIX-01) */
+  /* Hamburger (mobile only) */
+  .site-header__hamburger {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm, 6px);
+    cursor: pointer;
+    transition: background-color 120ms ease-out;
+  }
+  .site-header__hamburger:hover,
+  .site-header__hamburger:focus-visible {
+    background-color: rgba(255, 255, 255, 0.10);
+    outline: none;
+  }
+  .hamburger-bar {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 2px;
+    transition: transform 200ms ease, opacity 200ms ease;
+  }
+  /* Animated X state when open */
+  .site-header__hamburger[aria-expanded="true"] .hamburger-bar:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .site-header__hamburger[aria-expanded="true"] .hamburger-bar:nth-child(2) {
+    opacity: 0;
+  }
+  .site-header__hamburger[aria-expanded="true"] .hamburger-bar:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+  /* ================================================================
+     MOBILE CHIP RAIL — dark on navy
+     ================================================================ */
   .site-header__chips-mobile {
     position: relative;
-    background: #ffffff;
-    border-bottom: 1px solid var(--rule, #F1F1F3);
+    background: var(--navy-900, #14213A);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
   }
   .site-header__chips-scroll {
     overflow-x: auto;
@@ -280,9 +387,9 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
   .site-header__chips-list {
     list-style: none;
     margin: 0;
-    padding: 10px 28px 10px 16px;
+    padding: 0 28px 0 16px;
     display: flex;
-    gap: 20px;
+    gap: 0;
     white-space: nowrap;
   }
   .chip-item {
@@ -291,40 +398,52 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
   }
   .chip-link {
     display: inline-block;
-    padding-bottom: 5px;
-    color: var(--ink-2, #3A4660);
-    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
-    font-size: 0.875rem;
+    padding: 10px 14px;
+    color: rgba(255, 255, 255, 0.58);
+    font-family: var(--font-heading, "Plus Jakarta Sans"), system-ui, sans-serif;
+    font-size: 0.8125rem;
     line-height: 1.4;
-    font-weight: 500;
-    letter-spacing: 0.01em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     text-decoration: none;
     transition: color 120ms ease-out;
+    position: relative;
+  }
+  .chip-link::after {
+    content: '';
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 0;
+    height: 2px;
+    background: transparent;
+    border-radius: 2px 2px 0 0;
+    transition: background 120ms ease-out;
+  }
+  .chip-link:hover {
+    color: rgba(255, 255, 255, 0.90);
   }
   .chip-link:focus-visible {
-    outline: 2px solid var(--navy, #1B2A4A);
-    outline-offset: 2px;
+    outline: 2px solid var(--gold, #D4A843);
+    outline-offset: -2px;
+    border-radius: 3px;
   }
   .chip-link[data-active="true"] {
-    color: var(--navy, #1B2A4A);
+    color: #ffffff;
     font-weight: 700;
   }
   .chip-link[data-active="true"]::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 2px;
-    background: var(--cat-color, var(--red, #C8102E));
+    background: var(--cat-color, var(--gold, #D4A843));
   }
-  .chip-link[data-category="mlb"][data-active="true"]           { --cat-color: var(--cat-mlb); }
-  .chip-link[data-category="liga-mexicana"][data-active="true"] { --cat-color: var(--cat-liga-mexicana); }
-  .chip-link[data-category="seleccion"][data-active="true"]     { --cat-color: var(--cat-seleccion); }
-  .chip-link[data-category="juvenil"][data-active="true"]       { --cat-color: var(--cat-juvenil); }
-  .chip-link[data-category="softbol"][data-active="true"]       { --cat-color: var(--cat-softbol); }
-  .chip-link[data-category="opinion"][data-active="true"]       { --cat-color: var(--cat-opinion); }
+  /* Category accent colors for active chip underline */
+  .chip-link[data-category="mlb"][data-active="true"]           { --cat-color: var(--cat-mlb, #2563EB); }
+  .chip-link[data-category="liga-mexicana"][data-active="true"] { --cat-color: var(--cat-liga-mexicana, #059669); }
+  .chip-link[data-category="seleccion"][data-active="true"]     { --cat-color: var(--cat-seleccion, #C8102E); }
+  .chip-link[data-category="juvenil"][data-active="true"]       { --cat-color: var(--cat-juvenil, #D4A843); }
+  .chip-link[data-category="softbol"][data-active="true"]       { --cat-color: var(--cat-softbol, #7C3AED); }
+  .chip-link[data-category="opinion"][data-active="true"]       { --cat-color: var(--cat-opinion, #6B7280); }
+  /* Fade-out right edge */
   .site-header__chips-mobile::after {
     content: '';
     position: absolute;
@@ -333,23 +452,94 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     width: 32px;
     height: 100%;
     pointer-events: none;
-    background: linear-gradient(to right, transparent, #ffffff);
+    background: linear-gradient(to right, transparent, var(--navy-900, #14213A));
   }
 
-  /* Desktop (>= 1024px): nav row + scroll border. Below this, mobile pattern (logo mark + underline chips) applies. */
-  @media (min-width: 1024px) {
-    .site-header {
-      border-bottom: 2px solid transparent;
-      transition: border-color 150ms ease-out, transform 200ms ease-out;
-    }
-    .site-header[data-scrolled="true"] {
-      border-bottom-color: var(--navy, #1B2A4A);
-    }
+  /* ================================================================
+     MOBILE DRAWER
+     ================================================================ */
+  .mobile-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(300px, 85vw);
+    background: var(--navy-900, #14213A);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(-100%);
+    transition: transform 260ms cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    padding-top: 80px; /* clear the sticky header */
+  }
+  .mobile-drawer.is-open {
+    transform: translateX(0);
+  }
+  .mobile-drawer__nav {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0 24px;
+  }
+  .mobile-drawer__link {
+    display: flex;
+    align-items: center;
+    min-height: 52px;
+    padding: 0 24px;
+    color: rgba(255, 255, 255, 0.72);
+    font-family: var(--font-heading, "Plus Jakarta Sans"), system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    transition: color 120ms ease, background 120ms ease;
+    border-left: 3px solid transparent;
+  }
+  .mobile-drawer__link:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .mobile-drawer__link:focus-visible {
+    outline: 2px solid var(--gold, #D4A843);
+    outline-offset: -2px;
+  }
+  .mobile-drawer__link[aria-current="page"] {
+    color: var(--gold, #D4A843);
+    border-left-color: var(--gold, #D4A843);
+    background: rgba(212, 168, 67, 0.08);
+  }
+  .mobile-drawer__link--accent {
+    color: rgba(255, 255, 255, 0.85);
+    margin-top: 4px;
+  }
+  .mobile-drawer__link--accent:hover { color: #ffffff; }
+  .mobile-drawer__divider {
+    height: 1px;
+    margin: 12px 24px;
+    background: rgba(255, 255, 255, 0.10);
+  }
 
+  /* Scrim */
+  .mobile-drawer-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 199;
+    opacity: 0;
+    transition: opacity 260ms ease;
+  }
+  .mobile-drawer-scrim.is-visible {
+    opacity: 1;
+  }
+
+  /* ================================================================
+     DESKTOP (≥ 1024px)
+     ================================================================ */
+  @media (min-width: 1024px) {
     .site-header__bar {
       height: 64px;
       padding: 0 24px;
-      gap: 24px;
+      gap: 16px;
       transition: height 200ms ease-out;
     }
     .site-header.is-compact .site-header__bar { height: 48px; }
@@ -357,121 +547,133 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     .site-header__logo { margin-right: 0; }
     .site-header__logo--mobile { display: none; }
     .site-header__logo--desktop { display: inline-flex; align-items: center; }
-    :global(.header-logo-img) { width: auto; max-height: 40px; transition: max-height 200ms ease-out; }
-    .site-header.is-compact :global(.header-logo-img) { max-height: 28px; }
+    :global(.header-logo-img) { width: auto; max-height: 36px; transition: max-height 200ms ease-out; }
+    .site-header.is-compact :global(.header-logo-img) { max-height: 26px; }
 
     .site-header__nav-desktop {
       display: flex;
       flex: 1;
-      gap: 6px;
+      gap: 2px;
       justify-content: center;
       align-items: center;
       flex-wrap: nowrap;
     }
 
+    /* Hide mobile-only elements */
     .site-header__chips-mobile { display: none; }
+    .site-header__hamburger { display: none; }
 
-    .site-header__actions {
-      min-width: 72px;
-    }
-
+    .site-header__actions { min-width: 120px; }
     .header-cta { display: inline-flex; }
 
-    /* Nav pill — desktop primary nav */
-    .nav-pill {
+    /* ---- Desktop nav link — underline style ---- */
+    .nav-link {
       display: inline-flex;
       align-items: center;
       flex-shrink: 0;
-      padding: 7px 16px;
-      border: 1px solid var(--rule-strong, rgba(27, 42, 74, 0.28));
-      border-radius: 999px;
+      padding: 6px 12px;
       background: transparent;
-      color: var(--ink, var(--navy, #1B2A4A));
-      font-family: var(--font-body, "Inter"), system-ui, sans-serif;
-      font-size: 13px;
+      border: 0;
+      border-radius: var(--radius-sm, 6px);
+      color: rgba(255, 255, 255, 0.65);
+      font-family: var(--font-heading, "Plus Jakarta Sans"), system-ui, sans-serif;
+      font-size: 0.875rem;
       font-weight: 600;
-      line-height: 1;
-      letter-spacing: 0.02em;
+      line-height: var(--lh-nav, 1.4);
+      letter-spacing: var(--tracking-nav, 0.01em);
       text-transform: none;
       text-decoration: none;
       white-space: nowrap;
       cursor: pointer;
-      transition:
-        background-color 120ms ease-out,
-        color 120ms ease-out,
-        border-color 120ms ease-out;
+      position: relative;
+      transition: color 120ms ease-out, background-color 120ms ease-out;
     }
-    .nav-pill:hover {
-      border-color: var(--navy, #1B2A4A);
-      color: var(--navy, #1B2A4A);
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 2px;
+      height: 2px;
+      background: transparent;
+      border-radius: 2px;
+      transition: background 120ms ease-out;
     }
-    .nav-pill:focus-visible {
-      outline: 2px solid var(--navy, #1B2A4A);
+    .nav-link:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .nav-link:focus-visible {
+      outline: 2px solid var(--gold, #D4A843);
       outline-offset: 2px;
     }
-    .nav-pill[aria-current="page"] {
-      background: var(--cat-color, var(--navy, #1B2A4A));
+    /* Active state: full white + gold underline */
+    .nav-link[aria-current="page"] {
       color: #ffffff;
-      border-color: transparent;
     }
-    .nav-pill[aria-current="page"][data-category="mlb"]           { --cat-color: var(--cat-mlb); }
-    .nav-pill[aria-current="page"][data-category="liga-mexicana"] { --cat-color: var(--cat-liga-mexicana); }
-    .nav-pill[aria-current="page"][data-category="seleccion"]     { --cat-color: var(--cat-seleccion); }
-    .nav-pill[aria-current="page"][data-category="juvenil"]       { --cat-color: var(--cat-juvenil); }
-    .nav-pill[aria-current="page"][data-category="softbol"]       { --cat-color: var(--cat-softbol); }
-    .nav-pill[aria-current="page"][data-category="opinion"]       { --cat-color: var(--cat-opinion); }
+    .nav-link[aria-current="page"]::after {
+      background: var(--cat-color, var(--gold, #D4A843));
+    }
+    /* Category accent underlines */
+    .nav-link[aria-current="page"][data-category="mlb"]           { --cat-color: var(--cat-mlb, #2563EB); }
+    .nav-link[aria-current="page"][data-category="liga-mexicana"] { --cat-color: var(--cat-liga-mexicana, #059669); }
+    .nav-link[aria-current="page"][data-category="seleccion"]     { --cat-color: var(--cat-seleccion, #C8102E); }
+    .nav-link[aria-current="page"][data-category="juvenil"]       { --cat-color: var(--cat-juvenil, #D4A843); }
+    .nav-link[aria-current="page"][data-category="softbol"]       { --cat-color: var(--cat-softbol, #7C3AED); }
+    .nav-link[aria-current="page"][data-category="opinion"]       { --cat-color: var(--cat-opinion, #6B7280); }
 
-    /* "Más" dropdown */
+    /* ---- "Más" dropdown ---- */
     .nav-more {
       position: relative;
       display: none;
     }
-    .nav-more[data-has-active="true"] .nav-pill--more {
-      border-color: var(--navy, #1B2A4A);
-      color: var(--navy, #1B2A4A);
+    .nav-more[data-has-active="true"] .nav-link--more {
+      color: #ffffff;
     }
     .nav-more__caret {
       margin-left: 4px;
-      font-size: 0.75em;
+      font-size: 0.7em;
+      opacity: 0.7;
     }
     .nav-more__panel {
       position: absolute;
-      top: calc(100% + 4px);
+      top: calc(100% + 6px);
       right: 0;
       min-width: 180px;
-      padding: 8px 0;
-      background: #ffffff;
-      border: 1px solid var(--rule-strong, rgba(27, 42, 74, 0.28));
-      border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
+      padding: 6px 0;
+      background: var(--navy-700, #243757);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius, 10px);
+      box-shadow: var(--shadow-lg, 0 12px 28px rgba(16, 24, 40, 0.18));
       z-index: 60;
     }
     .nav-more__panel[hidden] { display: none; }
     .nav-more__item {
       display: block;
-      padding: 10px 14px;
-      color: var(--ink, var(--navy, #1B2A4A));
-      font-family: var(--font-body, "Inter"), system-ui, sans-serif;
-      font-size: 14px;
+      padding: 10px 16px;
+      color: rgba(255, 255, 255, 0.75);
+      font-family: var(--font-heading, "Plus Jakarta Sans"), system-ui, sans-serif;
+      font-size: 0.875rem;
       font-weight: 600;
       line-height: 1.3;
       text-decoration: none;
-      transition: background-color 120ms ease-out;
+      transition: background-color 120ms ease-out, color 120ms ease-out;
     }
     .nav-more__item:hover,
     .nav-more__item:focus-visible {
-      background: var(--surface-tinted, #F6F5F1);
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
       outline: none;
     }
     .nav-more__item[aria-current="page"] {
-      color: var(--navy, #1B2A4A);
-      background: var(--surface-tinted, #F6F5F1);
+      color: var(--gold, #D4A843);
+      background: rgba(212, 168, 67, 0.10);
     }
   }
 
   /* Narrow desktop (1024–1099): collapse Softbol + Opinión into "Más" */
   @media (min-width: 1024px) and (max-width: 1099px) {
-    .site-header__nav-desktop .nav-pill[data-collapse="true"] { display: none; }
+    .site-header__nav-desktop .nav-link[data-collapse="true"] { display: none; }
     .nav-more { display: block; }
   }
 
@@ -493,7 +695,11 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     const header = document.getElementById('site-header');
     const moreTrigger = document.getElementById('nav-more-trigger');
     const morePanel = document.getElementById('nav-more-panel');
+    const mobileTrigger = document.getElementById('mobile-menu-trigger');
+    const mobilePanel = document.getElementById('mobile-menu-panel');
+    const mobileScrim = document.getElementById('mobile-menu-scrim');
 
+    // ── Scroll behaviour (compact + shadow + hide-on-scroll-down) ──
     if (header) {
       const COMPACT_THRESHOLD = 80;
       const SCROLL_BORDER_THRESHOLD = 40;
@@ -539,6 +745,7 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
       onScroll();
     }
 
+    // ── Desktop "Más" dropdown ──
     if (moreTrigger && morePanel) {
       let isOpen = false;
 
@@ -582,6 +789,59 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
         });
       } catch (err) {
         console.error('[Header] more-menu init failed:', err);
+      }
+    }
+
+    // ── Mobile drawer ──
+    if (mobileTrigger && mobilePanel && mobileScrim) {
+      let drawerOpen = false;
+
+      const openDrawer = () => {
+        drawerOpen = true;
+        mobilePanel.hidden = false;
+        mobileScrim.hidden = false;
+        // Force reflow so transition fires
+        mobilePanel.offsetHeight;
+        mobileScrim.offsetHeight;
+        mobilePanel.classList.add('is-open');
+        mobileScrim.classList.add('is-visible');
+        mobileTrigger.setAttribute('aria-expanded', 'true');
+        mobileTrigger.setAttribute('aria-label', 'Cerrar menú');
+        mobilePanel.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      };
+      const closeDrawer = () => {
+        drawerOpen = false;
+        mobilePanel.classList.remove('is-open');
+        mobileScrim.classList.remove('is-visible');
+        mobileTrigger.setAttribute('aria-expanded', 'false');
+        mobileTrigger.setAttribute('aria-label', 'Abrir menú');
+        mobilePanel.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        // Wait for transition before hiding
+        setTimeout(() => {
+          if (!drawerOpen) {
+            mobilePanel.hidden = true;
+            mobileScrim.hidden = true;
+          }
+        }, 280);
+      };
+
+      try {
+        mobileTrigger.addEventListener('click', () => {
+          if (drawerOpen) closeDrawer(); else openDrawer();
+        });
+
+        mobileScrim.addEventListener('click', closeDrawer);
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && drawerOpen) {
+            closeDrawer();
+            mobileTrigger.focus();
+          }
+        });
+      } catch (err) {
+        console.error('[Header] mobile-drawer init failed:', err);
       }
     }
   })();

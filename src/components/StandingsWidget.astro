@@ -1,0 +1,121 @@
+---
+// StandingsWidget — compact standings module for the homepage rail.
+// Reads from Postgres (decoupled from the sync). LMB / MLB tabs toggle
+// client-side; each league shows its divisions (top 5) with a link to the
+// full /posiciones page. Renders a graceful empty state if there's no data.
+import { getLigas, getPosiciones, agruparPosiciones } from '@/lib/supabase';
+
+const TOP_N = 5;
+const ligas = await getLigas();
+
+const bloques = await Promise.all(
+  ligas.map(async (liga) => {
+    const grupos = agruparPosiciones(await getPosiciones(liga.slug)).map((g) => ({
+      ...g,
+      equipos: g.equipos.slice(0, TOP_N),
+    }));
+    return { liga, grupos };
+  }),
+);
+const conDatos = bloques.filter((b) => b.grupos.length > 0);
+const temporada = ligas.find((l) => l.temporada_actual)?.temporada_actual ?? '';
+---
+
+{conDatos.length > 0 && (
+  <section class="bj-card overflow-hidden" data-standings-widget>
+    <!-- Header -->
+    <div class="bg-navy px-4 pt-3.5 pb-0">
+      <div class="flex items-center justify-between">
+        <h2 class="font-heading text-white font-extrabold text-base tracking-tight flex items-center gap-2">
+          <span class="inline-block w-1.5 h-4 rounded-sm bg-gold"></span>
+          Posiciones
+        </h2>
+        {temporada && <span class="text-[11px] font-semibold uppercase tracking-wider text-white/55">Temporada {temporada}</span>}
+      </div>
+      <!-- League tabs -->
+      <div class="flex gap-1 mt-3" role="tablist">
+        {conDatos.map((b, i) => (
+          <button
+            type="button"
+            role="tab"
+            data-liga-tab={b.liga.slug}
+            aria-selected={i === 0 ? 'true' : 'false'}
+            class="relative px-3 py-2 text-sm font-bold text-white/55 aria-selected:text-white transition-colors"
+          >
+            {b.liga.abreviatura}
+            <span class="tab-underline absolute inset-x-2 bottom-0 h-0.5 rounded-t bg-gold opacity-0 transition-opacity"></span>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- League panels -->
+    {conDatos.map((b, i) => (
+      <div data-liga-panel={b.liga.slug} class={i === 0 ? '' : 'hidden'}>
+        {b.grupos.map((g) => (
+          <div class="px-4 py-3 border-t border-[color:var(--rule)] first:border-t-0">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="bj-kicker" style="--kicker: var(--navy)">
+                {g.conferencia ? `${g.conferencia} · ${g.division}` : g.division}
+              </span>
+            </div>
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-[10px] uppercase tracking-wider text-[color:var(--ink-3)]">
+                  <th class="text-left font-bold pb-1.5 w-6">#</th>
+                  <th class="text-left font-bold pb-1.5">Equipo</th>
+                  <th class="text-right font-bold pb-1.5 tabular-nums">G-P</th>
+                  <th class="text-right font-bold pb-1.5 tabular-nums">PCT</th>
+                  <th class="text-right font-bold pb-1.5 tabular-nums">JD</th>
+                </tr>
+              </thead>
+              <tbody>
+                {g.equipos.map((p, idx) => (
+                  <tr class="border-t border-[color:var(--rule)]">
+                    <td class="py-1.5 text-[color:var(--ink-3)] font-semibold tabular-nums">{idx + 1}</td>
+                    <td class="py-1.5">
+                      <span class="flex items-center gap-2 min-w-0">
+                        <span class="w-1.5 h-4 rounded-sm flex-shrink-0" style={`background:${p.equipo?.color_primario || 'var(--navy)'}`}></span>
+                        <span class="font-bold text-navy truncate">{p.equipo?.nombre_corto || p.equipo?.nombre}</span>
+                        <span class="text-[color:var(--ink-3)] text-xs font-semibold flex-shrink-0">{p.equipo?.abreviatura}</span>
+                      </span>
+                    </td>
+                    <td class="py-1.5 text-right tabular-nums font-semibold text-navy">{p.jg}-{p.jp}</td>
+                    <td class="py-1.5 text-right tabular-nums text-[color:var(--ink-2)]">{p.pct.toFixed(3).replace(/^0/, '')}</td>
+                    <td class="py-1.5 text-right tabular-nums text-[color:var(--ink-3)]">{p.gb}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+        <a
+          href={`/posiciones?liga=${b.liga.slug}`}
+          class="flex items-center justify-center gap-1 px-4 py-3 border-t border-[color:var(--rule)] text-sm font-bold text-rojo hover:bg-[color:var(--surface-2)] transition-colors"
+        >
+          Ver posiciones completas
+          <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    ))}
+  </section>
+)}
+
+<style>
+  [data-liga-tab][aria-selected="true"] .tab-underline { opacity: 1; }
+</style>
+
+<script>
+  // League tab toggle (scoped per widget instance).
+  document.querySelectorAll('[data-standings-widget]').forEach((widget) => {
+    const tabs = widget.querySelectorAll('[data-liga-tab]');
+    const panels = widget.querySelectorAll('[data-liga-panel]');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const slug = tab.getAttribute('data-liga-tab');
+        tabs.forEach((t) => t.setAttribute('aria-selected', String(t === tab)));
+        panels.forEach((p) => p.classList.toggle('hidden', p.getAttribute('data-liga-panel') !== slug));
+      });
+    });
+  });
+</script>

@@ -736,3 +736,145 @@ export async function getAnunciosBySlot(slotId: string): Promise<Anuncio[]> {
   }
   return (data as Anuncio[]) || [];
 }
+
+// ==================== POSICIONES (STANDINGS-01) ====================
+
+export interface Liga {
+  id: number;
+  slug: string;            // 'lmb' | 'mlb'
+  nombre: string;
+  abreviatura: string;
+  external_sport_id: number | null;
+  external_league_ids: string | null;
+  temporada_actual: string | null;
+  activa: boolean;
+  orden: number;
+}
+
+export interface Equipo {
+  id: number;
+  liga_id: number;
+  nombre: string;
+  nombre_corto: string | null;
+  abreviatura: string | null;
+  ciudad: string | null;
+  division: string | null;      // 'Norte'/'Sur' (LMB) · 'Este'/'Centro'/'Oeste' (MLB)
+  conferencia: string | null;   // 'Americana'/'Nacional' (MLB) · null (LMB)
+  logo_url: string | null;
+  color_primario: string | null;
+  external_id: string | null;
+  activo: boolean;
+}
+
+export interface Posicion {
+  id: number;
+  equipo_id: number;
+  temporada: string;
+  jj: number;   // juegos jugados
+  jg: number;   // juegos ganados
+  jp: number;   // juegos perdidos
+  pct: number;
+  gb: string;
+  racha: string | null;
+  orden: number;
+  updated_at: string;
+  equipo?: Equipo;
+}
+
+export interface GrupoPosiciones {
+  division: string;
+  conferencia: string | null;
+  equipos: Posicion[];
+}
+
+/** Active leagues, in display order. */
+export async function getLigas(): Promise<Liga[]> {
+  const { data, error } = await supabaseServer
+    .from('ligas')
+    .select('*')
+    .eq('activa', true)
+    .order('orden', { ascending: true });
+  if (error) {
+    console.error('[getLigas] Failed:', error.message);
+    return [];
+  }
+  return (data as Liga[]) || [];
+}
+
+export async function getLigaBySlug(slug: string): Promise<Liga | null> {
+  const { data, error } = await supabaseServer
+    .from('ligas')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (error) {
+    console.error(`[getLigaBySlug] Failed for ${slug}:`, error.message);
+    return null;
+  }
+  return (data as Liga) || null;
+}
+
+/**
+ * Standings rows for a league + season, each joined to its team. Two-step
+ * (teams → standings) to stay robust against PostgREST embedded-filter quirks
+ * and to degrade gracefully when a league has no rows yet (returns []).
+ */
+export async function getPosiciones(ligaSlug: string, temporada?: string): Promise<Posicion[]> {
+  const liga = await getLigaBySlug(ligaSlug);
+  if (!liga) return [];
+  const season = temporada || liga.temporada_actual || `${new Date().getFullYear()}`;
+
+  const { data: equipos, error: eqErr } = await supabaseServer
+    .from('equipos')
+    .select('*')
+    .eq('liga_id', liga.id)
+    .eq('activo', true);
+  if (eqErr) {
+    console.error(`[getPosiciones] equipos ${ligaSlug}:`, eqErr.message);
+    return [];
+  }
+  if (!equipos || equipos.length === 0) return [];
+
+  const byId = new Map<number, Equipo>((equipos as Equipo[]).map((e) => [e.id, e]));
+  const { data: pos, error: posErr } = await supabaseServer
+    .from('posiciones')
+    .select('*')
+    .eq('temporada', season)
+    .in('equipo_id', (equipos as Equipo[]).map((e) => e.id))
+    .order('orden', { ascending: true });
+  if (posErr) {
+    console.error(`[getPosiciones] posiciones ${ligaSlug}:`, posErr.message);
+    return [];
+  }
+  // `pct` is a Postgres numeric → returned as a string by supabase-js; coerce
+  // to a real number so `.toFixed()` / numeric sorts work downstream.
+  return ((pos as Posicion[]) || []).map((p) => ({
+    ...p,
+    pct: Number(p.pct),
+    equipo: byId.get(p.equipo_id),
+  }));
+}
+
+const CONFERENCIA_ORDER = ['Americana', 'Nacional', ''];
+const DIVISION_ORDER = ['Norte', 'Sur', 'Este', 'Centro', 'Oeste', 'General'];
+
+/** Group standings rows into ordered division blocks (handles LMB + MLB shapes). */
+export function agruparPosiciones(rows: Posicion[]): GrupoPosiciones[] {
+  const groups = new Map<string, GrupoPosiciones>();
+  for (const r of rows) {
+    const division = r.equipo?.division || 'General';
+    const conferencia = r.equipo?.conferencia || null;
+    const key = `${conferencia ?? ''}|${division}`;
+    if (!groups.has(key)) groups.set(key, { division, conferencia, equipos: [] });
+    groups.get(key)!.equipos.push(r);
+  }
+  for (const g of groups.values()) {
+    g.equipos.sort((a, b) => a.orden - b.orden || b.pct - a.pct);
+  }
+  return [...groups.values()].sort((a, b) => {
+    const ca = CONFERENCIA_ORDER.indexOf(a.conferencia ?? '');
+    const cb = CONFERENCIA_ORDER.indexOf(b.conferencia ?? '');
+    if (ca !== cb) return ca - cb;
+    return DIVISION_ORDER.indexOf(a.division) - DIVISION_ORDER.indexOf(b.division);
+  });
+}

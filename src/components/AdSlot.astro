@@ -13,8 +13,9 @@ interface Props {
   slotId: string;
   /** false = pre-architected inactive render for Phase 2 (Slot C). No fetch, no GA4. */
   active?: boolean;
-  /** Layout footprint: 'prose' (Slot A) or 'card' (Slot B). Cosmetic only. */
-  variant?: 'prose' | 'card';
+  /** Layout footprint. Cosmetic only — never affects the disclosure label.
+   *  'prose'|'card' = 300×250 · 'sidebar' = 300×250 (rail) · 'leaderboard' = 970×90 / 320×50. */
+  variant?: 'prose' | 'card' | 'sidebar' | 'leaderboard';
   /** UI language for the disclosure label. Site default is ES. */
   lang?: 'es' | 'en';
 }
@@ -126,6 +127,34 @@ const isExternal = href.startsWith('http');
 
   .bj-adslot--prose {
     max-width: var(--max-width-prose, 42rem);
+  }
+
+  /* --- Leaderboard: wide banner. 970×90 desktop, ~320×50 mobile. --- */
+  .bj-adslot--leaderboard .bj-adslot__label {
+    max-width: 970px;
+    text-align: center;
+  }
+  .bj-adslot--leaderboard .bj-adslot__frame {
+    width: 100%;
+    max-width: 970px;
+    aspect-ratio: auto;
+    height: 90px;
+  }
+  .bj-adslot--leaderboard .bj-adslot__placeholder {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: center;
+    gap: 10px;
+  }
+  @media (max-width: 768px) {
+    .bj-adslot--leaderboard .bj-adslot__frame { height: 56px; }
+    .bj-adslot--leaderboard .bj-adslot__ph-cta { font-size: 15px; }
+    .bj-adslot--leaderboard .bj-adslot__ph-sub { font-size: 11px; }
+  }
+
+  /* --- Sidebar: 300×250 rail unit (sticky positioning set by the parent). --- */
+  .bj-adslot--sidebar {
+    max-width: 300px;
   }
 
   .bj-adslot__label {

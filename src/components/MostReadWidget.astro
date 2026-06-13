@@ -1,5 +1,6 @@
 ---
 import type { Articulo } from '@/lib/supabase';
+import { getCategoryAccent } from '@/lib/categoryAccents.js';
 
 type MostReadScope =
   | { type: 'global' }
@@ -32,25 +33,20 @@ const categorySlug =
       ? scope.categorySlug
       : null;
 
-// Global scope → navy; any category scope (including Juvenil) → category color.
-// Numerals render at text-2xl font-black (24px/900) — WCAG large text, 3:1 threshold.
-// Gold #D4A843 on white ≈ 3.2:1, passes. Carve-out only applies to small/body text.
-const rankColor = !categorySlug ? 'var(--navy)' : `var(--cat-${categorySlug})`;
+// Global scope → red kicker accent; category scope → category accent
+const rankColor = !categorySlug ? 'var(--red, #C8102E)' : getCategoryAccent(categorySlug);
 ---
 
 {articles.length > 0 && (
-  <aside class="bg-gris-bg rounded-lg p-5">
-    <h3 class="text-sm font-extrabold uppercase tracking-wider text-navy mb-4 pb-2 border-b border-gris-border">
-      {headline}
-    </h3>
-    <ol class="space-y-4">
+  <aside class="bj-most-read bj-card" style={`--rank-color: ${rankColor};`}>
+    <div class="bj-most-read__header">
+      <span class="bj-kicker" style="--kicker: var(--rank-color);">{headline}</span>
+    </div>
+    <ol class="bj-most-read__list">
       {articles.map((a, i) => (
-        <li class="flex gap-3 group">
-          <span
-            class="text-2xl font-black leading-none w-6 flex-shrink-0 tabular-nums"
-            style={`color: ${rankColor};`}
-          >{i + 1}</span>
-          <a href={`/articulo/${a.slug}`} class="text-sm font-medium text-navy leading-snug line-clamp-2 group-hover:text-steel-blue transition-colors">
+        <li class="bj-most-read__item">
+          <span class="bj-most-read__rank" aria-hidden="true">{i + 1}</span>
+          <a href={`/articulo/${a.slug}`} class="bj-most-read__link">
             {a.titulo}
           </a>
         </li>
@@ -58,3 +54,81 @@ const rankColor = !categorySlug ? 'var(--navy)' : `var(--cat-${categorySlug})`;
     </ol>
   </aside>
 )}
+
+<style>
+  .bj-most-read {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .bj-most-read__header {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--rule, rgba(27, 42, 74, 0.10));
+    position: relative;
+  }
+
+  /* Accent rule under the kicker */
+  .bj-most-read__header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 16px;
+    width: 36px;
+    height: 2px;
+    background: var(--rank-color);
+    border-radius: 2px;
+  }
+
+  .bj-most-read__list {
+    list-style: none;
+    margin: 0;
+    padding: 8px 0;
+  }
+
+  .bj-most-read__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--rule, rgba(27, 42, 74, 0.10));
+    transition: background 0.15s;
+  }
+
+  .bj-most-read__item:last-child {
+    border-bottom: none;
+  }
+
+  .bj-most-read__item:hover {
+    background: var(--surface-2, #F6F5F1);
+  }
+
+  .bj-most-read__rank {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--rank-color);
+    flex-shrink: 0;
+    width: 1.5ch;
+    tabular-nums: true;
+    margin-top: 2px;
+  }
+
+  .bj-most-read__link {
+    font-family: var(--font-heading);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--navy, #1B2A4A);
+    text-decoration: none;
+    transition: color 0.15s;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .bj-most-read__link:hover {
+    color: var(--red, #C8102E);
+  }
+</style>

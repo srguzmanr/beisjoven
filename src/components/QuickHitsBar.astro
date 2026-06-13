@@ -13,41 +13,148 @@ function isExternal(url: string) {
 ---
 
 {hits.length > 0 && (
-  <div class="bg-navy text-white">
-    <div class="max-w-7xl mx-auto">
-      <ul
-        class="quick-hits-list flex md:justify-between items-stretch overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none"
-      >
-        {hits.map((hit) => {
-          const external = isExternal(hit.url);
-          return (
-            <li class="flex-shrink-0 md:flex-1 snap-start basis-[85vw] md:basis-auto">
-              <a
-                href={hit.url}
-                target={external ? '_blank' : undefined}
-                rel={external ? 'noopener noreferrer' : undefined}
-                class="flex items-center gap-2.5 px-4 min-h-[44px] py-2.5 text-[13px] md:text-sm font-medium text-white/90 hover:text-white hover:bg-white/5 transition-colors w-full"
-                style="font-family: var(--font-body);"
-              >
-                <span class="inline-flex items-center gap-1.5 flex-shrink-0">
-                  <span class="w-1.5 h-1.5 rounded-full bg-rojo animate-pulse" aria-hidden="true"></span>
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-rojo">Live</span>
-                </span>
-                <span class="truncate">{hit.texto}</span>
-              </a>
-            </li>
-          );
-        })}
-      </ul>
+  <div class="bj-quickhits" role="complementary" aria-label="Última hora">
+    <div class="bj-container">
+      <div class="bj-quickhits__inner">
+        <!-- Label -->
+        <div class="bj-quickhits__label" aria-hidden="true">
+          <span class="bj-quickhits__dot" aria-hidden="true"></span>
+          <span>Última hora</span>
+        </div>
+
+        <!-- Divider -->
+        <div class="bj-quickhits__divider" aria-hidden="true"></div>
+
+        <!-- Scrollable hits -->
+        <ul class="bj-quickhits__list" role="list">
+          {hits.map((hit, i) => {
+            const external = isExternal(hit.url);
+            return (
+              <li class="bj-quickhits__item">
+                {i > 0 && <span class="bj-quickhits__sep" aria-hidden="true">/</span>}
+                <a
+                  href={hit.url}
+                  target={external ? '_blank' : undefined}
+                  rel={external ? 'noopener noreferrer' : undefined}
+                  class="bj-quickhits__link"
+                >
+                  {hit.texto}
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </div>
   </div>
 )}
 
 <style>
-  .quick-hits-list {
-    scrollbar-width: none;
+  .bj-quickhits {
+    background: var(--navy-900, #14213A);
+    border-bottom: 2px solid var(--rojo, var(--red, #C8102E));
   }
-  .quick-hits-list::-webkit-scrollbar {
+
+  .bj-quickhits__inner {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .bj-quickhits__label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 8px 0;
+    font-family: var(--font-heading);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--red, #C8102E);
+    white-space: nowrap;
+  }
+
+  .bj-quickhits__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--red, #C8102E);
+    display: inline-block;
+    flex-shrink: 0;
+    animation: bj-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes bj-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .bj-quickhits__divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.15);
+    flex-shrink: 0;
+    margin: 0 14px;
+  }
+
+  .bj-quickhits__list {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .bj-quickhits__list::-webkit-scrollbar {
     display: none;
+  }
+
+  .bj-quickhits__item {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .bj-quickhits__sep {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 14px;
+    padding: 0 10px;
+    user-select: none;
+  }
+
+  .bj-quickhits__link {
+    display: inline-block;
+    padding: 10px 0;
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.82);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.15s;
+    min-height: 44px;
+    line-height: 24px;
+  }
+
+  .bj-quickhits__link:hover {
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-quickhits__link {
+      font-size: 13px;
+    }
   }
 </style>

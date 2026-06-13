@@ -11,6 +11,7 @@
 // in the homepage, and Astro builds parallelize fetches across the page.
 import StoryCard from '@/components/StoryCard.astro';
 import { supabaseServer } from '@/lib/supabase';
+import { getCategoryAccent } from '@/lib/categoryAccents.js';
 
 interface Props {
   slug: string;
@@ -19,19 +20,7 @@ interface Props {
 
 const { slug, displayName } = Astro.props;
 
-const KNOWN_ACCENT_TOKENS = new Set([
-  'mlb',
-  'liga-mexicana',
-  'seleccion',
-  'softbol',
-  'opinion',
-  'juvenil',
-]);
-
-if (!KNOWN_ACCENT_TOKENS.has(slug)) {
-  console.warn(`[CategorySection] No --cat-${slug} token; falling back to --navy.`);
-}
-const accent = KNOWN_ACCENT_TOKENS.has(slug) ? `var(--cat-${slug})` : 'var(--navy)';
+const accent = getCategoryAccent(slug);
 
 type Row = {
   id: number;
@@ -77,11 +66,18 @@ const stories = ((raw ?? []) as Row[]).map((r) => {
 
 {stories.length > 0 && (
   <section class="bj-cat-section" style={`--bj-cat-accent: ${accent};`}>
+    <!-- Section header with kicker + "Ver todo" -->
     <div class="bj-cat-section__header">
-      <h2 class="bj-cat-section__title">{displayName}</h2>
+      <div class="bj-cat-section__heading">
+        <span class="bj-kicker" style="--kicker: var(--bj-cat-accent);">{displayName}</span>
+      </div>
       <span class="bj-cat-section__spacer" aria-hidden="true"></span>
       <a class="bj-cat-section__cta" href={`/categoria/${slug}`}>
-        Ver más en {displayName} <span aria-hidden="true">→</span>
+        Ver todo
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="5" y1="12" x2="19" y2="12" />
+          <polyline points="12 5 19 12 12 19" />
+        </svg>
       </a>
     </div>
 
@@ -100,21 +96,30 @@ const stories = ((raw ?? []) as Row[]).map((r) => {
 
   .bj-cat-section__header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 12px;
-    border-bottom: 4px solid var(--bj-cat-accent);
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--rule, rgba(27, 42, 74, 0.10));
+    position: relative;
   }
 
-  .bj-cat-section__title {
-    font-family: var(--font-heading);
-    font-weight: 600;
-    font-size: clamp(1.25rem, 1.05rem + 0.6vw, 1.75rem);
-    color: var(--ink, var(--navy));
-    margin: 0;
-    line-height: 1.2;
+  /* Category-accent rule under the kicker */
+  .bj-cat-section__header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 44px;
+    height: 3px;
+    background: var(--bj-cat-accent);
+    border-radius: 3px;
+  }
+
+  .bj-cat-section__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
   }
 
   .bj-cat-section__spacer {
@@ -122,20 +127,23 @@ const stories = ((raw ?? []) as Row[]).map((r) => {
   }
 
   .bj-cat-section__cta {
-    font-family: var(--font-body);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--navy);
-    text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--bj-cat-accent);
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+    min-height: 44px;
   }
 
   .bj-cat-section__cta:hover {
-    text-decoration: underline;
+    opacity: 0.75;
   }
 
   .bj-cat-section__grid {
@@ -144,10 +152,17 @@ const stories = ((raw ?? []) as Row[]).map((r) => {
     gap: 28px;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 600px) {
+    .bj-cat-section__grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+  }
+
+  @media (min-width: 900px) {
     .bj-cat-section__grid {
       grid-template-columns: repeat(3, 1fr);
-      gap: 32px;
+      gap: 28px;
     }
   }
 </style>

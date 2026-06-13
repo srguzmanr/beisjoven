@@ -9,6 +9,8 @@ import Gallery from '@/components/Gallery.astro';
 import CategorySection from '@/components/CategorySection.astro';
 import NewsletterBlock from '@/components/NewsletterBlock.astro';
 import AdSlot from '@/components/AdSlot.astro';
+import StandingsWidget from '@/components/StandingsWidget.astro';
+import MostReadWidget from '@/components/MostReadWidget.astro';
 import {
   supabaseServer,
   getArticulos,
@@ -44,7 +46,7 @@ const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   .toISOString()
   .split('T')[0];
 
-const [latestRes, masLeidosWindowRes, videosRes] = await Promise.all([
+const [latestRes, masLeidosWindowRes, videosRes, masLeidosWidgetRes] = await Promise.all([
   supabaseServer
     .from('articulos')
     .select(FEED_SELECT)
@@ -65,6 +67,13 @@ const [latestRes, masLeidosWindowRes, videosRes] = await Promise.all([
     .eq('publicado', true)
     .order('fecha', { ascending: false })
     .limit(4),
+  // MostReadWidget needs full Articulo-shape rows (titulo, slug, categoria)
+  supabaseServer
+    .from('articulos')
+    .select('id, titulo, slug, vistas, categorias(slug, nombre)')
+    .eq('publicado', true)
+    .order('vistas', { ascending: false })
+    .limit(5),
 ]);
 
 let masLeidosRaw = masLeidosWindowRes.data ?? [];
@@ -76,6 +85,10 @@ if (masLeidosRaw.length < 4) {
     .order('vistas', { ascending: false })
     .limit(4);
   masLeidosRaw = fallback ?? [];
+}
+
+if (masLeidosWidgetRes.error) {
+  console.error('[index] MostReadWidget query failed:', masLeidosWidgetRes.error);
 }
 
 type FeedRow = {
@@ -114,6 +127,27 @@ function flatten(rows: FeedRow[] | null) {
 const latest = flatten(latestRes.data as FeedRow[] | null);
 const masLeidos = flatten(masLeidosRaw as FeedRow[]);
 const videos = videosRes.data ?? [];
+
+// Shape for MostReadWidget: needs Articulo-shaped rows (titulo, slug, categoria)
+type WidgetRow = {
+  id: number;
+  titulo: string;
+  slug: string;
+  vistas: number;
+  categorias: { slug: string; nombre: string } | { slug: string; nombre: string }[] | null;
+};
+
+const masLeidosWidget = ((masLeidosWidgetRes.data ?? []) as WidgetRow[]).map((r) => {
+  const cat = Array.isArray(r.categorias) ? r.categorias[0] : r.categorias;
+  // MostReadWidget only reads titulo and slug from articles, so casting is safe
+  return {
+    id: r.id,
+    titulo: r.titulo,
+    slug: r.slug,
+    vistas: r.vistas,
+    categoria: cat ? { slug: cat.slug, nombre: cat.nombre, id: 0, color: '' } : null,
+  } as any;
+});
 
 // DESIGN-04c: Juvenil rail — 3 most-recent juvenil articles for the
 // "Nuestra obsesión" navy module. Separate from the per-category rail
@@ -158,119 +192,284 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
 ---
 
 <BaseLayout>
+  <!-- Breaking news ticker -->
   <QuickHitsBar hits={quickHits} />
 
-  {/* Active Event Banner */}
+  <!-- Active Event Banner -->
   {eventoActivo && (
-    <a href={`/evento/${eventoActivo.slug}`} class="block bg-rojo hover:bg-rojo-dark transition-colors">
-      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <div class="flex items-center gap-3 min-w-0">
-          <span class="bg-white/20 text-white text-[10px] font-bold uppercase px-2 py-1 rounded-sm tracking-wider flex-shrink-0">
-            Evento
-          </span>
-          <span class="text-white font-bold text-sm truncate">
-            {eventoActivo.nombre}
-          </span>
-          {eventoActivo.ciudad && (
-            <span class="text-white/70 text-xs hidden sm:inline flex-shrink-0">
-              {eventoActivo.ciudad}
-            </span>
-          )}
+    <a href={`/evento/${eventoActivo.slug}`} class="bj-event-banner">
+      <div class="bj-container">
+        <div class="bj-event-banner__inner">
+          <div class="bj-event-banner__left">
+            <span class="bj-event-banner__badge">Evento</span>
+            <span class="bj-event-banner__name">{eventoActivo.nombre}</span>
+            {eventoActivo.ciudad && (
+              <span class="bj-event-banner__city">{eventoActivo.ciudad}</span>
+            )}
+          </div>
+          <span class="bj-event-banner__cta">Ver cobertura &rarr;</span>
         </div>
-        <span class="text-white/90 text-xs font-semibold flex-shrink-0 whitespace-nowrap">
-          Ver cobertura &rarr;
-        </span>
       </div>
     </a>
   )}
 
-  <!-- Hero Section -->
-  <div class="max-w-7xl mx-auto px-4 py-8">
-    <section class="mb-12">
+  <!-- =====================================================
+       HERO — full-bleed container row
+       ===================================================== -->
+  <div class="bj-hero-section">
+    <div class="bj-container">
       {hero && <HeroDefault story={hero} />}
-    </section>
+    </div>
   </div>
 
-  <!-- DESIGN-04b: Sponsor reservation + Mixed Feed -->
+  <!-- =====================================================
+       FULL-BLEED MIDDLE SECTIONS
+       (MixedFeed, JuvenilRail, Gallery own their backgrounds)
+       ===================================================== -->
   <SponsorReservation />
   <MixedFeed latest={latest} masLeidos={masLeidos} videos={videos} />
-
-  {/* HOUSE-ADS-01 — Slot B: homepage in-feed, between blocks. */}
-  <section class="bj-adslot-feed">
-    <div class="bj-adslot-feed__container">
-      <AdSlot slotId="slot-b" variant="card" />
-    </div>
-  </section>
-
   {juvenilRail.length > 0 && <JuvenilRail stories={juvenilRail} />}
-
-  <!-- DESIGN-04d: Gallery — "La semana, en imágenes" -->
   <Gallery />
 
-  <!-- DESIGN-04e: Per-category sections — 5 stacked 3-up grids -->
-  <section class="categories-stack">
-    <div class="categories-stack__container">
-      <CategorySection slug="mlb" displayName="MLB" />
-      <CategorySection slug="liga-mexicana" displayName="Ligas Mexicanas" />
-      <CategorySection slug="seleccion" displayName="Selección" />
-      <CategorySection slug="softbol" displayName="Softbol" />
-      <CategorySection slug="opinion" displayName="Opinión" />
-      <NewsletterBlock />
+  <!-- =====================================================
+       CATEGORIES + RIGHT RAIL two-column grid
+       ===================================================== -->
+  <div class="bj-below-fold">
+    <div class="bj-container">
+      <div class="bj-below-fold__grid">
+
+        <!-- Main: stacked category sections -->
+        <div class="bj-cat-main">
+          <CategorySection slug="mlb" displayName="MLB" />
+          <CategorySection slug="liga-mexicana" displayName="Ligas Mexicanas" />
+          <CategorySection slug="seleccion" displayName="Selección" />
+          <CategorySection slug="softbol" displayName="Softbol" />
+          <CategorySection slug="opinion" displayName="Opinión" />
+        </div>
+
+        <!-- Right rail: Standings → Ad → MostRead (lg+ only) -->
+        <aside class="bj-right-rail" aria-label="Lateral">
+          <StandingsWidget />
+          <div class="bj-right-rail__ad">
+            <AdSlot slotId="slot-b" variant="sidebar" />
+          </div>
+          {masLeidosWidget.length > 0 && (
+            <MostReadWidget articles={masLeidosWidget} scope={{ type: 'global' }} />
+          )}
+        </aside>
+
+      </div>
     </div>
-  </section>
+  </div>
 
-  <style>
-    /* HOUSE-ADS-01 — Slot B in-feed wrapper (card footprint, centered). */
-    .bj-adslot-feed {
-      background: #fff;
-      padding: 8px 0 24px;
+  <!-- Rail content for mobile (below category stack) -->
+  <div class="bj-mobile-rail">
+    <div class="bj-container">
+      <div class="bj-mobile-rail__grid">
+        <StandingsWidget />
+        {masLeidosWidget.length > 0 && (
+          <MostReadWidget articles={masLeidosWidget} scope={{ type: 'global' }} />
+        )}
+      </div>
+    </div>
+  </div>
+
+  <!-- Newsletter — navy/gold, full bleed -->
+  <NewsletterBlock />
+
+</BaseLayout>
+
+<style>
+  /* ====================================================
+     Event Banner
+     ==================================================== */
+  .bj-event-banner {
+    display: block;
+    background: var(--red, #C8102E);
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+
+  .bj-event-banner:hover {
+    background: var(--red-dark, #9A0C23);
+  }
+
+  .bj-event-banner__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    min-height: 44px;
+  }
+
+  .bj-event-banner__left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .bj-event-banner__badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-family: var(--font-heading);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .bj-event-banner__name {
+    color: #fff;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bj-event-banner__city {
+    color: rgba(255, 255, 255, 0.65);
+    font-family: var(--font-body);
+    font-size: 12px;
+    flex-shrink: 0;
+    display: none;
+  }
+
+  @media (min-width: 640px) {
+    .bj-event-banner__city {
+      display: inline;
     }
+  }
 
-    @media (min-width: 768px) {
-      .bj-adslot-feed {
-        padding: 16px 32px 32px;
-      }
+  .bj-event-banner__cta {
+    color: rgba(255, 255, 255, 0.9);
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* ====================================================
+     Hero section
+     ==================================================== */
+  .bj-hero-section {
+    background: #fff;
+    padding: 32px 0 40px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-hero-section {
+      padding: 40px 0 48px;
     }
+  }
 
-    .bj-adslot-feed__container {
-      max-width: var(--w-page);
-      margin: 0 auto;
-      padding: 0 16px;
-      display: flex;
-      justify-content: center;
+  /* ====================================================
+     Below-fold: categories + rail
+     ==================================================== */
+  .bj-below-fold {
+    background: #fff;
+    padding: 40px 0 0;
+  }
+
+  @media (min-width: 768px) {
+    .bj-below-fold {
+      padding: 48px 0 0;
     }
+  }
 
-    @media (min-width: 768px) {
-      .bj-adslot-feed__container {
-        padding: 0;
-      }
+  .bj-below-fold__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .bj-below-fold__grid {
+      grid-template-columns: 1fr 300px;
+      gap: 48px;
+      align-items: start;
     }
+  }
 
-    .categories-stack {
-      background: #fff;
-      padding: 16px 0 48px;
+  /* Category stack — main column */
+  .bj-cat-main {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    padding-bottom: 56px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-cat-main {
+      gap: 56px;
+      padding-bottom: 72px;
     }
+  }
 
-    @media (min-width: 768px) {
-      .categories-stack {
-        padding: 24px 32px 72px;
-      }
-    }
+  /* Right rail — hidden mobile, sticky desktop */
+  .bj-right-rail {
+    display: none;
+  }
 
-    .categories-stack__container {
-      max-width: var(--w-page);
-      margin: 0 auto;
-      padding: 0 16px;
+  @media (min-width: 1024px) {
+    .bj-right-rail {
       display: flex;
       flex-direction: column;
-      gap: 40px;
+      gap: 24px;
+      position: sticky;
+      top: 24px;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      scrollbar-width: none;
+      padding-bottom: 56px;
     }
 
-    @media (min-width: 768px) {
-      .categories-stack__container {
-        padding: 0;
-        gap: 56px;
-      }
+    .bj-right-rail::-webkit-scrollbar {
+      display: none;
     }
-  </style>
-</BaseLayout>
+  }
+
+  .bj-right-rail__ad {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ====================================================
+     Mobile rail (below categories on small screens)
+     ==================================================== */
+  .bj-mobile-rail {
+    background: var(--surface-2, #F6F5F1);
+    padding: 32px 0 40px;
+    border-top: 1px solid var(--rule, rgba(27, 42, 74, 0.10));
+  }
+
+  @media (min-width: 1024px) {
+    .bj-mobile-rail {
+      display: none;
+    }
+  }
+
+  .bj-mobile-rail__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  @media (min-width: 640px) {
+    .bj-mobile-rail__grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+  }
+</style>

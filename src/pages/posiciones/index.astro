@@ -1,0 +1,199 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getLigas, getPosiciones, agruparPosiciones, type GrupoPosiciones } from '@/lib/supabase';
+
+// ISR (no prerender): re-fetches on Vercel every 60s so standings stay fresh
+// as the nightly sync updates them — no rebuild needed.
+
+const ligas = await getLigas();
+
+const bloques = await Promise.all(
+  ligas.map(async (liga) => {
+    const filas = await getPosiciones(liga.slug);
+    const grupos = agruparPosiciones(filas);
+    const lastUpdated = filas.reduce<string | null>(
+      (acc, f) => (!acc || f.updated_at > acc ? f.updated_at : acc),
+      null,
+    );
+    return { liga, grupos, lastUpdated };
+  }),
+);
+const conDatos = bloques.filter((b) => b.grupos.length > 0);
+const temporada = ligas.find((l) => l.temporada_actual)?.temporada_actual ?? '';
+
+function fmtFecha(iso: string | null): string {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+  } catch {
+    return '';
+  }
+}
+function rachaClass(r: string | null): string {
+  if (r?.startsWith('G')) return 'bg-emerald-50 text-emerald-700';
+  if (r?.startsWith('P')) return 'bg-red-50 text-rojo';
+  return 'text-[color:var(--ink-3)]';
+}
+// Build display blocks that insert a conference heading when it changes (MLB).
+function withConfBreaks(grupos: GrupoPosiciones[]) {
+  let prev: string | null | undefined;
+  return grupos.map((g) => {
+    const showConf = g.conferencia && g.conferencia !== prev;
+    prev = g.conferencia;
+    return { grupo: g, conferenciaHeading: showConf ? g.conferencia : null };
+  });
+}
+---
+
+<BaseLayout
+  title="Posiciones LMB y MLB — Beisjoven"
+  description="Tabla de posiciones de la Liga Mexicana de Béisbol (LMB) y las Grandes Ligas (MLB), temporada 2026. Récords, porcentaje de ganados y juegos detrás por división."
+>
+  <!-- Hero -->
+  <header class="bg-navy text-white relative overflow-hidden">
+    <div class="absolute inset-0 opacity-[0.07] ph--dark" aria-hidden="true"></div>
+    <div class="bj-container relative py-8 md:py-10">
+      <nav class="text-xs font-semibold text-white/55 mb-3" aria-label="Ruta">
+        <a href="/" class="hover:text-white transition-colors">Inicio</a>
+        <span class="mx-1.5">/</span>
+        <span class="text-white/80">Posiciones</span>
+      </nav>
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <span class="bj-kicker" style="--kicker: var(--gold)">Standings</span>
+          <h1 class="font-heading text-3xl md:text-4xl font-extrabold tracking-tight mt-1">Posiciones</h1>
+          <p class="text-white/65 mt-2 max-w-xl text-sm md:text-base">
+            Liga Mexicana de Béisbol y Grandes Ligas{temporada ? ` · Temporada ${temporada}` : ''}.
+          </p>
+        </div>
+      </div>
+
+      {conDatos.length > 0 && (
+        <div class="flex gap-2 mt-6" role="tablist" data-standings-page>
+          {conDatos.map((b, i) => (
+            <button
+              type="button"
+              role="tab"
+              data-liga-tab={b.liga.slug}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              class="px-4 py-2 rounded-full text-sm font-bold border border-white/20 text-white/65 transition-colors aria-selected:bg-gold aria-selected:text-navy aria-selected:border-gold hover:text-white aria-selected:hover:text-navy"
+            >
+              {b.liga.abreviatura}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  </header>
+
+  <div class="bj-container py-8 md:py-10">
+    {conDatos.length === 0 && (
+      <p class="text-center text-[color:var(--ink-2)] py-16">
+        Las posiciones estarán disponibles muy pronto.
+      </p>
+    )}
+
+    {conDatos.map((b, i) => (
+      <section data-liga-panel={b.liga.slug} class={i === 0 ? '' : 'hidden'}>
+        <div class="flex items-center justify-between flex-wrap gap-2 mb-5">
+          <h2 class="font-heading text-xl font-extrabold text-navy">{b.liga.nombre}</h2>
+          {b.lastUpdated && (
+            <span class="text-xs text-[color:var(--ink-3)]">
+              Actualizado: {fmtFecha(b.lastUpdated)}
+            </span>
+          )}
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          {withConfBreaks(b.grupos).map(({ grupo, conferenciaHeading }) => (
+            <>
+              {conferenciaHeading && (
+                <h3 class="md:col-span-2 font-heading text-sm font-extrabold uppercase tracking-wider text-[color:var(--ink-2)] mt-2 flex items-center gap-3">
+                  <span class="bj-rule" style="--kicker: var(--gold)"></span>
+                  Liga {conferenciaHeading}
+                </h3>
+              )}
+              <div class="bj-card">
+                <div class="px-4 py-3 border-b border-[color:var(--rule)] bg-[color:var(--surface-2)]">
+                  <span class="font-heading font-extrabold text-navy">
+                    {grupo.conferencia ? `División ${grupo.division}` : `Zona ${grupo.division}`}
+                  </span>
+                </div>
+                <div class="bj-scroll-x">
+                  <table class="w-full text-sm min-w-[460px]">
+                    <thead>
+                      <tr class="text-[10px] uppercase tracking-wider text-[color:var(--ink-3)] border-b border-[color:var(--rule)]">
+                        <th class="text-left font-bold py-2 pl-4 w-7">#</th>
+                        <th class="text-left font-bold py-2">Equipo</th>
+                        <th class="text-right font-bold py-2 tabular-nums">JJ</th>
+                        <th class="text-right font-bold py-2 tabular-nums">JG</th>
+                        <th class="text-right font-bold py-2 tabular-nums">JP</th>
+                        <th class="text-right font-bold py-2 tabular-nums">PCT</th>
+                        <th class="text-right font-bold py-2 tabular-nums">JD</th>
+                        <th class="text-right font-bold py-2 pr-4">Racha</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {grupo.equipos.map((p, idx) => (
+                        <tr class="border-b border-[color:var(--rule)] last:border-b-0 hover:bg-[color:var(--surface-2)] transition-colors">
+                          <td class="py-2.5 pl-4 text-[color:var(--ink-3)] font-semibold tabular-nums">{idx + 1}</td>
+                          <td class="py-2.5">
+                            <span class="flex items-center gap-2.5 min-w-0">
+                              <span class="w-1.5 h-5 rounded-sm flex-shrink-0" style={`background:${p.equipo?.color_primario || 'var(--navy)'}`}></span>
+                              <span class="font-bold text-navy truncate">{p.equipo?.nombre_corto || p.equipo?.nombre}</span>
+                              <span class="text-[color:var(--ink-3)] text-xs font-semibold flex-shrink-0">{p.equipo?.abreviatura}</span>
+                            </span>
+                          </td>
+                          <td class="py-2.5 text-right tabular-nums text-[color:var(--ink-2)]">{p.jj}</td>
+                          <td class="py-2.5 text-right tabular-nums font-semibold text-navy">{p.jg}</td>
+                          <td class="py-2.5 text-right tabular-nums text-[color:var(--ink-2)]">{p.jp}</td>
+                          <td class="py-2.5 text-right tabular-nums font-bold text-navy">{p.pct.toFixed(3).replace(/^0/, '')}</td>
+                          <td class="py-2.5 text-right tabular-nums text-[color:var(--ink-3)]">{p.gb}</td>
+                          <td class="py-2.5 pr-4 text-right">
+                            {p.racha && (
+                              <span class={`inline-block px-1.5 py-0.5 rounded text-xs font-bold tabular-nums ${rachaClass(p.racha)}`}>
+                                {p.racha}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          ))}
+        </div>
+      </section>
+    ))}
+
+    <!-- Legend -->
+    <p class="text-xs text-[color:var(--ink-3)] mt-6 leading-relaxed">
+      <strong class="text-[color:var(--ink-2)]">JJ</strong> juegos jugados ·
+      <strong class="text-[color:var(--ink-2)]">JG</strong> ganados ·
+      <strong class="text-[color:var(--ink-2)]">JP</strong> perdidos ·
+      <strong class="text-[color:var(--ink-2)]">PCT</strong> porcentaje ·
+      <strong class="text-[color:var(--ink-2)]">JD</strong> juegos detrás ·
+      <strong class="text-[color:var(--ink-2)]">Racha</strong> (G ganados / P perdidos).
+    </p>
+  </div>
+</BaseLayout>
+
+<script>
+  // League tab toggle + honor ?liga= on load.
+  const root = document.querySelector('[data-standings-page]');
+  if (root) {
+    const tabs = document.querySelectorAll('[data-liga-tab]');
+    const panels = document.querySelectorAll('[data-liga-panel]');
+    const select = (slug: string) => {
+      tabs.forEach((t) => t.setAttribute('aria-selected', String(t.getAttribute('data-liga-tab') === slug)));
+      panels.forEach((p) => p.classList.toggle('hidden', p.getAttribute('data-liga-panel') !== slug));
+    };
+    tabs.forEach((tab) =>
+      tab.addEventListener('click', () => select(tab.getAttribute('data-liga-tab') || '')),
+    );
+    const wanted = new URLSearchParams(location.search).get('liga');
+    if (wanted && document.querySelector(`[data-liga-panel="${wanted}"]`)) select(wanted);
+  }
+</script>

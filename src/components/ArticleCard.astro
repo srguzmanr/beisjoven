@@ -2,6 +2,7 @@
 import CategoryPill from './CategoryPill.astro';
 import ArticleMeta from '@/components/ArticleMeta.astro';
 import { formatCardDate } from '@/utils/formatDate.js';
+import { getCategoryAccent } from '@/lib/categoryAccents.js';
 import type { Articulo } from '@/lib/supabase';
 
 interface Props {
@@ -14,32 +15,42 @@ interface Props {
 const { article, size = 'default', showExcerpt = true, eager = false } = Astro.props;
 
 const href = `/articulo/${article.slug}`;
-const imgAlt = article.titulo;
+const imgAlt = article.imagen_portada_alt || article.titulo;
 const compactDate = article.fecha ? formatCardDate(article.fecha) : '';
+const accent = getCategoryAccent(article.categoria?.slug);
+const hasImg = !!article.imagen_url;
 ---
 
 {size === 'horizontal' ? (
   <!-- Horizontal Card -->
-  <article class="group flex gap-4 bg-white rounded-lg overflow-hidden border border-gris-border/60 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer">
-    <a href={href} class="block w-2/5 flex-shrink-0 overflow-hidden">
-      <img
-        src={article.imagen_url}
-        alt={imgAlt}
-        loading={eager ? 'eager' : 'lazy'}
-        class="w-full h-full object-cover aspect-[4/3] group-hover:scale-[1.03] transition-transform duration-300"
-      />
+  <article
+    class="group relative flex gap-4 bg-white rounded-xl overflow-hidden border border-[color:var(--rule)] shadow-sm transition-all duration-300 hover:shadow-[var(--shadow-hover)] hover:-translate-y-0.5"
+    style={`--accent:${accent}`}
+  >
+    <span class="absolute left-0 inset-y-0 w-1 z-10" style="background:var(--accent)"></span>
+    <a href={href} class="block w-2/5 flex-shrink-0 overflow-hidden" aria-label={article.titulo}>
+      {hasImg ? (
+        <img
+          src={article.imagen_url}
+          alt={imgAlt}
+          loading={eager ? 'eager' : 'lazy'}
+          class="w-full h-full object-cover aspect-[4/3] transition-transform duration-500 group-hover:scale-105"
+        />
+      ) : (
+        <div class="w-full h-full aspect-[4/3] ph"></div>
+      )}
     </a>
-    <div class="flex-1 py-3 pr-4">
+    <div class="flex-1 min-w-0 py-3 pr-4">
       {article.categoria && (
         <CategoryPill name={article.categoria.nombre} slug={article.categoria.slug} />
       )}
       <a href={href}>
-        <h3 class="font-bold text-[#111827] mt-1.5 mb-1 line-clamp-2 group-hover:text-rojo transition-colors duration-300 leading-snug">
+        <h3 class="font-heading font-bold text-navy mt-1.5 mb-1 line-clamp-2 leading-snug transition-colors duration-200 group-hover:text-rojo">
           {article.titulo}
         </h3>
       </a>
       {showExcerpt && article.extracto && (
-        <p class="text-sm text-[#6b7280] line-clamp-2 mb-2">{article.extracto}</p>
+        <p class="text-sm text-[color:var(--ink-2)] line-clamp-2 mb-2">{article.extracto}</p>
       )}
       <ArticleMeta
         fecha={article.fecha}
@@ -50,56 +61,71 @@ const compactDate = article.fecha ? formatCardDate(article.fecha) : '';
     </div>
   </article>
 ) : size === 'small' ? (
-  <!-- Small Card (sidebar) -->
-  <article class="group flex gap-3 cursor-pointer">
-    <a href={href} class="block w-20 h-20 flex-shrink-0 overflow-hidden rounded">
-      <img
-        src={article.imagen_url}
-        alt={imgAlt}
-        loading="lazy"
-        class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-      />
+  <!-- Small Card (sidebar / rail) -->
+  <article class="group flex gap-3">
+    <a href={href} class="block w-20 h-20 flex-shrink-0 overflow-hidden rounded-lg" aria-label={article.titulo}>
+      {hasImg ? (
+        <img
+          src={article.imagen_url}
+          alt={imgAlt}
+          loading="lazy"
+          class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      ) : (
+        <div class="w-full h-full ph"></div>
+      )}
     </a>
     <div class="flex-1 min-w-0">
+      <span class="block h-0.5 w-6 rounded mb-1.5" style={`background:${accent}`}></span>
       <a href={href}>
-        <h4 class="text-sm font-bold text-[#111827] line-clamp-2 group-hover:text-rojo transition-colors duration-300">
+        <h4 class="font-heading text-sm font-bold text-navy line-clamp-3 leading-snug transition-colors duration-200 group-hover:text-rojo">
           {article.titulo}
         </h4>
       </a>
-      <span class="text-xs text-[#9ca3af] mt-1 block">{compactDate}</span>
+      <span class="text-xs text-[color:var(--ink-3)] mt-1 block">{compactDate}</span>
     </div>
   </article>
 ) : (
   <!-- Default Card -->
-  <article class="group bg-white rounded-lg overflow-hidden border border-gris-border/60 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer">
-    <a href={href} class="block overflow-hidden">
+  <article
+    class="group relative flex flex-col bg-white rounded-xl overflow-hidden border border-[color:var(--rule)] shadow-sm transition-all duration-300 hover:shadow-[var(--shadow-hover)] hover:-translate-y-1"
+    style={`--accent:${accent}`}
+  >
+    <span class="absolute inset-x-0 top-0 h-1 z-10" style="background:var(--accent)"></span>
+    <a href={href} class="block overflow-hidden" aria-label={article.titulo}>
       <div class="aspect-[16/9] overflow-hidden">
-        <img
-          src={article.imagen_url}
-          alt={imgAlt}
-          loading={eager ? 'eager' : 'lazy'}
-          class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-        />
+        {hasImg ? (
+          <img
+            src={article.imagen_url}
+            alt={imgAlt}
+            loading={eager ? 'eager' : 'lazy'}
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div class="w-full h-full ph"></div>
+        )}
       </div>
     </a>
-    <div class="p-4">
+    <div class="flex flex-col flex-1 p-4">
       {article.categoria && (
         <CategoryPill name={article.categoria.nombre} slug={article.categoria.slug} />
       )}
       <a href={href}>
-        <h3 class="font-bold text-[#111827] mt-2 mb-1.5 line-clamp-2 group-hover:text-rojo transition-colors duration-300 leading-snug">
+        <h3 class="font-heading font-bold text-navy text-lg mt-2 mb-1.5 line-clamp-3 leading-snug transition-colors duration-200 group-hover:text-rojo">
           {article.titulo}
         </h3>
       </a>
       {showExcerpt && article.extracto && (
-        <p class="text-sm text-[#6b7280] line-clamp-2 mb-2">{article.extracto}</p>
+        <p class="text-sm text-[color:var(--ink-2)] line-clamp-2 mb-3">{article.extracto}</p>
       )}
-      <ArticleMeta
-        fecha={article.fecha}
-        autorNombre={article.autor?.nombre}
-        readMinutes={article.read_time_minutes}
-        variant="card"
-      />
+      <div class="mt-auto">
+        <ArticleMeta
+          fecha={article.fecha}
+          autorNombre={article.autor?.nombre}
+          readMinutes={article.read_time_minutes}
+          variant="card"
+        />
+      </div>
     </div>
   </article>
 )}

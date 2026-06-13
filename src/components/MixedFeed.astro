@@ -37,10 +37,11 @@ const hasVideos = videos.length > 0;
 ---
 
 <section class="bj-mixed-feed">
-  <div class="bj-mixed-feed__container">
+  <div class="bj-container">
     <div class="bj-mixed-feed__grid">
+      <!-- Main: "Lo último" -->
       <div class="bj-mixed-feed__main">
-        <SectionHead title="Lo último" />
+        <SectionHead title="Lo último" accent="var(--red)" />
         <div class="bj-mixed-feed__cards">
           {latest.map((story) => (
             <StoryCard story={story} size="md" />
@@ -48,10 +49,11 @@ const hasVideos = videos.length > 0;
         </div>
       </div>
 
+      <!-- Rail: Más leídos + Videos -->
       <aside class="bj-mixed-feed__rail">
         <div class="bj-mixed-feed__block">
-          <SectionHead title="Más leídos" />
-          <div>
+          <SectionHead title="Más leídos" accent="var(--navy)" />
+          <div class="bj-mixed-feed__list">
             {masLeidos.map((story, i) => (
               <ListCard story={story} rank={i + 1} />
             ))}
@@ -60,8 +62,8 @@ const hasVideos = videos.length > 0;
 
         {hasVideos && (
           <div class="bj-mixed-feed__block">
-            <SectionHead title="Videos" href="/videos" moreLabel="Ver más" />
-            <div>
+            <SectionHead title="Videos" href="/videos" moreLabel="Ver más" accent="var(--red)" />
+            <div class="bj-mixed-feed__list">
               {videos.map((video) => (
                 <VideoTile video={video} />
               ))}
@@ -75,38 +77,29 @@ const hasVideos = videos.length > 0;
 
 <style>
   .bj-mixed-feed {
-    background: #fff;
-    padding: 40px 0 8px;
+    background: var(--surface-2, #F6F5F1);
+    padding: 40px 0;
+    border-top: 1px solid var(--rule, rgba(27, 42, 74, 0.10));
+    border-bottom: 1px solid var(--rule, rgba(27, 42, 74, 0.10));
   }
 
   @media (min-width: 768px) {
     .bj-mixed-feed {
-      padding: 56px 32px 24px;
-    }
-  }
-
-  .bj-mixed-feed__container {
-    max-width: var(--w-page);
-    margin: 0 auto;
-    padding: 0 16px;
-  }
-
-  @media (min-width: 768px) {
-    .bj-mixed-feed__container {
-      padding: 0;
+      padding: 56px 0;
     }
   }
 
   .bj-mixed-feed__grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 32px;
+    gap: 40px;
   }
 
   @media (min-width: 1024px) {
     .bj-mixed-feed__grid {
       grid-template-columns: 1.55fr 1fr;
-      gap: 48px;
+      gap: 52px;
+      align-items: start;
     }
   }
 
@@ -116,16 +109,26 @@ const hasVideos = videos.length > 0;
     gap: 28px;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 640px) {
     .bj-mixed-feed__cards {
       grid-template-columns: 1fr 1fr;
-      gap: 32px;
+      gap: 28px;
     }
   }
 
   .bj-mixed-feed__rail {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 36px;
+  }
+
+  .bj-mixed-feed__block {
+    /* Each block is a self-contained unit */
+  }
+
+  .bj-mixed-feed__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
   }
 </style>

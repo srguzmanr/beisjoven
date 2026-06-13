@@ -10,6 +10,7 @@ import {
   getMasLeidosByCategoria,
 } from '@/lib/supabase';
 import { buildPage, parsePageParam } from '@/lib/pagination';
+import { getCategoryAccent, getCategoryLabel } from '@/lib/categoryAccents.js';
 
 const PAGE_SIZE = 20;
 const { slug } = Astro.params;
@@ -45,6 +46,8 @@ const categoryDescriptions: Record<string, string> = {
 
 const description = categoryDescriptions[slug!] || `Noticias y artículos de ${categoria.nombre} en Beisjoven.`;
 const categoryUrl = `https://beisjoven.com/categoria/${slug}`;
+const accent = getCategoryAccent(slug!);
+const kickerLabel = getCategoryLabel(slug!);
 
 const hasMore = !!page.url.next;
 ---
@@ -59,19 +62,24 @@ const hasMore = !!page.url.next;
     { text: categoria.nombre },
   ]} />
 
-  <div class="max-w-7xl mx-auto px-4 py-6">
-    <header class="mb-6">
-      <h1 class="text-2xl md:text-3xl font-bold text-navy uppercase tracking-wide">{categoria.nombre}</h1>
-      <p class="text-gris-text mt-1">{description}</p>
-    </header>
+  <!-- Category header band -->
+  <div class="archive-header" style={`--accent:${accent}`}>
+    <div class="bj-container">
+      <span class="bj-kicker mb-3" style={`--kicker:${accent}`}>{kickerLabel}</span>
+      <h1 class="font-heading text-h2 text-navy" style="font-weight:800;">{categoria.nombre}</h1>
+      <p class="archive-header__desc">{description}</p>
+    </div>
+  </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Articles Feed -->
-      <div class="lg:col-span-2">
+  <div class="bj-container py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-10 xl:gap-14 items-start">
+
+      <!-- Articles feed -->
+      <div>
         {page.data.length > 0 ? (
           <div
             id="articles-grid"
-            class="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-5"
             data-category-slug={slug}
             data-category-name={categoria.nombre}
             data-page-size={PAGE_SIZE}
@@ -84,32 +92,30 @@ const hasMore = !!page.url.next;
             ))}
           </div>
         ) : (
-          <p class="text-gris-text py-8 text-center">No hay artículos en esta categoría todavía.</p>
+          <p class="text-[color:var(--ink-3)] py-12 text-center font-body">No hay artículos en esta categoría todavía.</p>
         )}
 
         <!-- Load More / Pagination -->
-        <div id="load-more-container" class="mt-8 flex flex-col items-center gap-3">
+        <div id="load-more-container" class="mt-10 flex flex-col items-center gap-3">
           {hasMore ? (
             <Fragment>
               <button
                 id="load-more-btn"
                 type="button"
-                class="w-full sm:w-auto rounded-full font-semibold text-white transition-opacity hover:opacity-90"
-                style="background:var(--navy);font-family:var(--font-body);font-size:14px;padding:14px 28px;border:none;cursor:pointer"
+                class="archive-load-more-btn"
               >
                 Cargar más artículos
               </button>
               <a
                 id="next-page-link"
                 href={page.url.next}
-                class="text-gris-muted hover:text-navy hover:underline transition-colors"
-                style="font-family:var(--font-body);font-size:12px;font-weight:400"
+                class="archive-page-hint"
               >
                 Página {page.currentPage} de {page.lastPage} &middot; Ver siguiente página
               </a>
             </Fragment>
           ) : page.lastPage > 1 ? (
-            <p class="text-sm text-gris-muted text-center py-2">
+            <p class="text-sm text-[color:var(--ink-3)] text-center py-2 font-body">
               Has visto todos los artículos de {categoria.nombre}
             </p>
           ) : null}
@@ -117,9 +123,12 @@ const hasMore = !!page.url.next;
       </div>
 
       <!-- Sidebar -->
-      <aside class="space-y-6">
-        <MostReadWidget articles={masLeidos} scope={masLeidosScope} />
+      <aside class="archive-sidebar">
+        <div class="sticky top-24">
+          <MostReadWidget articles={masLeidos} scope={masLeidosScope} />
+        </div>
       </aside>
+
     </div>
   </div>
 
@@ -131,4 +140,72 @@ const hasMore = !!page.url.next;
   )}
 
   <BackToTop />
+
+  <style>
+    .archive-header {
+      padding-top: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .archive-header__desc {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--ink-2);
+      margin-top: 0.5rem;
+      max-width: 56ch;
+    }
+
+    .archive-load-more-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 2rem;
+      border-radius: var(--radius-pill);
+      background: var(--navy);
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      border: none;
+      cursor: pointer;
+      transition: background 0.18s, box-shadow 0.18s;
+      box-shadow: var(--shadow-sm);
+      width: 100%;
+      max-width: 20rem;
+    }
+    .archive-load-more-btn:hover {
+      background: var(--navy-700);
+      box-shadow: var(--shadow-md);
+    }
+    .archive-load-more-btn:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .archive-page-hint {
+      font-family: var(--font-body);
+      font-size: 0.8125rem;
+      color: var(--ink-3);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .archive-page-hint:hover {
+      color: var(--navy);
+      text-decoration: underline;
+    }
+
+    /* Sidebar: only show on lg+ */
+    .archive-sidebar {
+      display: none;
+    }
+    @media (min-width: 1024px) {
+      .archive-sidebar {
+        display: block;
+      }
+    }
+  </style>
 </BaseLayout>
