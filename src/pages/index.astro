@@ -2,7 +2,6 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HeroDefault from '@/components/HeroDefault.astro';
 import QuickHitsBar from '@/components/QuickHitsBar.astro';
-import SponsorReservation from '@/components/SponsorReservation.astro';
 import MixedFeed from '@/components/MixedFeed.astro';
 import JuvenilRail from '@/components/JuvenilRail.astro';
 import Gallery from '@/components/Gallery.astro';
@@ -191,8 +190,13 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
     </section>
   </div>
 
-  <!-- DESIGN-04b: Sponsor reservation + Mixed Feed -->
-  <SponsorReservation />
+  {/* LEADER-01 — homepage leaderboard: below hero, above mixed feed. */}
+  <section class="bj-leaderboard-zone">
+    <div class="bj-leaderboard-zone__container">
+      <AdSlot slotId="home-leaderboard" format="leaderboard" />
+    </div>
+  </section>
+
   <MixedFeed latest={latest} masLeidos={masLeidos} videos={videos} />
 
   {/* HOUSE-ADS-01 — Slot B: homepage in-feed, between blocks. */}
@@ -220,6 +224,31 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
   </section>
 
   <style>
+    /* LEADER-01 — leaderboard zone wrapper (max 970px, centered). At 375px the
+       16px side padding leaves 343px → the 320×50 box centers, no overflow. */
+    .bj-leaderboard-zone {
+      background: #fff;
+      padding: 8px 0 24px;
+    }
+
+    @media (min-width: 768px) {
+      .bj-leaderboard-zone {
+        padding: 16px 32px 32px;
+      }
+    }
+
+    .bj-leaderboard-zone__container {
+      max-width: 970px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    @media (min-width: 768px) {
+      .bj-leaderboard-zone__container {
+        padding: 0;
+      }
+    }
+
     /* HOUSE-ADS-01 — Slot B in-feed wrapper (card footprint, centered). */
     .bj-adslot-feed {
       background: #fff;
