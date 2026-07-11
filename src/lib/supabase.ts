@@ -707,6 +707,9 @@ export type AnuncioTipo = 'propia' | 'aliado' | 'casa' | 'placeholder';
 export interface Anuncio {
   id: string;
   imagen_url: string | null;
+  /** LEADER-01 art direction (<768px). Optional: column exists only after the
+      20260710_leader_01 migration runs; select('*') omits it before that. */
+  imagen_url_mobile?: string | null;
   alt_text: string;
   target_url: string | null;
   slot_id: string;

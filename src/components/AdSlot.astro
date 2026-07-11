@@ -9,17 +9,22 @@
 import { getAnunciosBySlot, type Anuncio, type AnuncioTipo } from '@/lib/supabase';
 
 interface Props {
-  /** 'slot-a' (in-article) | 'slot-b' (homepage feed) | 'slot-c' (end-of-article, Phase 2). */
+  /** 'slot-a' (in-article) | 'slot-b' (homepage feed) | 'slot-c' (end-of-article, Phase 2)
+      | 'home-leaderboard' (LEADER-01). */
   slotId: string;
-  /** false = pre-architected inactive render for Phase 2 (Slot C). No fetch, no GA4. */
+  /** false = pre-architected inactive render for Phase 2 (Slot C). No fetch, no GA4.
+      mpu-only: the leaderboard branch always renders active. */
   active?: boolean;
-  /** Layout footprint: 'prose' (Slot A) or 'card' (Slot B). Cosmetic only. */
+  /** Layout footprint: 'prose' (Slot A) or 'card' (Slot B). Cosmetic only. mpu-only. */
   variant?: 'prose' | 'card';
+  /** Ad format: 'mpu' 300×250 (Slots A/B/C, default) | 'leaderboard' responsive
+      970×90 desktop / 320×50 mobile (LEADER-01). */
+  format?: 'mpu' | 'leaderboard';
   /** UI language for the disclosure label. Site default is ES. */
   lang?: 'es' | 'en';
 }
 
-const { slotId, active = true, variant = 'card', lang = 'es' } = Astro.props;
+const { slotId, active = true, variant = 'card', format = 'mpu', lang = 'es' } = Astro.props;
 
 // --- Disclosure labels — CLOSED by Legal. Do NOT add cases. ---
 // casa        → "De Beisjoven" / "By Beisjoven"
@@ -46,7 +51,10 @@ if (active) {
   const real = anuncios.filter((a) => a.tipo !== 'placeholder');
   const pool = real.length > 0 ? real : anuncios;
   if (pool.length > 0) {
-    chosen = pool[Math.floor(Math.random() * pool.length)];
+    // Leaderboard: deterministic — lowest prioridad wins (pool is prioridad asc).
+    chosen = format === 'leaderboard'
+      ? pool[0]
+      : pool[Math.floor(Math.random() * pool.length)];
   }
 }
 
@@ -54,13 +62,61 @@ if (active) {
 // back to the branded "Tu marca aquí" placeholder frame.
 const hasCreative = !!(chosen && chosen.imagen_url && chosen.target_url);
 const tipo: AnuncioTipo = hasCreative ? chosen!.tipo : 'placeholder';
-const label = labelFor(tipo, lang);
+// LEADER-01: the leaderboard placeholder is non-promotional ("Espacio
+// publicitario", no CTA), so it carries the generic disclosure — identical to
+// the label a real creative will show. labelFor()'s closed list is untouched.
+const label = format === 'leaderboard' && !hasCreative
+  ? (lang === 'en' ? 'Advertisement' : 'Publicidad')
+  : labelFor(tipo, lang);
 const anunciante = hasCreative ? chosen!.marca ?? chosen!.tipo : 'placeholder';
 const href = hasCreative ? chosen!.target_url! : COMMERCIAL_HREF;
 const isExternal = href.startsWith('http');
+// Leaderboard art direction: mobile creative falls back to the desktop asset
+// (letterboxed via object-fit: contain) until imagen_url_mobile is set.
+const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
 ---
 
-{active ? (
+{format === 'leaderboard' ? (
+  /* LEADER-01 — responsive leaderboard: 970×90 ≥768px / 320×50 <768px.
+     Always active; height reserved in CSS (aspect-ratio) so CLS = 0. */
+  <aside
+    class="bj-adslot bj-adslot--leaderboard"
+    aria-label={label}
+    data-ad-slot={slotId}
+    data-ad-active="true"
+    data-ad-tipo={tipo}
+    data-ad-anunciante={anunciante}
+  >
+    <span class="bj-adslot__label bj-adslot__label--lb">{label}</span>
+    {hasCreative ? (
+      <a
+        class="bj-lb__frame"
+        href={href}
+        data-ad-cta
+        target="_blank"
+        rel="sponsored noopener"
+      >
+        <picture class="bj-lb__picture">
+          <source media="(min-width: 768px)" srcset={chosen!.imagen_url!} width="970" height="90" />
+          <img
+            class="bj-lb__img"
+            src={mobileSrc}
+            alt={chosen!.alt_text}
+            width="320"
+            height="50"
+            loading="eager"
+            decoding="async"
+          />
+        </picture>
+      </a>
+    ) : (
+      <div class="bj-lb__frame bj-lb__frame--ph">
+        <span class="bj-lb__ph bj-lb__ph--mobile">Espacio publicitario · 320 × 50</span>
+        <span class="bj-lb__ph bj-lb__ph--desktop">Espacio publicitario · 970 × 90</span>
+      </div>
+    )}
+  </aside>
+) : active ? (
   <aside
     class:list={['bj-adslot', `bj-adslot--${variant}`]}
     aria-label={label}
@@ -209,6 +265,75 @@ const isExternal = href.startsWith('http');
 
   .bj-adslot__frame--inactive .bj-adslot__ph-sub {
     color: var(--muted, #6B7280);
+  }
+
+  /* --- LEADER-01 — leaderboard format (970×90 / 320×50) ------------------- */
+  /* The frame reserves its box via width + aspect-ratio per breakpoint, so
+     height is CSS-determined before any image byte arrives → CLS = 0. */
+  .bj-adslot__label--lb {
+    max-width: 320px;
+  }
+
+  .bj-lb__frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 320px;
+    max-width: 100%;
+    aspect-ratio: 320 / 50;
+    border: 1px solid var(--rule, rgba(27, 42, 74, 0.10));
+    background: var(--bg-2, #F6F5F1);
+    overflow: hidden;
+    text-decoration: none;
+  }
+
+  .bj-lb__picture {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .bj-lb__img {
+    width: 100%;
+    height: 100%;
+    /* contain, not cover: a 970×90 asset serving as mobile fallback would
+       lose ~40% of its width to cropping; letterboxing keeps it legible. */
+    object-fit: contain;
+    display: block;
+  }
+
+  .bj-lb__ph {
+    font-family: var(--font-body, system-ui, sans-serif);
+    font-size: 12px;
+    line-height: 1.2;
+    text-align: center;
+    /* navy @ 60% */
+    color: rgba(27, 42, 74, 0.6);
+  }
+
+  .bj-lb__ph--desktop {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .bj-adslot__label--lb {
+      max-width: 970px;
+    }
+
+    /* 768–1010px viewports: max-width:100% shrinks the box, aspect-ratio
+       scales the height proportionally — still zero shift. */
+    .bj-lb__frame {
+      width: 970px;
+      aspect-ratio: 970 / 90;
+    }
+
+    .bj-lb__ph--mobile {
+      display: none;
+    }
+
+    .bj-lb__ph--desktop {
+      display: inline;
+    }
   }
 </style>
 
