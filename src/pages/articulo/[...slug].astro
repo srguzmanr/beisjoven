@@ -17,6 +17,7 @@ import {
 } from '@/lib/supabase';
 import { renderContent } from '@/lib/content';
 import { ensureOgImage } from '@/lib/og-image-generator';
+import { SITE_URL } from '@/lib/site';
 
 const { slug } = Astro.params;
 const articulo = await getArticuloBySlug(slug!);
@@ -42,7 +43,7 @@ const masLeidosScope = {
   categorySlug: articulo.categoria.slug,
   categoryDisplayName: articulo.categoria.nombre,
 };
-const articleUrl = `https://beisjoven.com/articulo/${articulo.slug}`;
+const articleUrl = `${SITE_URL}/articulo/${articulo.slug}`;
 const renderedBody = renderContent(articulo.contenido);
 
 // ADS-STD-01 — Slot A: mid-article, anchored right after the 3rd top-level
@@ -70,12 +71,12 @@ const breadcrumbJsonLd = {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
   "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://beisjoven.com/" },
+    { "@type": "ListItem", "position": 1, "name": "Inicio", "item": `${SITE_URL}/` },
     {
       "@type": "ListItem",
       "position": 2,
       "name": articulo.categoria?.nombre || 'Noticias',
-      "item": `https://beisjoven.com/categoria/${articulo.categoria?.slug || ''}`,
+      "item": `${SITE_URL}/categoria/${articulo.categoria?.slug || ''}`,
     },
     { "@type": "ListItem", "position": 3, "name": articulo.titulo },
   ],
@@ -93,14 +94,14 @@ const articleJsonLd = {
   "author": {
     "@type": "Person",
     "name": articulo.autor?.nombre || 'Redacción Beisjoven',
-    "url": `https://beisjoven.com/autor/${articulo.autor?.slug || 'redaccion'}`,
+    "url": `${SITE_URL}/autor/${articulo.autor?.slug || 'redaccion'}`,
   },
   "publisher": {
     "@type": "Organization",
     "name": "Beisjoven",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://beisjoven.com/brand/logo-lockup.png",
+      "url": `${SITE_URL}/brand/logo-lockup.png`,
     },
   },
   "mainEntityOfPage": { "@type": "WebPage", "@id": articleUrl },

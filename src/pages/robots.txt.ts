@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { SITE_URL } from '@/lib/site';
 
 export const prerender = true;
 
@@ -10,7 +11,7 @@ Disallow: /admin/
 Disallow: /login
 Disallow: /buscar
 
-Sitemap: https://beisjoven.com/sitemap.xml`;
+Sitemap: ${SITE_URL}/sitemap.xml`;
 
   return new Response(body, {
     headers: { 'Content-Type': 'text/plain' },

@@ -8,6 +8,7 @@ import {
   getArticulosByEvento,
 } from '@/lib/supabase';
 import { formatDate } from '@/lib/content';
+import { SITE_URL } from '@/lib/site';
 
 const { slug } = Astro.params;
 const evento = await getEventoBySlug(slug!);
@@ -17,7 +18,7 @@ if (!evento) {
 }
 
 const articulos = await getArticulosByEvento(evento.id);
-const eventUrl = `https://beisjoven.com/evento/${evento.slug}`;
+const eventUrl = `${SITE_URL}/evento/${evento.slug}`;
 
 const fechaInicio = formatDate(evento.fecha_inicio);
 const fechaFin = evento.fecha_fin ? formatDate(evento.fecha_fin) : null;

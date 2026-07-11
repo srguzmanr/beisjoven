@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import BackToTop from '@/components/BackToTop.astro';
 import { supabase, supabaseServer } from '@/lib/supabase';
+import { SITE_URL } from '@/lib/site';
 
 interface PhotoRow {
   nombre: string;
@@ -40,7 +41,7 @@ const remainingJson = JSON.stringify(remainingPhotos)
 
 const pageTitle = 'Galería - Beisjoven';
 const description = 'Fotografía editorial Beisjoven: béisbol y softbol mexicano en imágenes.';
-const galeriaUrl = 'https://beisjoven.com/galeria';
+const galeriaUrl = `${SITE_URL}/galeria`;
 ---
 
 <BaseLayout title={pageTitle} description={description} url={galeriaUrl}>

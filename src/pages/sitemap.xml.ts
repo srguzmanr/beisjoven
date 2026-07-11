@@ -8,8 +8,9 @@ import {
   getTags,
   getAllArticulosByTag,
 } from '@/lib/supabase';
+import { SITE_URL } from '@/lib/site';
 
-const SITE = 'https://beisjoven.com';
+const SITE = SITE_URL;
 const PAGE_SIZE = 20;
 
 function escapeXml(str: string): string {
