@@ -190,19 +190,21 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
     </section>
   </div>
 
-  {/* LEADER-01 — homepage leaderboard: below hero, above mixed feed. */}
+  {/* LEADER-01 — homepage leaderboard: below hero, above mixed feed.
+      ADS-GOLIVE-PREP-01: slot id frozen as 'home-top'. */}
   <section class="bj-leaderboard-zone">
     <div class="bj-leaderboard-zone__container">
-      <AdSlot slotId="home-leaderboard" format="leaderboard" />
+      <AdSlot slotId="home-top" format="leaderboard" />
     </div>
   </section>
 
   <MixedFeed latest={latest} masLeidos={masLeidos} videos={videos} />
 
-  {/* HOUSE-ADS-01 — Slot B: homepage in-feed, between blocks. */}
+  {/* HOUSE-ADS-01 — homepage in-feed, between blocks.
+      ADS-GOLIVE-PREP-01: slot id frozen as 'home-mid' (ex slot-b). */}
   <section class="bj-adslot-feed">
     <div class="bj-adslot-feed__container">
-      <AdSlot slotId="slot-b" variant="card" />
+      <AdSlot slotId="home-mid" variant="card" />
     </div>
   </section>
 
