@@ -45,18 +45,18 @@ const masLeidosScope = {
 const articleUrl = `https://beisjoven.com/articulo/${articulo.slug}`;
 const renderedBody = renderContent(articulo.contenido);
 
-// HOUSE-ADS-01 — Slot A: split the body at a natural break (~mid-article)
-// so the in-article ad sits between top-level paragraphs. Short articles
-// (fewer than 4 paragraphs) render uninterrupted — no mid-slot.
-function splitAtMidParagraph(html: string): [string, string] {
+// ADS-STD-01 — Slot A: mid-article, anchored right after the 3rd top-level
+// paragraph (placement standard: after the 3rd–4th paragraph). Articles with
+// fewer than 4 paragraphs render uninterrupted — no mid-slot — so at least
+// one paragraph always follows the ad.
+function splitAfterParagraph(html: string, n: number): [string, string] {
   const parts = html.split('</p>');
-  if (parts.length < 4) return [html, ''];
-  const mid = Math.floor(parts.length / 2);
-  const first = parts.slice(0, mid).join('</p>') + '</p>';
-  const second = parts.slice(mid).join('</p>');
+  if (parts.length < n + 2) return [html, ''];
+  const first = parts.slice(0, n).join('</p>') + '</p>';
+  const second = parts.slice(n).join('</p>');
   return [first, second];
 }
-const [bodyFirst, bodySecond] = splitAtMidParagraph(renderedBody);
+const [bodyFirst, bodySecond] = splitAfterParagraph(renderedBody, 3);
 
 // Detect which embed scripts are needed at build time
 const needsTwitterScript = renderedBody.includes('class="twitter-embed"')
