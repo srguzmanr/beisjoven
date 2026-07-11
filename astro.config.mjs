@@ -15,10 +15,10 @@ export default defineConfig({
       // Re-generate a cached page at most once per this many seconds.
       expiration: 60,
       // Always render fresh (never ISR-cached): per-query search results and
-      // the ad-tracking beacon endpoint (ADS-TRACK-01) — POSTs are never
-      // cacheable, but keeping it out of the ISR function avoids the
-      // adapter's ISR request semantics entirely.
-      exclude: ['/buscar', '/api/ad-event'],
+      // the POST API endpoints (ADS-TRACK-01/02) — Vercel's ISR/prerender
+      // functions only serve GET/HEAD, so POST routes must stay out of the
+      // ISR function entirely.
+      exclude: ['/buscar', '/api/ad-event', '/api/notify-historia'],
     },
   }),
   integrations: [],

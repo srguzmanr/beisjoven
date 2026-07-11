@@ -3,12 +3,26 @@
 // anon/authenticated INSERT policies (SEC-06 doctrine). The endpoint is
 // intentionally silent: malformed payloads, rate-limited callers and insert
 // failures all answer 204 — a tracking beacon must never surface a 500 to the
-// page. Failures are logged server-side instead.
+// page. Failures are logged server-side instead. Non-POST methods → 405
+// (ADS-TRACK-02; without ALL, Astro would answer 404 for them).
 import type { APIRoute } from 'astro';
 import { supabaseServer } from '@/lib/supabase';
 import { validateAdEvent } from '@/lib/ad-event-validator.js';
 
+export const prerender = false;
+
 const MAX_BODY_BYTES = 2048;
+
+// ADS-TRACK-02 — the insert only works with the service role. When the key is
+// missing, supabaseServer silently falls back to the anon client and every
+// insert dies in RLS with a misleading error; refuse loudly instead so the
+// misconfiguration is unmissable in Vercel logs. Evaluated at Vite build time
+// (inlined), same as the supabaseServer client itself — a key added in Vercel
+// only takes effect on the next deploy, which is Vercel's env semantics anyway.
+const serviceKeyPresent = Boolean(import.meta.env.SUPABASE_SERVICE_ROLE_KEY);
+if (!serviceKeyPresent) {
+  console.error('[ad-event] SUPABASE_SERVICE_ROLE_KEY is not set — events will be dropped');
+}
 
 // Soft per-IP rate limit (~60/min, fixed window), in-memory per warm serverless
 // instance. A mitigation against runaway clients, not a security control: each
@@ -52,6 +66,8 @@ export const POST: APIRoute = async ({ request }) => {
     const payload = validateAdEvent(raw);
     if (!payload) return noContent();
 
+    if (!serviceKeyPresent) return noContent();
+
     const ua = request.headers.get('user-agent') ?? '';
     const { error } = await supabaseServer.from('ad_eventos').insert({
       slot_id: payload.slot_id,
@@ -66,3 +82,6 @@ export const POST: APIRoute = async ({ request }) => {
   }
   return noContent();
 };
+
+export const ALL: APIRoute = () =>
+  new Response(null, { status: 405, headers: { Allow: 'POST' } });
