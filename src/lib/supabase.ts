@@ -724,7 +724,7 @@ export interface Anuncio {
 /**
  * Active creatives for a slot, ordered by occupancy priority (lower first).
  * AdSlot uses this to rotate; an empty result is fine — AdSlot falls back to
- * the hardcoded "Tu marca aquí" placeholder so the slot never collapses.
+ * the hardcoded "Espacio publicitario" placeholder so the slot never collapses.
  */
 export async function getAnunciosBySlot(slotId: string): Promise<Anuncio[]> {
   const { data, error } = await supabaseServer

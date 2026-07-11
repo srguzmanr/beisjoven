@@ -27,49 +27,43 @@ interface Props {
 const { slotId, active = true, variant = 'card', format = 'mpu', lang = 'es' } = Astro.props;
 
 // --- Disclosure labels — CLOSED by Legal. Do NOT add cases. ---
-// casa        → "De Beisjoven" / "By Beisjoven"
-// placeholder → "Publicidad — Tu marca aquí" / "Advertisement — Your brand here"
-// everything else (propia | aliado) → "Publicidad" / "Advertisement"
+// casa → "De Beisjoven" / "By Beisjoven"
+// everything else (propia | aliado | placeholder) → "Publicidad" / "Advertisement"
 function labelFor(tipo: AnuncioTipo, l: 'es' | 'en'): string {
   if (tipo === 'casa') return l === 'en' ? 'By Beisjoven' : 'De Beisjoven';
-  if (tipo === 'placeholder') {
-    return l === 'en' ? 'Advertisement — Your brand here' : 'Publicidad — Tu marca aquí';
-  }
   return l === 'en' ? 'Advertisement' : 'Publicidad';
 }
 
-// Commercial stopgap until /publicidad exists.
-const COMMERCIAL_HREF = 'mailto:contacto@beisjoven.com?subject=Publicidad%20en%20Beisjoven';
-const PLACEHOLDER_CTA = lang === 'en' ? 'Your brand here' : 'Tu marca aquí';
+// ADS-STD-01 — placeholder pattern (LEADER-01): non-promotional,
+// dimensions-only copy. Same string in ES and EN, like the leaderboard.
+const MPU_PH_TEXT = 'Espacio publicitario · 300 × 250';
 
 // --- Select the creative to serve -------------------------------------------
-// Rotate among active non-placeholder creatives; the placeholder is the
-// last resort (anti-collapse) and only serves when nothing real is active.
+// ADS-STD-01 waterfall: paid (propia/aliado) > casa > placeholder. Only
+// servable creatives (image + destination) compete; the highest non-empty
+// tier wins. MPU rotates randomly ONLY within the winning tier; leaderboard
+// stays deterministic — lowest prioridad in the tier (pool keeps the
+// prioridad-asc order from getAnunciosBySlot).
 let chosen: Anuncio | null = null;
 if (active) {
   const anuncios = await getAnunciosBySlot(slotId);
-  const real = anuncios.filter((a) => a.tipo !== 'placeholder');
-  const pool = real.length > 0 ? real : anuncios;
-  if (pool.length > 0) {
-    // Leaderboard: deterministic — lowest prioridad wins (pool is prioridad asc).
+  const servable = anuncios.filter((a) => a.imagen_url && a.target_url);
+  const tiers: AnuncioTipo[][] = [['propia', 'aliado'], ['casa'], ['placeholder']];
+  const pool = tiers
+    .map((tier) => servable.filter((a) => tier.includes(a.tipo)))
+    .find((p) => p.length > 0);
+  if (pool) {
     chosen = format === 'leaderboard'
       ? pool[0]
       : pool[Math.floor(Math.random() * pool.length)];
   }
 }
 
-// A served creative needs both an image and a destination; otherwise we fall
-// back to the branded "Tu marca aquí" placeholder frame.
-const hasCreative = !!(chosen && chosen.imagen_url && chosen.target_url);
+const hasCreative = chosen !== null;
 const tipo: AnuncioTipo = hasCreative ? chosen!.tipo : 'placeholder';
-// LEADER-01: the leaderboard placeholder is non-promotional ("Espacio
-// publicitario", no CTA), so it carries the generic disclosure — identical to
-// the label a real creative will show. labelFor()'s closed list is untouched.
-const label = format === 'leaderboard' && !hasCreative
-  ? (lang === 'en' ? 'Advertisement' : 'Publicidad')
-  : labelFor(tipo, lang);
+const label = labelFor(tipo, lang);
 const anunciante = hasCreative ? chosen!.marca ?? chosen!.tipo : 'placeholder';
-const href = hasCreative ? chosen!.target_url! : COMMERCIAL_HREF;
+const href = hasCreative ? chosen!.target_url! : '';
 const isExternal = href.startsWith('http');
 // Leaderboard art direction: mobile creative falls back to the desktop asset
 // (letterboxed via object-fit: contain) until imagen_url_mobile is set.
@@ -126,13 +120,13 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     data-ad-anunciante={anunciante}
   >
     <span class="bj-adslot__label">{label}</span>
-    <a
-      class="bj-adslot__frame"
-      href={href}
-      data-ad-cta
-      {...isExternal ? { target: '_blank', rel: 'noopener sponsored' } : {}}
-    >
-      {hasCreative ? (
+    {hasCreative ? (
+      <a
+        class="bj-adslot__frame"
+        href={href}
+        data-ad-cta
+        {...isExternal ? { target: '_blank', rel: 'noopener sponsored' } : {}}
+      >
         <img
           class="bj-adslot__img"
           src={chosen!.imagen_url!}
@@ -142,13 +136,12 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
           loading="lazy"
           decoding="async"
         />
-      ) : (
-        <span class="bj-adslot__placeholder">
-          <span class="bj-adslot__ph-cta">{PLACEHOLDER_CTA}</span>
-          <span class="bj-adslot__ph-sub">{lang === 'en' ? 'Advertise on Beisjoven' : 'Anúnciate en Beisjoven'}</span>
-        </span>
-      )}
-    </a>
+      </a>
+    ) : (
+      <div class="bj-adslot__frame bj-adslot__frame--ph">
+        <span class="bj-adslot__ph">{MPU_PH_TEXT}</span>
+      </div>
+    )}
   </aside>
 ) : (
   /* Slot C — pre-architected INACTIVE render for Phase 2. Visible, reserved,
@@ -160,11 +153,8 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     data-ad-active="false"
   >
     <span class="bj-adslot__label">{label}</span>
-    <div class="bj-adslot__frame bj-adslot__frame--inactive">
-      <span class="bj-adslot__placeholder">
-        <span class="bj-adslot__ph-cta">{PLACEHOLDER_CTA}</span>
-        <span class="bj-adslot__ph-sub">{lang === 'en' ? 'Coming soon' : 'Próximamente'}</span>
-      </span>
+    <div class="bj-adslot__frame bj-adslot__frame--ph">
+      <span class="bj-adslot__ph">{MPU_PH_TEXT}</span>
     </div>
   </aside>
 )}
@@ -184,8 +174,10 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     max-width: var(--max-width-prose, 42rem);
   }
 
+  /* ADS-STD-01 — label sits directly above the unit, flush with the unit's
+     left edge: same 300px cap as the frame, centered together in the column
+     (align-items: center), text left-aligned. */
   .bj-adslot__label {
-    align-self: stretch;
     text-align: left;
     font-family: var(--font-body, system-ui, sans-serif);
     font-size: 11px;
@@ -219,52 +211,20 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     display: block;
   }
 
-  /* Branded "Tu marca aquí" placeholder (navy, neutral). */
-  .bj-adslot__placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    width: 100%;
-    height: 100%;
-    /* ≥44px touch target guaranteed by the 250px-tall frame. */
-    padding: 12px;
-    text-align: center;
-    background: var(--navy, #1B2A4A);
+  /* ADS-STD-01 — MPU placeholder, LEADER-01 pattern: neutral box, 1px
+     var(--rule) border, centered dimensions-only copy in navy @ 60%. */
+  .bj-adslot__frame--ph {
+    border-color: var(--rule, rgba(27, 42, 74, 0.10));
   }
 
-  .bj-adslot__ph-cta {
-    font-family: var(--font-heading, system-ui, sans-serif);
-    font-weight: 700;
-    font-size: 17px;
-    line-height: 1.2;
-    color: #fff;
-  }
-
-  .bj-adslot__ph-sub {
+  .bj-adslot__ph {
     font-family: var(--font-body, system-ui, sans-serif);
     font-size: 12px;
-    line-height: 1.3;
-    color: var(--gold, #D4A843);
-  }
-
-  /* Inactive (Slot C / Phase 2): visibly reserved, muted, non-interactive. */
-  .bj-adslot__frame--inactive {
-    cursor: default;
-    border-style: dashed;
-  }
-
-  .bj-adslot__frame--inactive .bj-adslot__placeholder {
-    background: var(--bg-2, #F6F5F1);
-  }
-
-  .bj-adslot__frame--inactive .bj-adslot__ph-cta {
-    color: var(--navy, #1B2A4A);
-  }
-
-  .bj-adslot__frame--inactive .bj-adslot__ph-sub {
-    color: var(--muted, #6B7280);
+    line-height: 1.2;
+    text-align: center;
+    padding: 12px;
+    /* navy @ 60% */
+    color: rgba(27, 42, 74, 0.6);
   }
 
   /* --- LEADER-01 — leaderboard format (970×90 / 320×50) ------------------- */
