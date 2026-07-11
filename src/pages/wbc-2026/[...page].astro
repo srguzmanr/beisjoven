@@ -5,6 +5,7 @@ import ArticleCard from '@/components/ArticleCard.astro';
 import MostReadWidget from '@/components/MostReadWidget.astro';
 import { getArticulosWbc2026Paginados, getMasLeidos } from '@/lib/supabase';
 import { buildPage, parsePageParam } from '@/lib/pagination';
+import { SITE_URL } from '@/lib/site';
 
 const PAGE_SIZE = 20;
 
@@ -26,7 +27,7 @@ const description = 'Cobertura completa del World Baseball Classic 2026. Noticia
 <BaseLayout
   title={title}
   description={description}
-  url="https://beisjoven.com/wbc-2026"
+  url={`${SITE_URL}/wbc-2026`}
 >
   <Breadcrumb items={[
     { text: 'Inicio', href: '/' },

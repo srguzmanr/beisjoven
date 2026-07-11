@@ -9,6 +9,7 @@ import {
   getMasLeidos,
 } from '@/lib/supabase';
 import { buildPage, parsePageParam } from '@/lib/pagination';
+import { SITE_URL } from '@/lib/site';
 
 const PAGE_SIZE = 20;
 const { slug } = Astro.params;
@@ -28,7 +29,7 @@ const page = buildPage(articulos, total, currentPage, PAGE_SIZE, `/tag/${slug}`)
 if (currentPage > page.lastPage) return Astro.redirect('/404');
 
 const description = `Artículos etiquetados con "${tag.nombre}" en Beisjoven. Béisbol y softbol mexicano.`;
-const tagUrl = `https://beisjoven.com/tag/${slug}`;
+const tagUrl = `${SITE_URL}/tag/${slug}`;
 ---
 
 <BaseLayout

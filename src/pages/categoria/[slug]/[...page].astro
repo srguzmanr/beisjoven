@@ -10,6 +10,7 @@ import {
   getMasLeidosByCategoria,
 } from '@/lib/supabase';
 import { buildPage, parsePageParam } from '@/lib/pagination';
+import { SITE_URL } from '@/lib/site';
 
 const PAGE_SIZE = 20;
 const { slug } = Astro.params;
@@ -44,7 +45,7 @@ const categoryDescriptions: Record<string, string> = {
 };
 
 const description = categoryDescriptions[slug!] || `Noticias y artículos de ${categoria.nombre} en Beisjoven.`;
-const categoryUrl = `https://beisjoven.com/categoria/${slug}`;
+const categoryUrl = `${SITE_URL}/categoria/${slug}`;
 
 const hasMore = !!page.url.next;
 ---

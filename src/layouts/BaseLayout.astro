@@ -1,6 +1,7 @@
 ---
 import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
+import { SITE_URL } from '@/lib/site';
 import '@/styles/global.css';
 
 interface Props {
@@ -21,7 +22,9 @@ const {
   title = 'Beisjoven - La Revista Digital de Béisbol y Softbol Mexicano',
   description = 'Cobertura editorial del béisbol y softbol mexicano. MLB, LMB, LMP, Selección México, Softbol y más.',
   image = 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-image.jpg',
-  url = Astro.url.href,
+  // SEO-01: never default to Astro.url.href — in SSR it reflects the incoming
+  // request host (localhost on Vercel). Only the path is request-derived.
+  url = new URL(Astro.url.pathname, SITE_URL).href,
   type = 'website',
   publishedTime,
   modifiedTime,
@@ -31,19 +34,19 @@ const {
   noIndex = false,
 } = Astro.props;
 
-const canonicalUrl = url.replace(/\/$/, '') || 'https://beisjoven.com';
+const canonicalUrl = url.replace(/\/$/, '') || SITE_URL;
 
 // Ensure og:image is always an absolute URL (WhatsApp requires this)
-const ogImage = image.startsWith('http') ? image : `https://beisjoven.com${image}`;
+const ogImage = image.startsWith('http') ? image : `${SITE_URL}${image}`;
 
 // Organization JSON-LD (always present)
 const orgJsonLd = {
   "@context": "https://schema.org",
   "@type": "NewsMediaOrganization",
   "name": "Beisjoven",
-  "url": "https://beisjoven.com",
+  "url": SITE_URL,
   "description": "La revista digital de referencia para el béisbol y softbol mexicano.",
-  "logo": "https://beisjoven.com/brand/logo-lockup.png",
+  "logo": `${SITE_URL}/brand/logo-lockup.png`,
   "sameAs": [
     "https://facebook.com/beisjoven",
     "https://instagram.com/beisjoven",

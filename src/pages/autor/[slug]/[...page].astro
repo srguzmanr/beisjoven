@@ -5,6 +5,7 @@ import ArticleCard from '@/components/ArticleCard.astro';
 import MostReadWidget from '@/components/MostReadWidget.astro';
 import { getAutorBySlug, getArticulosByAutorPaginados, getMasLeidos } from '@/lib/supabase';
 import { buildPage, parsePageParam } from '@/lib/pagination';
+import { SITE_URL } from '@/lib/site';
 
 const PAGE_SIZE = 20;
 const { slug } = Astro.params;
@@ -23,8 +24,7 @@ const [{ articulos, total }, masLeidos] = await Promise.all([
 const page = buildPage(articulos, total, currentPage, PAGE_SIZE, `/autor/${autor.slug}`);
 if (currentPage > page.lastPage) return Astro.redirect('/404');
 
-const SITE = 'https://beisjoven.com';
-const autorUrl = `${SITE}/autor/${autor.slug}`;
+const autorUrl = `${SITE_URL}/autor/${autor.slug}`;
 
 const personJsonLd = {
   "@context": "https://schema.org",
@@ -36,7 +36,7 @@ const personJsonLd = {
   "worksFor": {
     "@type": "Organization",
     "name": "Beisjoven",
-    "url": SITE,
+    "url": SITE_URL,
   },
 };
 ---
