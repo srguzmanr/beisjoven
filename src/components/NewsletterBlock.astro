@@ -181,8 +181,15 @@
 
   @media (min-width: 768px) {
     .bj-newsletter__form {
-      width: auto;
-      flex: 0 0 auto;
+      /* NEWS-OVFL-01: flex-basis acotado en lugar de `flex: 0 0 auto`. Con
+         shrink:0 el form quedaba clavado en su max-content (~843px: la
+         microcopy con flex-basis:100% no envuelve durante el sizing
+         intrínseco) y desbordaba el viewport entre 768 y ~1085px. Basis
+         definido → la microcopy envuelve dentro de 420px; shrink:1 +
+         min-width:0 → sigue encogiendo por debajo cuando hace falta. */
+      flex: 0 1 420px;
+      min-width: 0;
+      max-width: 100%;
     }
   }
 
@@ -206,8 +213,8 @@
 
   @media (min-width: 768px) {
     .bj-newsletter__input {
-      flex: 0 0 240px;
-      width: 240px;
+      /* NEWS-OVFL-01: flexible con mínimo útil, nunca ancho fijo. */
+      flex: 1 1 200px;
     }
   }
 

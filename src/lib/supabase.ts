@@ -721,6 +721,20 @@ export interface Anuncio {
   updated_at: string;
 }
 
+// ADS-TRACK-01 — first-party ad tracking. Rows are written ONLY by the
+// /api/ad-event endpoint (service role); RLS exposes SELECT to admins only.
+export type AdEventoTipo = 'impression' | 'viewable' | 'click';
+
+export interface AdEvento {
+  id: string;
+  anuncio_id: string | null;
+  slot_id: string;
+  evento: AdEventoTipo;
+  path: string | null;
+  ua_movil: boolean | null;
+  created_at: string;
+}
+
 /**
  * Active creatives for a slot, ordered by occupancy priority (lower first).
  * AdSlot uses this to rotate; an empty result is fine — AdSlot falls back to
