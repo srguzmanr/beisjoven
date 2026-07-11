@@ -80,6 +80,7 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     data-ad-active="true"
     data-ad-tipo={tipo}
     data-ad-anunciante={anunciante}
+    data-ad-id={chosen?.id}
   >
     <span class="bj-adslot__label bj-adslot__label--lb">{label}</span>
     {hasCreative ? (
@@ -118,6 +119,7 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     data-ad-active="true"
     data-ad-tipo={tipo}
     data-ad-anunciante={anunciante}
+    data-ad-id={chosen?.id}
   >
     <span class="bj-adslot__label">{label}</span>
     {hasCreative ? (
@@ -301,9 +303,23 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
   // HOUSE-ADS-01 — GA4 instrumentation for live ad slots.
   // ad_impression fires once when the slot enters the viewport; ad_click on
   // click. Payload: slot_id, tipo, anunciante. Inactive slots are skipped.
+  //
+  // ADS-TRACK-01 — first-party beacons to POST /api/ad-event, IN ADDITION to
+  // (and without touching) the GA4 events above:
+  //   impression : once per slot+path per tab session (sessionStorage flag,
+  //                so a reload does NOT double-count) — fired on render.
+  //   viewable   : IAB display standard — >=50% of the unit visible
+  //                continuously for >=1s; same sessionStorage dedupe as
+  //                impression so viewable_rate can never exceed 100%.
+  //   click      : every click on the creative CTA.
+  // Transport: sendBeacon (survives the click navigation) with
+  // fetch-keepalive fallback. Tracking must never break the page: every
+  // entry point is try/caught and failures are silent.
   (function () {
     if (window.__bjAdSlotInit) return;
     window.__bjAdSlotInit = true;
+
+    var VIEWABLE_MS = 1000;
 
     function emit(name, el) {
       if (typeof window.gtag !== 'function') return;
@@ -312,6 +328,55 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
         tipo: el.getAttribute('data-ad-tipo'),
         anunciante: el.getAttribute('data-ad-anunciante'),
       });
+    }
+
+    function beacon(el, evento) {
+      try {
+        var payload = JSON.stringify({
+          slot_id: el.getAttribute('data-ad-slot'),
+          anuncio_id: el.getAttribute('data-ad-id') || null,
+          evento: evento,
+          path: location.pathname,
+        });
+        var sent = false;
+        if (navigator.sendBeacon) {
+          sent = navigator.sendBeacon(
+            '/api/ad-event',
+            new Blob([payload], { type: 'application/json' })
+          );
+        }
+        if (!sent) {
+          fetch('/api/ad-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload,
+            keepalive: true,
+          }).catch(function () {});
+        }
+      } catch (e) { /* never let tracking break the page */ }
+    }
+
+    // sessionStorage dedupe per evento+slot+path. If storage is unavailable
+    // (private mode quotas), count rather than drop.
+    function once(el, evento) {
+      try {
+        var key = 'bj_ad:' + evento + ':' + el.getAttribute('data-ad-slot') + ':' + location.pathname;
+        if (sessionStorage.getItem(key)) return false;
+        sessionStorage.setItem(key, '1');
+        return true;
+      } catch (e) {
+        return true;
+      }
+    }
+
+    function alreadySent(el, evento) {
+      try {
+        return !!sessionStorage.getItem(
+          'bj_ad:' + evento + ':' + el.getAttribute('data-ad-slot') + ':' + location.pathname
+        );
+      } catch (e) {
+        return false;
+      }
     }
 
     function init() {
@@ -329,13 +394,69 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
           }, { threshold: 0.5 })
         : null;
 
+      // ADS-TRACK-01 — viewability: a second observer (the GA4 one above
+      // unobserves on first intersect, so it cannot measure a 1s dwell).
+      var pending = [];
+      var vio = 'IntersectionObserver' in window
+        ? new IntersectionObserver(function (entries, obs) {
+            entries.forEach(function (entry) {
+              var el = entry.target;
+              // 1e-3 epsilon: crossing the 0.5 threshold can report a ratio a
+              // hair under it.
+              var inView = entry.intersectionRatio >= 0.5 - 1e-3;
+              el.__bjInView = inView;
+              if (inView && !el.__bjViewTimer && !document.hidden) {
+                el.__bjViewTimer = setTimeout(function () {
+                  el.__bjViewTimer = null;
+                  if (once(el, 'viewable')) beacon(el, 'viewable');
+                  obs.unobserve(el);
+                }, VIEWABLE_MS);
+                pending.push(el);
+              } else if (!inView && el.__bjViewTimer) {
+                clearTimeout(el.__bjViewTimer);
+                el.__bjViewTimer = null;
+              }
+            });
+          }, { threshold: 0.5 })
+        : null;
+
+      // A hidden tab is not viewable (IO does not fire on tab switches):
+      // cancel dwell timers on hide, restart them for still-in-view slots on
+      // return.
+      document.addEventListener('visibilitychange', function () {
+        pending.forEach(function (el) {
+          if (document.hidden && el.__bjViewTimer) {
+            clearTimeout(el.__bjViewTimer);
+            el.__bjViewTimer = null;
+          } else if (!document.hidden && el.__bjInView && !el.__bjViewTimer && !alreadySent(el, 'viewable')) {
+            el.__bjViewTimer = setTimeout(function () {
+              el.__bjViewTimer = null;
+              if (once(el, 'viewable')) beacon(el, 'viewable');
+              if (vio) vio.unobserve(el);
+            }, VIEWABLE_MS);
+          }
+        });
+      });
+
       slots.forEach(function (el) {
         if (el.__bjAdBound) return;
         el.__bjAdBound = true;
         if (io) io.observe(el);
         else emit('ad_impression', el); // no IO support → count on render
+
+        // ADS-TRACK-01 — impression on render, deduped across reloads.
+        if (once(el, 'impression')) beacon(el, 'impression');
+        // Viewability needs IO; without support we deliberately record no
+        // viewable (never overstate the metric the advertiser pays against).
+        if (vio && !alreadySent(el, 'viewable')) vio.observe(el);
+
         var cta = el.querySelector('[data-ad-cta]');
-        if (cta) cta.addEventListener('click', function () { emit('ad_click', el); });
+        if (cta) {
+          cta.addEventListener('click', function () {
+            emit('ad_click', el);
+            beacon(el, 'click');
+          });
+        }
       });
     }
 

@@ -7,7 +7,8 @@
     "build:editor": "vite build --config vite.editor.config.js",
     "build": "npm run build:editor && astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.8",
