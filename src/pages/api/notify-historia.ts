@@ -1,40 +1,66 @@
-// Vercel Serverless Function — sends two emails when a story is submitted
-// via /tu-historia:
+// ADS-TRACK-02 — migrated from the root /api/notify-historia.js Vercel
+// function. A root-level /api directory makes Vercel claim the entire /api/*
+// namespace for its native functions router: any path under /api without a
+// matching file there dies in a platform NOT_FOUND before reaching Astro's
+// routes (this is what 404'd /api/ad-event). Everything under /api must
+// therefore live here, as Astro API routes.
+//
+// Contract is unchanged (caller: public/js/tu-historia.js, fire-and-forget):
+//   POST JSON → 200 { success, internal, confirmation } | 500 { error }
+//   other methods → 405 { error }
+//
+// Sends two emails when a story is submitted via /tu-historia:
 //   1. Internal notification to the editorial inbox (hola@beisjoven.com)
 //   2. Confirmation email to the user who sent the story
-//
-// Triggered fire-and-forget from public/js/tu-historia.js after the
-// Supabase INSERT succeeds. Failures must never block the submission —
-// the success surface is already rendered by the time we run.
-
+// Failures must never block the submission — the success surface is already
+// rendered by the time we run.
+import type { APIRoute } from 'astro';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+export const prerender = false;
 
-function escapeHtml(value) {
+// Lazy: the Resend constructor throws when no API key is available, and that
+// must surface as the handler's 500 — not as a module-load crash.
+let resend: Resend | null = null;
+function getResend(): Resend {
+  if (!resend) {
+    resend = new Resend(import.meta.env.RESEND_API_KEY ?? process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
+
+function escapeHtml(value: unknown): string {
   return String(value == null ? '' : value).replace(/[&<>"']/g, (c) => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
     "'": '&#39;',
-  }[c]));
+  }[c] as string));
 }
 
-function firstName(full) {
+function firstName(full: unknown): string {
   const s = String(full || '').trim();
   if (!s) return 'amigo';
   return s.split(/\s+/)[0];
 }
 
-function isValidEmail(value) {
+function isValidEmail(value: unknown): value is string {
   if (typeof value !== 'string') return false;
   const v = value.trim();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
-async function sendInternalNotification({ nombre, titulo, categoria, ciudad }) {
-  return resend.emails.send({
+interface HistoriaPayload {
+  nombre?: unknown;
+  email?: unknown;
+  titulo?: unknown;
+  categoria?: unknown;
+  ciudad?: unknown;
+}
+
+async function sendInternalNotification({ nombre, titulo, categoria, ciudad }: HistoriaPayload) {
+  const { error } = await getResend().emails.send({
     from: 'Beisjoven <noreply@beisjoven.com>',
     to: 'hola@beisjoven.com',
     subject: `Nueva historia: ${titulo || 'sin título'}`,
@@ -51,9 +77,12 @@ async function sendInternalNotification({ nombre, titulo, categoria, ciudad }) {
       </p>
     `,
   });
+  // The SDK reports failures via the error field, it does not throw — rethrow
+  // so the caller's try/catch (and the 500 contract) actually see them.
+  if (error) throw new Error(error.message);
 }
 
-async function sendUserConfirmation({ nombre, email, titulo }) {
+async function sendUserConfirmation({ nombre, email, titulo }: HistoriaPayload & { email: string }) {
   const fname = firstName(nombre);
   const safeName = escapeHtml(fname);
   const safeTitle = escapeHtml(titulo || 'tu historia');
@@ -101,7 +130,7 @@ async function sendUserConfirmation({ nombre, email, titulo }) {
     </div>
   `;
 
-  return resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: 'Beisjoven <hola@beisjoven.com>',
     to: email,
     replyTo: 'hola@beisjoven.com',
@@ -109,14 +138,26 @@ async function sendUserConfirmation({ nombre, email, titulo }) {
     html,
     text,
   });
+  if (error) throw new Error(error.message);
 }
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+const json = (status: number, body: unknown) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
 
-  const { nombre, email, titulo, categoria, ciudad } = req.body || {};
+export const POST: APIRoute = async ({ request }) => {
+  let payload: HistoriaPayload;
+  try {
+    payload = ((await request.json()) ?? {}) as HistoriaPayload;
+  } catch {
+    // Unparseable or empty body: the real caller (public/js/tu-historia.js)
+    // always sends JSON, so this is a stray probe — 400 (like the old Vercel
+    // body parser did) instead of emailing the editorial inbox empty fields.
+    return json(400, { error: 'Invalid JSON' });
+  }
+  const { nombre, email, titulo, categoria, ciudad } = payload;
 
   // 1. Internal notification — must succeed for the editorial team to act.
   let internalOk = false;
@@ -142,12 +183,18 @@ export default async function handler(req, res) {
   }
 
   if (!internalOk && !confirmationOk) {
-    return res.status(500).json({ error: 'Email failed' });
+    return json(500, { error: 'Email failed' });
   }
 
-  return res.status(200).json({
+  return json(200, {
     success: true,
     internal: internalOk,
     confirmation: confirmationOk,
   });
-}
+};
+
+export const ALL: APIRoute = () =>
+  new Response(JSON.stringify({ error: 'Method not allowed' }), {
+    status: 405,
+    headers: { 'Content-Type': 'application/json', Allow: 'POST' },
+  });
