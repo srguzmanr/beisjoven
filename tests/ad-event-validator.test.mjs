@@ -51,10 +51,20 @@ test('rejects unknown or missing evento', () => {
   assert.equal(validateAdEvent({ slot_id: 's', evento: 7 }), null);
 });
 
-test('rejects malformed anuncio_id', () => {
-  assert.equal(validateAdEvent({ slot_id: 's', anuncio_id: 'not-a-uuid', evento: 'click' }), null);
-  assert.equal(validateAdEvent({ slot_id: 's', anuncio_id: 123, evento: 'click' }), null);
-  assert.equal(validateAdEvent({ slot_id: 's', anuncio_id: `${UUID}x`, evento: 'click' }), null);
+// TRACK-ADID-01 — the event is the billable fact: a malformed anuncio_id
+// must never cost the row. It degrades to null (same as absent).
+test('malformed anuncio_id degrades to null without discarding the row', () => {
+  for (const bad of ['not-a-uuid', 123, `${UUID}x`, {}, ['a']]) {
+    const out = validateAdEvent({ slot_id: 's', anuncio_id: bad, evento: 'click' });
+    assert.deepEqual(out, { slot_id: 's', anuncio_id: null, evento: 'click', path: null },
+      `anuncio_id ${JSON.stringify(bad)} should degrade to null`);
+  }
+});
+
+test('valid anuncio_id is preserved (TRACK-ADID-01 regression)', () => {
+  const qa = '54ecc7b7-cda9-4070-9ec7-d23497bf2f75';
+  const out = validateAdEvent({ slot_id: 'article-footer', anuncio_id: qa, evento: 'impression', path: '/articulo/x' });
+  assert.equal(out?.anuncio_id, qa);
 });
 
 test('rejects malformed path', () => {
