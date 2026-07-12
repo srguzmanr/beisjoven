@@ -7,31 +7,34 @@
 // labelFor() below. The label is clear-and-conspicuous: rendered at the same
 // time as the creative (never behind hover/click), AA contrast, all devices.
 import { getAnunciosBySlot, type Anuncio, type AnuncioTipo } from '@/lib/supabase';
+import { buildAdHref } from '@/lib/ad-utm.js';
 
 interface Props {
-  /** 'slot-a' (in-article) | 'slot-b' (homepage feed) | 'slot-c' (end-of-article, Phase 2)
-      | 'home-leaderboard' (LEADER-01). */
+  /** Frozen nomenclature (ADS-GOLIVE-PREP-01):
+      'home-top' (homepage leaderboard) | 'home-mid' (homepage in-feed MPU)
+      | 'article-body' (in-article MPU) | 'article-footer' (end-of-note, Phase 2). */
   slotId: string;
-  /** false = pre-architected inactive render for Phase 2 (Slot C). No fetch, no GA4.
-      mpu-only: the leaderboard branch always renders active. */
+  /** false = pre-architected inactive render for Phase 2 (article-footer).
+      No fetch, no GA4. mpu-only: the leaderboard branch always renders active. */
   active?: boolean;
-  /** Layout footprint: 'prose' (Slot A) or 'card' (Slot B). Cosmetic only. mpu-only. */
+  /** Layout footprint: 'prose' (article-body) or 'card' (home-mid). Cosmetic only.
+      mpu-only. */
   variant?: 'prose' | 'card';
-  /** Ad format: 'mpu' 300×250 (Slots A/B/C, default) | 'leaderboard' responsive
-      970×90 desktop / 320×50 mobile (LEADER-01). */
+  /** Ad format: 'mpu' 300×250 (default) | 'leaderboard' responsive
+      970×90 desktop / 320×50 mobile (home-top, LEADER-01). */
   format?: 'mpu' | 'leaderboard';
-  /** UI language for the disclosure label. Site default is ES. */
-  lang?: 'es' | 'en';
 }
 
-const { slotId, active = true, variant = 'card', format = 'mpu', lang = 'es' } = Astro.props;
+const { slotId, active = true, variant = 'card', format = 'mpu' } = Astro.props;
 
 // --- Disclosure labels — CLOSED by Legal. Do NOT add cases. ---
-// casa → "De Beisjoven" / "By Beisjoven"
-// everything else (propia | aliado | placeholder) → "Publicidad" / "Advertisement"
-function labelFor(tipo: AnuncioTipo, l: 'es' | 'en'): string {
-  if (tipo === 'casa') return l === 'en' ? 'By Beisjoven' : 'De Beisjoven';
-  return l === 'en' ? 'Advertisement' : 'Publicidad';
+// ADS-GOLIVE-PREP-01: full bilingual text in a single string (no doctrine
+// change — same casa vs. everything-else split as HOUSE-ADS-LEGAL-01).
+// casa → "De Beisjoven / By Beisjoven"
+// everything else (propia | aliado | placeholder) → "Publicidad / Advertisement"
+function labelFor(tipo: AnuncioTipo): string {
+  if (tipo === 'casa') return 'De Beisjoven / By Beisjoven';
+  return 'Publicidad / Advertisement';
 }
 
 // ADS-STD-01 — placeholder pattern (LEADER-01): non-promotional,
@@ -61,9 +64,14 @@ if (active) {
 
 const hasCreative = chosen !== null;
 const tipo: AnuncioTipo = hasCreative ? chosen!.tipo : 'placeholder';
-const label = labelFor(tipo, lang);
+const label = labelFor(tipo);
 const anunciante = hasCreative ? chosen!.marca ?? chosen!.tipo : 'placeholder';
-const href = hasCreative ? chosen!.target_url! : '';
+// ADS-GOLIVE-PREP-01 — outbound UTMs, built server-side so the cached HTML is
+// already tagged. Paid tipos only (propia/aliado); casa/placeholder stay
+// clean. utm_* already present in target_url is never duplicated (DB wins).
+const href = hasCreative
+  ? buildAdHref(chosen!.target_url!, tipo, chosen!.campana ?? null, slotId)
+  : '';
 const isExternal = href.startsWith('http');
 // Leaderboard art direction: mobile creative falls back to the desktop asset
 // (letterboxed via object-fit: contain) until imagen_url_mobile is set.

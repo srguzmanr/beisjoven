@@ -173,9 +173,10 @@ const articleJsonLd = {
         {bodySecond ? (
           <>
             <div class="prose max-w-none" set:html={bodyFirst} />
-            {/* HOUSE-ADS-01 — Slot A: in-article, prose width. */}
+            {/* HOUSE-ADS-01 — in-article, prose width.
+                ADS-GOLIVE-PREP-01: slot id frozen as 'article-body' (ex slot-a). */}
             <div class="bj-adslot-inarticle">
-              <AdSlot slotId="slot-a" variant="prose" />
+              <AdSlot slotId="article-body" variant="prose" />
             </div>
             <div class="prose max-w-none" set:html={bodySecond} />
           </>
@@ -215,11 +216,12 @@ const articleJsonLd = {
           </section>
         )}
 
-        {/* HOUSE-ADS-01 — Slot C: end-of-note. Pre-architected INACTIVE for
-            Phase 2. (No NewsletterCTA exists on the article page yet; placed
-            at the end of the note. When one lands, move this below it.) */}
+        {/* HOUSE-ADS-01 — end-of-note. Pre-architected INACTIVE for Phase 2.
+            ADS-GOLIVE-PREP-01: slot id frozen as 'article-footer' (ex slot-c).
+            (No NewsletterCTA exists on the article page yet; placed at the
+            end of the note. When one lands, move this below it.) */}
         <div class="bj-adslot-endnote">
-          <AdSlot slotId="slot-c" variant="prose" active={false} />
+          <AdSlot slotId="article-footer" variant="prose" active={false} />
         </div>
       </div>
 

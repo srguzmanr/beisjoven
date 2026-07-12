@@ -7,8 +7,8 @@ import { validateAdEvent } from '../src/lib/ad-event-validator.js';
 const UUID = '11111111-1111-4111-8111-111111111111';
 
 test('accepts a full valid payload', () => {
-  const out = validateAdEvent({ slot_id: 'slot-b', anuncio_id: UUID, evento: 'impression', path: '/' });
-  assert.deepEqual(out, { slot_id: 'slot-b', anuncio_id: UUID, evento: 'impression', path: '/' });
+  const out = validateAdEvent({ slot_id: 'home-mid', anuncio_id: UUID, evento: 'impression', path: '/' });
+  assert.deepEqual(out, { slot_id: 'home-mid', anuncio_id: UUID, evento: 'impression', path: '/' });
 });
 
 test('accepts viewable and click eventos', () => {
@@ -17,8 +17,8 @@ test('accepts viewable and click eventos', () => {
 });
 
 test('anuncio_id and path are optional (normalized to null)', () => {
-  const out = validateAdEvent({ slot_id: 'home-leaderboard', evento: 'click' });
-  assert.deepEqual(out, { slot_id: 'home-leaderboard', anuncio_id: null, evento: 'click', path: null });
+  const out = validateAdEvent({ slot_id: 'home-top', evento: 'click' });
+  assert.deepEqual(out, { slot_id: 'home-top', anuncio_id: null, evento: 'click', path: null });
 });
 
 test('normalizes uppercase UUIDs to lowercase', () => {

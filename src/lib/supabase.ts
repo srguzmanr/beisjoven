@@ -713,6 +713,11 @@ export interface Anuncio {
   alt_text: string;
   target_url: string | null;
   slot_id: string;
+  /** ADS-GOLIVE-PREP-01 — utm_campaign per commercial deal (e.g.
+      'fundador-2026' for CEDISMAN). NULL = no utm_campaign on the outbound
+      URL. Optional: column exists only after the 20260712_ads_golive_prep_01
+      migration runs; select('*') omits it before that. */
+  campana?: string | null;
   tipo: AnuncioTipo;
   activo: boolean;
   prioridad: number;
