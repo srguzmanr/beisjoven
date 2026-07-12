@@ -12,11 +12,8 @@ import { buildAdHref } from '@/lib/ad-utm.js';
 interface Props {
   /** Frozen nomenclature (ADS-GOLIVE-PREP-01):
       'home-top' (homepage leaderboard) | 'home-mid' (homepage in-feed MPU)
-      | 'article-body' (in-article MPU) | 'article-footer' (end-of-note, Phase 2). */
+      | 'article-body' (in-article MPU) | 'article-footer' (end-of-note). */
   slotId: string;
-  /** false = pre-architected inactive render for Phase 2 (article-footer).
-      No fetch, no GA4. mpu-only: the leaderboard branch always renders active. */
-  active?: boolean;
   /** Layout footprint: 'prose' (article-body) or 'card' (home-mid). Cosmetic only.
       mpu-only. */
   variant?: 'prose' | 'card';
@@ -25,7 +22,7 @@ interface Props {
   format?: 'mpu' | 'leaderboard';
 }
 
-const { slotId, active = true, variant = 'card', format = 'mpu' } = Astro.props;
+const { slotId, variant = 'card', format = 'mpu' } = Astro.props;
 
 // --- Disclosure labels — CLOSED by Legal. Do NOT add cases. ---
 // ADS-GOLIVE-PREP-01: full bilingual text in a single string (no doctrine
@@ -48,18 +45,16 @@ const MPU_PH_TEXT = 'Espacio publicitario · 300 × 250';
 // stays deterministic — lowest prioridad in the tier (pool keeps the
 // prioridad-asc order from getAnunciosBySlot).
 let chosen: Anuncio | null = null;
-if (active) {
-  const anuncios = await getAnunciosBySlot(slotId);
-  const servable = anuncios.filter((a) => a.imagen_url && a.target_url);
-  const tiers: AnuncioTipo[][] = [['propia', 'aliado'], ['casa'], ['placeholder']];
-  const pool = tiers
-    .map((tier) => servable.filter((a) => tier.includes(a.tipo)))
-    .find((p) => p.length > 0);
-  if (pool) {
-    chosen = format === 'leaderboard'
-      ? pool[0]
-      : pool[Math.floor(Math.random() * pool.length)];
-  }
+const anuncios = await getAnunciosBySlot(slotId);
+const servable = anuncios.filter((a) => a.imagen_url && a.target_url);
+const tiers: AnuncioTipo[][] = [['propia', 'aliado'], ['casa'], ['placeholder']];
+const pool = tiers
+  .map((tier) => servable.filter((a) => tier.includes(a.tipo)))
+  .find((p) => p.length > 0);
+if (pool) {
+  chosen = format === 'leaderboard'
+    ? pool[0]
+    : pool[Math.floor(Math.random() * pool.length)];
 }
 
 const hasCreative = chosen !== null;
@@ -119,7 +114,7 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
       </div>
     )}
   </aside>
-) : active ? (
+) : (
   <aside
     class:list={['bj-adslot', `bj-adslot--${variant}`]}
     aria-label={label}
@@ -152,20 +147,6 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
         <span class="bj-adslot__ph">{MPU_PH_TEXT}</span>
       </div>
     )}
-  </aside>
-) : (
-  /* Slot C — pre-architected INACTIVE render for Phase 2. Visible, reserved,
-     non-interactive, no fetch, no GA4. */
-  <aside
-    class:list={['bj-adslot', 'bj-adslot--inactive', `bj-adslot--${variant}`]}
-    aria-label={label}
-    data-ad-slot={slotId}
-    data-ad-active="false"
-  >
-    <span class="bj-adslot__label">{label}</span>
-    <div class="bj-adslot__frame bj-adslot__frame--ph">
-      <span class="bj-adslot__ph">{MPU_PH_TEXT}</span>
-    </div>
   </aside>
 )}
 
@@ -310,7 +291,7 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
 <script is:inline>
   // HOUSE-ADS-01 — GA4 instrumentation for live ad slots.
   // ad_impression fires once when the slot enters the viewport; ad_click on
-  // click. Payload: slot_id, tipo, anunciante. Inactive slots are skipped.
+  // click. Payload: slot_id, tipo, anunciante.
   //
   // ADS-TRACK-01 — first-party beacons to POST /api/ad-event, IN ADDITION to
   // (and without touching) the GA4 events above:

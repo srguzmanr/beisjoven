@@ -216,12 +216,14 @@ const articleJsonLd = {
           </section>
         )}
 
-        {/* HOUSE-ADS-01 — end-of-note. Pre-architected INACTIVE for Phase 2.
+        {/* HOUSE-ADS-01 — end-of-note. ADS-FOOTER-ACT-01: active — fetch,
+            waterfall and tracking identical to article-body ("Pie de
+            Artículo", CEDISMAN package).
             ADS-GOLIVE-PREP-01: slot id frozen as 'article-footer' (ex slot-c).
             (No NewsletterCTA exists on the article page yet; placed at the
             end of the note. When one lands, move this below it.) */}
         <div class="bj-adslot-endnote">
-          <AdSlot slotId="article-footer" variant="prose" active={false} />
+          <AdSlot slotId="article-footer" variant="prose" />
         </div>
       </div>
 
