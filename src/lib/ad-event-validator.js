@@ -15,8 +15,11 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  */
 
 /**
- * Validates an untrusted ad-event payload. Strict: any malformed field
- * rejects the whole payload (the endpoint answers 204 without inserting).
+ * Validates an untrusted ad-event payload. Strict on slot_id/evento/path:
+ * any of them malformed rejects the whole payload (the endpoint answers 204
+ * without inserting). anuncio_id is the exception (TRACK-ADID-01): the event
+ * itself (impression/viewable/click) is the billable fact, so a malformed
+ * anuncio_id degrades to null instead of discarding the row.
  *
  * @param {unknown} raw - parsed JSON body
  * @returns {AdEventPayload | null} normalized payload, or null if invalid
@@ -30,8 +33,7 @@ export function validateAdEvent(raw) {
   if (typeof evento !== 'string' || !EVENTOS.has(evento)) return null;
 
   let anuncioId = null;
-  if (anuncio_id !== undefined && anuncio_id !== null && anuncio_id !== '') {
-    if (typeof anuncio_id !== 'string' || !UUID_RE.test(anuncio_id)) return null;
+  if (typeof anuncio_id === 'string' && UUID_RE.test(anuncio_id)) {
     anuncioId = anuncio_id.toLowerCase();
   }
 
