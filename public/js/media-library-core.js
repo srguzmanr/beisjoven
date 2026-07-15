@@ -589,6 +589,8 @@
             }).filter(function (img) {
                 if (!img.url || !img.nombre) return false;
                 if (img.url.endsWith('/') || img.nombre.startsWith('.')) return false;
+                // Excluir variantes OG generadas (mismo patrón que las vistas públicas)
+                if (/-og\.jpe?g$/i.test(img.nombre)) return false;
                 return /\.(jpe?g|png|gif|webp|svg|bmp|avif)$/i.test(img.nombre);
             });
 
@@ -1128,10 +1130,23 @@
     // ── Delete image from storage + metadata, update grid ─────────
     async function _deleteImage(img) {
         try {
-            await Promise.all([
+            var results = await Promise.all([
                 SupabaseStorage.eliminarImagen(img.nombre),
                 supabaseClient.from('imagenes_metadata').delete().eq('nombre', img.nombre),
             ]);
+            if (!results[0].success) throw new Error(results[0].error || 'Error eliminando de Storage');
+            if (results[1].error) throw results[1].error;
+
+            // Cascada no crítica: borrar la variante OG generada (<nombre sin ext>-og.jpg).
+            // Storage.remove no falla si el objeto no existe, así que un original
+            // sin variante procede sin error.
+            try {
+                var ogNombre = img.nombre.replace(/\.[^/.]+$/, '') + '-og.jpg';
+                await SupabaseStorage.eliminarImagen(ogNombre);
+            } catch (ogErr) {
+                console.error('[MediaLibraryCore] Fallo al borrar variante OG de ' + img.nombre + ':', ogErr);
+            }
+
             // Remove from local arrays then refresh grid
             _allImages      = _allImages.filter(function (i) { return i.nombre !== img.nombre; });
             _filteredImages = _filteredImages.filter(function (i) { return i.nombre !== img.nombre; });

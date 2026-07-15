@@ -647,23 +647,34 @@ const SupabaseStorage = {
         };
     },
     
-    // Listar todas las imágenes
+    // Listar todas las imágenes (pagina el bucket en lotes hasta agotarlo)
     async listarImagenes() {
-        const { data, error } = await supabaseClient
-            .storage
-            .from(this.BUCKET)
-            .list('', {
-                limit: 100,
-                sortBy: { column: 'created_at', order: 'desc' }
-            });
-        
-        if (error) {
-            console.error('Error listando imágenes:', error);
-            return [];
+        const BATCH = 100;
+        const archivos = [];
+        let offset = 0;
+
+        while (true) {
+            const { data, error } = await supabaseClient
+                .storage
+                .from(this.BUCKET)
+                .list('', {
+                    limit: BATCH,
+                    offset: offset,
+                    sortBy: { column: 'created_at', order: 'desc' }
+                });
+
+            if (error) {
+                console.error(`[listarImagenes] Error listando imágenes (offset ${offset}):`, error);
+                break;
+            }
+
+            archivos.push(...(data || []));
+            if (!data || data.length < BATCH) break;
+            offset += BATCH;
         }
-        
+
         // Agregar URLs públicas
-        return data.map(archivo => ({
+        return archivos.map(archivo => ({
             nombre: archivo.name,
             url: this.obtenerUrl(archivo.name),
             creado: archivo.created_at,
