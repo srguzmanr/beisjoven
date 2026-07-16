@@ -1314,6 +1314,20 @@
             statusEl.textContent = '¡Subida!';
             statusEl.className = 'mlc-upload-item-status mlc-upload-success';
 
+            // Crear la fila de metadata para que la imagen sea visible en
+            // /galeria sin edición manual (LIMPIA-04). Solo `nombre`:
+            // created_at tiene DEFAULT now() y los demás campos quedan null;
+            // no se mandan nulls explícitos para no pisar metadata existente
+            // si el nombre ya tuviera fila. No crítica: nunca bloquea el upload.
+            try {
+                var metaResult = await supabaseClient
+                    .from('imagenes_metadata')
+                    .upsert({ nombre: result.data.nombre }, { onConflict: 'nombre' });
+                if (metaResult.error) throw metaResult.error;
+            } catch (metaErr) {
+                console.error('[uploadMetadata] Failed:', metaErr);
+            }
+
             _addImageToTop({
                 url:         result.data.url,
                 nombre:      result.data.nombre,
