@@ -1,6 +1,10 @@
 ---
 export const prerender = true;
 import BaseLayout from '@/layouts/BaseLayout.astro';
+
+// SEC-02 P2 — inlined at build time (page is prerendered). Without it the
+// widget is skipped client-side and the server rejects every submission.
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
 ---
 
 <BaseLayout
@@ -251,7 +255,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
                 type="file"
                 id="th-fotos"
                 name="fotos"
-                accept="image/jpeg,image/png,image/webp,image/heic"
+                accept="image/jpeg,image/png,image/webp"
                 multiple
                 class="sr-only"
               />
@@ -387,6 +391,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
             <aside class="th-editorial-note">
               <strong>Antes de publicar:</strong> nuestra redacción revisa y puede editar para claridad. Nunca cambiamos los hechos. Si decidimos publicar, te contactamos primero para confirmar.
             </aside>
+
+            <!-- Turnstile (SEC-02 P2): managed widget, explicit render from
+                 tu-historia.js. The submit button stays disabled until the
+                 challenge yields a token; the server re-verifies it. -->
+            <div class="th-turnstile-wrapper">
+              <div id="th-turnstile" data-sitekey={turnstileSiteKey}></div>
+            </div>
 
             <div class="th-nav">
               <button type="button" class="th-btn-secondary" data-step-prev="2">← Volver a editar</button>
@@ -1109,10 +1120,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       white-space: nowrap;
       border: 0;
     }
+
+    /* ===== Turnstile (SEC-02 P2) ===== */
+    /* Managed widget is 300px wide — fits 375px viewports without overflow. */
+    .th-turnstile-wrapper {
+      margin: 20px 0 4px;
+      min-height: 65px;
+    }
   </style>
 
-  <!-- Supabase -->
-  <script is:inline src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script is:inline src="/js/supabase.js"></script>
+  <!-- SEC-02 P2: the form writes ONLY through /api/enviar-historia — no
+       supabase-js on this page anymore. Turnstile loads after tu-historia.js
+       so the thTurnstileOnLoad callback is already defined. -->
   <script is:inline src="/js/tu-historia.js"></script>
+  <script is:inline src="https://challenges.cloudflare.com/turnstile/api.js?onload=thTurnstileOnLoad&render=explicit" async defer></script>
 </BaseLayout>

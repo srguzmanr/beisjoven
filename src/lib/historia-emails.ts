@@ -1,26 +1,13 @@
-// ADS-TRACK-02 — migrated from the root /api/notify-historia.js Vercel
-// function. A root-level /api directory makes Vercel claim the entire /api/*
-// namespace for its native functions router: any path under /api without a
-// matching file there dies in a platform NOT_FOUND before reaching Astro's
-// routes (this is what 404'd /api/ad-event). Everything under /api must
-// therefore live here, as Astro API routes.
-//
-// Contract is unchanged (caller: public/js/tu-historia.js, fire-and-forget):
-//   POST JSON → 200 { success, internal, confirmation } | 500 { error }
-//   other methods → 405 { error }
-//
-// Sends two emails when a story is submitted via /tu-historia:
-//   1. Internal notification to the editorial inbox (hola@beisjoven.com)
-//   2. Confirmation email to the user who sent the story
-// Failures must never block the submission — the success surface is already
-// rendered by the time we run.
-import type { APIRoute } from 'astro';
+// SEC-02 P2 — the two Tu Historia emails, moved verbatim from the retired
+// public endpoint /api/notify-historia (which was unauthenticated and could be
+// used to spam arbitrary addresses). Now callable ONLY from the server-side
+// submission flow (src/pages/api/enviar-historia.ts), after the row is saved.
+// Failures must never block the submission — callers wrap each send in its
+// own try/catch.
 import { Resend } from 'resend';
 
-export const prerender = false;
-
 // Lazy: the Resend constructor throws when no API key is available, and that
-// must surface as the handler's 500 — not as a module-load crash.
+// must surface in the caller's try/catch — not as a module-load crash.
 let resend: Resend | null = null;
 function getResend(): Resend {
   if (!resend) {
@@ -45,21 +32,16 @@ function firstName(full: unknown): string {
   return s.split(/\s+/)[0];
 }
 
-function isValidEmail(value: unknown): value is string {
-  if (typeof value !== 'string') return false;
-  const v = value.trim();
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+export interface HistoriaEmailData {
+  nombre: string;
+  email: string;
+  titulo: string;
+  categoria: string;
+  ciudad: string;
 }
 
-interface HistoriaPayload {
-  nombre?: unknown;
-  email?: unknown;
-  titulo?: unknown;
-  categoria?: unknown;
-  ciudad?: unknown;
-}
-
-async function sendInternalNotification({ nombre, titulo, categoria, ciudad }: HistoriaPayload) {
+// Correo 1: aviso interno a la redacción.
+export async function sendInternalNotification({ nombre, titulo, categoria, ciudad }: HistoriaEmailData) {
   const { error } = await getResend().emails.send({
     from: 'Beisjoven <noreply@beisjoven.com>',
     to: 'hola@beisjoven.com',
@@ -78,11 +60,12 @@ async function sendInternalNotification({ nombre, titulo, categoria, ciudad }: H
     `,
   });
   // The SDK reports failures via the error field, it does not throw — rethrow
-  // so the caller's try/catch (and the 500 contract) actually see them.
+  // so the caller's try/catch actually sees them.
   if (error) throw new Error(error.message);
 }
 
-async function sendUserConfirmation({ nombre, email, titulo }: HistoriaPayload & { email: string }) {
+// Correo 2: confirmación al remitente.
+export async function sendUserConfirmation({ nombre, email, titulo }: HistoriaEmailData) {
   const fname = firstName(nombre);
   const safeName = escapeHtml(fname);
   const safeTitle = escapeHtml(titulo || 'tu historia');
@@ -140,61 +123,3 @@ async function sendUserConfirmation({ nombre, email, titulo }: HistoriaPayload &
   });
   if (error) throw new Error(error.message);
 }
-
-const json = (status: number, body: unknown) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-
-export const POST: APIRoute = async ({ request }) => {
-  let payload: HistoriaPayload;
-  try {
-    payload = ((await request.json()) ?? {}) as HistoriaPayload;
-  } catch {
-    // Unparseable or empty body: the real caller (public/js/tu-historia.js)
-    // always sends JSON, so this is a stray probe — 400 (like the old Vercel
-    // body parser did) instead of emailing the editorial inbox empty fields.
-    return json(400, { error: 'Invalid JSON' });
-  }
-  const { nombre, email, titulo, categoria, ciudad } = payload;
-
-  // 1. Internal notification — must succeed for the editorial team to act.
-  let internalOk = false;
-  try {
-    await sendInternalNotification({ nombre, titulo, categoria, ciudad });
-    internalOk = true;
-  } catch (error) {
-    console.error('[notify-historia] Internal notification failed:', error);
-  }
-
-  // 2. User confirmation — independent try/catch so a failure here doesn't
-  //    swallow the internal notification or block the submission flow.
-  let confirmationOk = false;
-  if (isValidEmail(email)) {
-    try {
-      await sendUserConfirmation({ nombre, email, titulo });
-      confirmationOk = true;
-    } catch (error) {
-      console.error('[TuHistoriaConfirmEmail] Send failed:', error);
-    }
-  } else {
-    console.warn('[TuHistoriaConfirmEmail] Skipped: missing or invalid email');
-  }
-
-  if (!internalOk && !confirmationOk) {
-    return json(500, { error: 'Email failed' });
-  }
-
-  return json(200, {
-    success: true,
-    internal: internalOk,
-    confirmation: confirmationOk,
-  });
-};
-
-export const ALL: APIRoute = () =>
-  new Response(JSON.stringify({ error: 'Method not allowed' }), {
-    status: 405,
-    headers: { 'Content-Type': 'application/json', Allow: 'POST' },
-  });
