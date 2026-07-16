@@ -355,7 +355,7 @@ export async function incrementVistas(articuloId: number) {
 
 // ==================== WBC 2026 ====================
 
-/** Fetch ALL published WBC 2026 articles (paginated). Used by getStaticPaths + paginate(). */
+/** Fetch ALL published WBC 2026 articles (paginated). Used by the sitemap. */
 export async function getAllArticulosWbc2026() {
   return fetchAllPaginated<Articulo>((from, to) =>
     supabaseServer
