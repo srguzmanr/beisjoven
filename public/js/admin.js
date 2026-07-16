@@ -23,6 +23,10 @@ function openMediaPicker() {
         // result puede ser {url, pieDeFoto, credito} o string (backward compat)
         const url = result.url || result;
         document.getElementById('image').value = url;
+        // SEC-02-FIX-01b: el admin eligió otra imagen — la foto de la historia
+        // ya no es la imagen del artículo; cancela la copia pendiente al publicar.
+        AdminPages._currentHistoriaFotoPath = null;
+        AdminPages._currentHistoriaFotoCredito = null;
         // Autocompletar crédito si existe el campo
         if (result.credito) {
             const creditoEl = document.getElementById('foto-credito');
@@ -413,7 +417,11 @@ var Autosave = {
             contenido: content || '',
             categoria_id: category && category.value ? parseInt(category.value) : null,
             autor_id: author && author.value ? parseInt(author.value) : null,
-            imagen_url: image ? image.value : '',
+            // SEC-02-FIX-01b: mientras se revisa una historia, #image tiene una
+            // signed URL temporal (bucket privado) sólo para vista previa. Nunca
+            // la persistas en un borrador — expira, y la copia pública se hace
+            // al publicar. Se guarda vacío hasta entonces.
+            imagen_url: AdminPages._currentHistoriaFotoPath ? '' : (image ? image.value : ''),
             destacado: featured ? featured.checked : false,
             pie_de_foto: pieFoto ? pieFoto.value : '',
             foto_credito: fotoCredito ? fotoCredito.value : '',
@@ -1083,6 +1091,11 @@ const AdminPages = {
         // AdminPages directly — otherwise we write to window/undefined and
         // saveArticle (which does use AdminPages.*) never sees the id.
         AdminPages._currentHistoriaSourceId = null;
+        // SEC-02-FIX-01b: foto pendiente (path en el bucket privado tu-historia)
+        // que se copia al bucket público 'imagenes' al PUBLICAR — no al abrir el
+        // editor. Se resetea por sesión de editor.
+        AdminPages._currentHistoriaFotoPath = null;
+        AdminPages._currentHistoriaFotoCredito = null;
         // Read the historia ID directly from the URL. We do this BEFORE the
         // seed fetch (and independent of its success) so the auto-transition
         // to publicada still fires even if loading the seed data fails, and
@@ -1139,17 +1152,21 @@ const AdminPages = {
             if (historiaSeed.permitir_credito && historiaSeed.nombre) {
                 historiaCreditoFoto = 'Cortesía ' + historiaSeed.nombre;
             }
-            // First photo → imagen principal. tu-historia es privado (SEC-02
-            // P1): la foto se copia al bucket público 'imagenes' (SEC-02-FIX-01)
-            // para tener una URL estable, no firmada, en el artículo publicado.
-            // No bloqueante: si falla, el admin puede agregar una imagen manual.
+            // First photo → vista previa. El bucket tu-historia es privado
+            // (SEC-02 P1). SEC-02-FIX-01b: NO copiamos la foto al bucket público
+            // 'imagenes' aquí (al abrir el editor para revisar) — eso la volvía
+            // pública ANTES de la decisión editorial y dejaba copias huérfanas
+            // de historias que el editor podía descartar. Sólo firmamos una URL
+            // temporal del bucket privado para que el admin VEA la foto durante
+            // la revisión; la copia pública se hace al Publicar (ver saveArticle).
             if (historiaSeed.fotos && historiaSeed.fotos.length > 0) {
+                AdminPages._currentHistoriaFotoPath = historiaSeed.fotos[0];
+                AdminPages._currentHistoriaFotoCredito = (historiaSeed.permitir_credito && historiaSeed.nombre) ? historiaSeed.nombre : null;
                 try {
-                    const creditoFoto = (historiaSeed.permitir_credito && historiaSeed.nombre) ? historiaSeed.nombre : null;
-                    historiaImagenUrl = await SupabaseHistorias.copiarFotoAImagenes(historiaSeed.fotos[0], creditoFoto);
+                    historiaImagenUrl = await SupabaseHistorias.obtenerUrlFotoFirmada(historiaSeed.fotos[0]);
                 } catch (e) {
-                    console.error('[editor] Failed to copy historia photo to imagenes:', e);
-                    showToast('No se pudo copiar la foto de la historia. Agrega una imagen manualmente.', 'error', 4000);
+                    console.error('[editor] Failed to sign historia photo for preview:', e);
+                    showToast('No se pudo cargar la vista previa de la foto de la historia.', 'error', 4000);
                 }
             }
         }
@@ -1793,6 +1810,40 @@ const AdminPages = {
         // Imagen principal: (1) la que eligió el periodista, (2) primera img del cuerpo, (3) default BJ
         const IMAGEN_DEFAULT_BJ = 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/beisjoven-og-default.png';
         let imagen_url = document.getElementById('image').value.trim();
+        // SEC-02-FIX-01b: si el artículo se sembró de una historia y aún usa la
+        // foto de esa historia (el admin no la reemplazó con el media picker),
+        // la foto vive en el bucket PRIVADO tu-historia y #image sólo tiene una
+        // signed URL temporal de vista previa. La copia al bucket público
+        // 'imagenes' (sin EXIF) ocurre AQUÍ, sólo al publicar — nunca al abrir
+        // el editor. Así una historia que se descarta jamás deja copia pública
+        // de su foto (posible menor). Bloqueante y ANTES del INSERT del artículo.
+        if (AdminPages._currentHistoriaFotoPath) {
+            const willBePublic = action === 'publish' || action === 'save';
+            if (willBePublic) {
+                try {
+                    imagen_url = await SupabaseHistorias.copiarFotoAImagenes(
+                        AdminPages._currentHistoriaFotoPath,
+                        AdminPages._currentHistoriaFotoCredito
+                    );
+                } catch (e) {
+                    console.error('[saveArticle] Failed to copy historia photo to imagenes:', e);
+                    showToast('No se pudo copiar la foto de la historia. Intenta de nuevo o elige otra imagen.', 'error', 5000);
+                    Autosave.start(editId);
+                    return; // no publicar apuntando a una signed URL que expira
+                }
+                // one-shot: ya copiada. Refleja la URL pública estable en #image
+                // y limpia el estado, para que un reintento (si el guardado del
+                // artículo fallara luego) no re-copie ni persista la signed URL.
+                const _imgEl = document.getElementById('image');
+                if (_imgEl) _imgEl.value = imagen_url;
+                AdminPages._currentHistoriaFotoPath = null;
+                AdminPages._currentHistoriaFotoCredito = null;
+            } else {
+                // Guardar borrador: NO hacer pública la foto todavía. Descarta la
+                // signed URL temporal (expira); cae al fallback de imagen abajo.
+                imagen_url = '';
+            }
+        }
         if (!imagen_url) {
             // Buscar primera imagen en el contenido
             const tempDiv = document.createElement('div');
