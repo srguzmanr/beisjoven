@@ -92,7 +92,7 @@ async function isRateLimited(ip: string): Promise<boolean> {
 // iCloud Private Relay / carrier CGNAT the IP that solved the challenge
 // routinely differs from the IP the POST arrives with, making siteverify
 // reject real humans (QA real: iPhone Safari, 3× 403 con widget resuelto).
-async function verifyTurnstile(token: string, tokenFieldCount: number): Promise<{ ok: boolean; codes: string[] }> {
+async function verifyTurnstile(token: string): Promise<{ ok: boolean; codes: string[] }> {
   if (!turnstileSecret) return { ok: false, codes: ['secret-key-missing'] };
   if (!token) return { ok: false, codes: ['token-missing'] };
   try {
@@ -101,45 +101,12 @@ async function verifyTurnstile(token: string, tokenFieldCount: number): Promise<
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ secret: turnstileSecret, response: token }),
     });
-    // TEMP SEC-02-FIX-05: read the RAW body — QA real produjo success:false
-    // con error-codes [] y hay que ver la respuesta cruda para adjudicar
-    // entre status!=200 con envelope JSON, success:false+codes:[] literal,
-    // o shape inesperado. RETIRAR este bloque de diagnóstico con el fix.
-    const raw = await res.text();
-    let outcome: { success?: boolean; 'error-codes'?: string[] } | null = null;
-    try {
-      outcome = JSON.parse(raw) as { success?: boolean; 'error-codes'?: string[] };
-    } catch (_) {
-      outcome = null; // body no-JSON: queda documentado en raw
+    const outcome = (await res.json()) as { success?: boolean; 'error-codes'?: string[] };
+    const codes = Array.isArray(outcome['error-codes']) ? outcome['error-codes'] : [];
+    if (outcome.success !== true) {
+      console.warn('[enviar-historia] turnstile rejected:', codes.join(', ') || `http-${res.status}`);
     }
-    const codes = (outcome && Array.isArray(outcome['error-codes'])) ? outcome['error-codes'].slice() : [];
-    const ok = outcome !== null && outcome.success === true;
-    if (!ok) {
-      // Server console (puede no ser consultable en Vercel — por eso el
-      // canal cliente de abajo). Nunca token/secret completos.
-      console.warn('[enviar-historia][temp-debug] siteverify rejected', {
-        status: res.status,
-        contentType: res.headers.get('content-type'),
-        raw: raw.slice(0, 500),
-        tokenLen: token.length,
-        tokenHead: token.slice(0, 8),
-        tokenTail: token.slice(-8),
-        tokenFieldCount,
-        secretLen: turnstileSecret.length,
-        secretShapeOk: /^0x[0-9A-Za-z_-]+$/.test(turnstileSecret),
-        secretTrimmed: turnstileSecret === turnstileSecret.trim(),
-      });
-      // TEMP canal cliente: viaja en details del 403 para leerse desde la
-      // consola del browser de QA (sin datos de la secret). RETIRAR con el fix.
-      codes.push(
-        `temp-debug:status=${res.status}`,
-        `temp-debug:ct=${res.headers.get('content-type') || 'none'}`,
-        `temp-debug:tokenLen=${token.length}`,
-        `temp-debug:tokenFields=${tokenFieldCount}`,
-        `temp-debug:raw=${raw.slice(0, 200)}`
-      );
-    }
-    return { ok, codes };
+    return { ok: outcome.success === true, codes };
   } catch (err) {
     // Cloudflare unreachable → we cannot vouch for the caller; reject rather
     // than letting an outage disable the site's main bot defense.
@@ -189,10 +156,7 @@ export const POST: APIRoute = async ({ request }) => {
     return json(429, { error: 'Demasiados envíos desde tu conexión. Intenta de nuevo más tarde.' });
   }
 
-  const turnstile = await verifyTurnstile(
-    fieldStr(form, 'cf-turnstile-response'),
-    form.getAll('cf-turnstile-response').length
-  );
+  const turnstile = await verifyTurnstile(fieldStr(form, 'cf-turnstile-response'));
   if (!turnstile.ok) {
     return json(403, {
       error: 'No pudimos verificar que eres humano. Reintenta la verificación.',

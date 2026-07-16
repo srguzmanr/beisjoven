@@ -21,6 +21,25 @@ export default defineConfig({
       exclude: ['/buscar', '/api/ad-event', '/api/enviar-historia'],
     },
   }),
+  security: {
+    // Keep Astro's CSRF origin check ON. Since the x-forwarded-host hardening
+    // (Astro >=5.14, CVE-2025-61925) the serverless runtime only trusts
+    // x-forwarded-proto/host — and even the plain Host header — when the host
+    // matches this allowlist; with the (default) empty list the request URL is
+    // rebuilt as https://localhost, so checkOrigin compared the browser's
+    // `Origin: https://beisjoven.com` against `https://localhost` and 403'd
+    // every same-origin multipart POST (/api/enviar-historia) before the
+    // endpoint ran. Allowlisting the real serving hosts fixes the URL
+    // reconstruction behind Vercel's proxy without loosening the check.
+    checkOrigin: true,
+    allowedDomains: [
+      { protocol: 'https', hostname: 'beisjoven.com' },
+      // Vercel preview/alias hosts (QA on branch deploys and *.vercel.app
+      // production aliases). Vercel's edge sets x-forwarded-host itself, so
+      // the wildcard doesn't let clients spoof the host.
+      { protocol: 'https', hostname: '**.vercel.app' },
+    ],
+  },
   integrations: [],
   vite: {
     plugins: [tailwindcss()],
