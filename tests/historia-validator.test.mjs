@@ -18,6 +18,7 @@ function base(overrides = {}) {
     liga_organizacion: '',
     ciudad_estado: 'Hermosillo, Sonora',
     autorizacion_general: 'true',
+    fotos_incluyen_menores: '',
     autorizacion_menores: '',
     permitir_credito: 'true',
     ...overrides,
@@ -38,6 +39,7 @@ test('accepts a full valid payload and normalizes it', () => {
     liga_organizacion: null,
     ciudad_estado: 'Hermosillo, Sonora',
     autorizacion_general: true,
+    fotos_incluyen_menores: null,
     autorizacion_menores: null,
     permitir_credito: true,
   });
@@ -106,11 +108,41 @@ test('autorizacion_general must be the literal string true', () => {
   assert.equal(validateHistoria(base({ autorizacion_general: 'on' }), 0).error.field, 'autorizacion_general');
 });
 
-test('autorizacion_menores: null without photos, boolean with photos', () => {
-  assert.equal(validateHistoria(base({ autorizacion_menores: 'true' }), 0).data.autorizacion_menores, null);
-  assert.equal(validateHistoria(base({ autorizacion_menores: 'true' }), 2).data.autorizacion_menores, true);
-  assert.equal(validateHistoria(base({ autorizacion_menores: '' }), 2).data.autorizacion_menores, false);
-  assert.equal(validateHistoria(base({ autorizacion_menores: 'false' }), 2).data.autorizacion_menores, false);
+// ==================== Minors flow (SEC-02-FIX-02) ====================
+
+test('sin fotos: la pregunta de menores no aplica y ambos campos quedan null', () => {
+  const out = validateHistoria(base({ fotos_incluyen_menores: 'true', autorizacion_menores: 'true' }), 0);
+  assert.ok('data' in out);
+  assert.equal(out.data.fotos_incluyen_menores, null);
+  assert.equal(out.data.autorizacion_menores, null);
+});
+
+test('con fotos: la declaración de menores es obligatoria (true/false explícito)', () => {
+  assert.equal(validateHistoria(base(), 1).error.field, 'fotos_incluyen_menores');
+  assert.equal(validateHistoria(base({ fotos_incluyen_menores: 'si' }), 1).error.field, 'fotos_incluyen_menores');
+  assert.equal(validateHistoria(base({ fotos_incluyen_menores: 'on' }), 2).error.field, 'fotos_incluyen_menores');
+});
+
+test('fotos SIN menores: se acepta sin autorización de menores', () => {
+  const out = validateHistoria(base({ fotos_incluyen_menores: 'false' }), 2);
+  assert.ok('data' in out);
+  assert.equal(out.data.fotos_incluyen_menores, false);
+  assert.equal(out.data.autorizacion_menores, null);
+});
+
+test('fotos CON menores: exige la autorización; sin ella rechaza', () => {
+  assert.equal(
+    validateHistoria(base({ fotos_incluyen_menores: 'true' }), 1).error.field,
+    'autorizacion_menores'
+  );
+  assert.equal(
+    validateHistoria(base({ fotos_incluyen_menores: 'true', autorizacion_menores: 'false' }), 1).error.field,
+    'autorizacion_menores'
+  );
+  const out = validateHistoria(base({ fotos_incluyen_menores: 'true', autorizacion_menores: 'true' }), 1);
+  assert.ok('data' in out);
+  assert.equal(out.data.fotos_incluyen_menores, true);
+  assert.equal(out.data.autorizacion_menores, true);
 });
 
 test('permitir_credito defaults to true and only false disables it', () => {

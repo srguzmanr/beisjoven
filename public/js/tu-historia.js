@@ -35,7 +35,9 @@
   const DESCRIPCION_MIN = 50;
 
   // Required field IDs per step. Step 3 requires all 3 legal consent checkboxes
-  // (BJ-007 ADENDA). autorizacion_menores is conditional on photo uploads, not required.
+  // (BJ-007 ADENDA). The minors question (SEC-02-FIX-02) is conditional — only
+  // with photos, and the authorization checkbox only when minors are declared —
+  // so it's gated by menoresValid(), not by this list.
   const REQUIRED_BY_STEP = {
     1: ['th-nombre', 'th-email', 'th-relacion', 'th-ciudad'],
     2: ['th-categoria', 'th-titulo', 'th-descripcion'],
@@ -44,12 +46,12 @@
 
   // Scalar fields persisted to localStorage. File objects are intentionally
   // excluded — they aren't serializable and would bloat storage.
-  // Legal consent checkboxes are intentionally NOT persisted — users must
-  // actively re-check them each session.
+  // Legal declarations (consent checkboxes, minors question) are intentionally
+  // NOT persisted — users must actively re-declare them each session, and the
+  // minors answer is meaningless without the photos it refers to.
   const PERSISTED_FIELDS = [
     'nombre', 'email', 'telefono', 'relacion', 'ciudad_estado', 'liga_organizacion',
     'categoria_sugerida', 'titulo', 'descripcion', 'permitir_credito',
-    'autorizacion_menores',
   ];
 
   const RELACION_LABELS = {
@@ -193,6 +195,8 @@
       photoReadout: document.getElementById('th-fotos-readout'),
 
       menoresWrapper: document.getElementById('th-menores-wrapper'),
+      menoresRadios: Array.from(document.querySelectorAll('input[name="fotos_incluyen_menores"]')),
+      menoresAuthBlock: document.getElementById('th-menores-auth'),
       menoresCheckbox: document.getElementById('th-auth-menores'),
       menoresNote: document.getElementById('th-menores-note'),
 
@@ -303,6 +307,12 @@
         panel.setAttribute('hidden', '');
       }
     });
+
+    // Turnstile renders lazily once its container is actually visible
+    // (SEC-02-FIX-02) — must run AFTER the step-3 panel is unhidden above.
+    if (state.currentStep === 3 && typeof state._renderTurnstile === 'function') {
+      state._renderTurnstile();
+    }
   }
 
   // ==================== VALIDATION ====================
@@ -768,19 +778,56 @@
     if (bar) bar.style.width = `${progress}%`;
   }
 
-  // ==================== MENORES VISIBILITY ====================
+  // ==================== MENORES (SEC-02-FIX-02) ====================
+  // Conditional flow: the question "¿Tus fotos incluyen menores?" only exists
+  // when photos are attached. "Sí" requires the authorization checkbox; "No"
+  // requires nothing more. The red note shows only while "Sí" is selected and
+  // the authorization is still unchecked.
+
+  function getMenoresAnswer(els) {
+    const checked = els.menoresRadios.find((r) => r.checked);
+    return checked ? checked.value : '';
+  }
+
+  function menoresValid(els, state) {
+    if (state.files.length === 0) return true;
+    const answer = getMenoresAnswer(els);
+    if (answer === 'false') return true;
+    if (answer === 'true') return !!(els.menoresCheckbox && els.menoresCheckbox.checked);
+    return false; // photos attached but question unanswered
+  }
+
+  function syncMenoresUI(els, state) {
+    const answer = getMenoresAnswer(els);
+    const showAuth = state.files.length > 0 && answer === 'true';
+    if (els.menoresAuthBlock) els.menoresAuthBlock.classList.toggle('hidden', !showAuth);
+    if (!showAuth && els.menoresCheckbox) els.menoresCheckbox.checked = false;
+
+    const showNote = showAuth && els.menoresCheckbox && !els.menoresCheckbox.checked;
+    if (els.menoresNote) els.menoresNote.classList.toggle('hidden', !showNote);
+  }
 
   function bindMenoresVisibility(els, state) {
-    if (!els.menoresCheckbox) return;
-    els.menoresCheckbox.addEventListener('change', () => {
-      try {
-        if (els.menoresCheckbox.checked && els.menoresNote) {
-          els.menoresNote.classList.add('hidden');
+    els.menoresRadios.forEach((radio) => {
+      radio.addEventListener('change', () => {
+        try {
+          syncMenoresUI(els, state);
+          updateSubmitState(els, state);
+        } catch (err) {
+          console.error('[TuHistoriaForm] menores-radio failed:', err);
         }
-      } catch (err) {
-        console.error('[TuHistoriaForm] menores-change failed:', err);
-      }
+      });
     });
+    if (els.menoresCheckbox) {
+      els.menoresCheckbox.addEventListener('change', () => {
+        try {
+          syncMenoresUI(els, state);
+          updateSubmitState(els, state);
+        } catch (err) {
+          console.error('[TuHistoriaForm] menores-change failed:', err);
+        }
+      });
+    }
   }
 
   function updateMenoresVisibility(els, state) {
@@ -789,9 +836,11 @@
       els.menoresWrapper.classList.remove('hidden');
     } else {
       els.menoresWrapper.classList.add('hidden');
+      els.menoresRadios.forEach((r) => { r.checked = false; });
       if (els.menoresCheckbox) els.menoresCheckbox.checked = false;
-      if (els.menoresNote) els.menoresNote.classList.add('hidden');
     }
+    syncMenoresUI(els, state);
+    updateSubmitState(els, state);
   }
 
   // ==================== AUTOSAVE ====================
@@ -1015,15 +1064,17 @@
     }
 
     // Disabled unless we're on step 3 with all required step-3 fields valid
-    // AND prior steps are complete (silent re-validation) AND the Turnstile
-    // challenge produced a token (when the widget is configured).
+    // AND prior steps are complete (silent re-validation) AND the conditional
+    // minors declaration is satisfied AND the Turnstile challenge produced a
+    // token (when the widget is configured).
     const onLastStep = state.currentStep === 3;
     const step1Valid = REQUIRED_BY_STEP[1].every((id) => validateField(id, { showErrors: false }).valid);
     const step2Valid = REQUIRED_BY_STEP[2].every((id) => validateField(id, { showErrors: false }).valid);
     const step3Valid = REQUIRED_BY_STEP[3].every((id) => validateField(id, { showErrors: false }).valid);
+    const menoresOk = menoresValid(els, state);
     const turnstileOk = !state.turnstileRequired || !!state.turnstileToken;
 
-    if (onLastStep && step1Valid && step2Valid && step3Valid && turnstileOk) {
+    if (onLastStep && step1Valid && step2Valid && step3Valid && menoresOk && turnstileOk) {
       setSubmitState(els, 'default');
     } else {
       setSubmitState(els, 'disabled');
@@ -1049,10 +1100,15 @@
   // ==================== TURNSTILE ====================
 
   // Explicit render into #th-turnstile (sitekey inlined at build in the page).
-  // The api.js script tag loads AFTER this file with ?onload=thTurnstileOnLoad,
-  // but guard both orders anyway. Without a sitekey (local dev) the widget is
-  // skipped and the token requirement is lifted client-side — the server still
-  // rejects tokenless submissions in production.
+  // SEC-02-FIX-02: the container lives inside the step-3 panel, which is
+  // display:none until the user reaches Revisión. Turnstile cannot render into
+  // a hidden container (the widget stays invisible and never issues a token,
+  // leaving the submit button permanently disabled), so rendering waits until
+  // BOTH the api.js script has loaded AND step 3 is visible — whichever comes
+  // last triggers it (updateStepUI calls state._renderTurnstile on step 3).
+  // Without a sitekey (local dev) the widget is skipped and the token
+  // requirement is lifted client-side — the server still rejects tokenless
+  // submissions in production.
   function setupTurnstile(els, state) {
     const container = document.getElementById('th-turnstile');
     const sitekey = container && container.getAttribute('data-sitekey');
@@ -1062,7 +1118,12 @@
     }
     state.turnstileRequired = true;
 
-    const render = () => {
+    let rendered = false;
+    state._renderTurnstile = () => {
+      if (rendered) return;
+      if (state.currentStep !== 3) return;
+      if (!window.turnstile || typeof window.turnstile.render !== 'function') return;
+      rendered = true;
       try {
         window.turnstile.render(container, {
           sitekey,
@@ -1081,15 +1142,16 @@
           },
         });
       } catch (err) {
+        // Allow a retry on the next entry to step 3.
+        rendered = false;
         console.error('[TuHistoriaForm] turnstile render failed:', err);
       }
     };
 
-    if (window.turnstile && typeof window.turnstile.render === 'function') {
-      render();
-    } else {
-      window.thTurnstileOnLoad = render;
-    }
+    // api.js loads with ?onload=thTurnstileOnLoad; if it somehow loaded first,
+    // the direct call below covers that order too.
+    window.thTurnstileOnLoad = state._renderTurnstile;
+    state._renderTurnstile();
   }
 
   function resetTurnstile(state) {
@@ -1185,9 +1247,15 @@
         if (!ok2) { goToStep(els, state, 2, { validateCurrent: false }); return; }
         if (!ok3) return;
 
-        // If photos attached but minor consent missing, hint (non-blocking).
-        if (state.files.length > 0 && els.menoresCheckbox && !els.menoresCheckbox.checked && els.menoresNote) {
-          els.menoresNote.classList.remove('hidden');
+        // Conditional minors declaration (SEC-02-FIX-02): blocks only when it
+        // actually applies — photos with the question unanswered, or minors
+        // declared without the authorization checkbox.
+        if (!menoresValid(els, state)) {
+          syncMenoresUI(els, state);
+          if (els.menoresWrapper) {
+            els.menoresWrapper.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          return;
         }
 
         state.submitting = true;
@@ -1232,7 +1300,13 @@
         fd.append('autorizacion_general', String(!!(els.consentAge && els.consentAge.checked &&
           els.consentThirdParty && els.consentThirdParty.checked &&
           els.consentTerms && els.consentTerms.checked)));
-        fd.append('autorizacion_menores', state.files.length > 0 ? String(!!els.menoresCheckbox.checked) : '');
+        // Minors contract (SEC-02-FIX-02): both empty without photos; with
+        // photos the declaration is 'true'/'false', and the authorization is
+        // sent only when minors were declared.
+        const menoresAnswer = state.files.length > 0 ? getMenoresAnswer(els) : '';
+        fd.append('fotos_incluyen_menores', menoresAnswer);
+        fd.append('autorizacion_menores',
+          menoresAnswer === 'true' ? String(!!(els.menoresCheckbox && els.menoresCheckbox.checked)) : '');
         fd.append('permitir_credito', String(!!f.permitir_credito.checked));
         fotoBlobs.forEach((blob, i) => fd.append('fotos', blob, `foto-${i + 1}.jpg`));
         // Anti-bot signals, validated server-side.

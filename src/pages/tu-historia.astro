@@ -369,18 +369,35 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
                 <p class="hint th-auth-hint" data-hint-default="">&nbsp;</p>
               </div>
 
+              <!-- SEC-02-FIX-02: pregunta condicional. Solo visible con fotos;
+                   la autorización se exige únicamente si declaran menores. -->
               <div id="th-menores-wrapper" class="field hidden">
-                <label class="th-checkbox">
-                  <input
-                    type="checkbox"
-                    id="th-auth-menores"
-                    name="autorizacion_menores"
-                  />
-                  <span>Las fotografías incluyen menores de edad y confirmo que cuento con la autorización del padre, madre o tutor legal para su uso editorial.</span>
-                </label>
-                <p id="th-menores-note" class="hidden hint" style="color: #C8102E;">
-                  Si tus fotos incluyen menores de edad, necesitamos esta confirmación para poder usarlas.
-                </p>
+                <span class="th-menores-question" id="th-menores-q">
+                  ¿Tus fotos incluyen menores de edad? <span class="req">*</span>
+                </span>
+                <div class="th-menores-options" role="radiogroup" aria-labelledby="th-menores-q">
+                  <label class="th-radio">
+                    <input type="radio" name="fotos_incluyen_menores" value="true" />
+                    <span>Sí</span>
+                  </label>
+                  <label class="th-radio">
+                    <input type="radio" name="fotos_incluyen_menores" value="false" />
+                    <span>No</span>
+                  </label>
+                </div>
+                <div id="th-menores-auth" class="hidden">
+                  <label class="th-checkbox">
+                    <input
+                      type="checkbox"
+                      id="th-auth-menores"
+                      name="autorizacion_menores"
+                    />
+                    <span>Confirmo que cuento con la autorización del padre, madre o tutor legal de cada menor que aparece en las fotos para su uso editorial. <span class="req">*</span></span>
+                  </label>
+                  <p id="th-menores-note" class="hidden hint" style="color: #C8102E;">
+                    Necesitamos esta confirmación para poder usar fotos con menores de edad.
+                  </p>
+                </div>
               </div>
             </fieldset>
 
@@ -393,8 +410,10 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
             </aside>
 
             <!-- Turnstile (SEC-02 P2): managed widget, explicit render from
-                 tu-historia.js. The submit button stays disabled until the
-                 challenge yields a token; the server re-verifies it. -->
+                 tu-historia.js when the user reaches this step — rendering
+                 while the panel is display:none breaks the widget and no
+                 token is ever issued (SEC-02-FIX-02). Submit stays disabled
+                 until the challenge yields a token; the server re-verifies. -->
             <div class="th-turnstile-wrapper">
               <div id="th-turnstile" data-sitekey={turnstileSiteKey}></div>
             </div>
@@ -667,6 +686,32 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
     }
     .th-checkbox input[type="checkbox"] {
       margin-top: 3px;
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      accent-color: var(--th-red);
+      cursor: pointer;
+    }
+
+    /* Radio row (pregunta de menores) */
+    .th-menores-question {
+      font: 600 14px/1.4 var(--font-body, "Inter", sans-serif);
+      color: var(--th-ink);
+    }
+    .th-menores-options {
+      display: flex;
+      gap: 24px;
+    }
+    .th-radio {
+      display: inline-flex !important;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      cursor: pointer;
+      font: 400 14px/1.5 var(--font-body, "Inter", sans-serif) !important;
+      color: var(--th-ink) !important;
+    }
+    .th-radio input[type="radio"] {
       width: 18px;
       height: 18px;
       flex-shrink: 0;
