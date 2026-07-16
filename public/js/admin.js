@@ -1135,13 +1135,22 @@ const AdminPages = {
                 .map(p => '<p>' + p.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') + '</p>')
                 .join('');
             historiaContentHtml = paragraphs || '<p></p>';
-            // First photo → imagen principal
-            if (historiaSeed.fotos && historiaSeed.fotos.length > 0) {
-                historiaImagenUrl = SupabaseHistorias.obtenerUrlFoto(historiaSeed.fotos[0]);
-            }
             // Credit opt-in → crédito fotográfico
             if (historiaSeed.permitir_credito && historiaSeed.nombre) {
                 historiaCreditoFoto = 'Cortesía ' + historiaSeed.nombre;
+            }
+            // First photo → imagen principal. tu-historia es privado (SEC-02
+            // P1): la foto se copia al bucket público 'imagenes' (SEC-02-FIX-01)
+            // para tener una URL estable, no firmada, en el artículo publicado.
+            // No bloqueante: si falla, el admin puede agregar una imagen manual.
+            if (historiaSeed.fotos && historiaSeed.fotos.length > 0) {
+                try {
+                    const creditoFoto = (historiaSeed.permitir_credito && historiaSeed.nombre) ? historiaSeed.nombre : null;
+                    historiaImagenUrl = await SupabaseHistorias.copiarFotoAImagenes(historiaSeed.fotos[0], creditoFoto);
+                } catch (e) {
+                    console.error('[editor] Failed to copy historia photo to imagenes:', e);
+                    showToast('No se pudo copiar la foto de la historia. Agrega una imagen manualmente.', 'error', 4000);
+                }
             }
         }
 
