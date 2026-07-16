@@ -1,9 +1,13 @@
 // ==================== TU HISTORIA — Submission Form (BJ-003a) ====================
 // 3-step form: Tus datos / Tu historia / Revisión.
-// Inline onBlur validation, lazy photo upload (uploaded only at final submit),
-// autosave to localStorage every 5s, draft restore pill.
+// Inline onBlur validation, autosave to localStorage every 5s, draft restore pill.
 // Submit button has 5 explicit visual states — never the desaturated pink that
 // previously read as "disabled, fix something".
+//
+// SEC-02 P2: the whole submission (fields + photos + Turnstile token) goes in
+// ONE multipart POST to /api/enviar-historia — no direct Supabase writes from
+// the browser. Photos are re-encoded client-side (max 1920px JPEG) because the
+// Vercel function body is capped at 4.5MB. Rate limiting is server-side (429).
 
 (function () {
   'use strict';
@@ -15,12 +19,18 @@
   const AUTOSAVE_DEBOUNCE = 5000;
 
   const MAX_FILES = 5;
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per spec
-  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB pre-compression
+  // No HEIC: iOS converts to JPEG automatically when heic isn't accepted, and
+  // neither canvas (Chrome/Android) nor the server's sharp build can decode it.
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-  const RATE_LIMIT_KEY = 'tu_historia_submissions';
-  const RATE_LIMIT_WINDOW = 24 * 60 * 60 * 1000;
-  const RATE_LIMIT_MAX = 3;
+  // Client-side compression targets. The multipart body must stay under
+  // Vercel's 4.5MB function limit, so each photo is re-encoded to max 1920px
+  // JPEG, stepping quality down until it fits the per-photo target.
+  const FOTO_MAX_DIM = 1920;
+  const FOTO_TARGET_BYTES = 700 * 1024;
+  const FOTO_QUALITY_LADDER = [0.85, 0.78, 0.7, 0.6];
+  const FOTOS_TOTAL_BUDGET = 3_800_000;
 
   const DESCRIPCION_MIN = 50;
 
@@ -127,6 +137,10 @@
       submitting: false,
       submitted: false,
       restoredFileNames: [],
+      // Time-trap: sent to the server, which rejects forms filled in < 3s.
+      startedAt: Date.now(),
+      turnstileToken: '',
+      turnstileRequired: false,
     };
     const storage = safeStorage();
 
@@ -138,16 +152,12 @@
     bindAutosave(els, state, storage);
     bindDraftRestore(els, state, storage);
     bindSubmit(els, state, storage);
+    setupTurnstile(els, state);
 
     // Initial UI sync
     renderPhotoGrid(els, state);
     updateStepUI(els, state);
     updateSubmitState(els, state);
-
-    // Show rate-limit banner on load if applicable
-    if (isRateLimited(storage)) {
-      els.rateLimitBanner.classList.remove('hidden');
-    }
 
     // Try to restore draft (shows pill if applicable)
     maybeShowDraftPill(els, storage);
@@ -604,7 +614,7 @@
         break;
       }
       if (!ALLOWED_TYPES.includes(file.type)) {
-        errors.push(`"${file.name}" no es una imagen válida (JPG, PNG, WebP o HEIC).`);
+        errors.push(`"${file.name}" no es una imagen válida (JPG, PNG o WebP).`);
         continue;
       }
       if (file.size > MAX_FILE_SIZE) {
@@ -1005,13 +1015,15 @@
     }
 
     // Disabled unless we're on step 3 with all required step-3 fields valid
-    // AND prior steps are complete (silent re-validation).
+    // AND prior steps are complete (silent re-validation) AND the Turnstile
+    // challenge produced a token (when the widget is configured).
     const onLastStep = state.currentStep === 3;
     const step1Valid = REQUIRED_BY_STEP[1].every((id) => validateField(id, { showErrors: false }).valid);
     const step2Valid = REQUIRED_BY_STEP[2].every((id) => validateField(id, { showErrors: false }).valid);
     const step3Valid = REQUIRED_BY_STEP[3].every((id) => validateField(id, { showErrors: false }).valid);
+    const turnstileOk = !state.turnstileRequired || !!state.turnstileToken;
 
-    if (onLastStep && step1Valid && step2Valid && step3Valid) {
+    if (onLastStep && step1Valid && step2Valid && step3Valid && turnstileOk) {
       setSubmitState(els, 'default');
     } else {
       setSubmitState(els, 'disabled');
@@ -1034,62 +1046,137 @@
     }
   }
 
-  // ==================== RATE LIMIT ====================
+  // ==================== TURNSTILE ====================
 
-  function getRecentSubmissions(storage) {
-    if (!storage) return [];
-    try {
-      const raw = storage.getItem(RATE_LIMIT_KEY);
-      const arr = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(arr)) return [];
-      const cutoff = Date.now() - RATE_LIMIT_WINDOW;
-      return arr.filter((ts) => typeof ts === 'number' && ts > cutoff);
-    } catch (_) {
-      return [];
+  // Explicit render into #th-turnstile (sitekey inlined at build in the page).
+  // The api.js script tag loads AFTER this file with ?onload=thTurnstileOnLoad,
+  // but guard both orders anyway. Without a sitekey (local dev) the widget is
+  // skipped and the token requirement is lifted client-side — the server still
+  // rejects tokenless submissions in production.
+  function setupTurnstile(els, state) {
+    const container = document.getElementById('th-turnstile');
+    const sitekey = container && container.getAttribute('data-sitekey');
+    if (!container || !sitekey) {
+      console.warn('[TuHistoriaForm] Turnstile sitekey missing — widget skipped');
+      return;
+    }
+    state.turnstileRequired = true;
+
+    const render = () => {
+      try {
+        window.turnstile.render(container, {
+          sitekey,
+          language: 'es',
+          callback: (token) => {
+            state.turnstileToken = token;
+            updateSubmitState(els, state);
+          },
+          'expired-callback': () => {
+            state.turnstileToken = '';
+            updateSubmitState(els, state);
+          },
+          'error-callback': () => {
+            state.turnstileToken = '';
+            updateSubmitState(els, state);
+          },
+        });
+      } catch (err) {
+        console.error('[TuHistoriaForm] turnstile render failed:', err);
+      }
+    };
+
+    if (window.turnstile && typeof window.turnstile.render === 'function') {
+      render();
+    } else {
+      window.thTurnstileOnLoad = render;
     }
   }
 
-  function recordSubmission(storage) {
-    if (!storage) return;
+  function resetTurnstile(state) {
+    state.turnstileToken = '';
     try {
-      const recent = getRecentSubmissions(storage);
-      recent.push(Date.now());
-      storage.setItem(RATE_LIMIT_KEY, JSON.stringify(recent));
-    } catch (_) { /* ignore */ }
+      if (window.turnstile && typeof window.turnstile.reset === 'function') {
+        window.turnstile.reset();
+      }
+    } catch (err) {
+      console.error('[TuHistoriaForm] turnstile reset failed:', err);
+    }
   }
 
-  function isRateLimited(storage) {
-    return getRecentSubmissions(storage).length >= RATE_LIMIT_MAX;
+  // ==================== PHOTO COMPRESSION ====================
+
+  function decodeImage(file) {
+    if (typeof window.createImageBitmap === 'function') {
+      return window.createImageBitmap(file).catch(() => decodeImageViaImg(file));
+    }
+    return decodeImageViaImg(file);
+  }
+
+  function decodeImageViaImg(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('decode-failed')); };
+      img.src = url;
+    });
+  }
+
+  function canvasToJpeg(canvas, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error('encode-failed'))),
+        'image/jpeg',
+        quality
+      );
+    });
+  }
+
+  // Re-encode a photo to max FOTO_MAX_DIM px JPEG, stepping quality down until
+  // it fits FOTO_TARGET_BYTES (or the ladder runs out). The canvas re-encode
+  // also drops EXIF client-side; the server re-strips with sharp regardless.
+  async function compressPhoto(file) {
+    const img = await decodeImage(file);
+    const w = img.width || img.naturalWidth;
+    const h = img.height || img.naturalHeight;
+    if (!w || !h) throw new Error('decode-failed');
+
+    const scale = Math.min(1, FOTO_MAX_DIM / Math.max(w, h));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    if (typeof img.close === 'function') {
+      try { img.close(); } catch (_) { /* ignore */ }
+    }
+
+    let blob = null;
+    for (const quality of FOTO_QUALITY_LADDER) {
+      blob = await canvasToJpeg(canvas, quality);
+      if (blob.size <= FOTO_TARGET_BYTES) break;
+    }
+    return blob;
   }
 
   // ==================== SUBMIT ====================
 
   function bindSubmit(els, state, storage) {
+    const defaultErrorText = els.errorBanner ? els.errorBanner.textContent : '';
+
+    const showError = (message) => {
+      els.errorBanner.textContent = message || defaultErrorText;
+      els.errorBanner.classList.remove('hidden');
+      els.errorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
     els.form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (state.submitting) return;
 
       els.errorBanner.classList.add('hidden');
+      els.rateLimitBanner.classList.add('hidden');
 
       try {
-        // Honeypot
-        const honeypot = els.form.elements.website && els.form.elements.website.value;
-        if (honeypot) {
-          console.warn('[TuHistoriaForm] honeypot triggered — silent success');
-          const f = els.form.elements;
-          showSuccess(els, state, {
-            nombre: (f.nombre.value || '').trim(),
-            email: (f.email.value || '').trim(),
-          }, storage);
-          return;
-        }
-
-        if (isRateLimited(storage)) {
-          els.rateLimitBanner.classList.remove('hidden');
-          els.rateLimitBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          return;
-        }
-
         // Validate every step before submit
         const ok1 = validateStep(els, state, 1, { showErrors: true });
         const ok2 = validateStep(els, state, 2, { showErrors: true });
@@ -1107,65 +1194,81 @@
         if (state._autosave) state._autosave.cancel();
         updateSubmitState(els, state);
 
-        const submissionId = uuidv4();
-
-        // Lazy upload — only at submit time
-        const photoPaths = [];
+        // Compress photos so the single multipart request stays under the
+        // 4.5MB Vercel function body limit.
+        const fotoBlobs = [];
+        let totalBytes = 0;
         for (const fileItem of state.files) {
+          updateFileProgress(els, state, fileItem.id, 30, 'uploading');
+          let blob;
           try {
-            updateFileProgress(els, state, fileItem.id, 10, 'uploading');
-            const path = await window.SupabaseHistorias.subirFotoHistoria(submissionId, fileItem.file);
-            updateFileProgress(els, state, fileItem.id, 100, 'done');
-            photoPaths.push(path);
+            blob = await compressPhoto(fileItem.file);
           } catch (err) {
-            console.error('[TuHistoriaForm] photo-upload failed:', err);
+            console.error('[TuHistoriaForm] photo-compress failed:', err);
             updateFileProgress(els, state, fileItem.id, 0, 'error');
-            throw new Error('photo-upload-failed');
+            showError(`No pudimos procesar "${fileItem.file.name}" como imagen. Quítala e intenta de nuevo.`);
+            return;
           }
+          totalBytes += blob.size;
+          fotoBlobs.push(blob);
+          updateFileProgress(els, state, fileItem.id, 60, 'uploading');
+        }
+        if (totalBytes > FOTOS_TOTAL_BUDGET) {
+          showError('Tus fotos superan el límite total de envío. Quita alguna e intenta de nuevo.');
+          return;
         }
 
         const f = els.form.elements;
+        const fd = new FormData();
+        fd.append('nombre', (f.nombre.value || '').trim());
+        fd.append('email', (f.email.value || '').trim());
+        fd.append('telefono', (f.telefono.value || '').trim());
+        fd.append('relacion', f.relacion.value);
+        fd.append('categoria_sugerida', f.categoria_sugerida.value);
+        fd.append('titulo', (f.titulo.value || '').trim());
+        fd.append('descripcion', (f.descripcion.value || '').trim());
+        fd.append('liga_organizacion', (f.liga_organizacion.value || '').trim());
+        fd.append('ciudad_estado', (f.ciudad_estado.value || '').trim());
+        fd.append('autorizacion_general', String(!!(els.consentAge && els.consentAge.checked &&
+          els.consentThirdParty && els.consentThirdParty.checked &&
+          els.consentTerms && els.consentTerms.checked)));
+        fd.append('autorizacion_menores', state.files.length > 0 ? String(!!els.menoresCheckbox.checked) : '');
+        fd.append('permitir_credito', String(!!f.permitir_credito.checked));
+        fotoBlobs.forEach((blob, i) => fd.append('fotos', blob, `foto-${i + 1}.jpg`));
+        // Anti-bot signals, validated server-side.
+        fd.append('cf-turnstile-response', state.turnstileToken || '');
+        fd.append('form_started_at', String(state.startedAt));
+        fd.append('website', (f.website && f.website.value) || '');
+
+        const res = await fetch('/api/enviar-historia', { method: 'POST', body: fd });
+
+        if (res.status === 429) {
+          els.rateLimitBanner.classList.remove('hidden');
+          els.rateLimitBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+        if (res.status === 403) {
+          resetTurnstile(state);
+          showError('No pudimos verificar que eres humano. Completa la verificación e intenta de nuevo.');
+          return;
+        }
+        if (!res.ok) {
+          let message = '';
+          try {
+            const body = await res.json();
+            message = body && body.error ? body.error : '';
+          } catch (_) { /* keep default */ }
+          console.error('[TuHistoriaForm] submit rejected:', res.status, message);
+          showError(message);
+          return;
+        }
+
+        state.files.forEach((fileItem) => updateFileProgress(els, state, fileItem.id, 100, 'done'));
+
         const payload = {
-          id: submissionId,
           nombre: (f.nombre.value || '').trim(),
           email: (f.email.value || '').trim(),
-          telefono: (f.telefono.value || '').trim() || null,
-          relacion: f.relacion.value,
-          categoria_sugerida: f.categoria_sugerida.value,
-          titulo: (f.titulo.value || '').trim(),
-          descripcion: (f.descripcion.value || '').trim(),
-          liga_organizacion: (f.liga_organizacion.value || '').trim() || null,
-          ciudad_estado: (f.ciudad_estado.value || '').trim(),
-          fotos: photoPaths,
-          autorizacion_general: !!(els.consentAge && els.consentAge.checked &&
-            els.consentThirdParty && els.consentThirdParty.checked &&
-            els.consentTerms && els.consentTerms.checked),
-          autorizacion_menores: state.files.length > 0 ? els.menoresCheckbox.checked : null,
-          permitir_credito: f.permitir_credito.checked,
         };
-
-        await window.SupabaseHistorias.enviarHistoria(payload);
-
-        recordSubmission(storage);
-        if (isRateLimited(storage)) els.rateLimitBanner.classList.remove('hidden');
-
-        // Fire-and-forget email notification — never blocks success.
-        // Sends BOTH the internal editorial notification AND the user confirmation.
-        try {
-          fetch('/api/notify-historia', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              nombre: payload.nombre,
-              email: payload.email,
-              titulo: payload.titulo,
-              categoria: payload.categoria_sugerida,
-              ciudad: payload.ciudad_estado,
-            }),
-          }).catch((err) => console.error('[notify-historia] email request failed:', err));
-        } catch (err) {
-          console.error('[notify-historia] dispatch failed:', err);
-        }
 
         // Clear draft on successful submit
         try {
@@ -1181,8 +1284,7 @@
         setTimeout(() => showSuccess(els, state, payload, storage), 600);
       } catch (err) {
         console.error('[TuHistoriaForm] submit failed:', err);
-        els.errorBanner.classList.remove('hidden');
-        els.errorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showError('');
       } finally {
         if (!state.submitted) {
           state.submitting = false;

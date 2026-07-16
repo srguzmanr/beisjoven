@@ -710,44 +710,12 @@ window.SupabaseStorage = SupabaseStorage;
 
 // ==================== TU HISTORIA — COMMUNITY SUBMISSIONS ====================
 
+// Admin-panel helpers only. The public submission flow (form + photos +
+// emails) writes exclusively through POST /api/enviar-historia (SEC-02 P2) —
+// no anon-key writes from the browser.
 const SupabaseHistorias = {
 
     BUCKET: 'tu-historia',
-
-    // Submit a community story via SECURITY DEFINER RPC.
-    // Direct INSERT from anon is blocked because PostgREST issues
-    // INSERT...RETURNING by default and there is no anon SELECT policy
-    // on historias_enviadas (privacy by design), which surfaces as
-    // 42501 "new row violates row-level security policy". The RPC runs
-    // as the function owner, validates the payload, and writes the row.
-    async enviarHistoria(data) {
-        const { data: newId, error } = await supabaseClient
-            .rpc('enviar_historia', { payload: data });
-        if (error) {
-            console.error('[enviarHistoria] Failed:', error);
-            throw error;
-        }
-        return { id: newId || data.id };
-    },
-
-    // Upload one photo attached to a submission.
-    // Returns the storage path relative to the bucket.
-    async subirFotoHistoria(submissionId, file) {
-        // Sanitize filename: remove anything that isn't alnum, dot, dash, underscore.
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const path = `${submissionId}/${Date.now()}-${safeName}`;
-        const { data, error } = await supabaseClient.storage
-            .from(this.BUCKET)
-            .upload(path, file, {
-                upsert: false,
-                contentType: file.type,
-            });
-        if (error) {
-            console.error('[subirFotoHistoria] Failed:', error);
-            throw error;
-        }
-        return data.path;
-    },
 
     // Public URL for a stored photo path.
     // NOTE: only resolves while the bucket is public. Kept for the publish
