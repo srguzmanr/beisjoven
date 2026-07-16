@@ -32,7 +32,8 @@ const TITULO_MAX = 200;
  * @property {string | null} liga_organizacion
  * @property {string} ciudad_estado
  * @property {boolean} autorizacion_general
- * @property {boolean | null} autorizacion_menores  null when no photos
+ * @property {boolean | null} fotos_incluyen_menores  null when no photos
+ * @property {boolean | null} autorizacion_menores    true only when minors declared (null otherwise)
  * @property {boolean} permitir_credito
  */
 
@@ -94,12 +95,26 @@ export function validateHistoria(raw, fotoCount) {
     return fail('autorizacion_general', 'debes aceptar las confirmaciones obligatorias');
   }
 
-  // Only meaningful when photos are attached; whether they include minors is
-  // the sender's declaration, so with photos it's an explicit boolean, not a
-  // forced true (same contract as the retired client flow).
+  // Minors flow (SEC-02-FIX-02), mirror of the /tu-historia client:
+  //   - no photos           → question doesn't apply, both fields null
+  //   - photos              → explicit 'true'/'false' declaration required
+  //   - minors declared     → parental/guardian authorization required
+  //   - no minors declared  → authorization NOT required (never force a
+  //                           false declaration to unblock the submit)
+  let fotosIncluyenMenores = null;
   let autorizacionMenores = null;
   if (fotoCount > 0) {
-    autorizacionMenores = str(raw, 'autorizacion_menores') === 'true';
+    const declaracion = str(raw, 'fotos_incluyen_menores');
+    if (declaracion !== 'true' && declaracion !== 'false') {
+      return fail('fotos_incluyen_menores', 'indica si tus fotos incluyen menores de edad');
+    }
+    fotosIncluyenMenores = declaracion === 'true';
+    if (fotosIncluyenMenores) {
+      if (str(raw, 'autorizacion_menores') !== 'true') {
+        return fail('autorizacion_menores', 'falta la autorización del padre, madre o tutor legal para las fotos con menores');
+      }
+      autorizacionMenores = true;
+    }
   }
 
   return {
@@ -114,6 +129,7 @@ export function validateHistoria(raw, fotoCount) {
       liga_organizacion: liga || null,
       ciudad_estado: ciudad,
       autorizacion_general: true,
+      fotos_incluyen_menores: fotosIncluyenMenores,
       autorizacion_menores: autorizacionMenores,
       permitir_credito: str(raw, 'permitir_credito') !== 'false',
     },

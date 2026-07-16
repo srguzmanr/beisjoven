@@ -159,7 +159,7 @@ export const POST: APIRoute = async ({ request }) => {
   for (const name of [
     'nombre', 'email', 'telefono', 'relacion', 'categoria_sugerida', 'titulo',
     'descripcion', 'liga_organizacion', 'ciudad_estado', 'autorizacion_general',
-    'autorizacion_menores', 'permitir_credito',
+    'fotos_incluyen_menores', 'autorizacion_menores', 'permitir_credito',
   ]) {
     fields[name] = fieldStr(form, name);
   }
