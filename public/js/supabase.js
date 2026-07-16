@@ -717,14 +717,28 @@ const SupabaseHistorias = {
 
     BUCKET: 'tu-historia',
 
-    // Public URL for a stored photo path.
-    // NOTE: only resolves while the bucket is public. Kept for the publish
-    // flow (article main image). The admin panel uses obtenerUrlFotoFirmada.
-    obtenerUrlFoto(path) {
-        const { data } = supabaseClient.storage
-            .from(this.BUCKET)
-            .getPublicUrl(path);
-        return data.publicUrl;
+    // Copia la foto principal de una historia al bucket público 'imagenes'
+    // (SEC-02-FIX-01). El bucket tu-historia es privado desde SEC-02 P1 y el
+    // admin no tiene service role en cliente, así que la copia (descarga +
+    // strip EXIF con sharp + upload + metadata) la hace el servidor; aquí
+    // solo se manda el access_token de la sesión y se recibe la URL pública
+    // estable resultante. Lanza si falla — el llamante decide cómo degradar.
+    async copiarFotoAImagenes(path, credito) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) throw new Error('No hay sesión activa');
+        const res = await fetch('/api/copiar-foto-historia', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + session.access_token,
+            },
+            body: JSON.stringify({ path, credito: credito || null }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(body.error || 'No se pudo copiar la foto');
+        }
+        return body.url;
     },
 
     // Signed URL for a stored photo path (private bucket). Async.
