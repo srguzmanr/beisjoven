@@ -413,9 +413,15 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
                  tu-historia.js when the user reaches this step — rendering
                  while the panel is display:none breaks the widget and no
                  token is ever issued (SEC-02-FIX-02). Submit stays disabled
-                 until the challenge yields a token; the server re-verifies. -->
+                 until the challenge yields a token; the server re-verifies.
+                 SEC-02-FIX-03: if api.js fails to load or the challenge
+                 errors, #th-turnstile-error explains it — a Turnstile
+                 failure must never be a mute gray button. -->
             <div class="th-turnstile-wrapper">
               <div id="th-turnstile" data-sitekey={turnstileSiteKey}></div>
+              <p id="th-turnstile-error" class="hidden" role="alert">
+                No se pudo cargar la verificación de seguridad. Revisa tu conexión y recarga la página para poder enviar tu historia.
+              </p>
             </div>
 
             <div class="th-nav">
@@ -1172,11 +1178,19 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
       margin: 20px 0 4px;
       min-height: 65px;
     }
+    #th-turnstile-error {
+      font: 400 13px/1.5 var(--font-body, "Inter", sans-serif);
+      color: var(--th-red);
+      margin: 8px 0 0;
+    }
   </style>
 
   <!-- SEC-02 P2: the form writes ONLY through /api/enviar-historia — no
        supabase-js on this page anymore. Turnstile loads after tu-historia.js
-       so the thTurnstileOnLoad callback is already defined. -->
+       so the thTurnstileOnLoad callback is already defined.
+       SEC-02-FIX-03: the api.js path REQUIRES the /v0/ segment (without it
+       Cloudflare 404s, window.turnstile never exists and the submit button
+       stays disabled); onerror surfaces a load failure in the form. -->
   <script is:inline src="/js/tu-historia.js"></script>
-  <script is:inline src="https://challenges.cloudflare.com/turnstile/api.js?onload=thTurnstileOnLoad&render=explicit" async defer></script>
+  <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=thTurnstileOnLoad&render=explicit" async defer onerror="window.thTurnstileFailed && window.thTurnstileFailed()"></script>
 </BaseLayout>

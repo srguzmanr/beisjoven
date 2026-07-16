@@ -1106,11 +1106,18 @@
   // leaving the submit button permanently disabled), so rendering waits until
   // BOTH the api.js script has loaded AND step 3 is visible — whichever comes
   // last triggers it (updateStepUI calls state._renderTurnstile on step 3).
+  // SEC-02-FIX-03: a Turnstile failure must be VISIBLE, never a mute gray
+  // button — the script tag's onerror (definitive load failure), a watchdog
+  // armed on step 3 (api.js still absent after the grace period), and the
+  // widget's error-callback all surface #th-turnstile-error.
   // Without a sitekey (local dev) the widget is skipped and the token
   // requirement is lifted client-side — the server still rejects tokenless
   // submissions in production.
+  const TURNSTILE_WATCHDOG_MS = 8000;
+
   function setupTurnstile(els, state) {
     const container = document.getElementById('th-turnstile');
+    const errorEl = document.getElementById('th-turnstile-error');
     const sitekey = container && container.getAttribute('data-sitekey');
     if (!container || !sitekey) {
       console.warn('[TuHistoriaForm] Turnstile sitekey missing — widget skipped');
@@ -1118,18 +1125,45 @@
     }
     state.turnstileRequired = true;
 
+    const showLoadError = () => {
+      if (errorEl) errorEl.classList.remove('hidden');
+    };
+    const hideLoadError = () => {
+      if (errorEl) errorEl.classList.add('hidden');
+    };
+
     let rendered = false;
+    let watchdog = null;
     state._renderTurnstile = () => {
       if (rendered) return;
       if (state.currentStep !== 3) return;
-      if (!window.turnstile || typeof window.turnstile.render !== 'function') return;
+      if (!window.turnstile || typeof window.turnstile.render !== 'function') {
+        // api.js not available yet: give it a grace period, then surface the
+        // failure instead of leaving the user in front of a disabled button.
+        if (!watchdog) {
+          watchdog = setTimeout(() => {
+            watchdog = null;
+            if (!rendered) {
+              console.error('[TuHistoriaForm] turnstile api.js never loaded');
+              showLoadError();
+            }
+          }, TURNSTILE_WATCHDOG_MS);
+        }
+        return;
+      }
       rendered = true;
+      if (watchdog) {
+        clearTimeout(watchdog);
+        watchdog = null;
+      }
+      hideLoadError();
       try {
         window.turnstile.render(container, {
           sitekey,
           language: 'es',
           callback: (token) => {
             state.turnstileToken = token;
+            hideLoadError();
             updateSubmitState(els, state);
           },
           'expired-callback': () => {
@@ -1138,14 +1172,22 @@
           },
           'error-callback': () => {
             state.turnstileToken = '';
+            showLoadError();
             updateSubmitState(els, state);
           },
         });
       } catch (err) {
         // Allow a retry on the next entry to step 3.
         rendered = false;
+        showLoadError();
         console.error('[TuHistoriaForm] turnstile render failed:', err);
       }
+    };
+
+    // Fired by the api.js script tag's onerror attribute (404, offline, DNS).
+    window.thTurnstileFailed = () => {
+      console.error('[TuHistoriaForm] turnstile api.js failed to load');
+      showLoadError();
     };
 
     // api.js loads with ?onload=thTurnstileOnLoad; if it somehow loaded first,
