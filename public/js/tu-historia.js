@@ -1364,8 +1364,17 @@
           return;
         }
         if (res.status === 403) {
+          // SEC-02-FIX-04: surface Cloudflare's error-codes in the banner —
+          // a siteverify rejection must be diagnosable from a screenshot.
+          let codes = [];
+          try {
+            const body = await res.json();
+            if (body && Array.isArray(body.details)) codes = body.details;
+          } catch (_) { /* keep generic message */ }
+          console.error('[TuHistoriaForm] turnstile rejected server-side:', codes);
           resetTurnstile(state);
-          showError('No pudimos verificar que eres humano. Completa la verificación e intenta de nuevo.');
+          const suffix = codes.length ? ` (código: ${codes.join(', ')})` : '';
+          showError('No pudimos verificar que eres humano. Completa la verificación e intenta de nuevo.' + suffix);
           return;
         }
         if (!res.ok) {

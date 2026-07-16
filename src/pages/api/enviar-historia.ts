@@ -10,7 +10,9 @@
 // Contract with public/js/tu-historia.js:
 //   200 { success, id }   — saved (honeypot hits get a fake 200 too)
 //   400 { error, field? } — validation / malformed request
-//   403 { error, code: 'turnstile' } — token missing or rejected
+//   403 { error, code: 'turnstile', details: string[] } — token missing or
+//        rejected; details = Cloudflare error-codes (shown by the client so
+//        a rejection is diagnosable from a screenshot)
 //   413 { error }         — body over the Vercel function limit
 //   429 { error }         — per-IP rate limit
 //   500 { error }         — storage/insert failure (photos cleaned up)
@@ -83,24 +85,33 @@ async function isRateLimited(ip: string): Promise<boolean> {
   }
 }
 
-async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
-  if (!turnstileSecret || !token) return false;
+// SEC-02-FIX-04: returns the Cloudflare error-codes so the 403 body can carry
+// them — Vercel's log store keeps only request lines (console output is not
+// queryable), so the rejection reason must be observable from the response.
+// remoteip is deliberately NOT sent: it is optional per Cloudflare, and with
+// iCloud Private Relay / carrier CGNAT the IP that solved the challenge
+// routinely differs from the IP the POST arrives with, making siteverify
+// reject real humans (QA real: iPhone Safari, 3× 403 con widget resuelto).
+async function verifyTurnstile(token: string): Promise<{ ok: boolean; codes: string[] }> {
+  if (!turnstileSecret) return { ok: false, codes: ['secret-key-missing'] };
+  if (!token) return { ok: false, codes: ['token-missing'] };
   try {
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ secret: turnstileSecret, response: token, remoteip: ip }),
+      body: new URLSearchParams({ secret: turnstileSecret, response: token }),
     });
     const outcome = (await res.json()) as { success?: boolean; 'error-codes'?: string[] };
+    const codes = outcome['error-codes'] ?? [];
     if (!outcome.success) {
-      console.warn('[enviar-historia] turnstile rejected:', outcome['error-codes'] ?? []);
+      console.warn('[enviar-historia] turnstile rejected:', codes);
     }
-    return outcome.success === true;
+    return { ok: outcome.success === true, codes };
   } catch (err) {
     // Cloudflare unreachable → we cannot vouch for the caller; reject rather
     // than letting an outage disable the site's main bot defense.
     console.error('[enviar-historia] turnstile siteverify failed:', err);
-    return false;
+    return { ok: false, codes: ['siteverify-unreachable'] };
   }
 }
 
@@ -145,9 +156,13 @@ export const POST: APIRoute = async ({ request }) => {
     return json(429, { error: 'Demasiados envíos desde tu conexión. Intenta de nuevo más tarde.' });
   }
 
-  const turnstileOk = await verifyTurnstile(fieldStr(form, 'cf-turnstile-response'), ip);
-  if (!turnstileOk) {
-    return json(403, { error: 'No pudimos verificar que eres humano. Reintenta la verificación.', code: 'turnstile' });
+  const turnstile = await verifyTurnstile(fieldStr(form, 'cf-turnstile-response'));
+  if (!turnstile.ok) {
+    return json(403, {
+      error: 'No pudimos verificar que eres humano. Reintenta la verificación.',
+      code: 'turnstile',
+      details: turnstile.codes,
+    });
   }
 
   const fotos = form.getAll('fotos').filter((f): f is File => f instanceof File && f.size > 0);
