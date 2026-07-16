@@ -387,6 +387,15 @@ var Autosave = {
     _draftId: null,      // ID of draft created by autosave (for new articles)
     _beforeUnloadHandler: null,
     _active: false,      // true only when inside the editor
+    // HISTORIA-PIPELINE-02: sesiones sembradas desde una historia
+    // (/admin/nuevo?historia=) son de conversión atómica — el autosave sólo
+    // escribe a localStorage bajo una clave scoped al id de la historia,
+    // NUNCA a Supabase. La única escritura en articulos es el Publicar.
+    _localOnly: false,
+    _scopedKey: null,
+
+    // Clave activa de localStorage (scoped en sesiones de historia)
+    _key: function() { return this._scopedKey || this.STORAGE_KEY; },
 
     // Gather current form data
     _gatherData: function() {
@@ -435,7 +444,7 @@ var Autosave = {
     _updateIndicator: function(status, timestamp) {
         var texts = {
             saving: 'Guardando...',
-            saved: 'Guardado \u2713 ' + (timestamp || ''),
+            saved: (this._localOnly ? 'Respaldo local \u2713 ' : 'Guardado \u2713 ') + (timestamp || ''),
             unsaved: '\u25CF Sin guardar',
             error: '\u26A0 Error al guardar'
         };
@@ -484,7 +493,20 @@ var Autosave = {
 
         try {
             // Always save to localStorage as fallback
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+            localStorage.setItem(this._key(), JSON.stringify(data));
+
+            // HISTORIA-PIPELINE-02: en sesiones sembradas por historia el
+            // autosave termina aquí — red de seguridad local únicamente.
+            // Cero INSERTs de borradores huérfanos en articulos; la historia
+            // no se toca hasta el Publicar explícito. El check redundante de
+            // _currentHistoriaSourceId es cinturón y tirantes por si el modo
+            // local-only no se activó al iniciar la sesión.
+            var isHistoriaSeeded = !this._editId && typeof AdminPages !== 'undefined' && AdminPages._currentHistoriaSourceId;
+            if (this._localOnly || isHistoriaSeeded) {
+                this._dirty = false;
+                this._updateIndicator('saved', new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }));
+                return;
+            }
 
             // Build Supabase payload — content fields only
             var payload = {
@@ -601,6 +623,8 @@ var Autosave = {
         this._draftId = null;
         this._dirty = false;
         this._saving = false;
+        this._localOnly = false;
+        this._scopedKey = null;
         this._attachListeners();
 
         // Rule 7: beforeunload warning
@@ -614,6 +638,27 @@ var Autosave = {
         window.addEventListener('beforeunload', this._beforeUnloadHandler);
     },
 
+    // HISTORIA-PIPELINE-02: autosave SOLO-LOCAL para sesiones sembradas por
+    // historia. Guarda bajo una clave scoped al id de la historia (nunca la
+    // clave clásica, para no contaminar borradores de editores) y jamás
+    // escribe a Supabase.
+    startLocalOnly: function(storageKey) {
+        this.start(null);
+        this._localOnly = true;
+        this._scopedKey = storageKey;
+    },
+
+    // Reanuda el autosave conservando el modo de la sesión actual (clásico o
+    // local-only). Usado por los early-return de saveArticle — un resume con
+    // start() a secas reactivaría los INSERTs a Supabase en sesiones historia.
+    resume: function(editId) {
+        if (this._localOnly && this._scopedKey) {
+            this.startLocalOnly(this._scopedKey);
+        } else {
+            this.start(editId);
+        }
+    },
+
     stop: function() {
         this._active = false;
         if (this._timer) { clearTimeout(this._timer); this._timer = null; }
@@ -624,16 +669,16 @@ var Autosave = {
         this._dirty = false;
     },
 
-    load: function() {
+    load: function(storageKey) {
         try {
-            var raw = localStorage.getItem(this.STORAGE_KEY);
+            var raw = localStorage.getItem(storageKey || this._key());
             if (!raw) return null;
             return JSON.parse(raw);
         } catch (e) { return null; }
     },
 
-    clear: function() {
-        localStorage.removeItem(this.STORAGE_KEY);
+    clear: function(storageKey) {
+        localStorage.removeItem(storageKey || this._key());
         this._draftId = null;
     },
 
@@ -1107,6 +1152,12 @@ const AdminPages = {
             AdminPages._currentHistoriaSourceId = _urlHistoriaId;
             console.log('[editor] Seeded from historia:', _urlHistoriaId);
         }
+        // HISTORIA-PIPELINE-02: una sesión sembrada por historia es de
+        // conversión ATÓMICA — sin "Guardar Borrador", sin autosave a
+        // Supabase, sin restore del draft clásico. La única escritura en
+        // articulos (y la única transición de la historia) es el Publicar.
+        const isHistoriaSession = !isEdit && !!_urlHistoriaId;
+        const _historiaDraftKey = isHistoriaSession ? 'bj_historia_draft_' + _urlHistoriaId : null;
         if (!isEdit && query && query.get && query.get('historia')) {
             const historiaId = query.get('historia');
             try {
@@ -1187,17 +1238,29 @@ const AdminPages = {
             }
         }
         
-        // Check for saved draft (only for new articles)
+        // Check for saved draft (only for new articles).
+        // HISTORIA-PIPELINE-02: cada tipo de sesión lee SOLO su propia clave —
+        // una sesión historia nunca ofrece el draft clásico de un editor, y
+        // una sesión clásica nunca ofrece el respaldo local de una historia.
         let draft = null;
         let useDraft = false;
-        if (!isEdit) {
-            draft = Autosave.load();
+        if (!isEdit && !isHistoriaSession) {
+            draft = Autosave.load(Autosave.STORAGE_KEY);
             if (draft) {
                 const savedTime = new Date(draft.savedAt).toLocaleString('es-MX', {
                     day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
                 });
                 useDraft = confirm('📝 Se encontró un borrador guardado (' + savedTime + ').\n\n¿Deseas restaurarlo?');
-                if (!useDraft) { Autosave.clear(); draft = null; }
+                if (!useDraft) { Autosave.clear(Autosave.STORAGE_KEY); draft = null; }
+            }
+        } else if (isHistoriaSession) {
+            draft = Autosave.load(_historiaDraftKey);
+            if (draft) {
+                const savedTime = new Date(draft.savedAt).toLocaleString('es-MX', {
+                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                });
+                useDraft = confirm('📝 Hay un respaldo local de ESTA historia (' + savedTime + ').\n\n¿Deseas restaurarlo?');
+                if (!useDraft) { Autosave.clear(_historiaDraftKey); draft = null; }
             }
         }
 
@@ -1325,13 +1388,15 @@ const AdminPages = {
                                             if (_isAdmin) btns += '<button type="button" class="btn btn-outline btn-block" data-action="unpublish">Despublicar</button>';
                                         } else {
                                             if (_isAdmin) btns += '<button type="button" class="btn btn-primary btn-block" data-action="publish">Publicar</button>';
-                                            btns += '<button type="button" class="btn btn-secondary btn-block" data-action="draft">Guardar Borrador</button>';
+                                            // HISTORIA-PIPELINE-02: sin "Guardar Borrador" en sesiones
+                                            // sembradas por historia — la conversión es atómica.
+                                            if (!isHistoriaSession) btns += '<button type="button" class="btn btn-secondary btn-block" data-action="draft">Guardar Borrador</button>';
                                         }
                                         return btns;
                                     })()}
                                     <a href="/admin/articulos" class="btn btn-secondary btn-block">Cancelar</a>
                                     <div id="autosave-indicator" style="text-align:center;font-size:0.8rem;color:#9ca3af;margin-top:8px;">
-                                        Auto-guardado cada 30s
+                                        ${isHistoriaSession ? 'Respaldo local · el artículo se crea al Publicar' : 'Auto-guardado cada 30s'}
                                     </div>
                                 </div>
 
@@ -1440,11 +1505,12 @@ const AdminPages = {
                     if (_isAdmin) html += '<button type="button" class="btn-unpublish" data-action="unpublish">Despublicar</button>';
                 } else {
                     if (_isAdmin) html += '<button type="button" class="btn-publish" data-action="publish">Publicar</button>';
-                    html += '<button type="button" class="btn-draft" data-action="draft">Borrador</button>';
+                    // HISTORIA-PIPELINE-02: sin botón Borrador en sesiones historia
+                    if (!isHistoriaSession) html += '<button type="button" class="btn-draft" data-action="draft">Borrador</button>';
                 }
                 html += '<button type="button" class="btn-preview" onclick="ArticlePreview.openDraft()">👁️</button>';
                 html += '<a href="/admin/articulos" class="btn-cancel">Cancelar</a>';
-                if (!isEdit) html += '<span class="autosave-txt" id="autosave-indicator-sticky">Auto-guardado</span>';
+                if (!isEdit) html += '<span class="autosave-txt" id="autosave-indicator-sticky">' + (isHistoriaSession ? 'Respaldo local' : 'Auto-guardado') + '</span>';
                 return html;
             })();
             document.body.appendChild(stickyBar);
@@ -1514,8 +1580,15 @@ const AdminPages = {
             // MediaLibrary modal is available on demand via openMediaPicker() →
             // MediaLibrary.open(); no up-front init() call is needed.
 
-            // Start autosave AFTER editor is initialized so connectEditor works
-            Autosave.start(isEdit ? parseInt(params.id) : null);
+            // Start autosave AFTER editor is initialized so connectEditor works.
+            // HISTORIA-PIPELINE-02: en sesiones sembradas por historia el
+            // autosave es SOLO-LOCAL (clave scoped a la historia) — no crea
+            // borradores en Supabase; el artículo nace únicamente al Publicar.
+            if (isHistoriaSession) {
+                Autosave.startLocalOnly(_historiaDraftKey);
+            } else {
+                Autosave.start(isEdit ? parseInt(params.id) : null);
+            }
             Autosave.connectEditor();
         } catch (initError) {
             console.error('[editor] Initialization error (buttons still work):', initError);
@@ -1772,6 +1845,15 @@ const AdminPages = {
         // during the Supabase await and sends publicado:false, overwriting our save.
         Autosave.stop();
 
+        // HISTORIA-PIPELINE-02: en sesiones sembradas por historia la única
+        // acción que puede escribir en articulos es Publicar. El botón de
+        // borrador ya no se renderiza; este guard cubre cualquier otra vía.
+        if (!editId && AdminPages._currentHistoriaSourceId && action !== 'publish') {
+            showToast('Esta historia se convierte en artículo únicamente al Publicar.', 'error', 5000);
+            Autosave.resume(editId);
+            return;
+        }
+
         const titulo = document.getElementById('title').value.trim();
         const extracto = document.getElementById('excerpt').value.trim();
         const categoriaVal = document.getElementById('category').value;
@@ -1785,7 +1867,7 @@ const AdminPages = {
         if (!autorVal) errores.push('Selecciona un autor');
         if (errores.length > 0) {
             showToast(errores.join('. '), 'error');
-            Autosave.start(editId);
+            Autosave.resume(editId);
             return;
         }
 
@@ -1828,7 +1910,7 @@ const AdminPages = {
                 } catch (e) {
                     console.error('[saveArticle] Failed to copy historia photo to imagenes:', e);
                     showToast('No se pudo copiar la foto de la historia. Intenta de nuevo o elige otra imagen.', 'error', 5000);
-                    Autosave.start(editId);
+                    Autosave.resume(editId);
                     return; // no publicar apuntando a una signed URL que expira
                 }
                 // one-shot: ya copiada. Refleja la URL pública estable en #image
@@ -1864,7 +1946,7 @@ const AdminPages = {
             if (editId) {
                 const ok = confirm('El editor está vacío. ¿Guardar de todos modos? (Esto eliminará el contenido existente del artículo).');
                 if (!ok) {
-                    Autosave.start(editId);
+                    Autosave.resume(editId);
                     return;
                 }
             } else {
@@ -1979,8 +2061,12 @@ const AdminPages = {
         // If this editor session was seeded from a Tu Historia submission,
         // mark that submission as publicada and link it to the new article.
         // Non-fatal: a failure here must not block the save.
-        console.log('[saveArticle] historia check — editId:', editId, 'savedArticleId:', savedArticleId, 'sourceId:', AdminPages._currentHistoriaSourceId);
-        if (!editId && savedArticleId && AdminPages._currentHistoriaSourceId) {
+        // HISTORIA-PIPELINE-02: SOLO en el publish real (action 'publish' y
+        // publicado true). Antes, cualquier action marcaba la historia
+        // 'publicada' (estado terminal) apuntando a un borrador con
+        // publicado=false — corrupción reproducida en prod (60cb947d).
+        console.log('[saveArticle] historia check — editId:', editId, 'savedArticleId:', savedArticleId, 'sourceId:', AdminPages._currentHistoriaSourceId, 'action:', action);
+        if (!editId && savedArticleId && AdminPages._currentHistoriaSourceId && action === 'publish' && articulo.publicado === true) {
             var histId = AdminPages._currentHistoriaSourceId;
             AdminPages._currentHistoriaSourceId = null; // one-shot
             try {
