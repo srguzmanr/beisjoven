@@ -1,10 +1,8 @@
 /**
  * Runtime pagination helpers for SSR listing routes (categoría, autor, tag, wbc-2026).
  *
- * Replaces Astro's build-time `paginate()` (which only works inside
- * `getStaticPaths`). Produces a `page` object whose shape matches the subset of
- * Astro's `Page` used by the listing templates, so the existing markup is
- * unchanged.
+ * Produces a `page` object whose shape matches the subset of Astro's `Page`
+ * used by the listing templates, so the existing markup is unchanged.
  *
  * URL convention mirrors Astro's `[...page]` paginate output (and the sitemap):
  *   page 1 → base path (no suffix); page N → `${base}/${N}`.

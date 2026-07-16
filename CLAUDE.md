@@ -8,7 +8,7 @@
 - Do NOT spend time explaining the branch situation in commit messages or chat — just commit and push to the current branch.
 - Run `npx astro build` before every push. If it fails, fix it before pushing.
 - Use conventional commit messages: `feat(TICKET): description`, `fix(TICKET): description`
-- After merge to main, the Vercel deploy hook triggers automatically.
+- Push a main → Vercel despliega vía Git integration. Publicar contenido NO genera deploys: SSR+ISR sirve el contenido en ≤60s.
 
 ## Before Writing Code
 - Read every file you plan to modify BEFORE editing it.
@@ -39,7 +39,7 @@
 - Supabase RLS: public SELECT, authenticated INSERT/UPDATE/DELETE (unless told otherwise).
 
 ## Stack
-- Framework: Astro (SSG) + Tailwind CSS
+- Framework: Astro (SSR + ISR) en Vercel + Tailwind CSS
 - Backend: Supabase (DB, Auth, Storage) — project: yulkbjpotfmwqkzzfegg
 - Editor: Tiptap 2.0 (Vite-bundled IIFE, window.TiptapEditor)
 - Hosting: Vercel (production branch: main)
