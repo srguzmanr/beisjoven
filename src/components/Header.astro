@@ -5,11 +5,9 @@ import Logo from '@/components/Logo.astro';
 
 const currentPath = Astro.url.pathname;
 
-// Hardcoded chip order (not DB-driven). Names/slugs come from categorias rows.
-const CHIP_ORDER = ['mlb', 'liga-mexicana', 'seleccion', 'juvenil', 'softbol', 'opinion'];
-// Pills that collapse into the "Más" dropdown below 1100px.
-const COLLAPSE_SLUGS = new Set(['softbol', 'opinion']);
-// Short labels for the mobile chip rail (per HEADER-FIX-01 spec).
+// Hardcoded nav order (not DB-driven). Names/slugs come from categorias rows.
+const NAV_ORDER = ['mlb', 'liga-mexicana', 'seleccion', 'juvenil', 'softbol', 'opinion'];
+// Short labels for the mobile chip rail.
 const MOBILE_SHORT_LABELS: Record<string, string> = {
   'mlb': 'MLB',
   'liga-mexicana': 'Ligas MX',
@@ -21,7 +19,7 @@ const MOBILE_SHORT_LABELS: Record<string, string> = {
 
 const categorias = await getCategorias();
 const bySlug = new Map(categorias.map((c) => [c.slug, c]));
-const chips = CHIP_ORDER
+const navItems = NAV_ORDER
   .map((slug) => bySlug.get(slug))
   .filter((c): c is NonNullable<typeof c> => Boolean(c));
 
@@ -45,287 +43,254 @@ if (categoriaMatch) {
   }
 }
 
-const collapsedItems = chips.filter((c) => COLLAPSE_SLUGS.has(c.slug));
-const moreHasActive = activeCategorySlug !== null && COLLAPSE_SLUGS.has(activeCategorySlug);
 const isCategoryActive = (slug: string) => activeCategorySlug === slug;
 ---
 
 <header id="site-header" class="site-header">
-  <div class="site-header__bar">
-    <a href="/" class="site-header__logo" aria-label="Beisjoven — Inicio">
-      <span class="site-header__logo--mobile">
-        <Logo format="mark" height={40} width={40} />
-      </span>
-      <span class="site-header__logo--desktop">
-        <Logo format="lockup" height={40} class="header-logo-img" />
-      </span>
-    </a>
-
-    <nav class="site-header__nav-desktop" aria-label="Navegación principal">
-      <a
-        href="/"
-        class="nav-pill"
-        data-nav="inicio"
-        aria-current={isHomeActive ? 'page' : undefined}
-      >
-        Inicio
-      </a>
-      {chips.map((c) => (
-        <a
-          href={`/categoria/${c.slug}`}
-          class="nav-pill"
-          data-category={c.slug}
-          data-collapse={COLLAPSE_SLUGS.has(c.slug) ? 'true' : undefined}
-          aria-current={isCategoryActive(c.slug) ? 'page' : undefined}
-        >
-          {c.nombre}
+  <div class="site-header__frame">
+    <div class="site-header__surface">
+      <div class="site-header__bar">
+        <a href="/" class="site-header__logo" aria-label="Beisjoven — Inicio">
+          <span class="site-header__logo-mobile">
+            <Logo format="mark" height={36} width={36} class="logo-mark-img" />
+          </span>
+          <span class="site-header__logo-desktop">
+            <Logo format="lockup" height={50} width={106} class="logo-lockup-img" />
+          </span>
         </a>
-      ))}
 
-      <div class="nav-more" data-has-active={moreHasActive ? 'true' : undefined}>
-        <button
-          id="nav-more-trigger"
-          class="nav-pill nav-pill--more"
-          type="button"
-          aria-haspopup="menu"
-          aria-expanded="false"
-          aria-controls="nav-more-panel"
-        >
-          Más <span class="nav-more__caret" aria-hidden="true">▾</span>
-        </button>
-        <div
-          id="nav-more-panel"
-          class="nav-more__panel"
-          role="menu"
-          aria-labelledby="nav-more-trigger"
-          hidden
-        >
-          {collapsedItems.map((c) => (
-            <a
-              href={`/categoria/${c.slug}`}
-              class="nav-more__item"
-              role="menuitem"
-              data-category={c.slug}
-              aria-current={isCategoryActive(c.slug) ? 'page' : undefined}
-            >
-              {c.nombre}
-            </a>
-          ))}
+        <span class="site-header__divider" aria-hidden="true"></span>
+
+        <nav class="site-header__nav" aria-label="Navegación principal">
+          <ul class="site-header__nav-list">
+            <li class="nav-item">
+              <a
+                href="/"
+                class="nav-link"
+                data-nav="inicio"
+                aria-current={isHomeActive ? 'page' : undefined}
+              >Inicio</a>
+            </li>
+            {navItems.map((c) => (
+              <li class="nav-item">
+                <a
+                  href={`/categoria/${c.slug}`}
+                  class="nav-link"
+                  data-category={c.slug}
+                  aria-current={isCategoryActive(c.slug) ? 'page' : undefined}
+                >{c.nombre}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div class="site-header__actions">
+          <a class="header-cta" href="/tu-historia" aria-label="Comparte tu historia con Beisjoven">
+            <svg class="header-cta__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+            </svg>
+            <span>Cuéntanos</span>
+          </a>
+          <button
+            id="search-trigger"
+            class="site-header__search"
+            type="button"
+            aria-label="Buscar"
+            aria-expanded="false"
+            aria-controls="search-overlay"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.35-4.35" stroke-linecap="round" />
+            </svg>
+          </button>
         </div>
       </div>
-    </nav>
-
-    <div class="site-header__actions">
-      <a class="header-cta" href="/tu-historia" aria-label="Comparte tu historia con Beisjoven">
-        <svg class="header-cta__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 20h9" />
-          <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-        </svg>
-        <span class="header-cta__label">Cuéntanos</span>
-      </a>
-      <button
-        id="search-trigger"
-        class="site-header__search"
-        type="button"
-        aria-label="Buscar"
-        aria-expanded="false"
-        aria-controls="search-overlay"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <circle cx="11" cy="11" r="7" />
-          <path d="M21 21l-4.35-4.35" stroke-linecap="round" />
-        </svg>
-      </button>
     </div>
   </div>
 
-  <nav class="site-header__chips-mobile" aria-label="Categorías">
+  <nav class="site-header__chips" aria-label="Categorías">
     <div class="site-header__chips-scroll">
       <ul class="site-header__chips-list">
         <li class="chip-item">
           <a
             href="/"
-            class="chip-link"
-            data-active={isHomeActive ? 'true' : 'false'}
+            class="chip"
             aria-current={isHomeActive ? 'page' : undefined}
           >Inicio</a>
         </li>
-        {chips.map((c) => (
+        {navItems.map((c) => (
           <li class="chip-item">
             <a
               href={`/categoria/${c.slug}`}
-              class="chip-link"
-              data-category={c.slug}
-              data-active={isCategoryActive(c.slug) ? 'true' : 'false'}
+              class="chip"
               aria-current={isCategoryActive(c.slug) ? 'page' : undefined}
             >{MOBILE_SHORT_LABELS[c.slug] ?? c.nombre}</a>
           </li>
         ))}
+        <li class="chip-item">
+          <a href="/tu-historia" class="chip chip--cta">Cuéntanos</a>
+        </li>
       </ul>
     </div>
   </nav>
+
+  <!--
+    Punto de inserción Quick Hits / LIVE strip (bloqueado por SEC-03, RLS de quick_hits):
+    cuando se habiliten, ambos van AQUÍ, inmediatamente después del nav de chips y dentro
+    del <header> para heredar el sticky/auto-hide. Orden vertical: LIVE strip arriba,
+    Quick Hits debajo (Bible §3.0).
+  -->
 </header>
 
-<SearchOverlay categorias={chips} />
+<SearchOverlay categorias={navItems} />
 
 <style>
+  /* ============================================================
+     Header — HeaderDefault (DESIGN-HF-01, Spec v1.1)
+     Móvil (<1024): barra 52px mark-only + chips scrolleables.
+     Desktop (≥1024): barra única 64px — logo · divisor · nav
+     inline con underline activo · Cuéntanos · búsqueda.
+     ============================================================ */
   .site-header {
     position: sticky;
     top: 0;
     z-index: 50;
-    background: #ffffff;
-    border-bottom: 1px solid #F1F1F3;
-    transition: transform 200ms ease-out;
+    transition: transform 0.25s ease;
     will-change: transform;
   }
   .site-header.is-hidden { transform: translateY(-100%); }
+  @media (prefers-reduced-motion: reduce) {
+    .site-header { transition: none; }
+  }
 
+  /* El frame reserva la altura de layout de la barra; nunca cambia,
+     así el shrink de sticky no produce CLS. */
+  .site-header__frame {
+    position: relative;
+    height: 52px;
+  }
+  .site-header__surface {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 52px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--rule);
+  }
   .site-header__bar {
     display: flex;
     align-items: center;
+    height: 100%;
     gap: 8px;
-    height: 52px;
     padding: 0 8px 0 16px;
-    max-width: var(--max-width-container, 75rem);
+    max-width: var(--w-page);
     margin: 0 auto;
   }
 
   .site-header__logo {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    margin-right: auto;
+    min-height: 44px;
     text-decoration: none;
   }
-  .site-header__logo--mobile { display: inline-flex; align-items: center; }
-  .site-header__logo--desktop { display: none; }
+  .site-header__logo:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .site-header__logo-mobile { display: inline-flex; align-items: center; }
+  .site-header__logo-desktop { display: none; }
+  :global(.logo-mark-img) { width: 36px; height: 36px; }
 
-  .site-header__nav-desktop { display: none; }
+  .site-header__divider { display: none; }
+  .site-header__nav { display: none; }
 
   .site-header__actions {
-    flex-shrink: 0;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-  }
-
-  .header-cta {
-    display: none;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
-    border: 1px solid var(--red, #C8102E);
-    border-radius: 999px;
-    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1;
-    letter-spacing: 0.02em;
-    color: var(--red, #C8102E);
-    text-decoration: none;
-    transition: background-color 120ms ease, color 120ms ease;
-    white-space: nowrap;
-  }
-  .header-cta:hover {
-    background: var(--red, #C8102E);
-    color: #ffffff;
-  }
-  .header-cta:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.35);
-  }
-  .header-cta__icon {
-    width: 14px;
-    height: 14px;
+    margin-left: auto;
     flex-shrink: 0;
   }
+  .header-cta { display: none; }
 
   .site-header__search {
-    flex-shrink: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 44px;
     height: 44px;
-    margin: 0;
     padding: 0;
     background: transparent;
     border: 0;
-    border-radius: 8px;
-    color: var(--navy, #1B2A4A);
+    border-radius: 2px;
+    color: var(--navy);
     cursor: pointer;
     transition: background-color 120ms ease-out;
   }
-  .site-header__search:hover,
+  .site-header__search:hover { background-color: rgba(27, 42, 74, 0.06); }
   .site-header__search:focus-visible {
-    background-color: rgba(27, 42, 74, 0.06);
-    outline: none;
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
   }
-  .site-header__search svg { width: 20px; height: 20px; }
+  .site-header__search svg { width: 22px; height: 22px; }
 
-  /* Mobile chips row — flat nav-text with 2px underline indicator (HEADER-FIX-01) */
-  .site-header__chips-mobile {
+  /* --- Chips móviles: scroll horizontal + fade derecho --- */
+  .site-header__chips {
     position: relative;
     background: #ffffff;
-    border-bottom: 1px solid var(--rule, #F1F1F3);
+    border-bottom: 1px solid var(--rule);
   }
   .site-header__chips-scroll {
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
-    -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
   }
   .site-header__chips-scroll::-webkit-scrollbar { display: none; }
   .site-header__chips-list {
     list-style: none;
     margin: 0;
-    padding: 10px 28px 10px 16px;
+    padding: 8px 32px 8px 16px;
     display: flex;
-    gap: 20px;
+    gap: 8px;
     white-space: nowrap;
   }
-  .chip-item {
-    flex: 0 0 auto;
-    position: relative;
-  }
-  .chip-link {
-    display: inline-block;
-    padding-bottom: 5px;
-    color: var(--ink-2, #3A4660);
-    font-family: var(--font-body, "Inter"), system-ui, sans-serif;
-    font-size: 0.875rem;
-    line-height: 1.4;
+  .chip-item { flex: 0 0 auto; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 2px;
+    background: var(--bg-2);
+    color: var(--navy);
+    font-family: var(--font-body);
+    font-size: var(--text-nav);
+    line-height: var(--lh-nav);
     font-weight: 500;
-    letter-spacing: 0.01em;
+    letter-spacing: var(--tracking-nav);
     text-transform: uppercase;
     text-decoration: none;
-    transition: color 120ms ease-out;
+    transition: background-color 120ms ease-out, color 120ms ease-out;
   }
-  .chip-link:focus-visible {
-    outline: 2px solid var(--navy, #1B2A4A);
+  .chip:focus-visible {
+    outline: 2px solid var(--gold);
     outline-offset: 2px;
   }
-  .chip-link[data-active="true"] {
-    color: var(--navy, #1B2A4A);
+  .chip[aria-current="page"] {
+    background: var(--navy);
+    color: #ffffff;
     font-weight: 700;
   }
-  .chip-link[data-active="true"]::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 2px;
-    background: var(--cat-color, var(--red, #C8102E));
+  .chip--cta {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--red);
+    color: var(--red);
+    font-weight: 600;
   }
-  .chip-link[data-category="mlb"][data-active="true"]           { --cat-color: var(--cat-mlb); }
-  .chip-link[data-category="liga-mexicana"][data-active="true"] { --cat-color: var(--cat-liga-mexicana); }
-  .chip-link[data-category="seleccion"][data-active="true"]     { --cat-color: var(--cat-seleccion); }
-  .chip-link[data-category="juvenil"][data-active="true"]       { --cat-color: var(--cat-juvenil); }
-  .chip-link[data-category="softbol"][data-active="true"]       { --cat-color: var(--cat-softbol); }
-  .chip-link[data-category="opinion"][data-active="true"]       { --cat-color: var(--cat-opinion); }
-  .site-header__chips-mobile::after {
+  .site-header__chips::after {
     content: '';
     position: absolute;
     top: 0;
@@ -333,256 +298,192 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     width: 32px;
     height: 100%;
     pointer-events: none;
-    background: linear-gradient(to right, transparent, #ffffff);
+    background: linear-gradient(to right, transparent, #ffffff 75%);
   }
 
-  /* Desktop (>= 1024px): nav row + scroll border. Below this, mobile pattern (logo mark + underline chips) applies. */
+  /* --- Desktop ≥1024 --- */
   @media (min-width: 1024px) {
-    .site-header {
-      border-bottom: 2px solid transparent;
-      transition: border-color 150ms ease-out, transform 200ms ease-out;
+    .site-header__frame { height: 64px; }
+    .site-header__surface {
+      height: 64px;
+      /* Shrink-on-sticky: la superficie es absoluta dentro del frame de
+         altura fija, así que animar su height no mueve nada fuera del
+         header (cero CLS). El contenido se re-centra solo por flex. */
+      transition: height 0.25s ease;
     }
-    .site-header[data-scrolled="true"] {
-      border-bottom-color: var(--navy, #1B2A4A);
+    .site-header.is-compact .site-header__surface { height: 48px; }
+    @media (prefers-reduced-motion: reduce) {
+      .site-header__surface { transition: none; }
     }
 
     .site-header__bar {
-      height: 64px;
-      padding: 0 24px;
-      gap: 24px;
-      transition: height 200ms ease-out;
+      gap: 28px;
+      padding: 0 32px;
     }
-    .site-header.is-compact .site-header__bar { height: 48px; }
 
-    .site-header__logo { margin-right: 0; }
-    .site-header__logo--mobile { display: none; }
-    .site-header__logo--desktop { display: inline-flex; align-items: center; }
-    :global(.header-logo-img) { width: auto; max-height: 40px; transition: max-height 200ms ease-out; }
-    .site-header.is-compact :global(.header-logo-img) { max-height: 28px; }
+    .site-header__logo-mobile { display: none; }
+    .site-header__logo-desktop { display: inline-flex; align-items: center; }
+    /* Lockup 1224×576 con aire transparente: el arte ocupa ~70% de la
+       altura del PNG, así que 50px de imagen ≈ 35px de altura visual. */
+    :global(.logo-lockup-img) {
+      height: 50px;
+      width: auto;
+      transition: height 0.25s ease;
+    }
+    .site-header.is-compact :global(.logo-lockup-img) { height: 40px; }
 
-    .site-header__nav-desktop {
+    .site-header__divider {
+      display: block;
+      width: 1px;
+      height: 24px;
+      background: var(--rule);
+      flex-shrink: 0;
+    }
+
+    .site-header__nav {
       display: flex;
       flex: 1;
-      gap: 6px;
-      justify-content: center;
-      align-items: center;
+      min-width: 0;
+      align-self: stretch;
+    }
+    .site-header__nav-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      gap: 20px; /* spec: 20–24px; 20 en desktop angosto para no invadir el CTA */
+      align-items: stretch;
       flex-wrap: nowrap;
     }
-
-    .site-header__chips-mobile { display: none; }
-
-    .site-header__actions {
-      min-width: 72px;
+    @media (min-width: 1200px) {
+      .site-header__nav-list { gap: 24px; }
     }
-
-    .header-cta { display: inline-flex; }
-
-    /* Nav pill — desktop primary nav */
-    .nav-pill {
-      display: inline-flex;
+    .nav-item {
+      position: relative;
+      display: flex;
       align-items: center;
-      flex-shrink: 0;
-      padding: 7px 16px;
-      border: 1px solid var(--rule-strong, rgba(27, 42, 74, 0.28));
-      border-radius: 999px;
-      background: transparent;
-      color: var(--ink, var(--navy, #1B2A4A));
-      font-family: var(--font-body, "Inter"), system-ui, sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      line-height: 1;
-      letter-spacing: 0.02em;
-      text-transform: none;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      color: var(--navy);
+      font-family: var(--font-body);
+      font-size: var(--text-nav);
+      line-height: var(--lh-nav);
+      font-weight: 500;
+      letter-spacing: var(--tracking-nav);
+      text-transform: uppercase;
       text-decoration: none;
       white-space: nowrap;
-      cursor: pointer;
-      transition:
-        background-color 120ms ease-out,
-        color 120ms ease-out,
-        border-color 120ms ease-out;
+      transition: color 120ms ease-out;
     }
-    .nav-pill:hover {
-      border-color: var(--navy, #1B2A4A);
-      color: var(--navy, #1B2A4A);
-    }
-    .nav-pill:focus-visible {
-      outline: 2px solid var(--navy, #1B2A4A);
+    .nav-link:hover { color: var(--red); }
+    .nav-link:focus-visible {
+      outline: 2px solid var(--gold);
       outline-offset: 2px;
     }
-    .nav-pill[aria-current="page"] {
-      background: var(--cat-color, var(--navy, #1B2A4A));
-      color: #ffffff;
-      border-color: transparent;
-    }
-    .nav-pill[aria-current="page"][data-category="mlb"]           { --cat-color: var(--cat-mlb); }
-    .nav-pill[aria-current="page"][data-category="liga-mexicana"] { --cat-color: var(--cat-liga-mexicana); }
-    .nav-pill[aria-current="page"][data-category="seleccion"]     { --cat-color: var(--cat-seleccion); }
-    .nav-pill[aria-current="page"][data-category="juvenil"]       { --cat-color: var(--cat-juvenil); }
-    .nav-pill[aria-current="page"][data-category="softbol"]       { --cat-color: var(--cat-softbol); }
-    .nav-pill[aria-current="page"][data-category="opinion"]       { --cat-color: var(--cat-opinion); }
-
-    /* "Más" dropdown */
-    .nav-more {
-      position: relative;
-      display: none;
-    }
-    .nav-more[data-has-active="true"] .nav-pill--more {
-      border-color: var(--navy, #1B2A4A);
-      color: var(--navy, #1B2A4A);
-    }
-    .nav-more__caret {
-      margin-left: 4px;
-      font-size: 0.75em;
-    }
-    .nav-more__panel {
+    .nav-link[aria-current="page"] { font-weight: 700; }
+    /* Underline activo: 2px en el acento de la categoría, anclado al
+       borde inferior de la barra (el item se estira a toda la altura). */
+    .nav-link[aria-current="page"]::after {
+      content: '';
       position: absolute;
-      top: calc(100% + 4px);
+      left: 0;
       right: 0;
-      min-width: 180px;
-      padding: 8px 0;
-      background: #ffffff;
-      border: 1px solid var(--rule-strong, rgba(27, 42, 74, 0.28));
-      border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
-      z-index: 60;
+      bottom: 0;
+      height: 2px;
+      background: var(--cat-color, var(--navy));
     }
-    .nav-more__panel[hidden] { display: none; }
-    .nav-more__item {
-      display: block;
-      padding: 10px 14px;
-      color: var(--ink, var(--navy, #1B2A4A));
-      font-family: var(--font-body, "Inter"), system-ui, sans-serif;
-      font-size: 14px;
+    .nav-link[data-category="mlb"]           { --cat-color: var(--cat-mlb); }
+    .nav-link[data-category="liga-mexicana"] { --cat-color: var(--cat-liga-mexicana); }
+    .nav-link[data-category="seleccion"]     { --cat-color: var(--cat-seleccion); }
+    .nav-link[data-category="juvenil"]       { --cat-color: var(--cat-juvenil); }
+    .nav-link[data-category="softbol"]       { --cat-color: var(--cat-softbol); }
+    .nav-link[data-category="opinion"]       { --cat-color: var(--cat-opinion); }
+
+    .site-header__actions { gap: 12px; margin-left: 0; }
+
+    .header-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 40px;
+      padding: 0 16px;
+      border: 1px solid var(--red);
+      border-radius: 2px;
+      color: var(--red);
+      font-family: var(--font-body);
+      font-size: var(--text-button);
+      line-height: var(--lh-button);
       font-weight: 600;
-      line-height: 1.3;
+      letter-spacing: var(--tracking-button);
       text-decoration: none;
-      transition: background-color 120ms ease-out;
+      white-space: nowrap;
+      transition: background-color 120ms ease-out, color 120ms ease-out;
     }
-    .nav-more__item:hover,
-    .nav-more__item:focus-visible {
-      background: var(--surface-tinted, #F6F5F1);
-      outline: none;
+    .header-cta:hover {
+      background: var(--red);
+      color: #ffffff;
     }
-    .nav-more__item[aria-current="page"] {
-      color: var(--navy, #1B2A4A);
-      background: var(--surface-tinted, #F6F5F1);
+    .header-cta:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
     }
-  }
+    .header-cta__icon {
+      /* Ícono opcional del spec: oculto en desktop angosto para dar aire al nav. */
+      display: none;
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+    @media (min-width: 1200px) {
+      .header-cta__icon { display: block; }
+    }
 
-  /* Narrow desktop (1024–1099): collapse Softbol + Opinión into "Más" */
-  @media (min-width: 1024px) and (max-width: 1099px) {
-    .site-header__nav-desktop .nav-pill[data-collapse="true"] { display: none; }
-    .nav-more { display: block; }
-  }
-
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+    .site-header__chips { display: none; }
   }
 </style>
 
 <script is:inline>
   (() => {
     const header = document.getElementById('site-header');
-    const moreTrigger = document.getElementById('nav-more-trigger');
-    const morePanel = document.getElementById('nav-more-panel');
+    if (!header) return;
 
-    if (header) {
-      const COMPACT_THRESHOLD = 80;
-      const SCROLL_BORDER_THRESHOLD = 40;
-      const desktopMql = window.matchMedia('(min-width: 1024px)');
-      let lastY = window.scrollY;
-      let ticking = false;
+    const THRESHOLD = 80;
+    const desktopMql = window.matchMedia('(min-width: 1024px)');
+    let lastY = window.scrollY;
+    let ticking = false;
 
-      function onScroll() {
-        const y = window.scrollY;
-        const isDesktop = desktopMql.matches;
+    function onScroll() {
+      const y = window.scrollY;
 
-        if (y > SCROLL_BORDER_THRESHOLD) {
-          header.setAttribute('data-scrolled', 'true');
+      if (y <= THRESHOLD) {
+        header.classList.remove('is-hidden', 'is-compact');
+      } else if (desktopMql.matches) {
+        // Desktop: shrink a barra compacta, nunca se oculta.
+        header.classList.add('is-compact');
+        header.classList.remove('is-hidden');
+      } else {
+        // Móvil: auto-hide al bajar, reaparece al subir.
+        header.classList.remove('is-compact');
+        if (y > lastY) {
+          header.classList.add('is-hidden');
         } else {
-          header.removeAttribute('data-scrolled');
-        }
-
-        if (y <= COMPACT_THRESHOLD) {
           header.classList.remove('is-hidden');
-          header.classList.remove('is-compact');
-        } else if (isDesktop) {
-          header.classList.add('is-compact');
-          header.classList.remove('is-hidden');
-        } else {
-          header.classList.remove('is-compact');
-          if (y > lastY) {
-            header.classList.add('is-hidden');
-          } else {
-            header.classList.remove('is-hidden');
-          }
         }
-        lastY = y;
-        ticking = false;
       }
-
-      window.addEventListener('scroll', () => {
-        if (!ticking) {
-          window.requestAnimationFrame(onScroll);
-          ticking = true;
-        }
-      }, { passive: true });
-
-      onScroll();
+      lastY = y;
+      ticking = false;
     }
 
-    if (moreTrigger && morePanel) {
-      let isOpen = false;
-
-      const openMenu = () => {
-        isOpen = true;
-        morePanel.hidden = false;
-        moreTrigger.setAttribute('aria-expanded', 'true');
-      };
-      const closeMenu = () => {
-        isOpen = false;
-        morePanel.hidden = true;
-        moreTrigger.setAttribute('aria-expanded', 'false');
-      };
-
-      try {
-        moreTrigger.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (isOpen) closeMenu(); else openMenu();
-        });
-
-        document.addEventListener('click', (e) => {
-          if (!isOpen) return;
-          const target = e.target;
-          if (!(target instanceof Node)) return;
-          if (morePanel.contains(target) || moreTrigger.contains(target)) return;
-          closeMenu();
-        });
-
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape' && isOpen) {
-            closeMenu();
-            moreTrigger.focus();
-          }
-        });
-
-        morePanel.addEventListener('click', (e) => {
-          const target = e.target;
-          if (target instanceof Element && target.closest('a[role="menuitem"]')) {
-            closeMenu();
-          }
-        });
-      } catch (err) {
-        console.error('[Header] more-menu init failed:', err);
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        window.requestAnimationFrame(onScroll);
+        ticking = true;
       }
-    }
+    }, { passive: true });
+
+    onScroll();
   })();
 </script>
