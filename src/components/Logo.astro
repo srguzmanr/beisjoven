@@ -1,5 +1,5 @@
 ---
-type Format = 'lockup' | 'mark' | 'lockup-mono';
+type Format = 'lockup' | 'mark';
 
 interface Props {
   format?: Format;
@@ -19,8 +19,6 @@ const {
 
 const src = format === 'mark'
   ? '/brand/logo-mark.png'
-  : format === 'lockup-mono'
-  ? '/brand/logo-lockup-mono.png'
   : '/brand/logo-lockup.png';
 ---
 
