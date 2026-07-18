@@ -208,13 +208,23 @@ curl -s -o /dev/null -w "eventos INSERT: %{http_code}\n" -X POST \
 
 | Archivo | Propuesta | Ejecutada por Sergio | Verificada |
 |---|---|---|---|
-| 01 roles_foundation | ✅ 18-jul | ⬜ | ⬜ |
-| 02 storage_policies | ✅ 18-jul | ⬜ | ⬜ |
-| 03 eventos_anon_write_hotfix | ✅ 18-jul | ⬜ | ⬜ |
-| 04 sec03_quickhits_tags | ✅ 18-jul | ⬜ | ⬜ |
-| 05 tuhistoria_estado | ✅ 18-jul | ⬜ | ⬜ |
-| Fase C retiro admin@ (Dashboard, sin SQL) | ✅ instrucción | ⬜ | ⬜ |
-| Fase D cleanup foto Williamsport (Dashboard) | ✅ instrucción | ⬜ | ⬜ |
+| 01 roles_foundation | ✅ 18-jul | ✅ 18-jul | ✅ helpers + rol superadmin confirmados en DB |
+| 02 storage_policies | ✅ 18-jul | ✅ 18-jul | ✅ pg_policies final = 4 policies esperadas; negativas RLS OK |
+| 03 eventos_anon_write_hotfix | ✅ 18-jul | ✅ 18-jul | ✅ INSERT anon rechazado (42501) |
+| 04 sec03_quickhits_tags | ✅ 18-jul | ✅ 18-jul | ✅ negativas anon/auth-sin-rol rechazadas; superadmin permitido |
+| 05 tuhistoria_estado | ✅ 18-jul | ✅ 18-jul | ✅ ciclo despublicar/republicar/borrar verificado (Nivel 2, rollback) |
+| Fase C retiro admin@ (Dashboard, sin SQL) | ✅ instrucción | ✅ 18-jul | ✅ 0 filas en auth.users; única cuenta = Sergio |
+| Fase D cleanup foto Williamsport (Dashboard) | ✅ instrucción | ✅ 18-jul | ✅ bucket tu-historia con 0 objetos |
+
+### Nota sobre la verificación ejecutada (18-jul, post-migraciones)
+
+- La política de red del entorno de Code bloquea HTTPS saliente a `*.supabase.co` (CONNECT 403 del proxy) → los curls de F.2 no pudieron ejecutarse desde la sesión. Se reemplazaron por la vía equivalente a nivel RLS: **simulación de roles dentro de transacciones con rollback total (Nivel 2, declarada antes de ejecutar)** — `SET LOCAL ROLE anon/authenticated` + `request.jwt.claims` sintético, intentando los mismos INSERTs que los curls. Resultados (9/9 esperados, cero escrituras persistidas):
+  - anon → `quick_hits`, `tags`, `eventos`, `storage imagenes`, `storage tu-historia`: **RECHAZADO (42501)**.
+  - authenticated sin rol (el atacante del hallazgo original) → `storage imagenes`, `quick_hits`: **RECHAZADO (42501)**.
+  - authenticated con `app_metadata.role='superadmin'` (JWT de Sergio post-re-login) → `quick_hits` y `storage imagenes`: **PERMITIDO**.
+- Máquina de estados (Nivel 2, rollback): artículo+historia de prueba en transacción → despublicar→`verificada`, republicar→`publicada`, borrar→ sin error FK, `articulo_id=NULL`, estado `verificada`. El caso Williamsport es irreproducible.
+- Post-check de limpieza: 0 filas `sec-test` en todas las tablas y en storage; `historias_enviadas` 0 filas; bucket `tu-historia` 0 objetos; `auth.users` = 1 (Sergio, `superadmin`).
+- Los curls de F.2 quedan disponibles para correrlos desde cualquier máquina fuera del entorno si se quiere el double-check por REST; F.3 (positivas en el panel con re-login) y F.4 (ojo al sitio público) siguen siendo verificación manual de Sergio.
 
 ## Pendientes propuestos fuera de esta misión
 
