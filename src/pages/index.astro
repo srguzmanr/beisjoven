@@ -213,14 +213,19 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
   <!-- DESIGN-04d: Gallery — "La semana, en imágenes" -->
   <Gallery />
 
-  <!-- DESIGN-04e: Per-category sections — 5 stacked 3-up grids -->
-  <section class="categories-stack">
-    <div class="categories-stack__container">
-      <CategorySection slug="mlb" displayName="MLB" />
-      <CategorySection slug="liga-mexicana" displayName="Ligas Mexicanas" />
-      <CategorySection slug="seleccion" displayName="Selección" />
-      <CategorySection slug="softbol" displayName="Softbol" />
-      <CategorySection slug="opinion" displayName="Opinión" />
+  <!-- DESIGN-04e → HF-02: Per-category sections as full-bleed alternating
+       bands (blanco / --bg-2, empezando en blanco). La frontera entre
+       secciones es el cambio de color de fondo. -->
+  <CategorySection slug="mlb" displayName="MLB" band="bg" />
+  <CategorySection slug="liga-mexicana" displayName="Ligas Mexicanas" band="bg-2" />
+  <CategorySection slug="seleccion" displayName="Selección" band="bg" />
+  <CategorySection slug="softbol" displayName="Softbol" band="bg-2" />
+  <CategorySection slug="opinion" displayName="Opinión" band="bg" />
+
+  {/* NewsletterBlock conserva su tarjeta --bg-2 con borde (HF-02: solo se
+      envuelve en banda blanca full-bleed; contenido y copy intactos). */}
+  <section class="newsletter-band">
+    <div class="newsletter-band__container">
       <NewsletterBlock />
     </div>
   </section>
@@ -277,30 +282,26 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
       }
     }
 
-    .categories-stack {
-      background: #fff;
-      padding: 16px 0 48px;
+    .newsletter-band {
+      background: var(--bg);
+      padding: var(--section) 0;
     }
 
     @media (min-width: 768px) {
-      .categories-stack {
-        padding: 24px 32px 72px;
+      .newsletter-band {
+        padding: var(--section-lg) 32px;
       }
     }
 
-    .categories-stack__container {
+    .newsletter-band__container {
       max-width: var(--w-page);
       margin: 0 auto;
       padding: 0 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 40px;
     }
 
     @media (min-width: 768px) {
-      .categories-stack__container {
+      .newsletter-band__container {
         padding: 0;
-        gap: 56px;
       }
     }
   </style>

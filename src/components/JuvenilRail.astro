@@ -139,7 +139,12 @@ const cards = stories.map((s) => ({
     gap: 6px;
   }
 
-  .bj-juvenil-rail__cta:hover {
+  @media (hover: hover) and (pointer: fine) {
+    .bj-juvenil-rail__cta:hover {
+      text-decoration: underline;
+    }
+  }
+  .bj-juvenil-rail__cta:active {
     text-decoration: underline;
   }
 

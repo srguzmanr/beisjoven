@@ -85,14 +85,15 @@ const photosWithUrl = photos.map((p) => {
 )}
 
 <style>
+  /* HF-02: banda full-bleed --bg-2 (frontera visual tras el rail navy). */
   .bj-gallery {
-    background: #fff;
-    padding: 40px 0;
+    background: var(--bg-2);
+    padding: var(--section) 0;
   }
 
   @media (min-width: 768px) {
     .bj-gallery {
-      padding: 56px 32px;
+      padding: var(--section-lg) 32px;
     }
   }
 
@@ -153,16 +154,25 @@ const photosWithUrl = photos.map((p) => {
     gap: 6px;
   }
 
-  .bj-gallery__cta:hover {
+  @media (hover: hover) and (pointer: fine) {
+    .bj-gallery__cta:hover {
+      text-decoration: underline;
+    }
+  }
+  .bj-gallery__cta:active {
     text-decoration: underline;
   }
 
   /* === Mobile grid (< 768px) ===
      2 cols × 3 rows, 4 visible cells. The 5th row is hidden on mobile to
-     preserve the asymmetric magazine read. */
+     preserve the asymmetric magazine read.
+     HF-02 overflow fix: minmax(0, 1fr) + min-width: 0 en las celdas.
+     Sin ellos, el min-content de los medias con aspect-ratio (la celda 3/4
+     que abarca 2 filas hereda la altura de dos celdas 1/1) expande las
+     columnas más allá del container (+74px a 375). */
   .bj-gallery__grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-auto-rows: auto;
     gap: 8px;
   }
@@ -172,6 +182,7 @@ const photosWithUrl = photos.map((p) => {
     text-decoration: none;
     color: inherit;
     position: relative;
+    min-width: 0;
   }
 
   .bj-gallery__cell--1 {
@@ -209,9 +220,13 @@ const photosWithUrl = photos.map((p) => {
   .bj-gallery__img {
     display: block;
     width: 100%;
+    max-width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 200ms ease;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .bj-gallery__img { transition: transform 200ms ease; }
   }
 
   .bj-gallery__overlay {
@@ -239,7 +254,7 @@ const photosWithUrl = photos.map((p) => {
      cells 2–5 fill the remaining 2×2 quadrant. */
   @media (min-width: 768px) {
     .bj-gallery__grid {
-      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
       grid-template-rows: 1fr 1fr;
       grid-auto-rows: unset;
       height: 480px;
@@ -275,8 +290,10 @@ const photosWithUrl = photos.map((p) => {
       display: flex;
     }
 
-    .bj-gallery__cell:hover .bj-gallery__img {
-      transform: scale(1.02);
+    @media (hover: hover) and (pointer: fine) {
+      .bj-gallery__cell:hover .bj-gallery__img {
+        transform: scale(1.02);
+      }
     }
 
     .bj-gallery__credit {

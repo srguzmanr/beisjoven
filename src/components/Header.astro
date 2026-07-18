@@ -7,7 +7,7 @@ const currentPath = Astro.url.pathname;
 
 // Hardcoded nav order (not DB-driven). Names/slugs come from categorias rows.
 const NAV_ORDER = ['mlb', 'liga-mexicana', 'seleccion', 'juvenil', 'softbol', 'opinion'];
-// Short labels for the mobile chip rail.
+// Short labels for the mobile tab rail.
 const MOBILE_SHORT_LABELS: Record<string, string> = {
   'mlb': 'MLB',
   'liga-mexicana': 'Ligas MX',
@@ -52,7 +52,7 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
       <div class="site-header__bar">
         <a href="/" class="site-header__logo" aria-label="Beisjoven — Inicio">
           <span class="site-header__logo-mobile">
-            <Logo format="mark" height={36} width={36} class="logo-mark-img" />
+            <Logo format="lockup" height={46} width={98} class="logo-lockup-mobile-img" />
           </span>
           <span class="site-header__logo-desktop">
             <Logo format="lockup" height={50} width={106} class="logo-lockup-img" />
@@ -110,35 +110,38 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     </div>
   </div>
 
-  <nav class="site-header__chips" aria-label="Categorías">
-    <div class="site-header__chips-scroll">
-      <ul class="site-header__chips-list">
-        <li class="chip-item">
+  <nav class="site-header__tabs" aria-label="Categorías">
+    <div class="site-header__tabs-scroll">
+      <ul class="site-header__tabs-list">
+        <li class="tab-item">
           <a
             href="/"
-            class="chip"
+            class="tab"
+            data-nav="inicio"
             aria-current={isHomeActive ? 'page' : undefined}
           >Inicio</a>
         </li>
         {navItems.map((c) => (
-          <li class="chip-item">
+          <li class="tab-item">
             <a
               href={`/categoria/${c.slug}`}
-              class="chip"
+              class="tab"
+              data-category={c.slug}
               aria-current={isCategoryActive(c.slug) ? 'page' : undefined}
             >{MOBILE_SHORT_LABELS[c.slug] ?? c.nombre}</a>
           </li>
         ))}
-        <li class="chip-item">
-          <a href="/tu-historia" class="chip chip--cta">Cuéntanos</a>
+        <li class="tab-item">
+          <a href="/tu-historia" class="tab tab--cta">Cuéntanos</a>
         </li>
       </ul>
     </div>
+    <span class="site-header__tabs-chevron" aria-hidden="true">›</span>
   </nav>
 
   <!--
     Punto de inserción Quick Hits / LIVE strip (bloqueado por SEC-03, RLS de quick_hits):
-    cuando se habiliten, ambos van AQUÍ, inmediatamente después del nav de chips y dentro
+    cuando se habiliten, ambos van AQUÍ, inmediatamente después del nav de tabs y dentro
     del <header> para heredar el sticky/auto-hide. Orden vertical: LIVE strip arriba,
     Quick Hits debajo (Bible §3.0).
   -->
@@ -148,8 +151,11 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
 
 <style>
   /* ============================================================
-     Header — HeaderDefault (DESIGN-HF-01, Spec v1.1)
-     Móvil (<1024): barra 52px mark-only + chips scrolleables.
+     Header — HeaderDefault (DESIGN-HF-01 → HF-02)
+     Móvil (<1024): barra 52px con lockup + tabs de texto
+     scrolleables con underline activo (mismo lenguaje que el
+     nav desktop). HF-02 supersede el "mark-only mobile" del
+     Bible §3.0 (regla anterior al asset lockup limpio).
      Desktop (≥1024): barra única 64px — logo · divisor · nav
      inline con underline activo · Cuéntanos · búsqueda.
      ============================================================ */
@@ -193,7 +199,7 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
   .site-header__logo {
     display: inline-flex;
     align-items: center;
-    min-height: 44px;
+    align-self: stretch; /* área táctil = alto completo de la barra (52px) */
     text-decoration: none;
   }
   .site-header__logo:focus-visible {
@@ -202,7 +208,10 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
   }
   .site-header__logo-mobile { display: inline-flex; align-items: center; }
   .site-header__logo-desktop { display: none; }
-  :global(.logo-mark-img) { width: 36px; height: 36px; }
+  /* Lockup 1224×576 con aire transparente: el arte ocupa ~70% de la
+     altura del PNG, así que 46px de imagen ≈ 32px de arte visual
+     (mismo criterio que el desktop: 50px ≈ 35px visuales). */
+  :global(.logo-lockup-mobile-img) { height: 46px; width: auto; }
 
   .site-header__divider { display: none; }
   .site-header__nav { display: none; }
@@ -229,68 +238,107 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     cursor: pointer;
     transition: background-color 120ms ease-out;
   }
-  .site-header__search:hover { background-color: rgba(27, 42, 74, 0.06); }
+  @media (hover: hover) and (pointer: fine) {
+    .site-header__search:hover { background-color: rgba(27, 42, 74, 0.06); }
+  }
+  .site-header__search:active { background-color: rgba(27, 42, 74, 0.06); }
   .site-header__search:focus-visible {
     outline: 2px solid var(--gold);
     outline-offset: 2px;
   }
   .site-header__search svg { width: 22px; height: 22px; }
 
-  /* --- Chips móviles: scroll horizontal + fade derecho --- */
-  .site-header__chips {
+  /* --- Tabs móviles: texto + underline activo, scroll horizontal
+     con snap, fade derecho y chevron de descubribilidad --- */
+  .site-header__tabs {
     position: relative;
     background: #ffffff;
     border-bottom: 1px solid var(--rule);
   }
-  .site-header__chips-scroll {
+  .site-header__tabs-scroll {
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scroll-padding-left: 4px;
   }
-  .site-header__chips-scroll::-webkit-scrollbar { display: none; }
-  .site-header__chips-list {
+  .site-header__tabs-scroll::-webkit-scrollbar { display: none; }
+  .site-header__tabs-list {
     list-style: none;
     margin: 0;
-    padding: 8px 32px 8px 16px;
+    /* Peek garantizado 40–60% (§6.4 → FIX): padding de tabs + gap
+       calibrados con métricas reales de Inter para que "Juvenil" quede
+       cortado ~50% a 375 y a 412 (medido en Playwright; el gap sube en
+       la media query de abajo porque 37px más de viewport no bastan
+       para mantener el corte con un layout único). */
+    padding: 0 40px 0 4px;
     display: flex;
-    gap: 8px;
+    gap: 4px;
+    height: 44px;
     white-space: nowrap;
   }
-  .chip-item { flex: 0 0 auto; }
-  .chip {
-    display: inline-flex;
+  .tab-item {
+    flex: 0 0 auto;
+    position: relative;
+    display: flex;
     align-items: center;
-    min-height: 44px;
-    padding: 0 14px;
-    border-radius: 2px;
-    background: var(--bg-2);
+    scroll-snap-align: start;
+  }
+  .tab {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 13px;
     color: var(--navy);
     font-family: var(--font-body);
-    font-size: var(--text-nav);
+    font-size: 13px;
     line-height: var(--lh-nav);
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: var(--tracking-nav);
     text-transform: uppercase;
     text-decoration: none;
-    transition: background-color 120ms ease-out, color 120ms ease-out;
   }
-  .chip:focus-visible {
+  .tab:focus-visible {
     outline: 2px solid var(--gold);
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
-  .chip[aria-current="page"] {
-    background: var(--navy);
-    color: #ffffff;
-    font-weight: 700;
+  .tab:active { color: var(--red); }
+  .tab[aria-current="page"] { font-weight: 700; }
+  /* Underline activo: 2px en el acento de categoría, anclado al borde
+     inferior de la fila (mismo patrón que el nav desktop). */
+  .tab[aria-current="page"]::after {
+    content: '';
+    position: absolute;
+    left: 13px;
+    right: 13px;
+    bottom: 0;
+    height: 2px;
+    background: var(--cat-color, var(--navy));
   }
-  .chip--cta {
-    background: transparent;
-    box-shadow: inset 0 0 0 1px var(--red);
+  .tab[data-category="mlb"]           { --cat-color: var(--cat-mlb); }
+  .tab[data-category="liga-mexicana"] { --cat-color: var(--cat-liga-mexicana); }
+  .tab[data-category="seleccion"]     { --cat-color: var(--cat-seleccion); }
+  .tab[data-category="juvenil"]       { --cat-color: var(--cat-juvenil); }
+  .tab[data-category="softbol"]       { --cat-color: var(--cat-softbol); }
+  .tab[data-category="opinion"]       { --cat-color: var(--cat-opinion); }
+  .tab--cta {
+    height: 32px;
+    margin: 0 4px 0 8px;
+    padding: 0 12px;
+    border: 1px solid var(--red);
+    border-radius: 2px;
     color: var(--red);
     font-weight: 600;
   }
-  .site-header__chips::after {
+  .tab--cta:active {
+    background: var(--red);
+    color: #ffffff;
+  }
+  @media (min-width: 400px) {
+    .site-header__tabs-list { gap: 13px; }
+  }
+  .site-header__tabs::after {
     content: '';
     position: absolute;
     top: 0;
@@ -299,6 +347,24 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
     height: 100%;
     pointer-events: none;
     background: linear-gradient(to right, transparent, #ffffff 75%);
+  }
+  .site-header__tabs-chevron {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    z-index: 1;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    pointer-events: none;
+    opacity: 1;
+  }
+  .site-header__tabs-chevron.is-faded { opacity: 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    .site-header__tabs-chevron { transition: opacity 0.2s ease-out; }
+    .tab { transition: color 0.15s ease-out; }
+    .tab--cta { transition: color 0.15s ease-out, background-color 0.15s ease-out; }
   }
 
   /* --- Desktop ≥1024 --- */
@@ -378,7 +444,10 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
       white-space: nowrap;
       transition: color 120ms ease-out;
     }
-    .nav-link:hover { color: var(--red); }
+    @media (hover: hover) and (pointer: fine) {
+      .nav-link:hover { color: var(--red); }
+    }
+    .nav-link:active { color: var(--red); }
     .nav-link:focus-visible {
       outline: 2px solid var(--gold);
       outline-offset: 2px;
@@ -422,7 +491,13 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
       white-space: nowrap;
       transition: background-color 120ms ease-out, color 120ms ease-out;
     }
-    .header-cta:hover {
+    @media (hover: hover) and (pointer: fine) {
+      .header-cta:hover {
+        background: var(--red);
+        color: #ffffff;
+      }
+    }
+    .header-cta:active {
       background: var(--red);
       color: #ffffff;
     }
@@ -441,12 +516,49 @@ const isCategoryActive = (slug: string) => activeCategorySlug === slug;
       .header-cta__icon { display: block; }
     }
 
-    .site-header__chips { display: none; }
+    .site-header__tabs { display: none; }
   }
 </style>
 
 <script is:inline>
   (() => {
+    // --- Descubribilidad del nav móvil (DESIGN-HF-02) ---
+    const scroller = document.querySelector('.site-header__tabs-scroll');
+    if (scroller) {
+      // Auto-scroll del tab activo: en páginas de categoría cuyo tab quede
+      // fuera del viewport inicial, centrarlo ANTES de registrar el listener
+      // del chevron (scroll programático ≠ scroll del usuario). Instantáneo,
+      // sin smooth. En Inicio no aplica (ya visible).
+      const active = scroller.querySelector('.tab[data-category][aria-current="page"]');
+      if (active) {
+        const sr = scroller.getBoundingClientRect();
+        const ar = active.getBoundingClientRect();
+        if (ar.right > sr.right || ar.left < sr.left) {
+          scroller.scrollLeft += (ar.left - sr.left) - (sr.width - ar.width) / 2;
+        }
+      }
+      // Chevron: se desvanece al primer scroll horizontal del usuario y no
+      // reaparece en esa vista. Listener pasivo; el scroll programático de
+      // arriba no lo dispara porque comparamos contra la posición base.
+      const chevron = document.querySelector('.site-header__tabs-chevron');
+      if (chevron) {
+        const maxScroll = scroller.scrollWidth - scroller.clientWidth;
+        if (scroller.scrollLeft >= maxScroll - 4) {
+          // Ya no hay contenido a la derecha (p. ej. tras el auto-scroll):
+          // el chevron no debe prometer más nav.
+          chevron.classList.add('is-faded');
+        } else {
+          const base = scroller.scrollLeft;
+          const onTabsScroll = () => {
+            if (Math.abs(scroller.scrollLeft - base) < 4) return;
+            chevron.classList.add('is-faded');
+            scroller.removeEventListener('scroll', onTabsScroll);
+          };
+          scroller.addEventListener('scroll', onTabsScroll, { passive: true });
+        }
+      }
+    }
+
     const header = document.getElementById('site-header');
     if (!header) return;
 
