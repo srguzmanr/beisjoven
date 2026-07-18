@@ -59,7 +59,7 @@ const legal = [
         </div>
       </div>
 
-      <nav class="site-footer__col" aria-label="Categorías editoriales">
+      <nav class="site-footer__col site-footer__col--cats" aria-label="Categorías editoriales">
         <h4 class="site-footer__heading">Categorías</h4>
         <ul class="site-footer__links">
           {categories.map((item) => (
@@ -125,7 +125,8 @@ const legal = [
   .site-footer__grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 40px;
+    /* HF-02: ritmo vertical compacto entre grupos en móvil. */
+    gap: 32px;
   }
 
   /* --- Marca --- */
@@ -173,7 +174,12 @@ const legal = [
     color: rgba(255, 255, 255, 0.7);
     transition: color 120ms ease-out;
   }
-  .social-link:hover { color: var(--gold); }
+  /* Hover solo en dispositivos con hover real; en touch el feedback es
+     :active (mismo color, sin persistencia tras el tap). */
+  @media (hover: hover) and (pointer: fine) {
+    .social-link:hover { color: var(--gold); }
+  }
+  .social-link:active { color: var(--gold); }
   .social-link:focus-visible {
     outline: 2px solid var(--gold);
     outline-offset: 2px;
@@ -196,6 +202,13 @@ const legal = [
     margin: 0;
     padding: 0;
   }
+  /* HF-02: CATEGORÍAS a 2 columnas en móvil (orden por filas:
+     MLB · Ligas Mexicanas arriba). Reduce la columna de 6 filas a 3. */
+  .site-footer__col--cats .site-footer__links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 16px;
+  }
   .footer-link {
     font-family: var(--font-body);
     font-size: var(--text-body-sm);
@@ -208,9 +221,10 @@ const legal = [
     align-items: center;
     min-height: 44px;
   }
-  .footer-link:hover {
-    color: var(--gold);
+  @media (hover: hover) and (pointer: fine) {
+    .footer-link:hover { color: var(--gold); }
   }
+  .footer-link:active { color: var(--gold); }
   .footer-link:focus-visible {
     outline: 2px solid var(--gold);
     outline-offset: 2px;
@@ -257,7 +271,10 @@ const legal = [
     align-items: center;
     min-height: 44px;
   }
-  .legal-link:hover { color: var(--gold); }
+  @media (hover: hover) and (pointer: fine) {
+    .legal-link:hover { color: var(--gold); }
+  }
+  .legal-link:active { color: var(--gold); }
   .legal-link:focus-visible {
     outline: 2px solid var(--gold);
     outline-offset: 2px;
@@ -282,6 +299,8 @@ const legal = [
     .footer-link { min-height: 0; }
     .site-footer__links li + li { margin-top: 12px; }
     .legal-link { min-height: 0; }
+    /* CATEGORÍAS vuelve a 1 columna fuera de móvil. */
+    .site-footer__col--cats .site-footer__links { display: block; }
   }
 
   /* --- ≥1024: grid completo de 4 columnas --- */

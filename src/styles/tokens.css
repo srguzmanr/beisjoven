@@ -70,7 +70,12 @@
      Used by Sponsor reservation, MixedFeed and other below-fold modules.
      Kept here so DESIGN-04c/d/e can share a single source of truth. */
   --w-page: 1200px;
+  --bg: #FFFFFF;
   --bg-2: #F6F5F1;
+  /* Ritmo vertical de bandas del homepage (DESIGN-HF-02). Valores del
+     tokens.css canónico (docs/design-reference), portados sin cambios. */
+  --section: 48px;
+  --section-lg: 64px;
   --rule: rgba(27, 42, 74, 0.10);
   --rule-strong: rgba(27, 42, 74, 0.28);
   --muted: #6B7280;

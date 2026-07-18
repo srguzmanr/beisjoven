@@ -15,9 +15,11 @@ import { supabaseServer } from '@/lib/supabase';
 interface Props {
   slug: string;
   displayName: string;
+  /** Fondo de la banda full-bleed (DESIGN-HF-02): blanco (--bg) o --bg-2. */
+  band?: 'bg' | 'bg-2';
 }
 
-const { slug, displayName } = Astro.props;
+const { slug, displayName, band = 'bg' } = Astro.props;
 
 const KNOWN_ACCENT_TOKENS = new Set([
   'mlb',
@@ -32,6 +34,13 @@ if (!KNOWN_ACCENT_TOKENS.has(slug)) {
   console.warn(`[CategorySection] No --cat-${slug} token; falling back to --navy.`);
 }
 const accent = KNOWN_ACCENT_TOKENS.has(slug) ? `var(--cat-${slug})` : 'var(--navy)';
+
+// Overline en el acento de categoría, salvo donde el acento no pasa WCAG AA
+// 4.5:1 como texto de 11px sobre su banda: liga-mexicana (3.77:1 en blanco,
+// 3.45:1 en --bg-2) y juvenil (regla ya documentada en tokens.css). Ahí el
+// texto va en navy; el border-bottom de 4px conserva el acento.
+const ACCENT_FAILS_AA = new Set(['liga-mexicana', 'juvenil']);
+const overlineColor = ACCENT_FAILS_AA.has(slug) ? 'var(--navy)' : accent;
 
 type Row = {
   id: number;
@@ -76,26 +85,71 @@ const stories = ((raw ?? []) as Row[]).map((r) => {
 ---
 
 {stories.length > 0 && (
-  <section class="bj-cat-section" style={`--bj-cat-accent: ${accent};`}>
-    <div class="bj-cat-section__header">
-      <h2 class="bj-cat-section__title">{displayName}</h2>
-      <span class="bj-cat-section__spacer" aria-hidden="true"></span>
-      <a class="bj-cat-section__cta" href={`/categoria/${slug}`}>
-        Ver más en {displayName} <span aria-hidden="true">→</span>
-      </a>
-    </div>
+  <section
+    class:list={['bj-cat-section', { 'bj-cat-section--alt': band === 'bg-2' }]}
+    style={`--bj-cat-accent: ${accent}; --bj-cat-overline: ${overlineColor};`}
+  >
+    <div class="bj-cat-section__container">
+      <span class="bj-cat-section__overline">{displayName}</span>
+      <div class="bj-cat-section__header">
+        <h2 class="bj-cat-section__title">{displayName}</h2>
+        <span class="bj-cat-section__spacer" aria-hidden="true"></span>
+        <a class="bj-cat-section__cta" href={`/categoria/${slug}`}>
+          Ver más en {displayName} <span aria-hidden="true">→</span>
+        </a>
+      </div>
 
-    <div class="bj-cat-section__grid">
-      {stories.map((story) => (
-        <StoryCard story={story} />
-      ))}
+      <div class="bj-cat-section__grid">
+        {stories.map((story) => (
+          <StoryCard story={story} />
+        ))}
+      </div>
     </div>
   </section>
 )}
 
 <style>
+  /* Banda full-bleed (DESIGN-HF-02): el fondo llega a los bordes del
+     viewport; el contenido respeta el container de 1200px. Sin margen
+     externo entre bandas — la frontera ES el cambio de color. */
   .bj-cat-section {
     display: block;
+    width: 100%;
+    background: var(--bg);
+    padding: var(--section) 0;
+  }
+
+  .bj-cat-section--alt {
+    background: var(--bg-2);
+  }
+
+  @media (min-width: 768px) {
+    .bj-cat-section {
+      padding: var(--section-lg) 32px;
+    }
+  }
+
+  .bj-cat-section__container {
+    max-width: var(--w-page);
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+
+  @media (min-width: 768px) {
+    .bj-cat-section__container {
+      padding: 0;
+    }
+  }
+
+  .bj-cat-section__overline {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--bj-cat-overline);
+    margin-bottom: 6px;
   }
 
   .bj-cat-section__header {
@@ -134,7 +188,12 @@ const stories = ((raw ?? []) as Row[]).map((r) => {
     gap: 6px;
   }
 
-  .bj-cat-section__cta:hover {
+  @media (hover: hover) and (pointer: fine) {
+    .bj-cat-section__cta:hover {
+      text-decoration: underline;
+    }
+  }
+  .bj-cat-section__cta:active {
     text-decoration: underline;
   }
 
