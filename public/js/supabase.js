@@ -105,14 +105,23 @@ const SupabaseAPI = {
         return { success: true };
     },
 
+    // Devuelve { data, error } — el llamante SIEMPRE muestra el error al
+    // usuario (doctrina: cero fallos silenciosos; el createTag mudo fue la
+    // causa #2 del bug "crear tag con acento falla", EDITOR-20 F0 §4).
     async createTag(nombre, slug) {
         const { data, error } = await supabaseClient
             .from('tags')
-            .insert([{ nombre, slug }])
+            .insert([{ nombre: String(nombre).normalize('NFC'), slug }])
             .select()
             .single();
-        if (error) { console.error('Error creando tag:', error); return null; }
-        return data;
+        if (error) {
+            console.error('[createTag] Failed:', error);
+            let msg = error.message;
+            if (error.code === '23505') msg = 'Ya existe un tag con ese nombre o slug.';
+            else if (error.code === '42501') msg = 'Sin permisos para crear tags. Cierra sesión y vuelve a entrar.';
+            return { data: null, error: msg };
+        }
+        return { data, error: null };
     },
 
     // ==================== ARTÍCULOS ====================

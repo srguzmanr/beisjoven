@@ -1302,6 +1302,16 @@ const AdminPages = {
                 .replace(/(^-|-$)/g, '');
         }
 
+        // Forma plegada para comparar: NFC (teclados iOS pueden emitir NFD)
+        // → minúsculas → sin marcas diacríticas. "Selección" ≡ "seleccion".
+        function fold(str) {
+            return String(str || '')
+                .normalize('NFC')
+                .toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .trim();
+        }
+
         function syncHidden() {
             hiddenInput.value = selectedTags.map(t => t.id).join(',');
         }
@@ -1333,13 +1343,17 @@ const AdminPages = {
         }
 
         function showSuggestions(query) {
-            var q = query.trim().toLowerCase();
+            // NFC primero: el teclado iOS puede emitir formas descompuestas.
+            var raw = query.normalize('NFC').trim();
+            var q = fold(raw);
             suggestionsBox.innerHTML = '';
             highlightIndex = -1;
             if (!q) { suggestionsBox.style.display = 'none'; return; }
 
+            // Búsqueda insensible a acentos y mayúsculas (EDITOR-20 F3):
+            // "seleccion" encuentra "Selección" y viceversa.
             var filtered = allTags.filter(function(t) {
-                return t.nombre.toLowerCase().includes(q) && !selectedTags.find(s => s.id === t.id);
+                return fold(t.nombre).includes(q) && !selectedTags.find(s => s.id === t.id);
             }).slice(0, 8);
 
             filtered.forEach(function(tag) {
@@ -1353,24 +1367,47 @@ const AdminPages = {
                 suggestionsBox.appendChild(item);
             });
 
-            // "Crear: [text]" option if query doesn't exactly match an existing tag
-            var exactMatch = allTags.find(t => t.nombre.toLowerCase() === q || t.slug === makeSlug(q));
-            if (q && !exactMatch) {
+            // "Crear:" solo se omite si un tag existente coincide EXACTO en
+            // forma plegada — y ese tag ya es visible arriba como sugerencia.
+            // (El viejo check por slug supríma la opción en silencio: dead-end.)
+            var exactMatch = allTags.find(function(t) { return fold(t.nombre) === q; });
+            if (raw && !exactMatch) {
                 var createItem = document.createElement('div');
                 createItem.className = 'tag-suggestion-item create';
-                createItem.textContent = 'Crear: ' + query.trim();
-                createItem.addEventListener('mousedown', async function(e) {
+                createItem.textContent = 'Crear: ' + raw;
+                createItem.addEventListener('mousedown', function(e) {
                     e.preventDefault();
-                    var newTag = await SupabaseAPI.createTag(query.trim(), makeSlug(query.trim()));
-                    if (newTag) {
-                        allTags.push(newTag);
-                        addTag(newTag);
-                    }
+                    crearTagDesdeInput(raw, createItem);
                 });
                 suggestionsBox.appendChild(createItem);
             }
 
             suggestionsBox.style.display = suggestionsBox.children.length > 0 ? '' : 'none';
+        }
+
+        // Creación con feedback SIEMPRE visible (doctrina: cero fallos mudos).
+        var creating = false;
+        async function crearTagDesdeInput(nombre, itemEl) {
+            if (creating) return;
+            creating = true;
+            if (itemEl) itemEl.textContent = 'Creando…';
+            try {
+                var res = await SupabaseAPI.createTag(nombre, makeSlug(nombre));
+                if (res.error || !res.data) {
+                    showToast('No se pudo crear el tag «' + nombre + '»: ' + (res.error || 'error desconocido'), 'error', 5000);
+                    if (itemEl) itemEl.textContent = 'Crear: ' + nombre;
+                    return;
+                }
+                allTags.push(res.data);
+                addTag(res.data);
+                showToast('✓ Tag «' + res.data.nombre + '» creado');
+            } catch (err) {
+                console.error('[Tags] createTag threw:', err);
+                showToast('No se pudo crear el tag: ' + (err.message || err), 'error', 5000);
+                if (itemEl) itemEl.textContent = 'Crear: ' + nombre;
+            } finally {
+                creating = false;
+            }
         }
 
         function addTag(tag) {
@@ -1432,6 +1469,20 @@ const AdminPages = {
                 }
                 if (visible) {
                     confirmHighlightedOrFirst();
+                    return;
+                }
+                // EDITOR-20 F3: con texto pero sin dropdown visible (p.ej. el
+                // debounce aún no corre), Enter actúa: selecciona el match
+                // exacto plegado o crea el tag. Antes: silencio total.
+                var raw = searchInput.value.normalize('NFC').trim();
+                if (!raw) return;
+                var exact = allTags.find(function(t) { return fold(t.nombre) === fold(raw); });
+                if (exact) {
+                    addTag(exact);
+                } else {
+                    crearTagDesdeInput(raw, null);
+                    searchInput.value = '';
+                    suggestionsBox.style.display = 'none';
                 }
                 return;
             }
