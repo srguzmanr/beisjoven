@@ -153,9 +153,14 @@ const ArticlePreview = {
         const pie_de_foto = document.getElementById('foto-pie')?.value || '';
         const foto_credito = document.getElementById('foto-credito')?.value || '';
 
-        // Contenido del RTE
-        const rteEditor = document.querySelector('.rte-editor');
-        const contenido = rteEditor ? rteEditor.innerHTML : (document.getElementById('content')?.value || '');
+        // Contenido del editor. El hidden input de Tiptap se sincroniza con
+        // editor.getHTML() en cada cambio — es la serialización limpia (los
+        // nodeviews de galería/embeds en el DOM vivo son previews, no HTML
+        // final). Fallback: textarea #content (modo sin Tiptap).
+        // Fix EDITOR-20 F4: antes se leía '.rte-editor' (editor viejo,
+        // inexistente) y la vista previa del borrador salía siempre vacía.
+        const hiddenInput = document.querySelector('.tiptap-hidden-input');
+        const contenido = (hiddenInput && hiddenInput.value) || document.getElementById('content')?.value || '';
 
         // Categoría — buscar el texto del option seleccionado
         const catSelect = document.getElementById('category');

@@ -224,12 +224,9 @@ var Autosave = {
                 // Rule 4: EXISTING article — update in place.
                 // Crucially: do NOT include 'publicado' in the payload.
                 // This prevents autosave from overwriting a published article's status.
-                var slug = data.titulo.toLowerCase()
-                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/(^-|-$)/g, '');
-                payload.slug = slug;
-
+                // M1 (EDITOR-20): tampoco 'slug' — el autosave regeneraba la URL
+                // desde el título en cada UPDATE y rompía enlaces publicados.
+                // El slug solo lo escribe saveArticle (y solo si no está lockeado).
                 await supabaseClient
                     .from('articulos')
                     .update(payload)
@@ -984,19 +981,13 @@ const AdminPages = {
 
                                 <div class="fg-titulo">
                                     <label for="title">Título *</label>
-                                    <input type="text" id="title" value="${article?.titulo || (useDraft && draft ? draft.titulo : '') || (historiaSeed ? (historiaSeed.titulo || '').replace(/"/g, '&quot;') : '') || ''}" placeholder="Título de la noticia" oninput="AdminPages.autoSlug()">
+                                    <input type="text" id="title" value="${article?.titulo || (useDraft && draft ? draft.titulo : '') || (historiaSeed ? (historiaSeed.titulo || '').replace(/"/g, '&quot;') : '') || ''}" placeholder="Título de la noticia" oninput="AdminPages.autoSlug(); AdminPages._updateTitleHint()">
+                                    <div id="title-length-hint" class="title-length-hint" aria-live="polite"></div>
                                 </div>
 
                                 <div class="fg-extracto">
                                     <label for="excerpt">Extracto *</label>
                                     <textarea id="excerpt" rows="3" placeholder="Breve descripción (aparece en tarjetas)">${article?.extracto || (useDraft && draft ? draft.extracto : '') || ''}</textarea>
-                                    <div style="margin-top:8px;">
-                                        <label for="slug" style="font-size:0.82rem;color:#6b7280;font-weight:500;margin-bottom:4px;">URL / Slug</label>
-                                        <div style="display:flex;gap:6px;align-items:center;">
-                                            <span style="font-size:0.8rem;color:#9ca3af;flex-shrink:0;">/articulo/</span>
-                                            <input type="text" id="slug" value="${article?.slug || (useDraft && draft ? draft.slug : '') || ''}" placeholder="se-genera-del-titulo" style="flex:1;font-size:0.85rem !important;padding:8px 10px !important;min-height:auto !important;" oninput="AdminPages._slugManual=true">
-                                        </div>
-                                    </div>
                                 </div>
 
                                 <div class="fg-meta">
@@ -1037,6 +1028,20 @@ const AdminPages = {
                                 <div class="fg-contenido">
                                     <label>Contenido *</label>
                                     <div id="content-editor-container"></div>
+                                </div>
+
+                                <div class="fg-slug">
+                                    ${(() => {
+                                        const _locked = !!(isEdit && article && article.publicado);
+                                        const _slugVal = article?.slug || (useDraft && draft ? draft.slug : '') || '';
+                                        return `
+                                        <label for="slug" style="font-size:0.82rem;color:#6b7280;font-weight:500;margin-bottom:4px;">URL / Slug${_locked ? ' 🔒' : ''}</label>
+                                        <div style="display:flex;gap:6px;align-items:center;">
+                                            <span style="font-size:0.8rem;color:#9ca3af;flex-shrink:0;">/articulo/</span>
+                                            <input type="text" id="slug" value="${_slugVal}" placeholder="se-genera-del-titulo" ${_locked ? 'readonly' : ''} autocapitalize="none" autocorrect="off" spellcheck="false" style="flex:1;font-size:0.85rem !important;padding:8px 10px !important;min-height:auto !important;${_locked ? 'background:#f3f4f6;color:#6b7280;' : ''}" oninput="AdminPages._slugManual=true">
+                                        </div>
+                                        ${_locked ? '<small style="display:block;margin-top:4px;font-size:0.75rem;color:#9ca3af;">URL fija — los enlaces de un artículo publicado no cambian aunque edites el título.</small>' : ''}`;
+                                    })()}
                                 </div>
 
                                 <div class="fg-imagen">
@@ -1095,11 +1100,14 @@ const AdminPages = {
             const style = document.createElement('style');
             style.id = 'bj-editor-styles';
             style.textContent = `
-                .form-grid-new { display: grid; grid-template-columns: 1fr 320px; grid-template-areas: "titulo imagen" "extracto imagen" "meta acciones" "contenido acciones"; gap: 0 24px; max-width: 100%; }
+                .form-grid-new { display: grid; grid-template-columns: 1fr 320px; grid-template-areas: "titulo imagen" "extracto imagen" "meta acciones" "contenido acciones" "slug acciones"; gap: 0 24px; max-width: 100%; }
                 .fg-titulo { grid-area: titulo; padding-bottom: 20px; }
                 .fg-extracto { grid-area: extracto; padding-bottom: 20px; }
                 .fg-meta { grid-area: meta; padding-bottom: 20px; }
                 .fg-contenido { grid-area: contenido; padding-bottom: 20px; }
+                .fg-slug { grid-area: slug; padding-bottom: 20px; }
+                .title-length-hint { font-size: 0.78rem; margin-top: 4px; min-height: 1em; color: #9ca3af; }
+                .title-length-hint.hint-warn { color: #d97706; font-weight: 600; }
                 .fg-imagen { grid-area: imagen; background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
                 .fg-acciones { grid-area: acciones; background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
                 .form-grid-new label { display: block; margin-bottom: 6px; font-weight: 600; color: #111827; font-size: 0.95rem; }
@@ -1114,34 +1122,19 @@ const AdminPages = {
                 .form-grid-new .image-preview { width: 100%; height: 150px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 8px 0; overflow: hidden; color: #9ca3af; }
                 .form-grid-new .image-preview img { width: 100%; height: 100%; object-fit: cover; }
                 @media (max-width: 768px) {
+                    /* EDITOR-20 F4 — sin acordeón: metadatos siempre visibles,
+                       en orden editorial por frecuencia de uso real. */
                     .form-grid-new { display: flex; flex-direction: column; gap: 0; padding-bottom: 80px; overflow: hidden; max-width: 100%; }
                     .fg-titulo { order: 1; padding: 16px 16px 0; }
                     .fg-extracto { order: 2; padding: 12px 16px 0; }
                     .fg-meta { order: 3; padding: 12px 16px 0; }
-                    .fg-contenido { order: 4; padding: 12px 16px 0; }
-                    .fg-imagen { order: 5; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
+                    .fg-imagen { order: 4; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
+                    .fg-contenido { order: 5; padding: 12px 16px 0; }
+                    .fg-slug { order: 6; padding: 12px 16px 0; }
                     .fg-acciones { order: 7; display: none; }
                     .fg-meta-row { grid-template-columns: 1fr; gap: 12px; }
                     .form-grid-new input, .form-grid-new textarea, .form-grid-new select { font-size: 16px !important; min-height: 44px; }
                     .admin-main, .admin-content, .admin-layout { max-width: 100vw; overflow-x: hidden; }
-                }
-                /* Metadata accordion — mobile only */
-                .metadata-accordion-toggle { display: none; }
-                @media (max-width: 768px) {
-                    .metadata-accordion-toggle {
-                        display: flex; align-items: center; justify-content: space-between;
-                        width: 100%; margin: 8px 16px 0; padding: 10px 14px;
-                        background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px;
-                        font-size: 0.9rem; font-weight: 600; color: #1e3a5f;
-                        cursor: pointer; box-sizing: border-box;
-                        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-                    }
-                    .metadata-accordion-toggle .acc-arrow { transition: transform 0.2s; font-size: 0.8rem; }
-                    .metadata-accordion-toggle.open .acc-arrow { transform: rotate(180deg); }
-                    .fg-extracto, .fg-meta, .fg-imagen { overflow: hidden; }
-                    .form-grid-new.accordion-closed .fg-extracto,
-                    .form-grid-new.accordion-closed .fg-meta,
-                    .form-grid-new.accordion-closed .fg-imagen { display: none; }
                 }
                 .admin-sticky-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; background: #ffffff; padding: 10px 16px; box-shadow: 0 -2px 12px rgba(0,0,0,0.15); display: flex; gap: 10px; align-items: center; color-scheme: light; }
                 .admin-sticky-bar .btn-publish { flex: 2; padding: 14px; background: #c4122e; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
@@ -1225,24 +1218,9 @@ const AdminPages = {
 
             // Reset slug manual flag so auto-slug works on new articles
             AdminPages._slugManual = !!(article?.slug);
-
-            // Metadata accordion — mobile only
-            if (window.innerWidth <= 768) {
-                var formGrid = document.querySelector('.form-grid-new');
-                var tituloEl = document.querySelector('.fg-titulo');
-                if (formGrid && tituloEl) {
-                    formGrid.classList.add('accordion-closed');
-                    var accBtn = document.createElement('button');
-                    accBtn.type = 'button';
-                    accBtn.className = 'metadata-accordion-toggle';
-                    accBtn.innerHTML = '<span>Metadatos &amp; Opciones</span><span class="acc-arrow">▼</span>';
-                    accBtn.addEventListener('click', function() {
-                        formGrid.classList.toggle('accordion-closed');
-                        accBtn.classList.toggle('open', !formGrid.classList.contains('accordion-closed'));
-                    });
-                    tituloEl.insertAdjacentElement('afterend', accBtn);
-                }
-            }
+            // M1 — slug lock: la URL de un artículo publicado es inmutable.
+            AdminPages._slugLocked = !!(isEdit && article && article.publicado);
+            AdminPages._updateTitleHint();
 
             // MediaLibrary modal is available on demand via openMediaPicker() →
             // MediaLibrary.open(); no up-front init() call is needed.
@@ -1274,6 +1252,29 @@ const AdminPages = {
     // ==================== FUNCIONES AUXILIARES ====================
 
     _slugManual: false,
+    // M1 (EDITOR-20): true cuando el artículo abierto ya está publicado —
+    // su slug es inmutable (autoSlug y saveArticle lo respetan).
+    _slugLocked: false,
+
+    // M2 — aviso no bloqueante de largo de titular (~65 chars: corte
+    // típico en SERP de Google y en tarjetas a 375px).
+    TITLE_WARN_LENGTH: 65,
+    _updateTitleHint: function() {
+        var input = document.getElementById('title');
+        var hint = document.getElementById('title-length-hint');
+        if (!input || !hint) return;
+        var len = input.value.trim().length;
+        if (len > this.TITLE_WARN_LENGTH) {
+            hint.textContent = len + ' caracteres — se truncará en tarjetas y en Google (~' + this.TITLE_WARN_LENGTH + ').';
+            hint.classList.add('hint-warn');
+        } else if (len > 0) {
+            hint.textContent = len + ' / ~' + this.TITLE_WARN_LENGTH + ' caracteres';
+            hint.classList.remove('hint-warn');
+        } else {
+            hint.textContent = '';
+            hint.classList.remove('hint-warn');
+        }
+    },
 
     // ==================== TAG INPUT ====================
 
@@ -1533,6 +1534,8 @@ const AdminPages = {
     _getSelectedTagIds: function() { return []; },
 
     autoSlug: function() {
+        // M1: jamás tocar el slug de un artículo publicado.
+        if (this._slugLocked) return;
         // Only auto-fill if the user hasn't manually edited the slug field
         if (this._slugManual) return;
         const slugField = document.getElementById('slug');
@@ -1671,7 +1674,9 @@ const AdminPages = {
         // C) Sanitizar contenido para prevenir XSS
         const contenido = sanitizeHtmlBasic(contenidoRaw);
 
-        // Crear slug — use the slug field if filled, otherwise derive from title
+        // Crear slug — use the slug field if filled, otherwise derive from title.
+        // M1: si el artículo ya está publicado, el slug NO viaja en el payload
+        // (la DB conserva el existente; los enlaces publicados no cambian).
         const slugFieldVal = (document.getElementById('slug')?.value || '').trim();
         const slug = slugFieldVal ||
             titulo.toLowerCase()
@@ -1684,7 +1689,6 @@ const AdminPages = {
 
         const articulo = {
             titulo: sanitizeHtmlBasic(titulo),
-            slug,
             extracto: sanitizeHtmlBasic(extracto),
             contenido,
             categoria_id,
@@ -1695,6 +1699,9 @@ const AdminPages = {
             publicado: action === 'publish' || action === 'save',
             read_time_minutes,
         };
+        if (!(editId && AdminPages._slugLocked)) {
+            articulo.slug = slug;
+        }
 
         // Track which auth user created the article
         if (!editId && !Autosave.getDraftId() && Auth.getUser()) {
