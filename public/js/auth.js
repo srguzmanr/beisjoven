@@ -67,10 +67,30 @@ const Auth = {
         return { success: true, user: this.currentUser };
     },
 
-    // Cerrar sesión
+    // Cerrar sesión. Retorna { success, error } — supabase-js v2 NO lanza:
+    // devuelve { error }, y ante fallo de red NO borra la sesión local ni
+    // emite SIGNED_OUT. Ignorarlo dejaba UI de "fuera" con token vivo
+    // (AUTH-LOGOUT-01). Con error no tocamos currentUser: el estado visible
+    // debe seguir diciendo "dentro" porque la sesión sigue viva.
     logout: async function() {
-        await supabaseClient.auth.signOut();
+        let error = null;
+        try {
+            const result = await supabaseClient.auth.signOut();
+            error = result && result.error;
+        } catch (e) {
+            error = e;
+        }
+
+        if (error) {
+            console.error('[Auth.logout] signOut falló — la sesión sigue activa:', error);
+            return {
+                success: false,
+                error: 'No se pudo cerrar la sesión (¿sin conexión?). Sigues dentro — inténtalo de nuevo.'
+            };
+        }
+
         this.currentUser = null;
+        return { success: true };
     },
 
     // Solicitar reset de contraseña

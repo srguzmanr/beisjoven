@@ -15,7 +15,13 @@ const Router = {
         // Manejar clicks en enlaces
         document.addEventListener('click', (e) => {
             const link = e.target.closest('a[href]');
-            if (link && link.href.startsWith(window.location.origin)) {
+            if (!link) return;
+            // href="#..." son controles JS (logout, acciones inline), no navegación
+            // SPA: interceptarlos re-navega a la ruta actual y dispara renders
+            // fantasma sobre handlers async en vuelo (AUTH-LOGOUT-01).
+            const rawHref = link.getAttribute('href') || '';
+            if (rawHref.startsWith('#')) return;
+            if (link.href.startsWith(window.location.origin)) {
                 const url = new URL(link.href);
                 if (!url.pathname.includes('.') && !link.hasAttribute('data-external') && link.getAttribute('target') !== '_blank') {
                     e.preventDefault();

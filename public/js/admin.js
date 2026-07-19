@@ -2943,10 +2943,28 @@ const AdminPages = {
         document.title = 'Usuarios - Beisjoven Admin';
     },
 
+    // AUTH-LOGOUT-01: un solo clic = sesión invalidada + arranque limpio.
+    // Éxito → navegación dura a /admin (descarta handlers/timers en vuelo;
+    // sin sesión, el guard del dashboard lleva al login — /login no existe
+    // como ruta de servidor, es redirect 301 a /admin).
+    // Fallo → la sesión sigue viva: se avisa con toast y NO se navega, sin
+    // estado intermedio en que la UI diga "fuera" con token vivo.
+    _loggingOut: false,
     logout: async function() {
+        if (this._loggingOut) return;
+        this._loggingOut = true;
         Autosave.stop();
-        await Auth.logout();
-        Router.navigate('/login');
+
+        const result = await Auth.logout();
+
+        if (!result.success) {
+            this._loggingOut = false;
+            AdminComponents.closeMoreMenu();
+            showToast(result.error, 'error', 6000);
+            return;
+        }
+
+        window.location.replace('/admin');
     },
 
     // ==================== BIBLIOTECA DE MEDIOS ====================
