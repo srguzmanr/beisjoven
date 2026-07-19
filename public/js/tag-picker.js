@@ -25,6 +25,16 @@ const PickerModal = (function() {
             .replace(/^-+|-+$/g, '');
     }
 
+    // Forma plegada para comparar (EDITOR-20 F3): NFC → minúsculas → sin
+    // diacríticos. La búsqueda es insensible a acentos y mayúsculas.
+    function _fold(str) {
+        return String(str || '')
+            .normalize('NFC')
+            .toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .trim();
+    }
+
     // options:
     //   mode?            'multi' | 'single'   (default 'multi')
     //   title            string
@@ -132,10 +142,11 @@ const PickerModal = (function() {
         }
 
         function renderList(q) {
-            q = (q || '').toLowerCase().trim();
+            var raw = (q || '').normalize('NFC').trim();
+            q = _fold(raw);
             var list = displayItems();
             var filtered = list.filter(function(t) {
-                return !q || t.nombre.toLowerCase().indexOf(q) !== -1;
+                return !q || _fold(t.nombre).indexOf(q) !== -1;
             });
 
             var inputType = mode === 'single' ? 'radio' : 'checkbox';
@@ -149,14 +160,16 @@ const PickerModal = (function() {
                 '</label>';
             });
 
-            if (allowCreate && q) {
+            if (allowCreate && raw) {
+                // "Crear" solo se omite ante match exacto plegado — que ya es
+                // visible como opción arriba. Nunca supresión silenciosa.
                 var exactMatch = list.some(function(t) {
-                    return t.nombre.toLowerCase() === q || _makeSlug(t.nombre) === _makeSlug(q);
+                    return _fold(t.nombre) === q;
                 });
                 if (!exactMatch) {
                     parts.push(
-                        '<div class="bj-tp-item bj-tp-create" id="bj-tp-create-item" data-name="' + _escapeHtml(q) + '">' +
-                            'Crear tag: <strong>' + _escapeHtml(q) + '</strong>' +
+                        '<div class="bj-tp-item bj-tp-create" id="bj-tp-create-item" data-name="' + _escapeHtml(raw) + '">' +
+                            'Crear tag: <strong>' + _escapeHtml(raw) + '</strong>' +
                         '</div>'
                     );
                 }
@@ -182,20 +195,27 @@ const PickerModal = (function() {
                 if (!name) return;
                 createItem.textContent = 'Creando...';
                 try {
-                    var newTag = await SupabaseAPI.createTag(name, _makeSlug(name));
-                    if (newTag) {
-                        items.push(newTag);
-                        if (availableIds) availableIds.add(newTag.id);
-                        selected.add(newTag.id);
+                    var res = await SupabaseAPI.createTag(name, _makeSlug(name));
+                    if (res && res.data) {
+                        items.push(res.data);
+                        if (availableIds) availableIds.add(res.data.id);
+                        selected.add(res.data.id);
                         searchEl.value = '';
                         renderList('');
                         updateConfirmBtn();
                     } else {
-                        createItem.textContent = 'Error al crear';
+                        var msg = (res && res.error) || 'error desconocido';
+                        createItem.textContent = '⚠ ' + msg;
+                        if (typeof showToast === 'function') {
+                            showToast('No se pudo crear el tag «' + name + '»: ' + msg, 'error', 5000);
+                        }
                     }
                 } catch (err) {
                     console.error('[PickerModal] createTag failed:', err);
-                    createItem.textContent = 'Error al crear';
+                    createItem.textContent = '⚠ Error al crear';
+                    if (typeof showToast === 'function') {
+                        showToast('No se pudo crear el tag: ' + (err.message || err), 'error', 5000);
+                    }
                 }
                 return;
             }

@@ -11,33 +11,35 @@ import AdSlot from '@/components/AdSlot.astro';
 import {
   supabaseServer,
   getArticulos,
-  getArticulosDestacados,
+  getPortadaSlots,
   getEventosActivos,
   getQuickHitsActivos,
+  type Articulo,
 } from '@/lib/supabase';
 
 // Fetch all data in parallel at build time
 const [
   articulos,
-  destacados,
+  portadaSlots,
   eventosActivos,
   quickHits,
 ] = await Promise.all([
   getArticulos(12),
-  getArticulosDestacados(3),
+  getPortadaSlots(),
   getEventosActivos(),
   getQuickHitsActivos(3),
 ]);
 
 const eventoActivo = eventosActivos[0] || null;
-const featured = destacados.length > 0 ? destacados : articulos.slice(0, 3);
-const hero = featured[0];
+// EDITOR-20 F2 — curación separada del contenido: slot 1 manda sobre el
+// hero; sin slot (o tabla aún no creada) la portada vive por recencia.
+const hero = portadaSlots.get(1) ?? articulos[0] ?? null;
 const heroId = hero?.id ?? -1;
 
 // MixedFeed data (DESIGN-04b). Joined select returns categorias/autores as
 // nested objects; we flatten to the StoryCard / ListCard prop shape below.
 const FEED_SELECT =
-  'id, slug, titulo, extracto, imagen_url, imagen_portada_alt, fecha, read_time_minutes, categorias!inner(slug, nombre), autores(nombre)';
+  'id, slug, titulo, extracto, imagen_url, fecha, read_time_minutes, categorias!inner(slug, nombre), autores(nombre)';
 
 const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   .toISOString()
@@ -50,7 +52,7 @@ const [latestRes, masLeidosWindowRes, videosRes] = await Promise.all([
     .eq('publicado', true)
     .neq('id', heroId)
     .order('fecha', { ascending: false })
-    .limit(4),
+    .limit(8),
   supabaseServer
     .from('articulos')
     .select(FEED_SELECT)
@@ -83,7 +85,6 @@ type FeedRow = {
   titulo: string;
   extracto: string | null;
   imagen_url: string | null;
-  imagen_portada_alt: string | null;
   fecha: string;
   read_time_minutes: number;
   categorias: { slug: string; nombre: string } | { slug: string; nombre: string }[] | null;
@@ -100,7 +101,6 @@ function flatten(rows: FeedRow[] | null) {
       titulo: r.titulo,
       extracto: r.extracto,
       imagen_url: r.imagen_url,
-      imagen_portada_alt: r.imagen_portada_alt,
       fecha: r.fecha,
       read_time_minutes: r.read_time_minutes ?? 1,
       categoria_slug: cat?.slug ?? '',
@@ -110,7 +110,43 @@ function flatten(rows: FeedRow[] | null) {
   });
 }
 
-const latest = flatten(latestRes.data as FeedRow[] | null);
+// EDITOR-20 F2 — slots 2–5 ocupan su posición exacta en "Lo último";
+// las posiciones sin curar (o cuyo artículo es ya el hero) se llenan
+// por recencia. Un artículo fijado nunca se duplica en el relleno.
+function articuloToFeedItem(a: Articulo) {
+  return {
+    id: a.id,
+    slug: a.slug,
+    titulo: a.titulo,
+    extracto: a.extracto,
+    imagen_url: a.imagen_url,
+    fecha: a.fecha,
+    read_time_minutes: a.read_time_minutes ?? 1,
+    categoria_slug: a.categoria?.slug ?? '',
+    categoria_nombre: a.categoria?.nombre ?? '',
+    autor_nombre: a.autor?.nombre ?? null,
+  };
+}
+
+const pinnedIds = new Set(
+  [2, 3, 4, 5]
+    .map((n) => portadaSlots.get(n)?.id)
+    .filter((id): id is number => typeof id === 'number'),
+);
+const fillPool = flatten(latestRes.data as FeedRow[] | null).filter(
+  (r) => !pinnedIds.has(r.id),
+);
+const latest: ReturnType<typeof articuloToFeedItem>[] = [];
+for (const slotN of [2, 3, 4, 5]) {
+  const pinned = portadaSlots.get(slotN);
+  if (pinned && pinned.id !== heroId) {
+    latest.push(articuloToFeedItem(pinned));
+  } else {
+    const next = fillPool.shift();
+    if (next) latest.push(next);
+  }
+}
+
 const masLeidos = flatten(masLeidosRaw as FeedRow[]);
 const videos = videosRes.data ?? [];
 
@@ -124,7 +160,6 @@ type JuvenilRow = {
   titulo: string;
   extracto: string | null;
   imagen_url: string | null;
-  imagen_portada_alt: string | null;
   fecha: string;
   read_time_minutes: number | null;
   autores: { nombre: string } | { nombre: string }[] | null;
@@ -133,7 +168,7 @@ type JuvenilRow = {
 const { data: juvenilRailRaw } = await supabaseServer
   .from('articulos')
   .select(
-    'id, slug, titulo, extracto, imagen_url, imagen_portada_alt, fecha, read_time_minutes, categorias!inner(slug), autores(nombre)'
+    'id, slug, titulo, extracto, imagen_url, fecha, read_time_minutes, categorias!inner(slug), autores(nombre)'
   )
   .eq('categorias.slug', 'juvenil')
   .eq('publicado', true)
@@ -147,7 +182,6 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
     titulo: row.titulo,
     extracto: row.extracto,
     imagen_url: row.imagen_url,
-    imagen_portada_alt: row.imagen_portada_alt,
     fecha: row.fecha,
     read_time_minutes: row.read_time_minutes ?? 1,
     autor_nombre: aut?.nombre ?? 'Redacción Beisjoven',

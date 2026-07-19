@@ -40,7 +40,6 @@ export interface Articulo {
   created_at: string;
   updated_at: string | null;
   publicado: boolean;
-  destacado: boolean;
   es_wbc2026: boolean;
   vistas: number;
   categoria_id: number;
@@ -48,10 +47,6 @@ export interface Articulo {
   evento_id: number | null;
   pie_de_foto: string | null;
   foto_credito: string | null;
-  kicker: string | null;
-  photo_credit: string | null;
-  imagen_portada_alt: string | null;
-  hero_layout: string | null;
   read_time_minutes: number;
   categoria: Categoria;
   autor: Autor;
@@ -264,16 +259,33 @@ export async function getArticulosWbc2026Paginados(limite = 20, offset = 0) {
   return { articulos: (data as Articulo[]) || [], total: count || 0 };
 }
 
-export async function getArticulosDestacados(limite = 5) {
-  const { data } = await supabaseServer
-    .from('articulos')
-    .select(ARTICLE_SELECT)
-    .eq('publicado', true)
-    .eq('destacado', true)
-    .order('fecha', { ascending: false })
-    .order('created_at', { ascending: false })
-    .limit(limite);
-  return (data as Articulo[]) || [];
+// ==================== PORTADA (EDITOR-20 F2) ====================
+
+/**
+ * Curación manual de portada — capa separada del contenido (patrón
+ * facia-tool). Devuelve Map slot→Articulo con SOLO artículos publicados.
+ * Slots: 1 = hero; 2–5 = posiciones de "Lo último" (MixedFeed).
+ *
+ * Resiliencia deliberada: si la tabla portada_slots aún no existe en
+ * prod (la migración 02 la ejecuta el CEO) o la query falla, devuelve
+ * un Map vacío y la portada cae al comportamiento de recencia. La
+ * homepage nunca depende de que exista curación.
+ */
+export async function getPortadaSlots(): Promise<Map<number, Articulo>> {
+  const { data, error } = await supabaseServer
+    .from('portada_slots')
+    .select(`slot, articulo:articulos!inner(${ARTICLE_SELECT})`)
+    .eq('articulo.publicado', true)
+    .order('slot', { ascending: true });
+  if (error) {
+    console.warn('[getPortadaSlots] Falling back to recency:', error.message);
+    return new Map();
+  }
+  const slots = new Map<number, Articulo>();
+  for (const row of (data as unknown as { slot: number; articulo: Articulo }[]) || []) {
+    if (row.articulo) slots.set(row.slot, row.articulo);
+  }
+  return slots;
 }
 
 export async function getMasLeidos(limite = 5) {

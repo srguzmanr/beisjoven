@@ -48,7 +48,6 @@ type Row = {
   titulo: string;
   extracto: string | null;
   imagen_url: string | null;
-  imagen_portada_alt: string | null;
   fecha: string;
   read_time_minutes: number;
   categorias: { slug: string; nombre: string } | { slug: string; nombre: string }[] | null;
@@ -58,7 +57,7 @@ type Row = {
 const { data: raw } = await supabaseServer
   .from('articulos')
   .select(
-    'id, slug, titulo, extracto, imagen_url, imagen_portada_alt, fecha, read_time_minutes, categorias!inner(slug, nombre), autores(nombre)'
+    'id, slug, titulo, extracto, imagen_url, fecha, read_time_minutes, categorias!inner(slug, nombre), autores(nombre)'
   )
   .eq('categorias.slug', slug)
   .eq('publicado', true)
@@ -74,7 +73,6 @@ const stories = ((raw ?? []) as Row[]).map((r) => {
     titulo: r.titulo,
     extracto: r.extracto,
     imagen_url: r.imagen_url,
-    imagen_portada_alt: r.imagen_portada_alt,
     fecha: r.fecha,
     read_time_minutes: r.read_time_minutes ?? 1,
     categoria_slug: cat?.slug ?? slug,

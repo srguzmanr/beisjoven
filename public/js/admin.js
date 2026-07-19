@@ -4,6 +4,13 @@
 // Global variable for rich text editor instance
 let contentEditor = null;
 
+// Escapado HTML mínimo (antes vivía en el legacy pages.js, hoy borrado)
+function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str == null ? '' : String(str)));
+    return div.innerHTML;
+}
+
 // C) Sanitización básica para prevenir XSS
 function sanitizeHtmlBasic(html) {
     if (!html) return '';
@@ -65,305 +72,6 @@ function showToast(message, type, duration) {
         setTimeout(function() { toast.remove(); }, 300);
     }, duration);
 }
-// ============================================================
-// BJ-MOBILE-001 — Markdown Import para RTE Admin
-// Agregar en js/admin.js después de que se inicialice el RTE
-// ============================================================
-
-function initMarkdownImport() {
-// — 1. Convierte markdown a HTML —
-function markdownToHtml(md) {
-let html = md
-// Saltos de línea dobles → párrafos
-.split(/\n{2,}/)
-.map(block => {
-block = block.trim();
-if (!block) return '';
-
-    // ### H3
-    if (/^###\s+/.test(block)) {
-      return `<h3>${block.replace(/^###\s+/, '')}</h3>`;
-    }
-    // ## H2
-    if (/^##\s+/.test(block)) {
-      return `<h2>${block.replace(/^##\s+/, '')}</h2>`;
-    }
-    // # H1
-    if (/^#\s+/.test(block)) {
-      return `<h1>${block.replace(/^#\s+/, '')}</h1>`;
-    }
-    // Listas con - o *
-    if (/^[-*]\s+/.test(block)) {
-      const items = block
-        .split('\n')
-        .filter(l => /^[-*]\s+/.test(l.trim()))
-        .map(l => `<li>${inlineMarkdown(l.replace(/^[-*]\s+/, '').trim())}</li>`)
-        .join('');
-      return `<ul>${items}</ul>`;
-    }
-    // Listas numeradas
-    if (/^\d+\.\s+/.test(block)) {
-      const items = block
-        .split('\n')
-        .filter(l => /^\d+\.\s+/.test(l.trim()))
-        .map(l => `<li>${inlineMarkdown(l.replace(/^\d+\.\s+/, '').trim())}</li>`)
-        .join('');
-      return `<ol>${items}</ol>`;
-    }
-    // Párrafo normal
-    return `<p>${inlineMarkdown(block.replace(/\n/g, ' '))}</p>`;
-  })
-  .filter(Boolean)
-  .join('');
-
-return html;
-
-}
-
-// Inline: negritas, itálicas, código
-function inlineMarkdown(text) {
-return text
-.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-.replace(/\*(.+?)\*/g, '<em>$1</em>')
-.replace(/\*(.+?)\*/g, '<em>$1</em>')
-.replace(/`(.+?)`/g, '<code>$1</code>');
-}
-
-// — 2. Crea el modal —
-function createModal() {
-// Evitar duplicados
-if (document.getElementById('bj-md-modal')) return;
-
-const overlay = document.createElement('div');
-overlay.id = 'bj-md-modal';
-overlay.innerHTML = `
-  <div id="bj-md-panel">
-    <div id="bj-md-header">
-      <span>📋 Pegar Markdown</span>
-      <button id="bj-md-close" aria-label="Cerrar">✕</button>
-    </div>
-    <textarea
-      id="bj-md-textarea"
-      placeholder="Pega aquí el markdown del artículo (## para títulos, ** para negritas)..."
-      spellcheck="false"
-    ></textarea>
-    <div id="bj-md-footer">
-      <button id="bj-md-cancel">Cancelar</button>
-      <button id="bj-md-import">Importar al editor →</button>
-    </div>
-  </div>
-`;
-
-// Estilos inyectados (patrón establecido en el proyecto)
-if (!document.getElementById('bj-md-styles')) {
-  const style = document.createElement('style');
-  style.id = 'bj-md-styles';
-  style.textContent = `
-    #bj-md-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 9999;
-      display: flex;
-      align-items: flex-end;       /* Sheet desde abajo en móvil */
-      justify-content: center;
-      padding: 0;
-      color-scheme: light;
-    }
-    #bj-md-panel {
-      background: #fff;
-      width: 100%;
-      max-width: 680px;
-      border-radius: 16px 16px 0 0;
-      display: flex;
-      flex-direction: column;
-      max-height: 90vh;
-      color-scheme: light;
-    }
-    #bj-md-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px 12px;
-      font-weight: 600;
-      font-size: 16px;
-      color: #111;
-      border-bottom: 1px solid #eee;
-    }
-    #bj-md-close {
-      background: none;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-      color: #666;
-      padding: 4px 8px;
-      min-width: 44px;
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #bj-md-textarea {
-      flex: 1;
-      min-height: 280px;
-      padding: 16px 20px;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-      line-height: 1.6;
-      border: none;
-      resize: none;
-      outline: none;
-      color: #222;
-      background: #fafafa;
-      -webkit-appearance: none;
-      color-scheme: light;
-    }
-    #bj-md-footer {
-      display: flex;
-      gap: 12px;
-      padding: 16px 20px;
-      border-top: 1px solid #eee;
-      padding-bottom: calc(16px + env(safe-area-inset-bottom));
-    }
-    #bj-md-cancel {
-      flex: 1;
-      padding: 14px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      background: #fff;
-      font-size: 15px;
-      cursor: pointer;
-      color: #444;
-      min-height: 44px;
-    }
-    #bj-md-import {
-      flex: 2;
-      padding: 14px;
-      border: none;
-      border-radius: 10px;
-      background: #1a1a2e;
-      color: #fff;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      min-height: 44px;
-    }
-    #bj-md-import:active {
-      opacity: 0.85;
-    }
-    /* Desktop: modal centrado */
-    @media (min-width: 680px) {
-      #bj-md-modal {
-        align-items: center;
-      }
-      #bj-md-panel {
-        border-radius: 16px;
-        max-height: 80vh;
-        margin: 20px;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-document.body.appendChild(overlay);
-
-// --- 3. Eventos del modal ---
-const textarea  = overlay.querySelector('#bj-md-textarea');
-const btnClose  = overlay.querySelector('#bj-md-close');
-const btnCancel = overlay.querySelector('#bj-md-cancel');
-const btnImport = overlay.querySelector('#bj-md-import');
-
-const closeModal = () => overlay.remove();
-
-btnClose.addEventListener('click', closeModal);
-btnCancel.addEventListener('click', closeModal);
-overlay.addEventListener('click', e => {
-  if (e.target === overlay) closeModal();
-});
-
-btnImport.addEventListener('click', () => {
-  const md = textarea.value.trim();
-  if (!md) return;
-
-  const html = markdownToHtml(md);
-
-  // Busca el contenteditable del RTE
-  const editor = document.querySelector('[contenteditable="true"]');
-  if (!editor) {
-    alert('No se encontró el editor. Asegúrate de tener un artículo abierto.');
-    return;
-  }
-
-  // Opción: reemplazar o agregar al final
-  // Si el editor está vacío → reemplaza; si tiene contenido → pregunta
-  const editorEmpty = editor.innerText.trim().length === 0;
-  if (!editorEmpty) {
-    const ok = confirm('El editor ya tiene contenido. ¿Reemplazarlo con el markdown importado?');
-    if (!ok) return;
-  }
-
-  editor.innerHTML = html;
-
-  // Dispara evento input para que el autosave y otros listeners detecten el cambio
-  editor.dispatchEvent(new Event('input', { bubbles: true }));
-
-  closeModal();
-});
-
-// Focus automático al textarea
-setTimeout(() => textarea.focus(), 100);
-
-}
-
-// — 4. Agrega el botón a la toolbar —
-function addImportButton() {
-// Evitar duplicados
-if (document.getElementById('bj-md-btn')) return;
-
-// Busca la toolbar del RTE — ajusta el selector si es necesario
-const toolbar = document.querySelector('.rte-toolbar, #rte-toolbar, .editor-toolbar, [class*="toolbar"]');
-
-const btn = document.createElement('button');
-btn.id = 'bj-md-btn';
-btn.type = 'button';
-btn.title = 'Importar desde Markdown';
-btn.innerHTML = '📋 MD';
-btn.style.cssText = `
-  padding: 6px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  min-height: 44px;
-  min-width: 44px;
-  color-scheme: light;
-`;
-btn.addEventListener('click', createModal);
-
-if (toolbar) {
-  toolbar.appendChild(btn);
-} else {
-  // Fallback: inserta el botón justo antes del contenteditable
-  const editor = document.querySelector('[contenteditable="true"]');
-  if (editor) {
-    editor.parentNode.insertBefore(btn, editor);
-  }
-}
-
-}
-
-// Inicializa
-addImportButton();
-}
-
-// Llama a la función después de que se monte el editor
-// En admin.js, busca donde se inicializa el RTE y agrega:
-// initMarkdownImport();
-// O si el editor se monta con delay:
-// setTimeout(initMarkdownImport, 500);
 // ==================== AUTOSAVE SYSTEM ====================
 // 8 RULES (from Admin 3.0 spec):
 // 1. ONLY activates inside the article editor. Never on other screens.
@@ -404,13 +112,8 @@ var Autosave = {
         var category = document.getElementById('category');
         var author = document.getElementById('author');
         var image = document.getElementById('image');
-        var featured = document.getElementById('featured');
         var pieFoto = document.getElementById('foto-pie');
         var fotoCredito = document.getElementById('foto-credito');
-        var esWbc = document.getElementById('es_wbc2026');
-        var heroLayout = document.getElementById('hero-layout');
-        var heroLayoutVal = heroLayout ? heroLayout.value : '';
-        var heroLayoutNormalized = heroLayoutVal === 'split' ? 'split' : null;
 
         var content = '';
         if (contentEditor) {
@@ -431,11 +134,8 @@ var Autosave = {
             // la persistas en un borrador — expira, y la copia pública se hace
             // al publicar. Se guarda vacío hasta entonces.
             imagen_url: AdminPages._currentHistoriaFotoPath ? '' : (image ? image.value : ''),
-            destacado: featured ? featured.checked : false,
             pie_de_foto: pieFoto ? pieFoto.value : '',
             foto_credito: fotoCredito ? fotoCredito.value : '',
-            es_wbc2026: esWbc ? esWbc.checked : false,
-            hero_layout: heroLayoutNormalized,
             savedAt: new Date().toISOString()
         };
     },
@@ -516,23 +216,17 @@ var Autosave = {
                 categoria_id: data.categoria_id,
                 autor_id: data.autor_id,
                 imagen_url: data.imagen_url,
-                destacado: data.destacado,
                 pie_de_foto: data.pie_de_foto || null,
-                foto_credito: data.foto_credito || null,
-                es_wbc2026: data.es_wbc2026,
-                hero_layout: data.hero_layout
+                foto_credito: data.foto_credito || null
             };
 
             if (this._editId) {
                 // Rule 4: EXISTING article — update in place.
                 // Crucially: do NOT include 'publicado' in the payload.
                 // This prevents autosave from overwriting a published article's status.
-                var slug = data.titulo.toLowerCase()
-                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/(^-|-$)/g, '');
-                payload.slug = slug;
-
+                // M1 (EDITOR-20): tampoco 'slug' — el autosave regeneraba la URL
+                // desde el título en cada UPDATE y rompía enlaces publicados.
+                // El slug solo lo escribe saveArticle (y solo si no está lockeado).
                 await supabaseClient
                     .from('articulos')
                     .update(payload)
@@ -811,7 +505,7 @@ const AdminPages = {
                         <div style="background: linear-gradient(135deg, #c41e3a 0%, #9a1830 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
                             <div>
                                 <h2 style="font-family: Oswald, sans-serif; font-size: 1.8rem; margin: 0 0 5px 0;">Hola, ${user.name}!</h2>
-                                <p style="margin: 0; opacity: 0.9;">${user.role === 'admin' ? 'Administrador' : 'Editor'} — Panel de Beisjoven</p>
+                                <p style="margin: 0; opacity: 0.9;">${user.role === 'superadmin' ? 'Superadmin' : 'Periodista'} — Panel de Beisjoven</p>
                             </div>
                             <a href="#" onclick="Router.navigate('/admin/nuevo'); return false;" style="background: white; color: #c41e3a; padding: 12px 24px; border-radius: 25px; font-weight: 600; text-decoration: none; white-space: nowrap;">+ Nuevo Artículo</a>
                         </div>
@@ -1077,6 +771,10 @@ const AdminPages = {
         await AdminPages._ensureArticulosDropdownData();
         AdminPages._populateArticulosDropdowns();
 
+        // Estado de portada (EDITOR-20 F2) — antes de la primera carga para
+        // que la tab "En portada" y los badges 📌 pinten con datos.
+        await AdminPages._loadPortadaSlots();
+
         // Sync filter bar UI to state parsed from URL
         AdminPages._syncFilterBarFromState();
 
@@ -1283,19 +981,13 @@ const AdminPages = {
 
                                 <div class="fg-titulo">
                                     <label for="title">Título *</label>
-                                    <input type="text" id="title" value="${article?.titulo || (useDraft && draft ? draft.titulo : '') || (historiaSeed ? (historiaSeed.titulo || '').replace(/"/g, '&quot;') : '') || ''}" placeholder="Título de la noticia" oninput="AdminPages.autoSlug()">
+                                    <input type="text" id="title" value="${article?.titulo || (useDraft && draft ? draft.titulo : '') || (historiaSeed ? (historiaSeed.titulo || '').replace(/"/g, '&quot;') : '') || ''}" placeholder="Título de la noticia" oninput="AdminPages.autoSlug(); AdminPages._updateTitleHint()">
+                                    <div id="title-length-hint" class="title-length-hint" aria-live="polite"></div>
                                 </div>
 
                                 <div class="fg-extracto">
                                     <label for="excerpt">Extracto *</label>
                                     <textarea id="excerpt" rows="3" placeholder="Breve descripción (aparece en tarjetas)">${article?.extracto || (useDraft && draft ? draft.extracto : '') || ''}</textarea>
-                                    <div style="margin-top:8px;">
-                                        <label for="slug" style="font-size:0.82rem;color:#6b7280;font-weight:500;margin-bottom:4px;">URL / Slug</label>
-                                        <div style="display:flex;gap:6px;align-items:center;">
-                                            <span style="font-size:0.8rem;color:#9ca3af;flex-shrink:0;">/articulo/</span>
-                                            <input type="text" id="slug" value="${article?.slug || (useDraft && draft ? draft.slug : '') || ''}" placeholder="se-genera-del-titulo" style="flex:1;font-size:0.85rem !important;padding:8px 10px !important;min-height:auto !important;" oninput="AdminPages._slugManual=true">
-                                        </div>
-                                    </div>
                                 </div>
 
                                 <div class="fg-meta">
@@ -1323,14 +1015,6 @@ const AdminPages = {
                                         </div>
                                     </div>
                                     <div class="form-group" style="margin-top:14px;">
-                                        <label for="hero-layout">Layout del hero</label>
-                                        <select id="hero-layout">
-                                            <option value="default" ${(article?.hero_layout == null || article?.hero_layout === 'default') && !(useDraft && draft && draft.hero_layout === 'split') ? 'selected' : (useDraft && draft && (draft.hero_layout == null || draft.hero_layout === 'default') ? 'selected' : '')}>Default (predeterminado)</option>
-                                            <option value="split" ${article?.hero_layout === 'split' || (useDraft && draft && draft.hero_layout === 'split') ? 'selected' : ''}>Split (dividido)</option>
-                                        </select>
-                                        <small style="display:block;margin-top:6px;font-size:0.8rem;color:#6b7280;font-weight:400;line-height:1.35;">Define cómo se ve el hero en la página individual del artículo. No afecta cómo aparece en el homepage.</small>
-                                    </div>
-                                    <div class="form-group" style="margin-top:14px;">
                                         <label>Etiquetas (Tags)</label>
                                         <div id="tag-pill-container" class="tag-pill-container"></div>
                                         <div style="position:relative;margin-top:6px;">
@@ -1344,6 +1028,20 @@ const AdminPages = {
                                 <div class="fg-contenido">
                                     <label>Contenido *</label>
                                     <div id="content-editor-container"></div>
+                                </div>
+
+                                <div class="fg-slug">
+                                    ${(() => {
+                                        const _locked = !!(isEdit && article && article.publicado);
+                                        const _slugVal = article?.slug || (useDraft && draft ? draft.slug : '') || '';
+                                        return `
+                                        <label for="slug" style="font-size:0.82rem;color:#6b7280;font-weight:500;margin-bottom:4px;">URL / Slug${_locked ? ' 🔒' : ''}</label>
+                                        <div style="display:flex;gap:6px;align-items:center;">
+                                            <span style="font-size:0.8rem;color:#9ca3af;flex-shrink:0;">/articulo/</span>
+                                            <input type="text" id="slug" value="${_slugVal}" placeholder="se-genera-del-titulo" ${_locked ? 'readonly' : ''} autocapitalize="none" autocorrect="off" spellcheck="false" style="flex:1;font-size:0.85rem !important;padding:8px 10px !important;min-height:auto !important;${_locked ? 'background:#f3f4f6;color:#6b7280;' : ''}" oninput="AdminPages._slugManual=true">
+                                        </div>
+                                        ${_locked ? '<small style="display:block;margin-top:4px;font-size:0.75rem;color:#9ca3af;">URL fija — los enlaces de un artículo publicado no cambian aunque edites el título.</small>' : ''}`;
+                                    })()}
                                 </div>
 
                                 <div class="fg-imagen">
@@ -1365,17 +1063,6 @@ const AdminPages = {
                                         <label for="foto-credito">Crédito fotográfico</label>
                                         <input type="text" id="foto-credito" value="${article?.foto_credito || (useDraft && draft ? draft.foto_credito : '') || historiaCreditoFoto || ''}" placeholder="Ej: Foto: Getty Images">
                                     </div>
-                                </div>
-
-                                <div class="fg-checks">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="featured" ${article?.destacado ? 'checked' : (useDraft && draft?.destacado ? 'checked' : '')}>
-                                        Artículo destacado
-                                    </label>
-                                    <label class="checkbox-label wbc-check-label">
-                                        <input type="checkbox" id="es_wbc2026" ${article?.es_wbc2026 ? 'checked' : (useDraft && draft?.es_wbc2026 ? 'checked' : '')}>
-                                        <span>⚾ Cobertura WBC 2026 <small>(aparece en el hub WBC)</small></span>
-                                    </label>
                                 </div>
 
                                 <div class="fg-acciones">
@@ -1413,23 +1100,20 @@ const AdminPages = {
             const style = document.createElement('style');
             style.id = 'bj-editor-styles';
             style.textContent = `
-                .form-grid-new { display: grid; grid-template-columns: 1fr 320px; grid-template-areas: "titulo imagen" "extracto imagen" "meta checks" "contenido acciones"; gap: 0 24px; max-width: 100%; }
+                .form-grid-new { display: grid; grid-template-columns: 1fr 320px; grid-template-areas: "titulo imagen" "extracto imagen" "meta acciones" "contenido acciones" "slug acciones"; gap: 0 24px; max-width: 100%; }
                 .fg-titulo { grid-area: titulo; padding-bottom: 20px; }
                 .fg-extracto { grid-area: extracto; padding-bottom: 20px; }
                 .fg-meta { grid-area: meta; padding-bottom: 20px; }
                 .fg-contenido { grid-area: contenido; padding-bottom: 20px; }
+                .fg-slug { grid-area: slug; padding-bottom: 20px; }
+                .title-length-hint { font-size: 0.78rem; margin-top: 4px; min-height: 1em; color: #9ca3af; }
+                .title-length-hint.hint-warn { color: #d97706; font-weight: 600; }
                 .fg-imagen { grid-area: imagen; background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
-                .fg-checks { grid-area: checks; background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
                 .fg-acciones { grid-area: acciones; background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
                 .form-grid-new label { display: block; margin-bottom: 6px; font-weight: 600; color: #111827; font-size: 0.95rem; }
                 .form-grid-new input[type="text"], .form-grid-new input[type="url"], .form-grid-new textarea, .form-grid-new select { width: 100%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; font-family: inherit; box-sizing: border-box; background: #fff; color: #111827; }
                 .form-grid-new input:focus, .form-grid-new textarea:focus, .form-grid-new select:focus { outline: none; border-color: #c4122e; }
                 .fg-meta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-                .form-grid-new .checkbox-label { display: flex; align-items: center; gap: 10px; padding: 10px 0; cursor: pointer; min-height: 44px; border-bottom: 1px solid #f3f4f6; }
-                .form-grid-new .checkbox-label:last-child { border-bottom: none; }
-                .form-grid-new .checkbox-label input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; cursor: pointer; accent-color: #c4122e; }
-                .wbc-check-label { background: #fef3c7 !important; border: 1px solid #f59e0b !important; border-radius: 8px; padding: 10px 12px !important; margin-top: 4px; }
-                .wbc-check-label small { font-size: 0.75rem; color: #92400e; display: block; }
                 .fg-acciones .btn { width: 100%; padding: 14px; font-size: 1rem; border-radius: 8px; margin-bottom: 8px; cursor: pointer; text-align: center; display: block; text-decoration: none; border: none; font-family: inherit; font-weight: 600; }
                 .fg-acciones .btn-primary { background: #c4122e; color: white; }
                 .fg-acciones .btn-secondary { background: #f3f4f6; color: #374151; }
@@ -1438,36 +1122,19 @@ const AdminPages = {
                 .form-grid-new .image-preview { width: 100%; height: 150px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 8px 0; overflow: hidden; color: #9ca3af; }
                 .form-grid-new .image-preview img { width: 100%; height: 100%; object-fit: cover; }
                 @media (max-width: 768px) {
+                    /* EDITOR-20 F4 — sin acordeón: metadatos siempre visibles,
+                       en orden editorial por frecuencia de uso real. */
                     .form-grid-new { display: flex; flex-direction: column; gap: 0; padding-bottom: 80px; overflow: hidden; max-width: 100%; }
                     .fg-titulo { order: 1; padding: 16px 16px 0; }
                     .fg-extracto { order: 2; padding: 12px 16px 0; }
                     .fg-meta { order: 3; padding: 12px 16px 0; }
-                    .fg-contenido { order: 4; padding: 12px 16px 0; }
-                    .fg-imagen { order: 5; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
-                    .fg-checks { order: 6; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
+                    .fg-imagen { order: 4; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
+                    .fg-contenido { order: 5; padding: 12px 16px 0; }
+                    .fg-slug { order: 6; padding: 12px 16px 0; }
                     .fg-acciones { order: 7; display: none; }
                     .fg-meta-row { grid-template-columns: 1fr; gap: 12px; }
                     .form-grid-new input, .form-grid-new textarea, .form-grid-new select { font-size: 16px !important; min-height: 44px; }
                     .admin-main, .admin-content, .admin-layout { max-width: 100vw; overflow-x: hidden; }
-                }
-                /* Metadata accordion — mobile only */
-                .metadata-accordion-toggle { display: none; }
-                @media (max-width: 768px) {
-                    .metadata-accordion-toggle {
-                        display: flex; align-items: center; justify-content: space-between;
-                        width: 100%; margin: 8px 16px 0; padding: 10px 14px;
-                        background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px;
-                        font-size: 0.9rem; font-weight: 600; color: #1e3a5f;
-                        cursor: pointer; box-sizing: border-box;
-                        touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-                    }
-                    .metadata-accordion-toggle .acc-arrow { transition: transform 0.2s; font-size: 0.8rem; }
-                    .metadata-accordion-toggle.open .acc-arrow { transform: rotate(180deg); }
-                    .fg-extracto, .fg-meta, .fg-imagen, .fg-checks { overflow: hidden; }
-                    .form-grid-new.accordion-closed .fg-extracto,
-                    .form-grid-new.accordion-closed .fg-meta,
-                    .form-grid-new.accordion-closed .fg-imagen,
-                    .form-grid-new.accordion-closed .fg-checks { display: none; }
                 }
                 .admin-sticky-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; background: #ffffff; padding: 10px 16px; box-shadow: 0 -2px 12px rgba(0,0,0,0.15); display: flex; gap: 10px; align-items: center; color-scheme: light; }
                 .admin-sticky-bar .btn-publish { flex: 2; padding: 14px; background: #c4122e; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
@@ -1542,13 +1209,6 @@ const AdminPages = {
                     'content',
                     initialContent
                 );
-            } else if (typeof RichTextEditor !== 'undefined') {
-                contentEditor = RichTextEditor.create(
-                    'content-editor-container',
-                    'content',
-                    initialContent
-                );
-                setTimeout(initMarkdownImport, 300);
             } else {
                 document.getElementById('content-editor-container').innerHTML = `
                     <textarea id="content" rows="15" placeholder="Escribe el contenido del artículo aquí...">${initialContent}</textarea>
@@ -1558,24 +1218,9 @@ const AdminPages = {
 
             // Reset slug manual flag so auto-slug works on new articles
             AdminPages._slugManual = !!(article?.slug);
-
-            // Metadata accordion — mobile only
-            if (window.innerWidth <= 768) {
-                var formGrid = document.querySelector('.form-grid-new');
-                var tituloEl = document.querySelector('.fg-titulo');
-                if (formGrid && tituloEl) {
-                    formGrid.classList.add('accordion-closed');
-                    var accBtn = document.createElement('button');
-                    accBtn.type = 'button';
-                    accBtn.className = 'metadata-accordion-toggle';
-                    accBtn.innerHTML = '<span>Metadatos &amp; Opciones</span><span class="acc-arrow">▼</span>';
-                    accBtn.addEventListener('click', function() {
-                        formGrid.classList.toggle('accordion-closed');
-                        accBtn.classList.toggle('open', !formGrid.classList.contains('accordion-closed'));
-                    });
-                    tituloEl.insertAdjacentElement('afterend', accBtn);
-                }
-            }
+            // M1 — slug lock: la URL de un artículo publicado es inmutable.
+            AdminPages._slugLocked = !!(isEdit && article && article.publicado);
+            AdminPages._updateTitleHint();
 
             // MediaLibrary modal is available on demand via openMediaPicker() →
             // MediaLibrary.open(); no up-front init() call is needed.
@@ -1607,6 +1252,29 @@ const AdminPages = {
     // ==================== FUNCIONES AUXILIARES ====================
 
     _slugManual: false,
+    // M1 (EDITOR-20): true cuando el artículo abierto ya está publicado —
+    // su slug es inmutable (autoSlug y saveArticle lo respetan).
+    _slugLocked: false,
+
+    // M2 — aviso no bloqueante de largo de titular (~65 chars: corte
+    // típico en SERP de Google y en tarjetas a 375px).
+    TITLE_WARN_LENGTH: 65,
+    _updateTitleHint: function() {
+        var input = document.getElementById('title');
+        var hint = document.getElementById('title-length-hint');
+        if (!input || !hint) return;
+        var len = input.value.trim().length;
+        if (len > this.TITLE_WARN_LENGTH) {
+            hint.textContent = len + ' caracteres — se truncará en tarjetas y en Google (~' + this.TITLE_WARN_LENGTH + ').';
+            hint.classList.add('hint-warn');
+        } else if (len > 0) {
+            hint.textContent = len + ' / ~' + this.TITLE_WARN_LENGTH + ' caracteres';
+            hint.classList.remove('hint-warn');
+        } else {
+            hint.textContent = '';
+            hint.classList.remove('hint-warn');
+        }
+    },
 
     // ==================== TAG INPUT ====================
 
@@ -1633,6 +1301,16 @@ const AdminPages = {
                 .replace(/[ñ]/g, 'n')
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)/g, '');
+        }
+
+        // Forma plegada para comparar: NFC (teclados iOS pueden emitir NFD)
+        // → minúsculas → sin marcas diacríticas. "Selección" ≡ "seleccion".
+        function fold(str) {
+            return String(str || '')
+                .normalize('NFC')
+                .toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .trim();
         }
 
         function syncHidden() {
@@ -1666,13 +1344,17 @@ const AdminPages = {
         }
 
         function showSuggestions(query) {
-            var q = query.trim().toLowerCase();
+            // NFC primero: el teclado iOS puede emitir formas descompuestas.
+            var raw = query.normalize('NFC').trim();
+            var q = fold(raw);
             suggestionsBox.innerHTML = '';
             highlightIndex = -1;
             if (!q) { suggestionsBox.style.display = 'none'; return; }
 
+            // Búsqueda insensible a acentos y mayúsculas (EDITOR-20 F3):
+            // "seleccion" encuentra "Selección" y viceversa.
             var filtered = allTags.filter(function(t) {
-                return t.nombre.toLowerCase().includes(q) && !selectedTags.find(s => s.id === t.id);
+                return fold(t.nombre).includes(q) && !selectedTags.find(s => s.id === t.id);
             }).slice(0, 8);
 
             filtered.forEach(function(tag) {
@@ -1686,24 +1368,47 @@ const AdminPages = {
                 suggestionsBox.appendChild(item);
             });
 
-            // "Crear: [text]" option if query doesn't exactly match an existing tag
-            var exactMatch = allTags.find(t => t.nombre.toLowerCase() === q || t.slug === makeSlug(q));
-            if (q && !exactMatch) {
+            // "Crear:" solo se omite si un tag existente coincide EXACTO en
+            // forma plegada — y ese tag ya es visible arriba como sugerencia.
+            // (El viejo check por slug supríma la opción en silencio: dead-end.)
+            var exactMatch = allTags.find(function(t) { return fold(t.nombre) === q; });
+            if (raw && !exactMatch) {
                 var createItem = document.createElement('div');
                 createItem.className = 'tag-suggestion-item create';
-                createItem.textContent = 'Crear: ' + query.trim();
-                createItem.addEventListener('mousedown', async function(e) {
+                createItem.textContent = 'Crear: ' + raw;
+                createItem.addEventListener('mousedown', function(e) {
                     e.preventDefault();
-                    var newTag = await SupabaseAPI.createTag(query.trim(), makeSlug(query.trim()));
-                    if (newTag) {
-                        allTags.push(newTag);
-                        addTag(newTag);
-                    }
+                    crearTagDesdeInput(raw, createItem);
                 });
                 suggestionsBox.appendChild(createItem);
             }
 
             suggestionsBox.style.display = suggestionsBox.children.length > 0 ? '' : 'none';
+        }
+
+        // Creación con feedback SIEMPRE visible (doctrina: cero fallos mudos).
+        var creating = false;
+        async function crearTagDesdeInput(nombre, itemEl) {
+            if (creating) return;
+            creating = true;
+            if (itemEl) itemEl.textContent = 'Creando…';
+            try {
+                var res = await SupabaseAPI.createTag(nombre, makeSlug(nombre));
+                if (res.error || !res.data) {
+                    showToast('No se pudo crear el tag «' + nombre + '»: ' + (res.error || 'error desconocido'), 'error', 5000);
+                    if (itemEl) itemEl.textContent = 'Crear: ' + nombre;
+                    return;
+                }
+                allTags.push(res.data);
+                addTag(res.data);
+                showToast('✓ Tag «' + res.data.nombre + '» creado');
+            } catch (err) {
+                console.error('[Tags] createTag threw:', err);
+                showToast('No se pudo crear el tag: ' + (err.message || err), 'error', 5000);
+                if (itemEl) itemEl.textContent = 'Crear: ' + nombre;
+            } finally {
+                creating = false;
+            }
         }
 
         function addTag(tag) {
@@ -1765,6 +1470,20 @@ const AdminPages = {
                 }
                 if (visible) {
                     confirmHighlightedOrFirst();
+                    return;
+                }
+                // EDITOR-20 F3: con texto pero sin dropdown visible (p.ej. el
+                // debounce aún no corre), Enter actúa: selecciona el match
+                // exacto plegado o crea el tag. Antes: silencio total.
+                var raw = searchInput.value.normalize('NFC').trim();
+                if (!raw) return;
+                var exact = allTags.find(function(t) { return fold(t.nombre) === fold(raw); });
+                if (exact) {
+                    addTag(exact);
+                } else {
+                    crearTagDesdeInput(raw, null);
+                    searchInput.value = '';
+                    suggestionsBox.style.display = 'none';
                 }
                 return;
             }
@@ -1815,6 +1534,8 @@ const AdminPages = {
     _getSelectedTagIds: function() { return []; },
 
     autoSlug: function() {
+        // M1: jamás tocar el slug de un artículo publicado.
+        if (this._slugLocked) return;
         // Only auto-fill if the user hasn't manually edited the slug field
         if (this._slugManual) return;
         const slugField = document.getElementById('slug');
@@ -1873,10 +1594,6 @@ const AdminPages = {
 
         const pie_de_foto = (document.getElementById('foto-pie')?.value || '').trim();
         const foto_credito = (document.getElementById('foto-credito')?.value || '').trim();
-        const es_wbc2026 = document.getElementById('es_wbc2026')?.checked || false;
-        // hero_layout: dropdown values 'default'|'split'. 'default' coerces to NULL.
-        const heroLayoutVal = document.getElementById('hero-layout')?.value || '';
-        const hero_layout = heroLayoutVal === 'split' ? 'split' : null;
 
         // Get content from Rich Text Editor or fallback to textarea
         let contenidoRaw;
@@ -1933,8 +1650,7 @@ const AdminPages = {
             const primeraImg = tempDiv.querySelector('img');
             imagen_url = primeraImg ? primeraImg.src : IMAGEN_DEFAULT_BJ;
         }
-        const destacado = document.getElementById('featured').checked;
-        
+
         // Validate content
         const trimmedContenido = (contenidoRaw || '').trim();
         const editorIsEmpty = !trimmedContenido || trimmedContenido === '<br>' || trimmedContenido === '<p></p>' || trimmedContenido === '<p><br></p>';
@@ -1958,7 +1674,9 @@ const AdminPages = {
         // C) Sanitizar contenido para prevenir XSS
         const contenido = sanitizeHtmlBasic(contenidoRaw);
 
-        // Crear slug — use the slug field if filled, otherwise derive from title
+        // Crear slug — use the slug field if filled, otherwise derive from title.
+        // M1: si el artículo ya está publicado, el slug NO viaja en el payload
+        // (la DB conserva el existente; los enlaces publicados no cambian).
         const slugFieldVal = (document.getElementById('slug')?.value || '').trim();
         const slug = slugFieldVal ||
             titulo.toLowerCase()
@@ -1971,7 +1689,6 @@ const AdminPages = {
 
         const articulo = {
             titulo: sanitizeHtmlBasic(titulo),
-            slug,
             extracto: sanitizeHtmlBasic(extracto),
             contenido,
             categoria_id,
@@ -1979,12 +1696,12 @@ const AdminPages = {
             imagen_url,
             pie_de_foto: pie_de_foto || null,
             foto_credito: foto_credito || null,
-            es_wbc2026,
-            destacado,
-            hero_layout,
             publicado: action === 'publish' || action === 'save',
             read_time_minutes,
         };
+        if (!(editId && AdminPages._slugLocked)) {
+            articulo.slug = slug;
+        }
 
         // Track which auth user created the article
         if (!editId && !Autosave.getDraftId() && Auth.getUser()) {
@@ -2109,20 +1826,121 @@ const AdminPages = {
         { key: 'todos',       label: 'Todos' },
         { key: 'publicados',  label: 'Publicados' },
         { key: 'borradores',  label: 'Borradores' },
-        { key: 'destacados',  label: 'Destacados' }
+        { key: 'portada',     label: 'En portada' }
     ],
-    _articulosTabCounts: { todos: 0, publicados: 0, borradores: 0, destacados: 0 },
+    _articulosTabCounts: { todos: 0, publicados: 0, borradores: 0, portada: 0 },
+
+    // ==================== PORTADA (EDITOR-20 F2) ====================
+    // Curación separada del contenido: portada_slots (slot 1 = Hero,
+    // 2-5 = posiciones de "Lo último"). Estado local: Maps por slot y
+    // por artículo, cargados junto con la lista.
+    _portadaState: { bySlot: {}, byArticulo: {}, loaded: false },
+    PORTADA_SLOT_LABELS: {
+        1: 'Hero',
+        2: 'Lo último · posición 1',
+        3: 'Lo último · posición 2',
+        4: 'Lo último · posición 3',
+        5: 'Lo último · posición 4'
+    },
+
+    _loadPortadaSlots: async function() {
+        try {
+            const { data, error } = await supabaseClient
+                .from('portada_slots')
+                .select('slot, articulo_id, articulo:articulos(titulo)');
+            if (error) throw error;
+            const bySlot = {}, byArticulo = {};
+            (data || []).forEach(function(r) {
+                bySlot[r.slot] = { articulo_id: r.articulo_id, titulo: r.articulo?.titulo || '' };
+                byArticulo[r.articulo_id] = r.slot;
+            });
+            AdminPages._portadaState = { bySlot: bySlot, byArticulo: byArticulo, loaded: true };
+        } catch (e) {
+            // Tabla aún no creada (migración 02 pendiente) u otro fallo de
+            // lectura: la lista funciona igual, solo sin datos de portada.
+            console.warn('[portada] No se pudieron cargar los slots:', e.message || e);
+            AdminPages._portadaState = { bySlot: {}, byArticulo: {}, loaded: false };
+        }
+    },
+
+    _portadaBadgeHtml: function(articuloId) {
+        const slot = AdminPages._portadaState.byArticulo[articuloId];
+        if (!slot) return '';
+        const label = slot === 1 ? 'Hero' : ('Portada #' + (slot - 1));
+        return ' <span class="badge badge-portada" title="' +
+            AdminPages._escapeHtml(AdminPages.PORTADA_SLOT_LABELS[slot] || ('Slot ' + slot)) +
+            '">📌 ' + label + '</span>';
+    },
+
+    _abrirPortadaPicker: function(articuloId) {
+        const st = AdminPages._portadaState;
+        const slotActual = st.byArticulo[articuloId] || null;
+        const items = [1, 2, 3, 4, 5].map(function(n) {
+            const occ = st.bySlot[n];
+            let suffix;
+            if (occ && occ.articulo_id === articuloId) suffix = ' — este artículo';
+            else if (occ) {
+                let t = occ.titulo || '';
+                if (t.length > 34) t = t.substring(0, 34) + '…';
+                suffix = ' — ocupado: «' + t + '»';
+            } else suffix = ' — libre';
+            return { id: String(n), nombre: AdminPages.PORTADA_SLOT_LABELS[n] + suffix };
+        });
+        if (slotActual) items.push({ id: 'quitar', nombre: '✕ Quitar de portada' });
+
+        PickerModal.open({
+            mode: 'single',
+            title: 'Fijar a portada',
+            items: items,
+            preselectedIds: slotActual ? String(slotActual) : undefined,
+            confirmLabel: 'Fijar',
+            onConfirm: function(selectedSet) {
+                const choice = Array.from(selectedSet)[0];
+                AdminPages._fijarPortada(articuloId, choice === 'quitar' ? null : parseInt(choice, 10));
+            }
+        });
+    },
+
+    _fijarPortada: async function(articuloId, slot) {
+        try {
+            // Un artículo ocupa a lo más un slot (UNIQUE articulo_id):
+            // primero se libera su slot actual, luego se fija el nuevo.
+            const { error: delErr } = await supabaseClient
+                .from('portada_slots')
+                .delete()
+                .eq('articulo_id', articuloId);
+            if (delErr) throw delErr;
+
+            if (slot) {
+                const { error: upErr } = await supabaseClient
+                    .from('portada_slots')
+                    .upsert({ slot: slot, articulo_id: articuloId }, { onConflict: 'slot' });
+                if (upErr) throw upErr;
+                showToast('📌 Fijado en ' + AdminPages.PORTADA_SLOT_LABELS[slot] + '. Visible en portada en ≤60s.');
+            } else {
+                showToast('Quitado de portada. La posición vuelve a recencia.');
+            }
+
+            await AdminPages._loadPortadaSlots();
+            AdminPages._renderArticulosRows();
+            AdminPages._refreshArticulosTabCounts();
+        } catch (e) {
+            console.error('[portada] Fijar falló:', e);
+            const hint = (e && e.message && e.message.indexOf('portada_slots') !== -1)
+                ? ' ¿Está ejecutada la migración 02 (portada_slots)?'
+                : '';
+            showToast('Error al fijar a portada: ' + (e.message || e) + hint, 'error', 5000);
+        }
+    },
 
     _parseStateFromQuery: function(query) {
-        const validTabs = { todos: 1, publicados: 1, borradores: 1, destacados: 1 };
+        const validTabs = { todos: 1, publicados: 1, borradores: 1, portada: 1 };
         let tab = query.get('tab');
         if (!tab || !validTabs[tab]) {
             // Back-compat with legacy URL params from the pre-tab filter bar
             const status = query.get('status');
             if (status === 'published') tab = 'publicados';
             else if (status === 'draft') tab = 'borradores';
-            else if (status === 'featured') tab = 'destacados';
-            else if (query.get('destacado') === '1') tab = 'destacados';
             else tab = 'todos';
         }
         return {
@@ -2153,13 +1971,13 @@ const AdminPages = {
         history.replaceState(null, '', url);
     },
 
-    // Map a tab key to the (publicado, destacado) predicate. Returns
-    // { publicado: bool|null, destacado: bool|null }.
+    // Map a tab key to the publicado predicate. La tab 'portada' no es un
+    // predicado de columna: filtra por los ids fijados en portada_slots
+    // (ver _loadArticulos / _refreshArticulosTabCounts).
     _tabToPredicate: function(tab) {
-        if (tab === 'publicados')  return { publicado: true,  destacado: null };
-        if (tab === 'borradores')  return { publicado: false, destacado: null };
-        if (tab === 'destacados')  return { publicado: null,  destacado: true };
-        return { publicado: null, destacado: null };
+        if (tab === 'publicados')  return { publicado: true };
+        if (tab === 'borradores')  return { publicado: false };
+        return { publicado: null };
     },
 
     // Apply the Artículos query scope (search + drawer filters + RLS) to a
@@ -2204,7 +2022,18 @@ const AdminPages = {
         q = AdminPages._applyArticulosScope(q, state);
         const pred = AdminPages._tabToPredicate(state.tab);
         if (pred.publicado !== null) q = q.eq('publicado', pred.publicado);
-        if (pred.destacado === true) q = q.eq('destacado', true);
+        if (state.tab === 'portada') {
+            const ids = Object.keys(AdminPages._portadaState.byArticulo).map(Number);
+            if (ids.length === 0) {
+                AdminPages._articulosState = state;
+                AdminPages._articulosTotal = 0;
+                AdminPages._articulosRows = [];
+                AdminPages._articulosLoaded = 0;
+                AdminPages._syncUrlFromState();
+                return;
+            }
+            q = q.in('id', ids);
+        }
 
         const res = await q;
         if (res.error) {
@@ -2353,12 +2182,12 @@ const AdminPages = {
                 </td>
                 <td><span class="badge">${catName}</span></td>
                 <td>
-                    <span class="badge ${estadoCls}">${estado}</span>
-                    ${article.destacado ? ' ⭐' : ''}
+                    <span class="badge ${estadoCls}">${estado}</span>${AdminPages._portadaBadgeHtml(article.id)}
                 </td>
                 <td>${fecha}</td>
                 <td class="actions-cell">
                     ${canEdit ? `<a href="/admin/editar/${article.id}" class="btn-small">Editar</a>` : ''}
+                    ${isAdmin && article.publicado ? `<button onclick="AdminPages._abrirPortadaPicker(${article.id})" class="btn-small btn-portada" title="Fijar a portada">📌 Portada</button>` : ''}
                     ${article.publicado ? `<button onclick="AdminPages.copyArticleUrl('${slug}', this)" class="btn-small btn-url" title="Copiar URL">🔗 URL</button>` : ''}
                     ${isAdmin ? `<button onclick="AdminPages.deleteArticle(${article.id})" class="btn-small btn-danger">Eliminar</button>` : ''}
                 </td>
@@ -2403,13 +2232,13 @@ const AdminPages = {
                         </div>
                         <h4 class="acm-title">${titulo}</h4>
                         <div class="acm-bottom">
-                            <span class="badge">${catName}</span>
-                            ${article.destacado ? '<span>⭐</span>' : ''}
+                            <span class="badge">${catName}</span>${AdminPages._portadaBadgeHtml(article.id)}
                         </div>
                     </div>
                 </div>
                 <div class="acm-actions">
                     ${canEdit ? `<a href="/admin/editar/${article.id}" class="acm-btn acm-btn-edit">Editar</a>` : ''}
+                    ${isAdmin && article.publicado ? `<button onclick="event.stopPropagation(); AdminPages._abrirPortadaPicker(${article.id})" class="acm-btn acm-btn-portada">📌 Portada</button>` : ''}
                     ${article.publicado ? `<button onclick="event.stopPropagation(); AdminPages.copyArticleUrl('${slug}', this)" class="acm-btn acm-btn-url">Copiar URL</button>` : ''}
                     ${isAdmin ? `<button onclick="event.stopPropagation(); AdminPages.deleteArticle(${article.id})" class="acm-btn acm-btn-danger">Eliminar</button>` : ''}
                 </div>
@@ -2509,7 +2338,7 @@ const AdminPages = {
     },
 
     _setArticulosTab: function(key, btn) {
-        const validTabs = { todos: 1, publicados: 1, borradores: 1, destacados: 1 };
+        const validTabs = { todos: 1, publicados: 1, borradores: 1, portada: 1 };
         if (!validTabs[key]) return;
         if (AdminPages._articulosState.tab === key) return;
         AdminPages._articulosState.tab = key;
@@ -2539,7 +2368,11 @@ const AdminPages = {
             q = AdminPages._applyArticulosScope(q, state);
             const pred = AdminPages._tabToPredicate(tab);
             if (pred.publicado !== null) q = q.eq('publicado', pred.publicado);
-            if (pred.destacado === true) q = q.eq('destacado', true);
+            if (tab === 'portada') {
+                const ids = Object.keys(AdminPages._portadaState.byArticulo).map(Number);
+                if (ids.length === 0) return Promise.resolve({ count: 0, error: null });
+                q = q.in('id', ids);
+            }
             return q;
         }
         try {
@@ -3041,96 +2874,72 @@ const AdminPages = {
         }
     },
 
-    // ==================== GESTIÓN DE USUARIOS (Admin only) ====================
+    // ==================== GESTIÓN DE USUARIOS (Superadmin only) ====================
+    // EDITOR-20 F7 — copy alineado al modelo real de roles (SEC-ROLES-01):
+    // app_metadata.role ∈ {superadmin, periodista}; una sola cuenta con rol
+    // (Sergio = superadmin); signup público OFF; altas manuales desde el
+    // Dashboard de Supabase. La UI de gestión de usuarios y las policies
+    // del rol periodista se implementan cuando exista el segundo usuario
+    // real (matriz aprobada en docs/SEC-ROLES-01.md).
     usuarios: async function() {
         if (!Auth.isLoggedIn()) { Router.navigate('/login'); return; }
         if (!Auth.isAdmin()) { Router.navigate('/admin'); return; }
 
+        const user = Auth.getUser();
         const main = document.getElementById('main-content');
         main.innerHTML = `
             <div class="admin-layout">
                 ${AdminComponents.sidebar()}
                 <div class="admin-main">
                     ${AdminComponents.header('Gestión de Usuarios')}
-                    <div class="admin-content"><p>Cargando usuarios...</p></div>
-                </div>
-            </div>
-        `;
-
-        // Fetch users via Supabase auth admin (requires service_role or custom RPC)
-        // For now, list from a users view or user_metadata approach
-        let users = [];
-        try {
-            const { data } = await supabaseClient.rpc('get_admin_users');
-            users = data || [];
-        } catch (e) {
-            // Fallback: show current user info only
-            users = [];
-        }
-
-        main.innerHTML = `
-            <div class="admin-layout">
-                ${AdminComponents.sidebar()}
-                <div class="admin-main">
-                    ${AdminComponents.header('Gestión de Usuarios')}
                     <div class="admin-content">
-                        <div class="content-header">
-                            <h2>Usuarios del sistema</h2>
-                            <button class="btn btn-primary" onclick="AdminPages._showCreateUserModal()">+ Nuevo Usuario</button>
-                        </div>
-
                         <div class="admin-section">
-                            <p style="color:#6b7280;font-size:0.9rem;margin-bottom:16px;">
-                                Para crear usuarios, usa el panel de Supabase Authentication o la funcion <code>supabase.auth.admin.createUser()</code>.
-                                Asigna el rol en <code>user_metadata.role</code> ("admin" o "editor").
-                            </p>
-
-                            ${users.length > 0 ? `
+                            <h3>Cuenta activa</h3>
                             <div class="articles-table">
                                 <table>
                                     <thead>
-                                        <tr>
-                                            <th>Nombre</th>
-                                            <th>Email</th>
-                                            <th>Rol</th>
-                                            <th>Registro</th>
-                                        </tr>
+                                        <tr><th>Nombre</th><th>Email</th><th>Rol</th></tr>
                                     </thead>
                                     <tbody>
-                                        ${users.map(u => `
-                                            <tr>
-                                                <td>${u.name || u.email}</td>
-                                                <td>${u.email}</td>
-                                                <td><span class="badge ${u.role === 'admin' ? 'badge-published' : 'badge-draft'}">${u.role === 'admin' ? 'Admin' : 'Editor'}</span></td>
-                                                <td>${u.created_at ? new Date(u.created_at).toLocaleDateString('es-MX') : '-'}</td>
-                                            </tr>
-                                        `).join('')}
+                                        <tr>
+                                            <td>${user.name}</td>
+                                            <td>${user.email}</td>
+                                            <td><span class="badge badge-published">${user.role === 'superadmin' ? 'Superadmin' : (user.role || 'sin rol')}</span></td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
-                            ` : `
-                            <div class="users-guide">
-                                <h4>Como crear un editor:</h4>
-                                <ol style="color:#374151;line-height:1.8;padding-left:20px;">
-                                    <li>Ve al <strong>Dashboard de Supabase</strong> → Authentication → Users</li>
-                                    <li>Click <strong>"Add User"</strong></li>
-                                    <li>Ingresa email y contrasena</li>
-                                    <li>En <strong>User Metadata</strong>, agrega:<br>
-                                        <code style="background:#f3f4f6;padding:4px 8px;border-radius:4px;font-size:0.85rem;">{ "role": "editor", "name": "Nombre" }</code>
-                                    </li>
-                                    <li>El nuevo editor podra crear articulos como borrador</li>
-                                </ol>
-                                <div style="margin-top:20px;padding:16px;background:#fef3c7;border-radius:8px;border:1px solid #f59e0b;">
-                                    <strong>Permisos de Editor:</strong>
-                                    <ul style="margin-top:8px;padding-left:20px;color:#92400e;">
-                                        <li>Crear articulos (solo como borrador)</li>
-                                        <li>Editar sus propios articulos</li>
-                                        <li>Subir imagenes a la biblioteca</li>
-                                        <li>NO puede publicar, eliminar ni editar articulos ajenos</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            `}
+                        </div>
+
+                        <div class="admin-section">
+                            <h3>Modelo de roles</h3>
+                            <p style="color:#374151;line-height:1.7;margin-bottom:12px;">
+                                Los roles viven en <code>app_metadata.role</code> (solo editable desde el
+                                servidor — nunca en <code>user_metadata</code>) y son dos:
+                                <strong>superadmin</strong> (todos los privilegios) y
+                                <strong>periodista</strong> (colaboradores futuros; permisos reducidos).
+                                El registro público está <strong>desactivado</strong>: las cuentas se crean
+                                a mano.
+                            </p>
+                            <p style="color:#374151;line-height:1.7;">
+                                La matriz de permisos del rol periodista está aprobada en
+                                <code>docs/SEC-ROLES-01.md</code>, pero sus políticas RLS y la UI de
+                                gestión <strong>aún no están implementadas</strong> — se construyen cuando
+                                exista la segunda persona real del equipo. No crees cuentas periodista
+                                antes de eso.
+                            </p>
+                        </div>
+
+                        <div class="admin-section">
+                            <h4>Alta manual de una cuenta (cuando toque)</h4>
+                            <ol style="color:#374151;line-height:1.8;padding-left:20px;">
+                                <li>Dashboard de Supabase → <strong>Authentication → Users → Add user</strong> (email + contraseña).</li>
+                                <li>Asignar el rol en <code>app_metadata</code> (SQL Editor):<br>
+                                    <code style="background:#f3f4f6;padding:4px 8px;border-radius:4px;font-size:0.85rem;display:inline-block;margin-top:4px;">UPDATE auth.users SET raw_app_meta_data = coalesce(raw_app_meta_data,'{}'::jsonb) || '{"role":"periodista"}' WHERE email = '...';</code>
+                                </li>
+                                <li>El nombre visible puede ir en <code>user_metadata.name</code> (solo display).</li>
+                                <li>Si la persona ya tenía sesión abierta: <strong>logout/login</strong> — el JWT viejo no trae el rol nuevo.</li>
+                            </ol>
                         </div>
                     </div>
                 </div>
@@ -3138,10 +2947,6 @@ const AdminPages = {
         `;
 
         document.title = 'Usuarios - Beisjoven Admin';
-    },
-
-    _showCreateUserModal: function() {
-        showToast('Usa el Dashboard de Supabase para crear usuarios', 'info');
     },
 
     logout: async function() {
@@ -4384,7 +4189,7 @@ const AdminComponents = {
                     <div class="user-avatar">${user.avatar || '👤'}</div>
                     <div class="user-info">
                         <span class="user-name">${user.name}</span>
-                        <span class="user-role">${user.role === 'admin' ? 'Administrador' : 'Editor'}</span>
+                        <span class="user-role">${user.role === 'superadmin' ? 'Superadmin' : 'Periodista'}</span>
                     </div>
                 </div>
 
@@ -4688,7 +4493,7 @@ var Onboarding = {
         var user = Auth.getUser();
         if (!user) return;
         // Only show for editors, not admins
-        if (user.role === 'admin') return;
+        if (user.role === 'superadmin') return;
         if (this._isCompleted(user.id)) return;
 
         this._showModal(user);

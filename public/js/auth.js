@@ -35,14 +35,19 @@ const Auth = {
         this._ready = true;
     },
 
-    // Mapear usuario de Supabase al formato que usa el admin panel
+    // Mapear usuario de Supabase al formato que usa el admin panel.
+    // SEC-ROLES-01 / EDITOR-20 F7: el rol vive en app_metadata (solo
+    // editable server-side). user_metadata JAMÁS se usa para autorización
+    // y no hay default permisivo: sin rol = sin privilegios de UI. La
+    // seguridad real la ponen RLS y los endpoints; esto alinea la UI.
     _mapUser: function(supaUser) {
         const meta = supaUser.user_metadata || {};
+        const appMeta = supaUser.app_metadata || {};
         return {
             id: supaUser.id,
             email: supaUser.email,
             name: meta.name || supaUser.email.split('@')[0],
-            role: meta.role || 'admin',
+            role: appMeta.role || null,
             avatar: meta.avatar || '👨‍💼'
         };
     },
@@ -85,14 +90,14 @@ const Auth = {
         return this.currentUser !== null;
     },
 
-    // Verificar rol admin
+    // Verificar rol superadmin (roles reales: superadmin | periodista)
     isAdmin: function() {
-        return this.currentUser && this.currentUser.role === 'admin';
+        return !!(this.currentUser && this.currentUser.role === 'superadmin');
     },
 
-    // Verificar si puede editar (admin o editor)
+    // Verificar si puede editar (superadmin o periodista)
     canEdit: function() {
-        return this.currentUser && ['admin', 'editor'].includes(this.currentUser.role);
+        return !!(this.currentUser && ['superadmin', 'periodista'].includes(this.currentUser.role));
     },
 
     // Obtener usuario actual

@@ -155,7 +155,7 @@
     grid-template-areas:
         "titulo    imagen"
         "extracto  imagen"
-        "meta      checks"
+        "meta      acciones"
         "contenido acciones";
     gap: 0 24px;
     max-width: 100%;
@@ -167,7 +167,6 @@
 .fg-meta      { grid-area: meta;      padding-bottom: 20px; }
 .fg-contenido { grid-area: contenido; padding-bottom: 20px; }
 .fg-imagen    { grid-area: imagen;    background: var(--admin-surface); border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
-.fg-checks    { grid-area: checks;    background: var(--admin-surface); border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
 .fg-acciones  { grid-area: acciones;  background: var(--admin-surface); border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 
 /* Labels en el nuevo grid */
@@ -207,33 +206,6 @@
     gap: 16px;
 }
 
-/* Checkbox labels */
-.form-grid-new .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-    cursor: pointer;
-    min-height: 44px;
-    border-bottom: 1px solid var(--admin-border);
-}
-.form-grid-new .checkbox-label:last-child { border-bottom: none; }
-.form-grid-new .checkbox-label input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-    cursor: pointer;
-    accent-color: #c4122e;
-}
-.wbc-check-label {
-    background: #fef3c7;
-    border: 1px solid #f59e0b !important;
-    border-radius: 8px;
-    padding: 10px 12px !important;
-    margin-top: 4px;
-}
-.wbc-check-label small { font-size: 0.75rem; color: #92400e; display: block; }
-
 /* Botones de acción */
 .fg-acciones .btn {
     width: 100%;
@@ -269,7 +241,6 @@
     .fg-meta      { order: 3; padding: 12px 16px 0; }
     .fg-contenido { order: 4; padding: 12px 16px 0; }
     .fg-imagen    { order: 5; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid var(--admin-border); border-radius: 8px; }
-    .fg-checks    { order: 6; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid var(--admin-border); border-radius: 8px; }
     .fg-acciones  { order: 7; display: none; } /* oculto — reemplazado por sticky bar abajo */
 
     /* Categoría + Autor apilados en móvil */
@@ -575,6 +546,12 @@
     background: #fef3c7 !important;
     color: #d97706 !important;
 }
+/* EDITOR-20 F2 — artículo fijado a portada (curación manual) */
+.badge-portada {
+    background: #1B2A4A !important;
+    color: #D4A843 !important;
+    white-space: nowrap;
+}
 
 /* ==================== ONBOARDING MODAL ==================== */
 .onboarding-overlay {
@@ -689,6 +666,11 @@
 .acm-btn-url {
     background: #e9ecef;
     color: #1a1a2e;
+}
+.acm-btn-portada,
+.btn-portada {
+    background: #1B2A4A;
+    color: #D4A843;
 }
 .acm-btn-danger {
     background: #fee2e2;

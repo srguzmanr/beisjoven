@@ -8,7 +8,6 @@ interface Story {
   titulo: string;
   extracto: string | null;
   imagen_url: string | null;
-  imagen_portada_alt: string | null;
   fecha: string;
   categoria_slug: string;
   categoria_nombre: string;
@@ -31,7 +30,7 @@ const href = `/articulo/${story.slug}`;
 const hasRank = typeof rank === 'number';
 const gridCols = hasRank ? '20px 72px 1fr' : '72px 1fr';
 
-const imgAlt = story.imagen_portada_alt || story.titulo;
+const imgAlt = story.titulo;
 ---
 
 <a

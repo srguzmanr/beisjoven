@@ -6,7 +6,6 @@ interface Story {
   titulo: string;
   extracto: string | null;
   imagen_url: string | null;
-  imagen_portada_alt: string | null;
   fecha: string;
   autor_nombre: string | null;
   read_time_minutes?: number;
@@ -21,7 +20,7 @@ const { stories } = Astro.props;
 const cards = stories.map((s) => ({
   ...s,
   href: `/articulo/${s.slug}`,
-  imgAlt: s.imagen_portada_alt || s.titulo,
+  imgAlt: s.titulo,
 }));
 ---
 
