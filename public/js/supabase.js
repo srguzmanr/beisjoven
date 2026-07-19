@@ -193,27 +193,6 @@ const SupabaseAPI = {
         return data;
     },
     
-    async getArticulosDestacados(limite = 5) {
-        const { data, error } = await supabaseClient
-            .from('articulos')
-            .select(`
-                *,
-                categoria:categorias(*),
-                autor:autores(*)
-            `)
-            .eq('publicado', true)
-            .eq('destacado', true)
-            .order('fecha', { ascending: false })
-            .order('created_at', { ascending: false })
-            .limit(limite);
-        
-        if (error) {
-            console.error('Error cargando artículos destacados:', error);
-            return [];
-        }
-        return data;
-    },
-    
     async getMasLeidos(limite = 5) {
         const { data, error } = await supabaseClient
             .from('articulos')

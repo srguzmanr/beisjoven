@@ -774,6 +774,10 @@ const AdminPages = {
         await AdminPages._ensureArticulosDropdownData();
         AdminPages._populateArticulosDropdowns();
 
+        // Estado de portada (EDITOR-20 F2) — antes de la primera carga para
+        // que la tab "En portada" y los badges 📌 pinten con datos.
+        await AdminPages._loadPortadaSlots();
+
         // Sync filter bar UI to state parsed from URL
         AdminPages._syncFilterBarFromState();
 
@@ -1764,20 +1768,121 @@ const AdminPages = {
         { key: 'todos',       label: 'Todos' },
         { key: 'publicados',  label: 'Publicados' },
         { key: 'borradores',  label: 'Borradores' },
-        { key: 'destacados',  label: 'Destacados' }
+        { key: 'portada',     label: 'En portada' }
     ],
-    _articulosTabCounts: { todos: 0, publicados: 0, borradores: 0, destacados: 0 },
+    _articulosTabCounts: { todos: 0, publicados: 0, borradores: 0, portada: 0 },
+
+    // ==================== PORTADA (EDITOR-20 F2) ====================
+    // Curación separada del contenido: portada_slots (slot 1 = Hero,
+    // 2-5 = posiciones de "Lo último"). Estado local: Maps por slot y
+    // por artículo, cargados junto con la lista.
+    _portadaState: { bySlot: {}, byArticulo: {}, loaded: false },
+    PORTADA_SLOT_LABELS: {
+        1: 'Hero',
+        2: 'Lo último · posición 1',
+        3: 'Lo último · posición 2',
+        4: 'Lo último · posición 3',
+        5: 'Lo último · posición 4'
+    },
+
+    _loadPortadaSlots: async function() {
+        try {
+            const { data, error } = await supabaseClient
+                .from('portada_slots')
+                .select('slot, articulo_id, articulo:articulos(titulo)');
+            if (error) throw error;
+            const bySlot = {}, byArticulo = {};
+            (data || []).forEach(function(r) {
+                bySlot[r.slot] = { articulo_id: r.articulo_id, titulo: r.articulo?.titulo || '' };
+                byArticulo[r.articulo_id] = r.slot;
+            });
+            AdminPages._portadaState = { bySlot: bySlot, byArticulo: byArticulo, loaded: true };
+        } catch (e) {
+            // Tabla aún no creada (migración 02 pendiente) u otro fallo de
+            // lectura: la lista funciona igual, solo sin datos de portada.
+            console.warn('[portada] No se pudieron cargar los slots:', e.message || e);
+            AdminPages._portadaState = { bySlot: {}, byArticulo: {}, loaded: false };
+        }
+    },
+
+    _portadaBadgeHtml: function(articuloId) {
+        const slot = AdminPages._portadaState.byArticulo[articuloId];
+        if (!slot) return '';
+        const label = slot === 1 ? 'Hero' : ('Portada #' + (slot - 1));
+        return ' <span class="badge badge-portada" title="' +
+            AdminPages._escapeHtml(AdminPages.PORTADA_SLOT_LABELS[slot] || ('Slot ' + slot)) +
+            '">📌 ' + label + '</span>';
+    },
+
+    _abrirPortadaPicker: function(articuloId) {
+        const st = AdminPages._portadaState;
+        const slotActual = st.byArticulo[articuloId] || null;
+        const items = [1, 2, 3, 4, 5].map(function(n) {
+            const occ = st.bySlot[n];
+            let suffix;
+            if (occ && occ.articulo_id === articuloId) suffix = ' — este artículo';
+            else if (occ) {
+                let t = occ.titulo || '';
+                if (t.length > 34) t = t.substring(0, 34) + '…';
+                suffix = ' — ocupado: «' + t + '»';
+            } else suffix = ' — libre';
+            return { id: String(n), nombre: AdminPages.PORTADA_SLOT_LABELS[n] + suffix };
+        });
+        if (slotActual) items.push({ id: 'quitar', nombre: '✕ Quitar de portada' });
+
+        PickerModal.open({
+            mode: 'single',
+            title: 'Fijar a portada',
+            items: items,
+            preselectedIds: slotActual ? String(slotActual) : undefined,
+            confirmLabel: 'Fijar',
+            onConfirm: function(selectedSet) {
+                const choice = Array.from(selectedSet)[0];
+                AdminPages._fijarPortada(articuloId, choice === 'quitar' ? null : parseInt(choice, 10));
+            }
+        });
+    },
+
+    _fijarPortada: async function(articuloId, slot) {
+        try {
+            // Un artículo ocupa a lo más un slot (UNIQUE articulo_id):
+            // primero se libera su slot actual, luego se fija el nuevo.
+            const { error: delErr } = await supabaseClient
+                .from('portada_slots')
+                .delete()
+                .eq('articulo_id', articuloId);
+            if (delErr) throw delErr;
+
+            if (slot) {
+                const { error: upErr } = await supabaseClient
+                    .from('portada_slots')
+                    .upsert({ slot: slot, articulo_id: articuloId }, { onConflict: 'slot' });
+                if (upErr) throw upErr;
+                showToast('📌 Fijado en ' + AdminPages.PORTADA_SLOT_LABELS[slot] + '. Visible en portada en ≤60s.');
+            } else {
+                showToast('Quitado de portada. La posición vuelve a recencia.');
+            }
+
+            await AdminPages._loadPortadaSlots();
+            AdminPages._renderArticulosRows();
+            AdminPages._refreshArticulosTabCounts();
+        } catch (e) {
+            console.error('[portada] Fijar falló:', e);
+            const hint = (e && e.message && e.message.indexOf('portada_slots') !== -1)
+                ? ' ¿Está ejecutada la migración 02 (portada_slots)?'
+                : '';
+            showToast('Error al fijar a portada: ' + (e.message || e) + hint, 'error', 5000);
+        }
+    },
 
     _parseStateFromQuery: function(query) {
-        const validTabs = { todos: 1, publicados: 1, borradores: 1, destacados: 1 };
+        const validTabs = { todos: 1, publicados: 1, borradores: 1, portada: 1 };
         let tab = query.get('tab');
         if (!tab || !validTabs[tab]) {
             // Back-compat with legacy URL params from the pre-tab filter bar
             const status = query.get('status');
             if (status === 'published') tab = 'publicados';
             else if (status === 'draft') tab = 'borradores';
-            else if (status === 'featured') tab = 'destacados';
-            else if (query.get('destacado') === '1') tab = 'destacados';
             else tab = 'todos';
         }
         return {
@@ -1808,13 +1913,13 @@ const AdminPages = {
         history.replaceState(null, '', url);
     },
 
-    // Map a tab key to the (publicado, destacado) predicate. Returns
-    // { publicado: bool|null, destacado: bool|null }.
+    // Map a tab key to the publicado predicate. La tab 'portada' no es un
+    // predicado de columna: filtra por los ids fijados en portada_slots
+    // (ver _loadArticulos / _refreshArticulosTabCounts).
     _tabToPredicate: function(tab) {
-        if (tab === 'publicados')  return { publicado: true,  destacado: null };
-        if (tab === 'borradores')  return { publicado: false, destacado: null };
-        if (tab === 'destacados')  return { publicado: null,  destacado: true };
-        return { publicado: null, destacado: null };
+        if (tab === 'publicados')  return { publicado: true };
+        if (tab === 'borradores')  return { publicado: false };
+        return { publicado: null };
     },
 
     // Apply the Artículos query scope (search + drawer filters + RLS) to a
@@ -1859,7 +1964,18 @@ const AdminPages = {
         q = AdminPages._applyArticulosScope(q, state);
         const pred = AdminPages._tabToPredicate(state.tab);
         if (pred.publicado !== null) q = q.eq('publicado', pred.publicado);
-        if (pred.destacado === true) q = q.eq('destacado', true);
+        if (state.tab === 'portada') {
+            const ids = Object.keys(AdminPages._portadaState.byArticulo).map(Number);
+            if (ids.length === 0) {
+                AdminPages._articulosState = state;
+                AdminPages._articulosTotal = 0;
+                AdminPages._articulosRows = [];
+                AdminPages._articulosLoaded = 0;
+                AdminPages._syncUrlFromState();
+                return;
+            }
+            q = q.in('id', ids);
+        }
 
         const res = await q;
         if (res.error) {
@@ -2008,12 +2124,12 @@ const AdminPages = {
                 </td>
                 <td><span class="badge">${catName}</span></td>
                 <td>
-                    <span class="badge ${estadoCls}">${estado}</span>
-                    ${article.destacado ? ' ⭐' : ''}
+                    <span class="badge ${estadoCls}">${estado}</span>${AdminPages._portadaBadgeHtml(article.id)}
                 </td>
                 <td>${fecha}</td>
                 <td class="actions-cell">
                     ${canEdit ? `<a href="/admin/editar/${article.id}" class="btn-small">Editar</a>` : ''}
+                    ${isAdmin && article.publicado ? `<button onclick="AdminPages._abrirPortadaPicker(${article.id})" class="btn-small btn-portada" title="Fijar a portada">📌 Portada</button>` : ''}
                     ${article.publicado ? `<button onclick="AdminPages.copyArticleUrl('${slug}', this)" class="btn-small btn-url" title="Copiar URL">🔗 URL</button>` : ''}
                     ${isAdmin ? `<button onclick="AdminPages.deleteArticle(${article.id})" class="btn-small btn-danger">Eliminar</button>` : ''}
                 </td>
@@ -2058,13 +2174,13 @@ const AdminPages = {
                         </div>
                         <h4 class="acm-title">${titulo}</h4>
                         <div class="acm-bottom">
-                            <span class="badge">${catName}</span>
-                            ${article.destacado ? '<span>⭐</span>' : ''}
+                            <span class="badge">${catName}</span>${AdminPages._portadaBadgeHtml(article.id)}
                         </div>
                     </div>
                 </div>
                 <div class="acm-actions">
                     ${canEdit ? `<a href="/admin/editar/${article.id}" class="acm-btn acm-btn-edit">Editar</a>` : ''}
+                    ${isAdmin && article.publicado ? `<button onclick="event.stopPropagation(); AdminPages._abrirPortadaPicker(${article.id})" class="acm-btn acm-btn-portada">📌 Portada</button>` : ''}
                     ${article.publicado ? `<button onclick="event.stopPropagation(); AdminPages.copyArticleUrl('${slug}', this)" class="acm-btn acm-btn-url">Copiar URL</button>` : ''}
                     ${isAdmin ? `<button onclick="event.stopPropagation(); AdminPages.deleteArticle(${article.id})" class="acm-btn acm-btn-danger">Eliminar</button>` : ''}
                 </div>
@@ -2164,7 +2280,7 @@ const AdminPages = {
     },
 
     _setArticulosTab: function(key, btn) {
-        const validTabs = { todos: 1, publicados: 1, borradores: 1, destacados: 1 };
+        const validTabs = { todos: 1, publicados: 1, borradores: 1, portada: 1 };
         if (!validTabs[key]) return;
         if (AdminPages._articulosState.tab === key) return;
         AdminPages._articulosState.tab = key;
@@ -2194,7 +2310,11 @@ const AdminPages = {
             q = AdminPages._applyArticulosScope(q, state);
             const pred = AdminPages._tabToPredicate(tab);
             if (pred.publicado !== null) q = q.eq('publicado', pred.publicado);
-            if (pred.destacado === true) q = q.eq('destacado', true);
+            if (tab === 'portada') {
+                const ids = Object.keys(AdminPages._portadaState.byArticulo).map(Number);
+                if (ids.length === 0) return Promise.resolve({ count: 0, error: null });
+                q = q.in('id', ids);
+            }
             return q;
         }
         try {

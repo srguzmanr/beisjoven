@@ -546,6 +546,12 @@
     background: #fef3c7 !important;
     color: #d97706 !important;
 }
+/* EDITOR-20 F2 — artículo fijado a portada (curación manual) */
+.badge-portada {
+    background: #1B2A4A !important;
+    color: #D4A843 !important;
+    white-space: nowrap;
+}
 
 /* ==================== ONBOARDING MODAL ==================== */
 .onboarding-overlay {
@@ -660,6 +666,11 @@
 .acm-btn-url {
     background: #e9ecef;
     color: #1a1a2e;
+}
+.acm-btn-portada,
+.btn-portada {
+    background: #1B2A4A;
+    color: #D4A843;
 }
 .acm-btn-danger {
     background: #fee2e2;

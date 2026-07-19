@@ -1,0 +1,38 @@
+-- ============================================================
+-- EDITOR-20 · 05 — DROP de articulos.destacado
+--
+-- ⚠️ GATE DURO (secuencia acordada en la misión): ejecutar SOLO cuando
+--    la capa de curación (portada_slots, archivo 02) esté VERIFICADA
+--    EN PROD en sus dos estados:
+--      · sin slots fijados → homepage por recencia, y
+--      · con slots fijados → hero y "Lo último" respetan la curación.
+--    Hasta entonces este archivo se queda mergeado pero SIN ejecutar.
+--
+-- Contexto (Fase 0): destacado=true en 275 de 657 artículos (42%) —
+-- hábito de captura, no curación. Tras PR-1 ningún código lo lee ni lo
+-- escribe (homepage consume portada_slots; editor sin checkbox; tab
+-- "Destacados" reemplazada por "En portada").
+--
+-- videos.destacado NO se toca (fuera de alcance).
+--
+-- Ejecutar en el SQL Editor. Idempotente (re-ejecutable).
+-- "Success. No rows returned" = éxito normal.
+-- ============================================================
+
+ALTER TABLE public.articulos DROP COLUMN IF EXISTS destacado;
+
+-- ============================================================
+-- VERIFICACIÓN (ejecutar después; resultado esperado al lado)
+-- ============================================================
+-- a) La columna no existe → 0 filas:
+--    SELECT column_name FROM information_schema.columns
+--    WHERE table_schema = 'public' AND table_name = 'articulos'
+--      AND column_name = 'destacado';
+--
+-- b) videos.destacado sobrevive → 1 fila:
+--    SELECT column_name FROM information_schema.columns
+--    WHERE table_schema = 'public' AND table_name = 'videos'
+--      AND column_name = 'destacado';
+--
+-- c) Humo: homepage y /admin/articulos renderizan tras ISR ≤60s.
+-- ============================================================
