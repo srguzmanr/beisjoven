@@ -51,7 +51,10 @@ export const POST: APIRoute = async ({ request }) => {
   if (userError || !userData?.user) {
     return json(401, { error: 'Sesión inválida o expirada' });
   }
-  if (userData.user.app_metadata?.role !== 'admin') {
+  // SEC-ROLES-01: el rol real es 'superadmin' (app_metadata). El valor legacy
+  // 'admin' dejó de existir cuando se aplicó la migración 01 — exigirlo aquí
+  // dejaba el endpoint en 403 permanente para la única cuenta operativa.
+  if (userData.user.app_metadata?.role !== 'superadmin') {
     return json(403, { error: 'No autorizado' });
   }
 
