@@ -475,36 +475,43 @@ console.log('✅ Supabase conectado:', SUPABASE_URL);
 // ==================== FUNCIONES CRUD PARA ADMIN ====================
 
 const SupabaseAdmin = {
-    
+
     // ==================== ARTÍCULOS ====================
-    
-    async crearArticulo(articulo) {
-        const { data, error } = await supabaseClient
-            .from('articulos')
-            .insert([articulo])
-            .select()
-            .single();
-        
-        if (error) {
-            console.error('Error creando artículo:', error);
-            return { success: false, error: error.message };
+    // SEC-04 (EDITOR-20 F6): crear/actualizar pasan por el endpoint
+    // server-side /api/guardar-articulo, que sanitiza el HTML del editor
+    // con allowlist y refuerza el slug lock antes de escribir. El panel
+    // ya no hace INSERT/UPDATE directos de articulos desde el navegador.
+    async _guardarViaEndpoint(id, articulo) {
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return { success: false, error: 'No hay sesión activa' };
+            const res = await fetch('/api/guardar-articulo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + session.access_token,
+                },
+                body: JSON.stringify({ id: id ?? null, articulo }),
+            });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok || !body.success) {
+                const msg = body.error || ('Error HTTP ' + res.status);
+                console.error('[guardarArticulo] Failed:', msg);
+                return { success: false, error: msg };
+            }
+            return { success: true, data: body.data };
+        } catch (e) {
+            console.error('[guardarArticulo] Network error:', e);
+            return { success: false, error: e.message || 'Error de red' };
         }
-        return { success: true, data };
     },
-    
+
+    async crearArticulo(articulo) {
+        return this._guardarViaEndpoint(null, articulo);
+    },
+
     async actualizarArticulo(id, cambios) {
-        const { data, error } = await supabaseClient
-            .from('articulos')
-            .update(cambios)
-            .eq('id', id)
-            .select()
-            .single();
-        
-        if (error) {
-            console.error('Error actualizando artículo:', error);
-            return { success: false, error: error.message };
-        }
-        return { success: true, data };
+        return this._guardarViaEndpoint(id, cambios);
     },
     
     async eliminarArticulo(id) {
