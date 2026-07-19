@@ -12,7 +12,6 @@ import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Youtube from '@tiptap/extension-youtube';
 import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import { Node, mergeAttributes, Extension } from '@tiptap/core';
@@ -1270,6 +1269,17 @@ const TiptapEditor = {
       extensions: [
         StarterKit.configure({
           horizontalRule: false, // we use the standalone extension
+          // EDITOR-20 F5: StarterKit v3 ya incluye Link — configurarlo aquí
+          // en vez de registrar @tiptap/extension-link por separado, que
+          // duplicaba la extensión ('Duplicate extension names: link').
+          link: {
+            openOnClick: false,
+            autolink: true,
+            HTMLAttributes: {
+              rel: 'noopener noreferrer',
+              target: '_blank',
+            },
+          },
         }),
         HorizontalRule,
         SafeYoutube.configure({
@@ -1280,14 +1290,6 @@ const TiptapEditor = {
         Image.configure({
           inline: false,
           allowBase64: false,
-        }),
-        Link.configure({
-          openOnClick: false,
-          autolink: true,
-          HTMLAttributes: {
-            rel: 'noopener noreferrer',
-            target: '_blank',
-          },
         }),
         Placeholder.configure({
           placeholder: 'Escribe el contenido del articulo...',

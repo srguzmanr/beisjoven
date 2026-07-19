@@ -227,33 +227,27 @@ var Autosave = {
                 // M1 (EDITOR-20): tampoco 'slug' — el autosave regeneraba la URL
                 // desde el título en cada UPDATE y rompía enlaces publicados.
                 // El slug solo lo escribe saveArticle (y solo si no está lockeado).
-                await supabaseClient
-                    .from('articulos')
-                    .update(payload)
-                    .eq('id', this._editId);
+                // SEC-04: vía endpoint sanitizador, nunca UPDATE directo.
+                var updRes = await SupabaseAdmin.actualizarArticulo(this._editId, payload);
+                if (!updRes.success) throw new Error(updRes.error);
             } else {
                 // Rule 3: NEW article — create with publicado:false, reuse ID
                 payload.publicado = false;
                 if (this._draftId) {
-                    // Already have a draft — update it
-                    await supabaseClient
-                        .from('articulos')
-                        .update(payload)
-                        .eq('id', this._draftId);
+                    // Already have a draft — update it (vía endpoint SEC-04)
+                    var draftRes = await SupabaseAdmin.actualizarArticulo(this._draftId, payload);
+                    if (!draftRes.success) throw new Error(draftRes.error);
                 } else {
-                    // First save — create the draft
+                    // First save — create the draft (vía endpoint SEC-04)
                     payload.slug = 'borrador-' + Date.now();
                     // Track ownership
                     if (Auth.getUser()) {
                         payload.user_id = Auth.getUser().id;
                     }
-                    var result = await supabaseClient
-                        .from('articulos')
-                        .insert([payload])
-                        .select('id')
-                        .single();
-                    if (result.data) {
-                        this._draftId = result.data.id;
+                    var insRes = await SupabaseAdmin.crearArticulo(payload);
+                    if (!insRes.success) throw new Error(insRes.error);
+                    if (insRes.data) {
+                        this._draftId = insRes.data.id;
                     }
                 }
             }

@@ -3,6 +3,7 @@
  * Mirrors the existing renderContent() logic from the vanilla JS site.
  * Supports both HTML legacy (Wix migration) and Markdown (new articles).
  */
+import { sanitizeArticuloHtml } from './sanitize-articulo';
 
 function escapeHtml(str: string): string {
   return str
@@ -213,6 +214,12 @@ function transformTiptapNodes(content: string): string {
 
 export function renderContent(content: string): string {
   if (!content) return '';
+
+  // STEP 0 (SEC-04, EDITOR-20 F6): allowlist sobre el contenido ALMACENADO
+  // antes de cualquier transformación — defensa en profundidad para
+  // contenido legacy o escrituras que no pasaron por /api/guardar-articulo.
+  // Los pasos siguientes solo AGREGAN wrappers generados por este código.
+  content = sanitizeArticuloHtml(content);
 
   // STEP 1: Replace standalone URL lines with embed HTML (raw text stage)
   content = preProcessEmbeds(content);
