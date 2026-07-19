@@ -67,10 +67,47 @@ const Auth = {
         return { success: true, user: this.currentUser };
     },
 
-    // Cerrar sesión
+    // Cerrar sesión.
+    // AUTH-LOGOUT-01: si el servidor no responde, supabase-js devuelve
+    // { error } SIN borrar la sesión local — eso dejaba el token vivo en
+    // localStorage con la UI diciendo "fuera". Ante fallo remoto se borra
+    // el token local a mano: el dispositivo queda sin sesión siempre, y el
+    // caller recibe { success, error } para mostrar el fallo al usuario.
     logout: async function() {
-        await supabaseClient.auth.signOut();
+        let error = null;
+        try {
+            const res = await supabaseClient.auth.signOut();
+            error = (res && res.error) || null;
+        } catch (e) {
+            error = e;
+        }
+        if (error) {
+            console.error('[logout] signOut falló:', error);
+            this._clearLocalSession();
+        }
         this.currentUser = null;
+        return {
+            success: !error,
+            error: error ? 'El servidor no confirmó el cierre de sesión.' : null
+        };
+    },
+
+    // Borra los tokens de Supabase del dispositivo (fallback cuando signOut
+    // falla). La clave estándar es sb-<project-ref>-auth-token; se barre por
+    // prefijo para no depender de la versión de supabase-js.
+    _clearLocalSession: function() {
+        try {
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') !== -1) {
+                    keys.push(k);
+                }
+            }
+            keys.forEach(k => localStorage.removeItem(k));
+        } catch (e) {
+            console.error('[logout] No se pudo limpiar el storage local:', e);
+        }
     },
 
     // Solicitar reset de contraseña
