@@ -13,7 +13,7 @@ const catName = story.categoria?.nombre ?? '';
 const accent = catSlug ? `var(--cat-${catSlug})` : 'var(--gold)';
 // Juvenil pill stays gold; pill text must render in navy for contrast.
 const pillText = catSlug === 'juvenil' ? 'var(--navy)' : '#fff';
-const altText = story.imagen_portada_alt ?? '';
+const altText = story.titulo ?? '';
 const href = `/articulo/${story.slug}`;
 ---
 
@@ -43,9 +43,6 @@ const href = `/articulo/${story.slug}`;
             />
           </div>
         </div>
-        {story.photo_credit && (
-          <span class="hero-default__credit">Foto: {story.photo_credit}</span>
-        )}
       </div>
       <div class="hero-default__prose">
         {story.extracto && (
@@ -130,19 +127,6 @@ const href = `/articulo/${story.slug}`;
     display: none;
     margin-top: 12px;
   }
-  .hero-default__credit {
-    position: absolute;
-    right: 8px;
-    bottom: 8px;
-    z-index: 2;
-    color: #fff;
-    background: rgba(0, 0, 0, 0.55);
-    font-family: var(--font-body);
-    font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 2px;
-  }
-
   .hero-default__prose {
     padding: 16px 16px 4px;
     max-width: 60rem;

@@ -72,8 +72,6 @@ const ArticlePreview = {
             .ap-content img { max-width: 100%; border-radius: 8px; margin: 16px 0; }
             .ap-content figure { margin: 20px 0; }
             .ap-content figcaption { font-size: 0.82rem; color: #6b7280; font-style: italic; margin-top: 6px; }
-            .ap-featured-badge { display: inline-block; background: #f4a024; color: #1a1a2e; padding: 3px 10px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; border-radius: 4px; margin-left: 8px; }
-            .ap-wbc-badge { display: flex; align-items: center; gap: 8px; background: #1a3a6b; color: white; padding: 8px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; }
             .ap-draft-banner { background: #fef3c7; border: 1px solid #f59e0b; color: #92400e; padding: 8px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; font-weight: 600; text-align: center; }
 
             /* Footer */
@@ -118,12 +116,10 @@ const ArticlePreview = {
 
         return `
             ${isDraft ? '<div class="ap-draft-banner">⚠️ Vista previa del borrador — no publicado aún</div>' : ''}
-            ${article.es_wbc2026 ? '<div class="ap-wbc-badge">⚾ Cobertura presentada por <strong>Caja Inmaculada</strong></div>' : ''}
             ${article.imagen_url ? `<img src="${article.imagen_url}" alt="${article.titulo}" class="ap-image">` : ''}
             ${article.pie_de_foto ? `<p class="ap-pie-de-foto">${article.pie_de_foto}${article.foto_credito ? ' — ' + article.foto_credito : ''}</p>` : ''}
             <div>
                 <span class="ap-category">${article.categoria || 'Sin categoría'}</span>
-                ${article.destacado ? '<span class="ap-featured-badge">⭐ Destacado</span>' : ''}
             </div>
             <h2 class="ap-title">${article.titulo || 'Sin título'}</h2>
             <div class="ap-meta">
@@ -156,8 +152,6 @@ const ArticlePreview = {
         const imagen_url = document.getElementById('image')?.value || '';
         const pie_de_foto = document.getElementById('foto-pie')?.value || '';
         const foto_credito = document.getElementById('foto-credito')?.value || '';
-        const destacado = document.getElementById('featured')?.checked || false;
-        const es_wbc2026 = document.getElementById('es_wbc2026')?.checked || false;
 
         // Contenido del RTE
         const rteEditor = document.querySelector('.rte-editor');
@@ -173,7 +167,7 @@ const ArticlePreview = {
 
         body.innerHTML = this._renderArticle({
             titulo, extracto, imagen_url, pie_de_foto, foto_credito,
-            destacado, es_wbc2026, contenido, categoria, autor,
+            contenido, categoria, autor,
             fecha: new Date().toISOString()
         }, true);
 
@@ -222,8 +216,7 @@ const ArticlePreview = {
                 categoria: article.categoria?.nombre,
                 autor: article.autor?.nombre,
                 pie_de_foto: article.pie_de_foto,
-                foto_credito: article.foto_credito,
-                es_wbc2026: article.es_wbc2026
+                foto_credito: article.foto_credito
             });
 
             footer.innerHTML = `

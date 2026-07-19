@@ -37,7 +37,7 @@ const heroId = hero?.id ?? -1;
 // MixedFeed data (DESIGN-04b). Joined select returns categorias/autores as
 // nested objects; we flatten to the StoryCard / ListCard prop shape below.
 const FEED_SELECT =
-  'id, slug, titulo, extracto, imagen_url, imagen_portada_alt, fecha, read_time_minutes, categorias!inner(slug, nombre), autores(nombre)';
+  'id, slug, titulo, extracto, imagen_url, fecha, read_time_minutes, categorias!inner(slug, nombre), autores(nombre)';
 
 const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   .toISOString()
@@ -83,7 +83,6 @@ type FeedRow = {
   titulo: string;
   extracto: string | null;
   imagen_url: string | null;
-  imagen_portada_alt: string | null;
   fecha: string;
   read_time_minutes: number;
   categorias: { slug: string; nombre: string } | { slug: string; nombre: string }[] | null;
@@ -100,7 +99,6 @@ function flatten(rows: FeedRow[] | null) {
       titulo: r.titulo,
       extracto: r.extracto,
       imagen_url: r.imagen_url,
-      imagen_portada_alt: r.imagen_portada_alt,
       fecha: r.fecha,
       read_time_minutes: r.read_time_minutes ?? 1,
       categoria_slug: cat?.slug ?? '',
@@ -124,7 +122,6 @@ type JuvenilRow = {
   titulo: string;
   extracto: string | null;
   imagen_url: string | null;
-  imagen_portada_alt: string | null;
   fecha: string;
   read_time_minutes: number | null;
   autores: { nombre: string } | { nombre: string }[] | null;
@@ -133,7 +130,7 @@ type JuvenilRow = {
 const { data: juvenilRailRaw } = await supabaseServer
   .from('articulos')
   .select(
-    'id, slug, titulo, extracto, imagen_url, imagen_portada_alt, fecha, read_time_minutes, categorias!inner(slug), autores(nombre)'
+    'id, slug, titulo, extracto, imagen_url, fecha, read_time_minutes, categorias!inner(slug), autores(nombre)'
   )
   .eq('categorias.slug', 'juvenil')
   .eq('publicado', true)
@@ -147,7 +144,6 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
     titulo: row.titulo,
     extracto: row.extracto,
     imagen_url: row.imagen_url,
-    imagen_portada_alt: row.imagen_portada_alt,
     fecha: row.fecha,
     read_time_minutes: row.read_time_minutes ?? 1,
     autor_nombre: aut?.nombre ?? 'Redacción Beisjoven',

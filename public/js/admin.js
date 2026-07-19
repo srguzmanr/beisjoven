@@ -4,6 +4,13 @@
 // Global variable for rich text editor instance
 let contentEditor = null;
 
+// Escapado HTML mínimo (antes vivía en el legacy pages.js, hoy borrado)
+function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str == null ? '' : String(str)));
+    return div.innerHTML;
+}
+
 // C) Sanitización básica para prevenir XSS
 function sanitizeHtmlBasic(html) {
     if (!html) return '';
@@ -65,305 +72,6 @@ function showToast(message, type, duration) {
         setTimeout(function() { toast.remove(); }, 300);
     }, duration);
 }
-// ============================================================
-// BJ-MOBILE-001 — Markdown Import para RTE Admin
-// Agregar en js/admin.js después de que se inicialice el RTE
-// ============================================================
-
-function initMarkdownImport() {
-// — 1. Convierte markdown a HTML —
-function markdownToHtml(md) {
-let html = md
-// Saltos de línea dobles → párrafos
-.split(/\n{2,}/)
-.map(block => {
-block = block.trim();
-if (!block) return '';
-
-    // ### H3
-    if (/^###\s+/.test(block)) {
-      return `<h3>${block.replace(/^###\s+/, '')}</h3>`;
-    }
-    // ## H2
-    if (/^##\s+/.test(block)) {
-      return `<h2>${block.replace(/^##\s+/, '')}</h2>`;
-    }
-    // # H1
-    if (/^#\s+/.test(block)) {
-      return `<h1>${block.replace(/^#\s+/, '')}</h1>`;
-    }
-    // Listas con - o *
-    if (/^[-*]\s+/.test(block)) {
-      const items = block
-        .split('\n')
-        .filter(l => /^[-*]\s+/.test(l.trim()))
-        .map(l => `<li>${inlineMarkdown(l.replace(/^[-*]\s+/, '').trim())}</li>`)
-        .join('');
-      return `<ul>${items}</ul>`;
-    }
-    // Listas numeradas
-    if (/^\d+\.\s+/.test(block)) {
-      const items = block
-        .split('\n')
-        .filter(l => /^\d+\.\s+/.test(l.trim()))
-        .map(l => `<li>${inlineMarkdown(l.replace(/^\d+\.\s+/, '').trim())}</li>`)
-        .join('');
-      return `<ol>${items}</ol>`;
-    }
-    // Párrafo normal
-    return `<p>${inlineMarkdown(block.replace(/\n/g, ' '))}</p>`;
-  })
-  .filter(Boolean)
-  .join('');
-
-return html;
-
-}
-
-// Inline: negritas, itálicas, código
-function inlineMarkdown(text) {
-return text
-.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-.replace(/\*(.+?)\*/g, '<em>$1</em>')
-.replace(/\*(.+?)\*/g, '<em>$1</em>')
-.replace(/`(.+?)`/g, '<code>$1</code>');
-}
-
-// — 2. Crea el modal —
-function createModal() {
-// Evitar duplicados
-if (document.getElementById('bj-md-modal')) return;
-
-const overlay = document.createElement('div');
-overlay.id = 'bj-md-modal';
-overlay.innerHTML = `
-  <div id="bj-md-panel">
-    <div id="bj-md-header">
-      <span>📋 Pegar Markdown</span>
-      <button id="bj-md-close" aria-label="Cerrar">✕</button>
-    </div>
-    <textarea
-      id="bj-md-textarea"
-      placeholder="Pega aquí el markdown del artículo (## para títulos, ** para negritas)..."
-      spellcheck="false"
-    ></textarea>
-    <div id="bj-md-footer">
-      <button id="bj-md-cancel">Cancelar</button>
-      <button id="bj-md-import">Importar al editor →</button>
-    </div>
-  </div>
-`;
-
-// Estilos inyectados (patrón establecido en el proyecto)
-if (!document.getElementById('bj-md-styles')) {
-  const style = document.createElement('style');
-  style.id = 'bj-md-styles';
-  style.textContent = `
-    #bj-md-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 9999;
-      display: flex;
-      align-items: flex-end;       /* Sheet desde abajo en móvil */
-      justify-content: center;
-      padding: 0;
-      color-scheme: light;
-    }
-    #bj-md-panel {
-      background: #fff;
-      width: 100%;
-      max-width: 680px;
-      border-radius: 16px 16px 0 0;
-      display: flex;
-      flex-direction: column;
-      max-height: 90vh;
-      color-scheme: light;
-    }
-    #bj-md-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px 20px 12px;
-      font-weight: 600;
-      font-size: 16px;
-      color: #111;
-      border-bottom: 1px solid #eee;
-    }
-    #bj-md-close {
-      background: none;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-      color: #666;
-      padding: 4px 8px;
-      min-width: 44px;
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #bj-md-textarea {
-      flex: 1;
-      min-height: 280px;
-      padding: 16px 20px;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-      line-height: 1.6;
-      border: none;
-      resize: none;
-      outline: none;
-      color: #222;
-      background: #fafafa;
-      -webkit-appearance: none;
-      color-scheme: light;
-    }
-    #bj-md-footer {
-      display: flex;
-      gap: 12px;
-      padding: 16px 20px;
-      border-top: 1px solid #eee;
-      padding-bottom: calc(16px + env(safe-area-inset-bottom));
-    }
-    #bj-md-cancel {
-      flex: 1;
-      padding: 14px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      background: #fff;
-      font-size: 15px;
-      cursor: pointer;
-      color: #444;
-      min-height: 44px;
-    }
-    #bj-md-import {
-      flex: 2;
-      padding: 14px;
-      border: none;
-      border-radius: 10px;
-      background: #1a1a2e;
-      color: #fff;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      min-height: 44px;
-    }
-    #bj-md-import:active {
-      opacity: 0.85;
-    }
-    /* Desktop: modal centrado */
-    @media (min-width: 680px) {
-      #bj-md-modal {
-        align-items: center;
-      }
-      #bj-md-panel {
-        border-radius: 16px;
-        max-height: 80vh;
-        margin: 20px;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-document.body.appendChild(overlay);
-
-// --- 3. Eventos del modal ---
-const textarea  = overlay.querySelector('#bj-md-textarea');
-const btnClose  = overlay.querySelector('#bj-md-close');
-const btnCancel = overlay.querySelector('#bj-md-cancel');
-const btnImport = overlay.querySelector('#bj-md-import');
-
-const closeModal = () => overlay.remove();
-
-btnClose.addEventListener('click', closeModal);
-btnCancel.addEventListener('click', closeModal);
-overlay.addEventListener('click', e => {
-  if (e.target === overlay) closeModal();
-});
-
-btnImport.addEventListener('click', () => {
-  const md = textarea.value.trim();
-  if (!md) return;
-
-  const html = markdownToHtml(md);
-
-  // Busca el contenteditable del RTE
-  const editor = document.querySelector('[contenteditable="true"]');
-  if (!editor) {
-    alert('No se encontró el editor. Asegúrate de tener un artículo abierto.');
-    return;
-  }
-
-  // Opción: reemplazar o agregar al final
-  // Si el editor está vacío → reemplaza; si tiene contenido → pregunta
-  const editorEmpty = editor.innerText.trim().length === 0;
-  if (!editorEmpty) {
-    const ok = confirm('El editor ya tiene contenido. ¿Reemplazarlo con el markdown importado?');
-    if (!ok) return;
-  }
-
-  editor.innerHTML = html;
-
-  // Dispara evento input para que el autosave y otros listeners detecten el cambio
-  editor.dispatchEvent(new Event('input', { bubbles: true }));
-
-  closeModal();
-});
-
-// Focus automático al textarea
-setTimeout(() => textarea.focus(), 100);
-
-}
-
-// — 4. Agrega el botón a la toolbar —
-function addImportButton() {
-// Evitar duplicados
-if (document.getElementById('bj-md-btn')) return;
-
-// Busca la toolbar del RTE — ajusta el selector si es necesario
-const toolbar = document.querySelector('.rte-toolbar, #rte-toolbar, .editor-toolbar, [class*="toolbar"]');
-
-const btn = document.createElement('button');
-btn.id = 'bj-md-btn';
-btn.type = 'button';
-btn.title = 'Importar desde Markdown';
-btn.innerHTML = '📋 MD';
-btn.style.cssText = `
-  padding: 6px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background: #fff;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  min-height: 44px;
-  min-width: 44px;
-  color-scheme: light;
-`;
-btn.addEventListener('click', createModal);
-
-if (toolbar) {
-  toolbar.appendChild(btn);
-} else {
-  // Fallback: inserta el botón justo antes del contenteditable
-  const editor = document.querySelector('[contenteditable="true"]');
-  if (editor) {
-    editor.parentNode.insertBefore(btn, editor);
-  }
-}
-
-}
-
-// Inicializa
-addImportButton();
-}
-
-// Llama a la función después de que se monte el editor
-// En admin.js, busca donde se inicializa el RTE y agrega:
-// initMarkdownImport();
-// O si el editor se monta con delay:
-// setTimeout(initMarkdownImport, 500);
 // ==================== AUTOSAVE SYSTEM ====================
 // 8 RULES (from Admin 3.0 spec):
 // 1. ONLY activates inside the article editor. Never on other screens.
@@ -404,13 +112,8 @@ var Autosave = {
         var category = document.getElementById('category');
         var author = document.getElementById('author');
         var image = document.getElementById('image');
-        var featured = document.getElementById('featured');
         var pieFoto = document.getElementById('foto-pie');
         var fotoCredito = document.getElementById('foto-credito');
-        var esWbc = document.getElementById('es_wbc2026');
-        var heroLayout = document.getElementById('hero-layout');
-        var heroLayoutVal = heroLayout ? heroLayout.value : '';
-        var heroLayoutNormalized = heroLayoutVal === 'split' ? 'split' : null;
 
         var content = '';
         if (contentEditor) {
@@ -431,11 +134,8 @@ var Autosave = {
             // la persistas en un borrador — expira, y la copia pública se hace
             // al publicar. Se guarda vacío hasta entonces.
             imagen_url: AdminPages._currentHistoriaFotoPath ? '' : (image ? image.value : ''),
-            destacado: featured ? featured.checked : false,
             pie_de_foto: pieFoto ? pieFoto.value : '',
             foto_credito: fotoCredito ? fotoCredito.value : '',
-            es_wbc2026: esWbc ? esWbc.checked : false,
-            hero_layout: heroLayoutNormalized,
             savedAt: new Date().toISOString()
         };
     },
@@ -516,11 +216,8 @@ var Autosave = {
                 categoria_id: data.categoria_id,
                 autor_id: data.autor_id,
                 imagen_url: data.imagen_url,
-                destacado: data.destacado,
                 pie_de_foto: data.pie_de_foto || null,
-                foto_credito: data.foto_credito || null,
-                es_wbc2026: data.es_wbc2026,
-                hero_layout: data.hero_layout
+                foto_credito: data.foto_credito || null
             };
 
             if (this._editId) {
@@ -1323,14 +1020,6 @@ const AdminPages = {
                                         </div>
                                     </div>
                                     <div class="form-group" style="margin-top:14px;">
-                                        <label for="hero-layout">Layout del hero</label>
-                                        <select id="hero-layout">
-                                            <option value="default" ${(article?.hero_layout == null || article?.hero_layout === 'default') && !(useDraft && draft && draft.hero_layout === 'split') ? 'selected' : (useDraft && draft && (draft.hero_layout == null || draft.hero_layout === 'default') ? 'selected' : '')}>Default (predeterminado)</option>
-                                            <option value="split" ${article?.hero_layout === 'split' || (useDraft && draft && draft.hero_layout === 'split') ? 'selected' : ''}>Split (dividido)</option>
-                                        </select>
-                                        <small style="display:block;margin-top:6px;font-size:0.8rem;color:#6b7280;font-weight:400;line-height:1.35;">Define cómo se ve el hero en la página individual del artículo. No afecta cómo aparece en el homepage.</small>
-                                    </div>
-                                    <div class="form-group" style="margin-top:14px;">
                                         <label>Etiquetas (Tags)</label>
                                         <div id="tag-pill-container" class="tag-pill-container"></div>
                                         <div style="position:relative;margin-top:6px;">
@@ -1365,17 +1054,6 @@ const AdminPages = {
                                         <label for="foto-credito">Crédito fotográfico</label>
                                         <input type="text" id="foto-credito" value="${article?.foto_credito || (useDraft && draft ? draft.foto_credito : '') || historiaCreditoFoto || ''}" placeholder="Ej: Foto: Getty Images">
                                     </div>
-                                </div>
-
-                                <div class="fg-checks">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="featured" ${article?.destacado ? 'checked' : (useDraft && draft?.destacado ? 'checked' : '')}>
-                                        Artículo destacado
-                                    </label>
-                                    <label class="checkbox-label wbc-check-label">
-                                        <input type="checkbox" id="es_wbc2026" ${article?.es_wbc2026 ? 'checked' : (useDraft && draft?.es_wbc2026 ? 'checked' : '')}>
-                                        <span>⚾ Cobertura WBC 2026 <small>(aparece en el hub WBC)</small></span>
-                                    </label>
                                 </div>
 
                                 <div class="fg-acciones">
@@ -1413,23 +1091,17 @@ const AdminPages = {
             const style = document.createElement('style');
             style.id = 'bj-editor-styles';
             style.textContent = `
-                .form-grid-new { display: grid; grid-template-columns: 1fr 320px; grid-template-areas: "titulo imagen" "extracto imagen" "meta checks" "contenido acciones"; gap: 0 24px; max-width: 100%; }
+                .form-grid-new { display: grid; grid-template-columns: 1fr 320px; grid-template-areas: "titulo imagen" "extracto imagen" "meta acciones" "contenido acciones"; gap: 0 24px; max-width: 100%; }
                 .fg-titulo { grid-area: titulo; padding-bottom: 20px; }
                 .fg-extracto { grid-area: extracto; padding-bottom: 20px; }
                 .fg-meta { grid-area: meta; padding-bottom: 20px; }
                 .fg-contenido { grid-area: contenido; padding-bottom: 20px; }
                 .fg-imagen { grid-area: imagen; background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
-                .fg-checks { grid-area: checks; background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; }
                 .fg-acciones { grid-area: acciones; background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
                 .form-grid-new label { display: block; margin-bottom: 6px; font-weight: 600; color: #111827; font-size: 0.95rem; }
                 .form-grid-new input[type="text"], .form-grid-new input[type="url"], .form-grid-new textarea, .form-grid-new select { width: 100%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; font-family: inherit; box-sizing: border-box; background: #fff; color: #111827; }
                 .form-grid-new input:focus, .form-grid-new textarea:focus, .form-grid-new select:focus { outline: none; border-color: #c4122e; }
                 .fg-meta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-                .form-grid-new .checkbox-label { display: flex; align-items: center; gap: 10px; padding: 10px 0; cursor: pointer; min-height: 44px; border-bottom: 1px solid #f3f4f6; }
-                .form-grid-new .checkbox-label:last-child { border-bottom: none; }
-                .form-grid-new .checkbox-label input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; cursor: pointer; accent-color: #c4122e; }
-                .wbc-check-label { background: #fef3c7 !important; border: 1px solid #f59e0b !important; border-radius: 8px; padding: 10px 12px !important; margin-top: 4px; }
-                .wbc-check-label small { font-size: 0.75rem; color: #92400e; display: block; }
                 .fg-acciones .btn { width: 100%; padding: 14px; font-size: 1rem; border-radius: 8px; margin-bottom: 8px; cursor: pointer; text-align: center; display: block; text-decoration: none; border: none; font-family: inherit; font-weight: 600; }
                 .fg-acciones .btn-primary { background: #c4122e; color: white; }
                 .fg-acciones .btn-secondary { background: #f3f4f6; color: #374151; }
@@ -1444,7 +1116,6 @@ const AdminPages = {
                     .fg-meta { order: 3; padding: 12px 16px 0; }
                     .fg-contenido { order: 4; padding: 12px 16px 0; }
                     .fg-imagen { order: 5; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
-                    .fg-checks { order: 6; margin: 12px 16px 0; padding: 16px; box-shadow: none; border: 1px solid #e5e7eb; border-radius: 8px; }
                     .fg-acciones { order: 7; display: none; }
                     .fg-meta-row { grid-template-columns: 1fr; gap: 12px; }
                     .form-grid-new input, .form-grid-new textarea, .form-grid-new select { font-size: 16px !important; min-height: 44px; }
@@ -1463,11 +1134,10 @@ const AdminPages = {
                     }
                     .metadata-accordion-toggle .acc-arrow { transition: transform 0.2s; font-size: 0.8rem; }
                     .metadata-accordion-toggle.open .acc-arrow { transform: rotate(180deg); }
-                    .fg-extracto, .fg-meta, .fg-imagen, .fg-checks { overflow: hidden; }
+                    .fg-extracto, .fg-meta, .fg-imagen { overflow: hidden; }
                     .form-grid-new.accordion-closed .fg-extracto,
                     .form-grid-new.accordion-closed .fg-meta,
-                    .form-grid-new.accordion-closed .fg-imagen,
-                    .form-grid-new.accordion-closed .fg-checks { display: none; }
+                    .form-grid-new.accordion-closed .fg-imagen { display: none; }
                 }
                 .admin-sticky-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; background: #ffffff; padding: 10px 16px; box-shadow: 0 -2px 12px rgba(0,0,0,0.15); display: flex; gap: 10px; align-items: center; color-scheme: light; }
                 .admin-sticky-bar .btn-publish { flex: 2; padding: 14px; background: #c4122e; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
@@ -1542,13 +1212,6 @@ const AdminPages = {
                     'content',
                     initialContent
                 );
-            } else if (typeof RichTextEditor !== 'undefined') {
-                contentEditor = RichTextEditor.create(
-                    'content-editor-container',
-                    'content',
-                    initialContent
-                );
-                setTimeout(initMarkdownImport, 300);
             } else {
                 document.getElementById('content-editor-container').innerHTML = `
                     <textarea id="content" rows="15" placeholder="Escribe el contenido del artículo aquí...">${initialContent}</textarea>
@@ -1873,10 +1536,6 @@ const AdminPages = {
 
         const pie_de_foto = (document.getElementById('foto-pie')?.value || '').trim();
         const foto_credito = (document.getElementById('foto-credito')?.value || '').trim();
-        const es_wbc2026 = document.getElementById('es_wbc2026')?.checked || false;
-        // hero_layout: dropdown values 'default'|'split'. 'default' coerces to NULL.
-        const heroLayoutVal = document.getElementById('hero-layout')?.value || '';
-        const hero_layout = heroLayoutVal === 'split' ? 'split' : null;
 
         // Get content from Rich Text Editor or fallback to textarea
         let contenidoRaw;
@@ -1933,8 +1592,7 @@ const AdminPages = {
             const primeraImg = tempDiv.querySelector('img');
             imagen_url = primeraImg ? primeraImg.src : IMAGEN_DEFAULT_BJ;
         }
-        const destacado = document.getElementById('featured').checked;
-        
+
         // Validate content
         const trimmedContenido = (contenidoRaw || '').trim();
         const editorIsEmpty = !trimmedContenido || trimmedContenido === '<br>' || trimmedContenido === '<p></p>' || trimmedContenido === '<p><br></p>';
@@ -1979,9 +1637,6 @@ const AdminPages = {
             imagen_url,
             pie_de_foto: pie_de_foto || null,
             foto_credito: foto_credito || null,
-            es_wbc2026,
-            destacado,
-            hero_layout,
             publicado: action === 'publish' || action === 'save',
             read_time_minutes,
         };

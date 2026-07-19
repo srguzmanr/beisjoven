@@ -1158,7 +1158,6 @@
     color: var(--admin-input-placeholder);
 }
 [data-theme="dark"] .fg-imagen,
-[data-theme="dark"] .fg-checks,
 [data-theme="dark"] .fg-acciones {
     background: var(--admin-surface);
     box-shadow: var(--admin-shadow);
