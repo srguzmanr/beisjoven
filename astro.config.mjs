@@ -43,6 +43,33 @@ export default defineConfig({
   integrations: [],
   vite: {
     plugins: [tailwindcss()],
+    ssr: {
+      // EDITOR-20-FIX-01: sanitize-html es CJS y hace require() de un
+      // htmlparser2 que solo se distribuye como ESM — en el runtime Node de
+      // Vercel eso explota con ERR_REQUIRE_ESM al inicializar la función
+      // (500 en /api/guardar-articulo y en el render SSR de artículos).
+      // Bundlearlo en el output SSR convierte esos require() en imports
+      // resueltos en build. Se bundlea también su subárbol de parsing porque
+      // sanitize-html depende de copias ANIDADAS (htmlparser2@12) distintas
+      // de las hoisted en la raíz (htmlparser2@10): externalizarlas haría
+      // que Node resolviera la versión equivocada en runtime.
+      // is-plain-object también va bundleado: su condición `exports.import`
+      // apunta a un .mjs SIN default export, y el interop CJS de Vite emite
+      // un default-import que revienta en runtime si queda externo (el resto
+      // de deps de sanitize-html — deepmerge, parse-srcset, postcss, launder —
+      // sí interoperan bien como externos; auditado en EDITOR-20-FIX-01).
+      noExternal: [
+        'sanitize-html',
+        'htmlparser2',
+        'domhandler',
+        'domutils',
+        'dom-serializer',
+        'domelementtype',
+        'entities',
+        'escape-string-regexp',
+        'is-plain-object',
+      ],
+    },
   },
   redirects: {
     '/login': '/admin',
