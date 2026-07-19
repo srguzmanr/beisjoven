@@ -110,7 +110,7 @@ Detalle completo y matriz de permisos: `docs/SEC-ROLES-01.md`.
 
 - Framework: Astro (SSR + ISR) en Vercel + Tailwind CSS
 - Backend: Supabase (DB, Auth, Storage) — project: yulkbjpotfmwqkzzfegg
-- Editor: Tiptap 2.0 (Vite-bundled IIFE, window.TiptapEditor)
+- Editor: Tiptap 3.22.1 (Vite-bundled IIFE, window.TiptapEditor). Errata EDITOR-20: la "migración 2→3" nunca estuvo pendiente — el repo nació en 3.22.1 (bootstrap PR #49, may-2026); B1 quedó cerrado como limpieza de config + test de paridad.
 - Hosting: Vercel (production branch: main)
 - Design tokens: Navy #1B2A4A, Red #C8102E, Gold #D4A843, White #FFFFFF
 - Typography: Plus Jakarta Sans + Inter

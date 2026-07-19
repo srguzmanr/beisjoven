@@ -18,7 +18,7 @@ export default defineConfig({
       // the POST API endpoints (ADS-TRACK-01/02, SEC-02 P2) — Vercel's
       // ISR/prerender functions only serve GET/HEAD, so POST routes must stay
       // out of the ISR function entirely.
-      exclude: ['/buscar', '/api/ad-event', '/api/enviar-historia', '/api/copiar-foto-historia'],
+      exclude: ['/buscar', '/api/ad-event', '/api/enviar-historia', '/api/copiar-foto-historia', '/api/guardar-articulo'],
     },
   }),
   security: {
