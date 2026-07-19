@@ -15,7 +15,14 @@ const Router = {
         // Manejar clicks en enlaces
         document.addEventListener('click', (e) => {
             const link = e.target.closest('a[href]');
-            if (link && link.href.startsWith(window.location.origin)) {
+            if (!link) return;
+            // AUTH-LOGOUT-01: los enlaces de acción (href="#") los maneja su
+            // propio onclick. Interceptarlos resolvía a la ruta ACTUAL y
+            // re-ejecutaba el handler de la página en paralelo a la acción
+            // (p. ej. logout), cuyo render tardío resucitaba el panel.
+            const rawHref = link.getAttribute('href') || '';
+            if (rawHref.startsWith('#')) return;
+            if (link.href.startsWith(window.location.origin)) {
                 const url = new URL(link.href);
                 if (!url.pathname.includes('.') && !link.hasAttribute('data-external') && link.getAttribute('target') !== '_blank') {
                     e.preventDefault();
@@ -60,6 +67,16 @@ const Router = {
         
         if (handler) {
             this.currentRoute = path;
+            // AUTH-LOGOUT-01: los handlers son async y guardan su propia
+            // referencia a #main-content; si uno viejo sigue en vuelo (queries
+            // pendientes), su render tardío sobreescribía la página nueva
+            // (p. ej. resucitaba el panel encima del login tras un logout).
+            // Reemplazar el nodo por uno fresco deja a los handlers viejos
+            // escribiendo en un nodo desconectado del DOM, sin efecto visible.
+            const staleMain = document.getElementById('main-content');
+            if (staleMain && staleMain.parentNode) {
+                staleMain.parentNode.replaceChild(staleMain.cloneNode(false), staleMain);
+            }
             handler({ params: routeParams, query: params });
         } else {
             // Ruta no encontrada - mostrar 404

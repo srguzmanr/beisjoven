@@ -1951,6 +1951,10 @@ const AdminPages = {
     },
 
     _syncUrlFromState: function() {
+        // Si el usuario ya navegó a otra ruta mientras la lista seguía
+        // cargando, no reescribas su entrada de historial (rompía el botón
+        // atrás y desincronizaba la URL visible).
+        if (window.location.pathname !== '/admin/articulos') return;
         const s = AdminPages._articulosState;
         const params = new URLSearchParams();
         if (s.q) params.set('q', s.q);
@@ -2391,6 +2395,9 @@ const AdminPages = {
 
     _wireArticulosFilters: function() {
         const q = document.getElementById('art-q');
+        // El usuario navegó a otra página mientras la lista seguía cargando:
+        // el DOM de filtros ya no existe — abortar sin ruido.
+        if (!q) return;
         const debouncedSearch = AdminPages._debounce(function(val) {
             AdminPages._articulosState.q = val;
             AdminPages._articulosState.page = 0;
@@ -2943,10 +2950,26 @@ const AdminPages = {
         document.title = 'Usuarios - Beisjoven Admin';
     },
 
+    // AUTH-LOGOUT-01: guard anti-reentrada — un logout en vuelo ignora
+    // clics repetidos en cualquiera de los dos puntos (sidebar / sheet Mas).
+    _loggingOut: false,
+
     logout: async function() {
+        if (this._loggingOut) return;
+        this._loggingOut = true;
         Autosave.stop();
-        await Auth.logout();
-        Router.navigate('/login');
+        try {
+            const result = await Auth.logout();
+            Router.navigate('/login');
+            if (!result.success) {
+                // Nunca silencioso: la sesión quedó borrada del dispositivo,
+                // pero la revocación remota falló (red). El toast vive en
+                // <body>, así que sobrevive al render del login.
+                showToast('Sesión cerrada en este dispositivo, pero el servidor no confirmó la revocación. Si compartes el dispositivo, vuelve a iniciar y cerrar sesión con conexión estable.', 'error', 6000);
+            }
+        } finally {
+            this._loggingOut = false;
+        }
     },
 
     // ==================== BIBLIOTECA DE MEDIOS ====================
@@ -4301,15 +4324,16 @@ const AdminComponents = {
 
     // Inject bottom tab bar into the page (called after each page render)
     injectBottomTabs: function() {
-        // Only on mobile
-        if (window.innerWidth > 768) return;
-        // Don't show on login page
-        if (!Auth.isLoggedIn()) return;
-        // Remove existing
+        // AUTH-LOGOUT-01: remover SIEMPRE las barras existentes antes de los
+        // early-returns — tras un logout la barra vieja sobrevivía en /login.
         var existing = document.getElementById('admin-bottom-tabs');
         if (existing) existing.remove();
         var existingMore = document.getElementById('abt-more-menu');
         if (existingMore) existingMore.remove();
+        // Only on mobile
+        if (window.innerWidth > 768) return;
+        // Don't show on login page
+        if (!Auth.isLoggedIn()) return;
         // Inject
         var wrapper = document.createElement('div');
         wrapper.innerHTML = this.bottomTabBar();
