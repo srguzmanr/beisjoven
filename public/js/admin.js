@@ -505,7 +505,7 @@ const AdminPages = {
                         <div style="background: linear-gradient(135deg, #c41e3a 0%, #9a1830 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
                             <div>
                                 <h2 style="font-family: Oswald, sans-serif; font-size: 1.8rem; margin: 0 0 5px 0;">Hola, ${user.name}!</h2>
-                                <p style="margin: 0; opacity: 0.9;">${user.role === 'admin' ? 'Administrador' : 'Editor'} — Panel de Beisjoven</p>
+                                <p style="margin: 0; opacity: 0.9;">${user.role === 'superadmin' ? 'Superadmin' : 'Periodista'} — Panel de Beisjoven</p>
                             </div>
                             <a href="#" onclick="Router.navigate('/admin/nuevo'); return false;" style="background: white; color: #c41e3a; padding: 12px 24px; border-radius: 25px; font-weight: 600; text-decoration: none; white-space: nowrap;">+ Nuevo Artículo</a>
                         </div>
@@ -2874,96 +2874,72 @@ const AdminPages = {
         }
     },
 
-    // ==================== GESTIÓN DE USUARIOS (Admin only) ====================
+    // ==================== GESTIÓN DE USUARIOS (Superadmin only) ====================
+    // EDITOR-20 F7 — copy alineado al modelo real de roles (SEC-ROLES-01):
+    // app_metadata.role ∈ {superadmin, periodista}; una sola cuenta con rol
+    // (Sergio = superadmin); signup público OFF; altas manuales desde el
+    // Dashboard de Supabase. La UI de gestión de usuarios y las policies
+    // del rol periodista se implementan cuando exista el segundo usuario
+    // real (matriz aprobada en docs/SEC-ROLES-01.md).
     usuarios: async function() {
         if (!Auth.isLoggedIn()) { Router.navigate('/login'); return; }
         if (!Auth.isAdmin()) { Router.navigate('/admin'); return; }
 
+        const user = Auth.getUser();
         const main = document.getElementById('main-content');
         main.innerHTML = `
             <div class="admin-layout">
                 ${AdminComponents.sidebar()}
                 <div class="admin-main">
                     ${AdminComponents.header('Gestión de Usuarios')}
-                    <div class="admin-content"><p>Cargando usuarios...</p></div>
-                </div>
-            </div>
-        `;
-
-        // Fetch users via Supabase auth admin (requires service_role or custom RPC)
-        // For now, list from a users view or user_metadata approach
-        let users = [];
-        try {
-            const { data } = await supabaseClient.rpc('get_admin_users');
-            users = data || [];
-        } catch (e) {
-            // Fallback: show current user info only
-            users = [];
-        }
-
-        main.innerHTML = `
-            <div class="admin-layout">
-                ${AdminComponents.sidebar()}
-                <div class="admin-main">
-                    ${AdminComponents.header('Gestión de Usuarios')}
                     <div class="admin-content">
-                        <div class="content-header">
-                            <h2>Usuarios del sistema</h2>
-                            <button class="btn btn-primary" onclick="AdminPages._showCreateUserModal()">+ Nuevo Usuario</button>
-                        </div>
-
                         <div class="admin-section">
-                            <p style="color:#6b7280;font-size:0.9rem;margin-bottom:16px;">
-                                Para crear usuarios, usa el panel de Supabase Authentication o la funcion <code>supabase.auth.admin.createUser()</code>.
-                                Asigna el rol en <code>user_metadata.role</code> ("admin" o "editor").
-                            </p>
-
-                            ${users.length > 0 ? `
+                            <h3>Cuenta activa</h3>
                             <div class="articles-table">
                                 <table>
                                     <thead>
-                                        <tr>
-                                            <th>Nombre</th>
-                                            <th>Email</th>
-                                            <th>Rol</th>
-                                            <th>Registro</th>
-                                        </tr>
+                                        <tr><th>Nombre</th><th>Email</th><th>Rol</th></tr>
                                     </thead>
                                     <tbody>
-                                        ${users.map(u => `
-                                            <tr>
-                                                <td>${u.name || u.email}</td>
-                                                <td>${u.email}</td>
-                                                <td><span class="badge ${u.role === 'admin' ? 'badge-published' : 'badge-draft'}">${u.role === 'admin' ? 'Admin' : 'Editor'}</span></td>
-                                                <td>${u.created_at ? new Date(u.created_at).toLocaleDateString('es-MX') : '-'}</td>
-                                            </tr>
-                                        `).join('')}
+                                        <tr>
+                                            <td>${user.name}</td>
+                                            <td>${user.email}</td>
+                                            <td><span class="badge badge-published">${user.role === 'superadmin' ? 'Superadmin' : (user.role || 'sin rol')}</span></td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
-                            ` : `
-                            <div class="users-guide">
-                                <h4>Como crear un editor:</h4>
-                                <ol style="color:#374151;line-height:1.8;padding-left:20px;">
-                                    <li>Ve al <strong>Dashboard de Supabase</strong> → Authentication → Users</li>
-                                    <li>Click <strong>"Add User"</strong></li>
-                                    <li>Ingresa email y contrasena</li>
-                                    <li>En <strong>User Metadata</strong>, agrega:<br>
-                                        <code style="background:#f3f4f6;padding:4px 8px;border-radius:4px;font-size:0.85rem;">{ "role": "editor", "name": "Nombre" }</code>
-                                    </li>
-                                    <li>El nuevo editor podra crear articulos como borrador</li>
-                                </ol>
-                                <div style="margin-top:20px;padding:16px;background:#fef3c7;border-radius:8px;border:1px solid #f59e0b;">
-                                    <strong>Permisos de Editor:</strong>
-                                    <ul style="margin-top:8px;padding-left:20px;color:#92400e;">
-                                        <li>Crear articulos (solo como borrador)</li>
-                                        <li>Editar sus propios articulos</li>
-                                        <li>Subir imagenes a la biblioteca</li>
-                                        <li>NO puede publicar, eliminar ni editar articulos ajenos</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            `}
+                        </div>
+
+                        <div class="admin-section">
+                            <h3>Modelo de roles</h3>
+                            <p style="color:#374151;line-height:1.7;margin-bottom:12px;">
+                                Los roles viven en <code>app_metadata.role</code> (solo editable desde el
+                                servidor — nunca en <code>user_metadata</code>) y son dos:
+                                <strong>superadmin</strong> (todos los privilegios) y
+                                <strong>periodista</strong> (colaboradores futuros; permisos reducidos).
+                                El registro público está <strong>desactivado</strong>: las cuentas se crean
+                                a mano.
+                            </p>
+                            <p style="color:#374151;line-height:1.7;">
+                                La matriz de permisos del rol periodista está aprobada en
+                                <code>docs/SEC-ROLES-01.md</code>, pero sus políticas RLS y la UI de
+                                gestión <strong>aún no están implementadas</strong> — se construyen cuando
+                                exista la segunda persona real del equipo. No crees cuentas periodista
+                                antes de eso.
+                            </p>
+                        </div>
+
+                        <div class="admin-section">
+                            <h4>Alta manual de una cuenta (cuando toque)</h4>
+                            <ol style="color:#374151;line-height:1.8;padding-left:20px;">
+                                <li>Dashboard de Supabase → <strong>Authentication → Users → Add user</strong> (email + contraseña).</li>
+                                <li>Asignar el rol en <code>app_metadata</code> (SQL Editor):<br>
+                                    <code style="background:#f3f4f6;padding:4px 8px;border-radius:4px;font-size:0.85rem;display:inline-block;margin-top:4px;">UPDATE auth.users SET raw_app_meta_data = coalesce(raw_app_meta_data,'{}'::jsonb) || '{"role":"periodista"}' WHERE email = '...';</code>
+                                </li>
+                                <li>El nombre visible puede ir en <code>user_metadata.name</code> (solo display).</li>
+                                <li>Si la persona ya tenía sesión abierta: <strong>logout/login</strong> — el JWT viejo no trae el rol nuevo.</li>
+                            </ol>
                         </div>
                     </div>
                 </div>
@@ -2971,10 +2947,6 @@ const AdminPages = {
         `;
 
         document.title = 'Usuarios - Beisjoven Admin';
-    },
-
-    _showCreateUserModal: function() {
-        showToast('Usa el Dashboard de Supabase para crear usuarios', 'info');
     },
 
     logout: async function() {
@@ -4217,7 +4189,7 @@ const AdminComponents = {
                     <div class="user-avatar">${user.avatar || '👤'}</div>
                     <div class="user-info">
                         <span class="user-name">${user.name}</span>
-                        <span class="user-role">${user.role === 'admin' ? 'Administrador' : 'Editor'}</span>
+                        <span class="user-role">${user.role === 'superadmin' ? 'Superadmin' : 'Periodista'}</span>
                     </div>
                 </div>
 
@@ -4521,7 +4493,7 @@ var Onboarding = {
         var user = Auth.getUser();
         if (!user) return;
         // Only show for editors, not admins
-        if (user.role === 'admin') return;
+        if (user.role === 'superadmin') return;
         if (this._isCompleted(user.id)) return;
 
         this._showModal(user);
