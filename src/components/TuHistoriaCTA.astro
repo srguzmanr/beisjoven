@@ -1,25 +1,45 @@
 ---
 // Call-to-action block driving readers to /tu-historia.
-// Rendered on every article page after the body, before related articles.
+// `placement` is reported on the GA4 click event so the same block can be
+// reused on other surfaces (homepage, etc.) without renaming the event.
+interface Props {
+  placement?: string;
+}
+const { placement = 'article-footer' } = Astro.props;
 ---
 
 <aside
   class="mt-10 rounded-xl px-6 py-8 sm:px-8 sm:py-10 border"
   style="background-color: rgba(212, 168, 67, 0.1); border-color: rgba(212, 168, 67, 0.3);"
 >
-  <h2 class="text-2xl sm:text-3xl font-extrabold text-navy leading-tight" style="letter-spacing: -0.02em;">
-    ¿Tienes una historia?
+  <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1B2A4A] leading-tight" style="letter-spacing: -0.02em;">
+    ¿Tienes una historia del beis? La redacción quiere leerla.
   </h2>
-  <p class="mt-3 text-navy/80 text-base sm:text-lg leading-relaxed">
+  <p class="mt-3 text-[#1B2A4A]/80 text-base sm:text-lg leading-relaxed">
     Si eres entrenador, jugador, padre de familia o directivo de liga, queremos escucharte. Envíanos tu historia y la publicamos en Beisjoven.
   </p>
   <a
     href="/tu-historia"
-    class="mt-6 inline-flex w-full sm:w-auto items-center justify-center rounded-lg bg-rojo px-6 py-3 text-base font-bold text-white hover:bg-rojo/90 transition-colors"
+    data-tuhistoria-cta
+    data-placement={placement}
+    class="mt-6 inline-flex w-full sm:w-auto items-center justify-center rounded-lg bg-[#C8102E] px-6 py-3 text-base font-bold text-white hover:bg-[#9A0C23] transition-colors"
   >
     Cuéntanos tu historia →
   </a>
-  <p class="mt-3 text-sm text-navy/60">
+  <p class="mt-3 text-sm text-[#1B2A4A]/60">
     Es gratis y toma menos de 5 minutos.
   </p>
 </aside>
+
+<script is:inline>
+  (function () {
+    document.querySelectorAll('[data-tuhistoria-cta]').forEach(function (el) {
+      if (el.__bjTuHistoriaBound) return;
+      el.__bjTuHistoriaBound = true;
+      el.addEventListener('click', function () {
+        if (typeof gtag !== 'function') return;
+        gtag('event', 'tuhistoria_cta_click', { placement: el.getAttribute('data-placement') });
+      });
+    });
+  })();
+</script>
