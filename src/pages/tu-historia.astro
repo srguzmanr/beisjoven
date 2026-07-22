@@ -5,11 +5,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 // SEC-02 P2 — inlined at build time (page is prerendered). Without it the
 // widget is skipped client-side and the server rejects every submission.
 const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
+
+// ONSITE-TUHISTORIA-01 — dedicated social preview (1200x630), uploaded to the
+// public `imagenes` bucket. Without this, X/WhatsApp link previews fell back
+// to the site-wide generic og:image.
+const ogImage = 'https://yulkbjpotfmwqkzzfegg.supabase.co/storage/v1/object/public/imagenes/1784675894634-90xlkpcph.png';
 ---
 
 <BaseLayout
   title="Tu Historia - Beisjoven"
   description="¿Tienes una historia de béisbol o sóftbol que merece ser contada? Cuéntanos y nuestro equipo editorial la llevará a toda la comunidad."
+  image={ogImage}
 >
   <!-- Hero -->
   <section class="bg-navy text-white">
