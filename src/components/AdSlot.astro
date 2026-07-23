@@ -85,34 +85,36 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     data-ad-anunciante={anunciante}
     data-ad-id={chosen?.id}
   >
-    <span class="bj-adslot__label bj-adslot__label--lb">{label}</span>
-    {hasCreative ? (
-      <a
-        class="bj-lb__frame"
-        href={href}
-        data-ad-cta
-        target="_blank"
-        rel="sponsored noopener"
-      >
-        <picture class="bj-lb__picture">
-          <source media="(min-width: 768px)" srcset={chosen!.imagen_url!} width="970" height="90" />
-          <img
-            class="bj-lb__img"
-            src={mobileSrc}
-            alt={chosen!.alt_text}
-            width="320"
-            height="50"
-            loading="eager"
-            decoding="async"
-          />
-        </picture>
-      </a>
-    ) : (
-      <div class="bj-lb__frame bj-lb__frame--ph">
-        <span class="bj-lb__ph bj-lb__ph--mobile">Espacio publicitario · 320 × 50</span>
-        <span class="bj-lb__ph bj-lb__ph--desktop">Espacio publicitario · 970 × 90</span>
-      </div>
-    )}
+    <div class="bj-lb__unit">
+      <span class="bj-adslot__label bj-adslot__label--lb">{label}</span>
+      {hasCreative ? (
+        <a
+          class="bj-lb__frame"
+          href={href}
+          data-ad-cta
+          target="_blank"
+          rel="sponsored noopener"
+        >
+          <picture class="bj-lb__picture">
+            <source media="(min-width: 768px)" srcset={chosen!.imagen_url!} width="970" height="90" />
+            <img
+              class="bj-lb__img"
+              src={mobileSrc}
+              alt={chosen!.alt_text}
+              width="320"
+              height="50"
+              loading="eager"
+              decoding="async"
+            />
+          </picture>
+        </a>
+      ) : (
+        <div class="bj-lb__frame bj-lb__frame--ph">
+          <span class="bj-lb__ph bj-lb__ph--mobile">Espacio publicitario · 320 × 50</span>
+          <span class="bj-lb__ph bj-lb__ph--desktop">Espacio publicitario · 970 × 90</span>
+        </div>
+      )}
+    </div>
   </aside>
 ) : (
   <aside
@@ -221,6 +223,19 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
   /* --- LEADER-01 — leaderboard format (970×90 / 320×50) ------------------- */
   /* The frame reserves its box via width + aspect-ratio per breakpoint, so
      height is CSS-determined before any image byte arrives → CLS = 0. */
+
+  /* HYGIENE-01 — the unit column (label + frame) shrink-wraps the served
+     creative so the disclosure label stays flush with the unit's real left
+     edge (ADS-STD-01) even when the creative is narrower than the slot. */
+  .bj-lb__unit {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    width: fit-content;
+    max-width: 100%;
+  }
+
   .bj-adslot__label--lb {
     max-width: 320px;
   }
@@ -276,6 +291,38 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     .bj-lb__frame {
       width: 970px;
       aspect-ratio: 970 / 90;
+    }
+
+    /* HYGIENE-01 — sin letterbox: cuando hay creativo, el frame deja de
+       pintar chrome (caja fija invisible, altura reservada 90px → CLS 0)
+       y el borde/fondo viven en la imagen, que se dibuja a su proporción
+       natural. Un creativo que no sea exactamente 970:90 queda centrado
+       y abrazado por su borde, sin bandas laterales. El placeholder
+       (--ph) conserva la caja fija con chrome. */
+    .bj-lb__frame:not(.bj-lb__frame--ph) {
+      width: auto;
+      height: 90px;
+      aspect-ratio: auto;
+      border: 0;
+      background: transparent;
+    }
+
+    .bj-lb__frame:not(.bj-lb__frame--ph) .bj-lb__picture {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bj-lb__frame:not(.bj-lb__frame--ph) .bj-lb__img {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 90px;
+      border: 1px solid var(--rule, rgba(27, 42, 74, 0.10));
+      background: var(--bg-2, #F6F5F1);
     }
 
     .bj-lb__ph--mobile {
