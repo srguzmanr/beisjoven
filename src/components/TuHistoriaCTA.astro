@@ -10,12 +10,11 @@ interface Props {
 }
 const { placement = 'article-footer' } = Astro.props;
 ---
-{/* Sin mx-auto (desvío del artefacto, criterio 2): la columna real del
-    artículo es max-w-none (~821px a 1280), así que centrar la card dejaba
-    su borde izquierdo a ~75px de la prosa. Anclada a la izquierda queda
-    flush con la prosa (delta 0) — coda editorial; el AdSlot de abajo sigue
-    centrado — objeto comercial. */}
-<aside class="max-w-[42rem] mt-10 md:mt-12 mb-8" aria-label="Tu Historia">
+{/* Centrada en la columna del artículo (criterio 2 amendado, CTA-01): la
+    columna es max-w-none (~821px a 1280), la card de 42rem se centra con
+    brechas laterales iguales. Sin px-4 propio: el gutter lo aporta el
+    <article> padre. */}
+<aside class="max-w-[42rem] mx-auto mt-10 md:mt-12 mb-8" aria-label="Tu Historia">
   <div class="p-6 md:p-8 bg-[var(--bg-cream)] border border-[var(--rule)]">
     <p class="text-[length:var(--text-overline)] leading-[var(--lh-overline)] font-bold tracking-[0.1em] uppercase text-[var(--red)] mb-2">Tu Historia</p>
     <h2 class="font-heading font-semibold text-[length:var(--text-h3)] leading-[var(--lh-h3)] tracking-[-0.01em] text-[var(--navy)] text-balance mb-2">
