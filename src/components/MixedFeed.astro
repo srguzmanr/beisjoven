@@ -19,10 +19,9 @@ interface Story {
 
 interface Video {
   id: number;
-  slug: string;
   titulo: string;
   thumbnail_url: string | null;
-  youtube_id?: string;
+  youtube_id: string;
 }
 
 interface Props {
@@ -59,7 +58,9 @@ const hasVideos = videos.length > 0;
 
         {hasVideos && (
           <div class="bj-mixed-feed__block">
-            <SectionHead title="Videos" href="/videos" moreLabel="Ver más" />
+            {/* HYGIENE-01 item 7: sin "Ver más" — no existe índice /videos
+                (el redirect legacy /videos → / se conserva para GSC). */}
+            <SectionHead title="Videos" />
             <div>
               {videos.map((video) => (
                 <VideoTile video={video} />

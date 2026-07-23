@@ -58,7 +58,7 @@ const [latestRes, masLeidosWindowRes, videosRes] = await Promise.all([
     .limit(4),
   supabaseServer
     .from('videos')
-    .select('id, slug, titulo, thumbnail_url, youtube_id')
+    .select('id, titulo, thumbnail_url, youtube_id')
     .eq('publicado', true)
     .order('fecha', { ascending: false })
     .limit(4),
