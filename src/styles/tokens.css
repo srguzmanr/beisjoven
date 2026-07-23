@@ -80,6 +80,11 @@
   --rule-strong: rgba(27, 42, 74, 0.28);
   --muted: #6B7280;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* CTA-01 — Tu Historia rescale (22-jul-2026) */
+  --ink-2: #3A4660;        /* body secundario — portado del tokens.css canónico */
+  --bg-cream: #FBF6EC;     /* crema de card: el rgba(212,168,67,.10) actual compuesto sobre blanco. Mismo render, ahora auditable */
+  --muted-strong: #4B5563; /* muted AA-seguro sobre superficies tintadas */
 }
 
 /* Spec v1.1: H1 tightens to 1.15 at the ≥768px breakpoint. */
