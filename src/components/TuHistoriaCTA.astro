@@ -1,5 +1,8 @@
 ---
 // Call-to-action block driving readers to /tu-historia.
+// CTA-01 (22-jul-2026): rescaled to the conversion-module tier — H3 ceiling,
+// prose width (42rem), NewsletterCTA pattern (DESIGN-01b precedent).
+// Semantic level stays <h2> in the outline; visual scale is H3.
 // `placement` is reported on the GA4 click event so the same block can be
 // reused on other surfaces (homepage, etc.) without renaming the event.
 interface Props {
@@ -7,30 +10,32 @@ interface Props {
 }
 const { placement = 'article-footer' } = Astro.props;
 ---
-
-<aside
-  class="mt-10 rounded-xl px-6 py-8 sm:px-8 sm:py-10 border"
-  style="background-color: rgba(212, 168, 67, 0.1); border-color: rgba(212, 168, 67, 0.3);"
->
-  <h2 class="text-2xl sm:text-3xl font-extrabold text-[#1B2A4A] leading-tight" style="letter-spacing: -0.02em;">
-    ¿Tienes una historia del beis? La redacción quiere leerla.
-  </h2>
-  <p class="mt-3 text-[#1B2A4A]/80 text-base sm:text-lg leading-relaxed">
-    Si eres entrenador, jugador, madre, padre o directivo de liga, queremos escucharte. Cualquier persona con una historia del beis puede enviarla: la redacción la revisa y, si la elegimos, la publicamos en Beisjoven.
-  </p>
-  <a
-    href="/tu-historia"
-    data-tuhistoria-cta
-    data-placement={placement}
-    class="mt-6 inline-flex w-full sm:w-auto items-center justify-center rounded-lg bg-[#C8102E] px-6 py-3 text-base font-bold text-white hover:bg-[#9A0C23] transition-colors"
-  >
-    Cuéntanos tu historia →
-  </a>
-  <p class="mt-3 text-sm text-[#1B2A4A]/60">
-    Es gratis y toma menos de 5 minutos.
-  </p>
+{/* Centrada en la columna del artículo (criterio 2 amendado, CTA-01): la
+    columna es max-w-none (~821px a 1280), la card de 42rem se centra con
+    brechas laterales iguales. Sin px-4 propio: el gutter lo aporta el
+    <article> padre. */}
+<aside class="max-w-[42rem] mx-auto mt-10 md:mt-12 mb-8" aria-label="Tu Historia">
+  <div class="p-6 md:p-8 bg-[var(--bg-cream)] border border-[var(--rule)]">
+    <p class="text-[length:var(--text-overline)] leading-[var(--lh-overline)] font-bold tracking-[0.1em] uppercase text-[var(--red)] mb-2">Tu Historia</p>
+    <h2 class="font-heading font-semibold text-[length:var(--text-h3)] leading-[var(--lh-h3)] tracking-[-0.01em] text-[var(--navy)] text-balance mb-2">
+      ¿Tienes una historia del beis? La redacción quiere leerla.
+    </h2>
+    <p class="text-[length:var(--text-body-sm)] leading-[var(--lh-body-sm)] text-[var(--ink-2)] mb-5">
+      Si eres entrenador, jugador, madre, padre o directivo de liga, queremos escucharte. Cualquier persona con una historia del beis puede enviarla: la redacción la revisa y, si la elegimos, la publicamos en Beisjoven.
+    </p>
+    <a
+      href="/tu-historia"
+      data-tuhistoria-cta
+      data-placement={placement}
+      class="inline-flex w-full sm:w-auto min-h-[44px] items-center justify-center px-5 bg-[var(--red)] text-white text-[length:var(--text-button)] leading-[var(--lh-button)] tracking-[0.02em] font-semibold transition-colors motion-reduce:transition-none hover:bg-[var(--red-dark)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
+    >
+      Cuéntanos tu historia →
+    </a>
+    <p class="mt-3 text-[length:var(--text-metadata)] leading-[var(--lh-metadata)] text-[var(--muted-strong)]">
+      Es gratis y toma menos de 5 minutos.
+    </p>
+  </div>
 </aside>
-
 <script is:inline>
   (function () {
     document.querySelectorAll('[data-tuhistoria-cta]').forEach(function (el) {
