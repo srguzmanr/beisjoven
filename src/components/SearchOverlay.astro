@@ -478,9 +478,11 @@ const { categorias } = Astro.props;
           return;
         }
         pushRecent(query);
+        // URL-AUDIT-01: /buscar solo lee `q` — no emitir params que el
+        // servidor ignora. El scope de los chips queda local al overlay
+        // hasta que exista filtrado server-side.
         const params = new URLSearchParams();
         params.set('q', query);
-        if (activeScope && activeScope !== 'all') params.set('cat', activeScope);
         window.location.href = '/buscar?' + params.toString();
       }
 

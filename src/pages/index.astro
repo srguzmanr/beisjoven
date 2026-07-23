@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import HeroDefault from '@/components/HeroDefault.astro';
-import QuickHitsBar from '@/components/QuickHitsBar.astro';
 import MixedFeed from '@/components/MixedFeed.astro';
 import JuvenilRail from '@/components/JuvenilRail.astro';
 import Gallery from '@/components/Gallery.astro';
@@ -13,7 +12,6 @@ import {
   getArticulos,
   getPortadaSlots,
   getEventosActivos,
-  getQuickHitsActivos,
   type Articulo,
 } from '@/lib/supabase';
 
@@ -22,12 +20,10 @@ const [
   articulos,
   portadaSlots,
   eventosActivos,
-  quickHits,
 ] = await Promise.all([
   getArticulos(12),
   getPortadaSlots(),
   getEventosActivos(),
-  getQuickHitsActivos(3),
 ]);
 
 const eventoActivo = eventosActivos[0] || null;
@@ -62,7 +58,7 @@ const [latestRes, masLeidosWindowRes, videosRes] = await Promise.all([
     .limit(4),
   supabaseServer
     .from('videos')
-    .select('id, slug, titulo, thumbnail_url, youtube_id')
+    .select('id, titulo, thumbnail_url, youtube_id')
     .eq('publicado', true)
     .order('fecha', { ascending: false })
     .limit(4),
@@ -191,8 +187,6 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
 ---
 
 <BaseLayout>
-  <QuickHitsBar hits={quickHits} />
-
   {/* Active Event Banner */}
   {eventoActivo && (
     <a href={`/evento/${eventoActivo.slug}`} class="block bg-rojo hover:bg-rojo-dark transition-colors">

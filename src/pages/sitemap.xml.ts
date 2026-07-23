@@ -50,7 +50,7 @@ export const GET: APIRoute = async () => {
   addUrl(`${SITE}/nosotros`, { priority: '0.5', changefreq: 'yearly' });
   addUrl(`${SITE}/contacto`, { priority: '0.5', changefreq: 'yearly' });
   addUrl(`${SITE}/tu-historia`, { priority: '0.6', changefreq: 'monthly' });
-  addUrl(`${SITE}/tu-historia/terminos`, { priority: '0.2', changefreq: 'yearly' });
+  // /tu-historia/terminos es noIndex (URL-AUDIT-01): fuera del sitemap.
   addUrl(`${SITE}/privacidad`, { priority: '0.2', changefreq: 'yearly' });
 
   // 2. Category pages — all pagination pages so Google can discover every article
