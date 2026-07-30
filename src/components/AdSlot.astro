@@ -194,6 +194,20 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     align-items: flex-start;
   }
 
+  /* PROSE-MEASURE-01 — de 768 para arriba la columna de lectura llega a su
+     tope de 42rem y la unidad de 300px se centra dentro de esa medida. Por
+     debajo NO: a 375 la columna mide 343px y centrar volvería a meter los
+     21.5px de sangrado a cada lado que quitó ADS-AIR-01, desalineando el
+     anuncio del borde del texto justo donde vive el 76% del tráfico.
+     El hallazgo de ADS-AIR-01 se conserva en los dos casos: rótulo y creativo
+     siguen compartiendo borde izquierdo entre sí (ambos topan en 300px), lo
+     que se mueve es la posición del par dentro de la columna. */
+  @media (min-width: 768px) {
+    .bj-adslot--prose {
+      align-items: center;
+    }
+  }
+
   /* ADS-STD-01 — label sits directly above the unit, flush with the unit's
      left edge: same 300px cap as the frame, so label and creative share a
      left edge whatever the column does with the pair (ADS-AIR-01: centered
