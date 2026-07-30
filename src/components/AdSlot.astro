@@ -3,11 +3,13 @@
 // Creatives are served from the `anuncios` table (CMS-managed). The slot
 // reserves a 300×250 box (aspect-ratio) so it NEVER collapses and CLS = 0.
 //
-// Disclosure labels are CLOSED by Legal (HOUSE-ADS-LEGAL-01) — hardcoded in
-// labelFor() below. The label is clear-and-conspicuous: rendered at the same
-// time as the creative (never behind hover/click), AA contrast, all devices.
+// Disclosure labels are CLOSED by Legal (HOUSE-ADS-LEGAL-01) and live in ONE
+// place: src/lib/ad-disclosure.js. The label is clear-and-conspicuous:
+// rendered at the same time as the creative (never behind hover/click), AA
+// contrast, all devices.
 import { getAnunciosBySlot, type Anuncio, type AnuncioTipo } from '@/lib/supabase';
 import { buildAdHref } from '@/lib/ad-utm.js';
+import { labelForCreative, canServeCreative, EMPTY_SLOT_NOTICE } from '@/lib/ad-disclosure.js';
 
 interface Props {
   /** Frozen nomenclature (ADS-GOLIVE-PREP-01):
@@ -24,30 +26,33 @@ interface Props {
 
 const { slotId, variant = 'card', format = 'mpu' } = Astro.props;
 
-// --- Disclosure labels — CLOSED by Legal. Do NOT add cases. ---
-// ADS-GOLIVE-PREP-01: full bilingual text in a single string (no doctrine
-// change — same casa vs. everything-else split as HOUSE-ADS-LEGAL-01).
-// casa → "De Beisjoven / By Beisjoven"
-// everything else (propia | aliado | placeholder) → "Publicidad / Advertisement"
-function labelFor(tipo: AnuncioTipo): string {
-  if (tipo === 'casa') return 'De Beisjoven / By Beisjoven';
-  return 'Publicidad / Advertisement';
-}
-
 // ADS-STD-01 — placeholder pattern (LEADER-01): non-promotional,
 // dimensions-only copy. Same string in ES and EN, like the leaderboard.
 const MPU_PH_TEXT = 'Espacio publicitario · 300 × 250';
 
 // --- Select the creative to serve -------------------------------------------
-// ADS-STD-01 waterfall: paid (propia/aliado) > casa > placeholder. Only
-// servable creatives (image + destination) compete; the highest non-empty
-// tier wins. MPU rotates randomly ONLY within the winning tier; leaderboard
-// stays deterministic — lowest prioridad in the tier (pool keeps the
-// prioridad-asc order from getAnunciosBySlot).
+// ADS-STD-01 waterfall: paid (propia/aliado) > casa. Only servable creatives
+// compete; the highest non-empty tier wins. MPU rotates randomly ONLY within
+// the winning tier; leaderboard stays deterministic — lowest prioridad in the
+// tier (pool keeps the prioridad-asc order from getAnunciosBySlot).
+//
+// ADS-DISCLOSURE-01 — "servable" now means image + destination + a Legal-
+// approved disclosure label. The gate sits here, at selection, so a creative
+// without an approved label can never be chosen and therefore can never
+// render: not unlabelled, not with a blank label, not with a generic
+// fallback. The slot falls through to the next tier and, if none qualifies,
+// to the empty state below — so the box is still reserved and CLS stays 0.
+//
+// `propia` keeps its tier-1 seat deliberately: it is non-servable today only
+// because ad-disclosure.js has no entry for it. Adding that entry is the
+// single lever that puts it back in rotation. `placeholder` is NOT a tier —
+// it is the empty state, reached by having no chosen creative at all.
 let chosen: Anuncio | null = null;
 const anuncios = await getAnunciosBySlot(slotId);
-const servable = anuncios.filter((a) => a.imagen_url && a.target_url);
-const tiers: AnuncioTipo[][] = [['propia', 'aliado'], ['casa'], ['placeholder']];
+const servable = anuncios.filter(
+  (a) => a.imagen_url && a.target_url && canServeCreative(a.tipo)
+);
+const tiers: AnuncioTipo[][] = [['propia', 'aliado'], ['casa']];
 const pool = tiers
   .map((tier) => servable.filter((a) => tier.includes(a.tipo)))
   .find((p) => p.length > 0);
@@ -57,9 +62,17 @@ if (pool) {
     : pool[Math.floor(Math.random() * pool.length)];
 }
 
+// Second fail-closed gate, same source of truth. Unreachable while the filter
+// above stands; it stays so the invariant survives an edit to the selection
+// logic. A creative without an approved label is DROPPED, never relabelled.
+const creativeLabel = chosen ? labelForCreative(chosen.tipo) : null;
+if (chosen && creativeLabel === null) chosen = null;
+
 const hasCreative = chosen !== null;
 const tipo: AnuncioTipo = hasCreative ? chosen!.tipo : 'placeholder';
-const label = labelFor(tipo);
+// Creative → its approved disclosure. No creative → the unsold-inventory
+// notice, which is not a disclosure (see EMPTY_SLOT_NOTICE).
+const label = hasCreative ? creativeLabel! : EMPTY_SLOT_NOTICE;
 const anunciante = hasCreative ? chosen!.marca ?? chosen!.tipo : 'placeholder';
 // ADS-GOLIVE-PREP-01 — outbound UTMs, built server-side so the cached HTML is
 // already tagged. Paid tipos only (propia/aliado); casa/placeholder stay
