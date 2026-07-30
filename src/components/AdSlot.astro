@@ -176,13 +176,25 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     width: 100%;
   }
 
+  /* ADS-AIR-01 — la unidad in-column comparte borde izquierdo con la columna
+     de texto. Antes, `margin: 0 auto` + `align-items: center` (heredados de
+     .bj-adslot) centraban una unidad de 300px dentro de una columna más ancha:
+     medido en el CSS servido, eso metía 21.5px de aire a cada lado a 375 y
+     218px a 768 en article-body / article-footer, y hacía que el bloque
+     arrancara más a la derecha que el cuerpo del artículo. El ancho de la
+     unidad NO cambia (300×250): solo deja de estar centrada. Las variantes
+     --card y --leaderboard conservan el centrado: son items de banda
+     full-bleed, no elementos dentro de una columna de lectura. */
   .bj-adslot--prose {
     max-width: var(--max-width-prose, 42rem);
+    margin: 0;
+    align-items: flex-start;
   }
 
   /* ADS-STD-01 — label sits directly above the unit, flush with the unit's
-     left edge: same 300px cap as the frame, centered together in the column
-     (align-items: center), text left-aligned. */
+     left edge: same 300px cap as the frame, so label and creative share a
+     left edge whatever the column does with the pair (ADS-AIR-01: centered
+     in --card / --leaderboard, flush with the text column in --prose). */
   .bj-adslot__label {
     text-align: left;
     font-family: var(--font-body, system-ui, sans-serif);
