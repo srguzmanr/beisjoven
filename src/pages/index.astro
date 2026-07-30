@@ -211,11 +211,13 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
     </a>
   )}
 
-  <!-- Hero Section -->
-  <div class="max-w-7xl mx-auto px-4 py-8">
-    <section class="mb-12">
-      {hero && <HeroDefault story={hero} />}
-    </section>
+  {/* Hero Section — ADS-AIR-02: `pt-8`, no `py-8`. Los 32px de arriba son la
+      frontera header→hero (o banner de evento→hero) y se conservan; el
+      padding-bottom desapareció junto con el `mb-12` de la sección que envolvía
+      al hero, porque la frontera hero→leaderboard ya no se compone aquí: la
+      pone entera `.bj-leaderboard-zone`. */}
+  <div class="max-w-7xl mx-auto px-4 pt-8">
+    {hero && <HeroDefault story={hero} />}
   </div>
 
   {/* LEADER-01 — homepage leaderboard: below hero, above mixed feed.
@@ -261,26 +263,34 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
   <style>
     /* LEADER-01 — leaderboard zone wrapper (max 970px, centered). At 375px the
        16px side padding leaves 343px → the 320×50 box centers, no overflow. */
-    /* ADS-AIR-01 — el padding vertical de esta banda es aire propio del
-       anuncio APILADO sobre el que ya ponen los vecinos, no en lugar de él.
-       Medido en el CSS servido a 375: encima del leaderboard hay 88px, de los
-       cuales 80 los ponen el `mb-12` de la sección del hero y el `py-8` de su
-       wrapper (layout compartido, fuera del alcance de este ticket); debajo hay
-       64px, de los cuales 40 los pone el `padding-top` de MixedFeed.
-       Se deja el padding-top en 0 (los 80px de arriba ya sobran) y el
-       padding-bottom en 8px, que sumado a MixedFeed da exactamente un section
-       gap: 8+40=48 (--section) en móvil y 8+56=64 (--section-lg) en desktop.
+    /* ADS-AIR-02 — esta banda es DUEÑA ÚNICA de su aire por los dos lados.
+       Antes el aire lo componían los vecinos y se apilaba: arriba 80px
+       (`mb-12` de la sección del hero + padding-bottom del `py-8` de su
+       wrapper) y abajo 48px (8 de aquí + 40 del `padding-top` de MixedFeed).
+       Los 80 no correspondían a ningún token: eran dos reglas que nunca
+       negociaron entre sí.
+       Una unidad publicitaria es un bloque INSERTADO en el flujo, no una
+       sección editorial. Aplicarle el ritmo de sección (--section 48 /
+       --section-lg 64) es el origen del defecto. 32 es lo que la Spec v1.1
+       da a blockquote e imagen/embed (`my-8`) y es --gutter-lg en tokens.css:
+       en escala y con precedente. Mismo valor en los cuatro breakpoints —
+       el aire intersticial de la unidad no tiene por qué escalar como el
+       ritmo editorial.
+       Contrapartida deliberada: el hero y MixedFeed ya no aportan nada a esta
+       frontera, así que el aire depende de que esta banda renderice. Renderiza
+       SIEMPRE: el estado vacío es un camino de código en AdSlot.astro, no una
+       fila de datos (ADS-DISCLOSURE-01), y la caja queda reservada por CSS.
        El padding lateral de 32px en desktop es el gutter de página y no se
        toca. .bj-adslot-feed conserva sus valores: sus bandas medidas (16/24 a
        375) ya están dentro de escala. */
     .bj-leaderboard-zone {
       background: #fff;
-      padding: 0 0 8px;
+      padding: 32px 0;
     }
 
     @media (min-width: 768px) {
       .bj-leaderboard-zone {
-        padding: 0 32px 8px;
+        padding: 32px;
       }
     }
 

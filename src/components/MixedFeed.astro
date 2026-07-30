@@ -74,14 +74,23 @@ const hasVideos = videos.length > 0;
 </section>
 
 <style>
+  /* ADS-AIR-02 — padding-top en 0: la frontera leaderboard→feed la pone
+     entera `.bj-leaderboard-zone` (32px), dueña única de su aire por los dos
+     lados. Los 40/56 que había aquí eran el port del prototipo canónico, donde
+     la banda de sponsor aportaba solo 14/18; en producción se sumaban a los 8
+     de la zona y daban 48/64, un ritmo de sección para un bloque insertado.
+     MixedFeed es homepage-only (único consumidor: src/pages/index.astro) y
+     siempre va precedido por la banda del leaderboard, que renderiza aunque no
+     haya creativo servible. El padding-bottom mira a `.bj-adslot-feed` y no
+     cambia. */
   .bj-mixed-feed {
     background: #fff;
-    padding: 40px 0 8px;
+    padding: 0 0 8px;
   }
 
   @media (min-width: 768px) {
     .bj-mixed-feed {
-      padding: 56px 32px 24px;
+      padding: 0 32px 24px;
     }
   }
 

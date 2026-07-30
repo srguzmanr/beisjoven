@@ -167,11 +167,14 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
 
 <style>
   /* Neutral / navy frame — NEVER a category color. */
+  /* ADS-AIR-02 — gap 6 → 4: acerca el rótulo a lo que rotula (la proximidad
+     del disclosure mejora, no empeora) y se queda en la banda inline 4–8 de la
+     Spec v1.1. Aplica a las tres variantes. */
   .bj-adslot {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     margin: 0 auto;
     width: 100%;
   }
@@ -195,11 +198,21 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
      left edge: same 300px cap as the frame, so label and creative share a
      left edge whatever the column does with the pair (ADS-AIR-01: centered
      in --card / --leaderboard, flush with the text column in --prose). */
+  /* ADS-AIR-02 — line-height propio. El rótulo es un overline de manual (11px,
+     700, mayúsculas, tracking 0.08em) y heredaba el 1.7 de `body`: 7.7px de
+     interlineado de PÁRRAFO sobre una micro-etiqueta de una línea, que a 375
+     inflaban su caja a 18.7px y se comían un tercio del bloque publicitario.
+     --lh-overline (1.4) es el token que la Spec v1.1 asigna a ese rol → caja
+     de 15.4px. Nada de lo que gobierna un disclosure cambia: mismo texto,
+     mismo tamaño de glifo, mismo peso, mismo #4B5563 (≈7:1 sobre blanco).
+     Compartido a propósito por los cuatro slots — era el mismo defecto de
+     herencia en las cuatro superficies. */
   .bj-adslot__label {
     text-align: left;
     font-family: var(--font-body, system-ui, sans-serif);
     font-size: 11px;
     font-weight: 700;
+    line-height: var(--lh-overline, 1.4);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     /* AA contrast on white: #4B5563 ≈ 7:1 */
@@ -256,7 +269,7 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 6px;
+    gap: 4px;
     width: fit-content;
     max-width: 100%;
   }
