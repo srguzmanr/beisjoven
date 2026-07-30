@@ -172,16 +172,16 @@ const articleJsonLd = {
         <!-- Content -->
         {bodySecond ? (
           <>
-            <div class="prose max-w-none" set:html={bodyFirst} />
+            <div class="prose max-w-prose" set:html={bodyFirst} />
             {/* HOUSE-ADS-01 — in-article, prose width.
                 ADS-GOLIVE-PREP-01: slot id frozen as 'article-body' (ex slot-a). */}
             <div class="bj-adslot-inarticle">
               <AdSlot slotId="article-body" variant="prose" />
             </div>
-            <div class="prose max-w-none" set:html={bodySecond} />
+            <div class="prose max-w-prose" set:html={bodySecond} />
           </>
         ) : (
-          <div class="prose max-w-none" set:html={renderedBody} />
+          <div class="prose max-w-prose" set:html={renderedBody} />
         )}
 
         <!-- Tags -->
@@ -426,8 +426,13 @@ const articleJsonLd = {
        imagen / embed dentro del artículo (my-8); las bandas medidas de
        article-body a 375 son exactamente 32/32, así que su aire vertical ya
        está en escala y no se toca. */
+    /* PROSE-MEASURE-01 — la banda del anuncio comparte la medida del cuerpo
+       (42rem) y su mismo borde izquierdo, para que la unidad se posicione
+       respecto a la columna de lectura y no respecto a la caja de la grilla,
+       que es ~150px más ancha. */
     .bj-adslot-inarticle {
       margin: 32px 0;
+      max-width: var(--max-width-prose, 42rem);
     }
 
     /* ADS-AIR-01 — el margin-top se queda en 32px: colapsa con el `mb-8` del
