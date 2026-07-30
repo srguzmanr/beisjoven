@@ -261,14 +261,26 @@ const juvenilRail = ((juvenilRailRaw ?? []) as JuvenilRow[]).map((row) => {
   <style>
     /* LEADER-01 — leaderboard zone wrapper (max 970px, centered). At 375px the
        16px side padding leaves 343px → the 320×50 box centers, no overflow. */
+    /* ADS-AIR-01 — el padding vertical de esta banda es aire propio del
+       anuncio APILADO sobre el que ya ponen los vecinos, no en lugar de él.
+       Medido en el CSS servido a 375: encima del leaderboard hay 88px, de los
+       cuales 80 los ponen el `mb-12` de la sección del hero y el `py-8` de su
+       wrapper (layout compartido, fuera del alcance de este ticket); debajo hay
+       64px, de los cuales 40 los pone el `padding-top` de MixedFeed.
+       Se deja el padding-top en 0 (los 80px de arriba ya sobran) y el
+       padding-bottom en 8px, que sumado a MixedFeed da exactamente un section
+       gap: 8+40=48 (--section) en móvil y 8+56=64 (--section-lg) en desktop.
+       El padding lateral de 32px en desktop es el gutter de página y no se
+       toca. .bj-adslot-feed conserva sus valores: sus bandas medidas (16/24 a
+       375) ya están dentro de escala. */
     .bj-leaderboard-zone {
       background: #fff;
-      padding: 8px 0 24px;
+      padding: 0 0 8px;
     }
 
     @media (min-width: 768px) {
       .bj-leaderboard-zone {
-        padding: 16px 32px 32px;
+        padding: 0 32px 8px;
       }
     }
 

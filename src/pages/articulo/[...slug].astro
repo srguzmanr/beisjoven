@@ -421,14 +421,25 @@ const articleJsonLd = {
   </script>
 
   <style>
-    /* HOUSE-ADS-01 — in-article (Slot A) and end-of-note (Slot C) spacing. */
+    /* HOUSE-ADS-01 — in-article (Slot A) and end-of-note (Slot C) spacing.
+       ADS-AIR-01 — 32px arriba y abajo es el ritmo que Spec v1.1 fija para
+       imagen / embed dentro del artículo (my-8); las bandas medidas de
+       article-body a 375 son exactamente 32/32, así que su aire vertical ya
+       está en escala y no se toca. */
     .bj-adslot-inarticle {
       margin: 32px 0;
     }
 
+    /* ADS-AIR-01 — el margin-top se queda en 32px: colapsa con el `mb-8` del
+       CTA de Tu Historia (también 32px), así que la banda superior medida no
+       la dueña este valor y bajarlo no movería nada.
+       El margin-bottom baja de 48px a 24px: era el único valor local de la
+       banda inferior y se apilaba sobre el `gap-8` del grid (32px hasta el
+       widget de Más Leídos en móvil) y sobre el `py-6` del <article> (24px
+       hasta el footer en desktop). Medido a 375: 80px → 56px. */
     .bj-adslot-endnote {
       margin-top: 32px;
-      margin-bottom: 48px;
+      margin-bottom: 24px;
     }
   </style>
 </BaseLayout>
