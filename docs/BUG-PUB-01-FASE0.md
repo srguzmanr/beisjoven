@@ -44,13 +44,18 @@ revalidación volvió a pedir el artículo a la DB y volvió a recibirlo**, porq
 la query no discriminaba `publicado`. Ninguna purga de caché lo habría
 arreglado; el fix opera en la query en tiempo de request, como pide el ticket.
 
-## Segundo defecto: el 404 no era un 404
+## Segundo defecto: la URL del artículo nunca devolvía 404
 
-Aun cuando el slug no existía, la ruta hacía `return Astro.redirect('/404')`:
-302 → `/404` → **200**. Soft 404 en toda regla: Google indexaba la URL como
-válida y cualquier verificación por status code (curl, monitor, el propio
-criterio de aceptación del ticket) leía 200. Ambas rutas de detalle
-(`/articulo`, `/evento`) tenían el mismo patrón.
+Aun cuando el slug no existía, la ruta hacía `return Astro.redirect('/404')`.
+Medido contra producción el 1-ago (`beisjoven.com`, código previo al fix):
+`/articulo/<slug-inexistente>` → **302** a `/404`, y `/404` → **404** (lo
+sirve el catch-all de Vercel, `{"src":"^/.*$","dest":"/404.html","status":404}`).
+
+Es decir: el status 404 existía, pero **en otra URL**. La URL del artículo
+respondía 302, así que un rastreador o un monitor que consultara el estado de
+`/articulo/<slug>` nunca veía un 404 en esa URL — veía una redirección a una
+página distinta. Ambas rutas de detalle (`/articulo`, `/evento`) tenían el
+mismo patrón. El fix hace que el 404 salga en la URL pedida, sin salto.
 
 ## Auditoría completa de superficies públicas
 
@@ -126,7 +131,17 @@ probar el caso negativo en el preview** → ver `supabase/qa/BUG-PUB-01-datos-pr
    del redirect. Con body nulo y status reroutable, Astro sirve la página 404
    prerenderizada (`404.html`) **conservando el status 404 y la URL original**
    (`REROUTABLE_STATUS_CODES` en `astro/dist/core/app/index.js`). No se toca
-   `404.astro` ni el catch-all de Vercel (`{"src":"^/.*$","dest":"/404.html","status":404}`).
+   `404.astro` ni el catch-all de Vercel.
+
+   Dependencia que introduce ese camino, verificada en el artefacto: Astro
+   recupera el cuerpo del 404 con `prerenderedErrorPageFetch` — un `fetch` a
+   `<host>/404.html` del propio deployment (log del harness:
+   `http://localhost/404.html`). En prod el host es `beisjoven.com` y ese
+   archivo lo sirve el CDN (comprobado: `beisjoven.com/404` responde 404 con
+   `content-disposition: filename="404.html"`). En un preview con SSO el
+   fetch interno topa con la pantalla de autenticación; el status sigue
+   siendo 404 porque `#mergeResponses` lo fuerza, pero el cuerpo puede no ser
+   la página de marca. Es cosmético y sólo afecta previews protegidos.
 3. `/evento/[slug]` recibe el mismo trato (mejora declarada: era el único otro
    detalle con soft 404; dejarlo inconsistente no tenía defensa).
 4. `tests/publicado-filter.test.mjs`: guarda de regresión estática que recorre
@@ -135,3 +150,54 @@ probar el caso negativo en el preview** → ver `supabase/qa/BUG-PUB-01-datos-pr
    real. Verificada quitando el filtro a mano: falla señalando el archivo:línea.
 
 Sin dependencias nuevas, sin cambios de esquema, sin migraciones.
+
+## Fase 2 — verificación end-to-end sobre el artefacto construido
+
+El preview de Vercel **no es alcanzable desde el contenedor**: la política de
+red del entorno rechaza el CONNECT a `*.vercel.app`
+(`gateway answered 403 to CONNECT`, mismo bloqueo documentado para
+`*.supabase.co` y `beisjoven.com`), y el deployment está bajo SSO
+(`ssoProtection: all_except_custom_domains`), así que el fetch por MCP recibe
+la redirección a `vercel.com/sso-api` en vez de la página. Ver "Pendiente del
+CEO" abajo.
+
+Sustituto ejercitado, siguiendo el patrón de `CLAUDE.md` (mock PostgREST local
+con datos reales obtenidos por MCP): se levantó **la función SSR/ISR ya
+construida** (`.vercel/output/functions/_isr.func/dist/server/entry.mjs`, el
+mismo artefacto que Vercel despliega) contra un mock de PostgREST en
+`127.0.0.1:54321`, con el artículo real 734 (publicado) y una fila
+despublicada de prueba. No es `astro dev`: es el bundle de producción.
+
+Dos shims declarados: (1) `fetch` a `<host>/404.html` servido desde
+`.vercel/output/static` — en Vercel lo sirve el CDN, aquí no hay CDN; (2) HEAD
+a Supabase Storage → 200, para que `ensureOgImage` tome su fast path sin salir
+a la red. Ninguno toca la ruta ni la query bajo prueba.
+
+Medición pareada, mismo mock, mismo harness — sólo cambia el código:
+
+| Caso | Antes (código de `HEAD~1`) | Después |
+| --- | --- | --- |
+| `/articulo/beisbol-mexico-panama-jcc-2026` (publicado) | 200, nota completa | **200, sin cambios** |
+| `/articulo/qa-bug-pub-01-no-publicar` (`publicado = false`) | **200 con el contenido íntegro** | **404**, página de marca, cero fuga |
+| `/articulo/slug-que-no-existe-999` | 302 → 404 en `/404` | **404** en la URL pedida |
+| `/evento/no-existe-999` | 302 → 404 en `/404` | **404** en la URL pedida |
+| `/` (portada) | — | 200 |
+| `/sitemap.xml` | — | 200, cero ocurrencias del despublicado |
+
+La fuga se comprobó buscando un centinela dentro del cuerpo del despublicado:
+1 ocurrencia antes, 0 después. `npm run build` y `npm test` (46 tests) en
+verde; la guarda de regresión se validó quitando el filtro a mano — falla
+apuntando a `src/lib/supabase.ts:157`.
+
+### Pendiente del CEO (no ejecutable desde aquí)
+
+1. Ejecutar `supabase/qa/BUG-PUB-01-datos-prueba.sql` (bloque 1) — prod tiene
+   0 despublicados, así que sin esa fila el caso negativo no existe en la DB.
+   **No se creó ni se mutó ningún dato**: doctrina Nivel 3.
+2. Tras el merge y pasada la ventana ISR de 60 s, confirmar en prod:
+   ```
+   curl -o /dev/null -s -w "%{http_code}\n" https://beisjoven.com/articulo/qa-bug-pub-01-no-publicar   # 404
+   curl -o /dev/null -s -w "%{http_code}\n" https://beisjoven.com/articulo/beisbol-mexico-panama-jcc-2026  # 200
+   curl -o /dev/null -s -w "%{http_code}\n" https://beisjoven.com/articulo/slug-que-no-existe-999      # 404
+   ```
+3. Ejecutar el bloque 3 del SQL para borrar la fila de prueba.
