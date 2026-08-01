@@ -6,7 +6,8 @@
 - Sergio clicks "Merge" in GitHub or VS Code after verifying the commit. That takes 2 seconds and preserves a clean commit-per-feature history.
 - Do NOT create pull requests unless explicitly asked.
 - Do NOT spend time explaining the branch situation in commit messages or chat — just commit and push to the current branch.
-- Run `npx astro build` before every push. If it fails, fix it before pushing.
+- Corre `npm run build` y `npm test` antes de cada push. Si algo falla, arréglalo antes de pushear.
+- `npm run build` = `build:editor` (bundle IIFE de Tiptap → `public/js/tiptap-editor.js`, artefacto **versionado**) + `astro build`. NUNCA uses `npx astro build` a secas: no regenera el bundle, así que un cambio en `src/admin/tiptap-editor.js` compila verde y jamás llega a producción.
 - Use conventional commit messages: `feat(TICKET): description`, `fix(TICKET): description`
 - Push a main → Vercel despliega vía Git integration. Publicar contenido NO genera deploys: SSR+ISR sirve el contenido en ≤60s.
 
@@ -69,8 +70,9 @@ Detalle completo y matriz de permisos: `docs/SEC-ROLES-01.md`.
 - Header móvil usa el lockup (mark+wordmark sin tagline) — supersede "mark-only mobile" de §3.0.
 - §6.4 watch-metric (chips empujaban categorías fuera de pantalla a 375) → RESUELTO en DESIGN-HF-02: peek 40–60% del último item + chevron de descubribilidad + auto-scroll del tab activo.
 - Tagline vigente: "Somos el futuro del beis". El asset con el tagline legacy "El Rostro del béisbol juvenil en México" está fuera de circulación — no lo uses.
-- Orden real del footer de artículo (verificado en `src/pages/articulo/[...slug].astro`): Tags → ShareButtons → Artículos relacionados → AdSlot `article-footer`. No existe NewsletterCTA en la página de artículo.
+- Orden real del footer de artículo (verificado en `src/pages/articulo/[...slug].astro`): Tags → ShareButtons → Artículos relacionados → `TuHistoriaCTA` (ONSITE-TUHISTORIA-01) → AdSlot `article-footer`. No existe NewsletterCTA en la página de artículo.
 - `NewsletterBlock` es homepage-only (solo `src/pages/index.astro` lo consume).
+- Los `.jsx` de `docs/design-reference/` son prototipo, NO código vivo: no entran al build. El componente de anuncios en producción es `src/components/AdSlot.astro` — `AdSlot.jsx`, `AdAnatomy.jsx` y `AdApp.jsx` no existen en el repo. Antes de "arreglar" un archivo de design-reference, confirma quién lo consume.
 
 ## Before Writing Code
 
@@ -81,10 +83,12 @@ Detalle completo y matriz de permisos: `docs/SEC-ROLES-01.md`.
 
 ## Self-Validation
 
-- After modifying any save/publish/delete flow: write a temporary test script or use the browser console to verify the operation completes end-to-end. Do not assume it works.
-- After modifying CSS/layout: describe what the page should look like at 375px and 1280px. If you cannot confirm visually, flag it for manual QA.
-- After adding a new Supabase query: run it in isolation first (via supabase.js or a test script) to confirm it returns expected data.
-- If you catch your own bug during self-check, fix it before committing.
+- El contenedor NO alcanza `*.supabase.co` ni `beisjoven.com`. No valides con el navegador contra prod ni con scripts que peguen a la API real: no es "un problema de red", es el entorno. Usa los sustitutos de abajo.
+- Query nueva de Supabase: córrela aislada vía MCP (SELECT, Nivel 1) antes de cablearla, y confirma que devuelve lo esperado.
+- Flujo de guardar/publicar/borrar: traza el camino completo de clic a escritura. Si necesitas ejercitar la escritura, declara un Nivel 2 (`BEGIN` → prueba → `ROLLBACK`) en el plan y repórtalo. No asumas que funciona.
+- CSS/layout: verifica con Playwright a 375/412/768/1280 contra el mock PostgREST local, con screenshots antes/después. Lo que no puedas confirmar visualmente se entrega marcado como QA manual del CEO — no lo des por bueno.
+- Lógica pura (validadores, etiquetas de disclosure, utilidades): cúbrela con una suite en `tests/*.test.mjs` (`npm test`). Es la única verificación automática que corre sin red.
+- Si detectas tu propio bug en el auto-chequeo, arréglalo antes de commitear.
 
 ## Error Handling
 
@@ -99,12 +103,15 @@ Detalle completo y matriz de permisos: `docs/SEC-ROLES-01.md`.
 - Before any save/publish operation, stop the autosave timer. Resume it only after the operation completes.
 - Never fire two concurrent Supabase writes to the same row. Await the first before starting the second.
 - After a successful INSERT of a new article, redirect to `/admin/editar/:id` (the saved article), never to `/admin/articulos` (the list) or a blank form.
+- Panel SPA: cada navegación reemplaza `#main-content` por un nodo fresco, para que un handler async viejo aún en vuelo escriba en un nodo desconectado en vez de resucitar la página anterior. El interceptor de clicks ignora `href="#"` (enlaces de acción): si no, re-navega a la ruta actual y corre su handler en paralelo (AUTH-LOGOUT-01).
+- Operaciones de sesión (logout incluido): guard anti-reentrada + feedback visible si el servidor no confirma. `signOut()` puede fallar en remoto — borra las claves `sb-*-auth-token` para garantizar el logout local y devuelve el error. Nunca falles en silencio dejando el token vivo.
 
 ## Architecture
 
 - ONE component, ONE source of truth. Never build two implementations of the same feature.
 - When replacing/rebuilding a feature, delete ALL old code first. No dead code.
-- Supabase RLS: public SELECT, authenticated INSERT/UPDATE/DELETE (unless told otherwise).
+- Supabase RLS: SELECT público donde el contenido es público; escritura SIEMPRE gated por `is_admin()` / `is_superadmin()`. "Cualquier `authenticated` escribe" NO es el patrón — es exactamente la deuda que SEC-ROLES-01 pagó. Las tablas que aún la arrastran están inventariadas en `docs/SEC-ROLES-01.md` (pendiente SEC-04); no repliques ese patrón en policies nuevas.
+- Permiso y etiqueta de un creativo publicitario comparten una sola fuente de verdad (`src/lib/ad-disclosure.js`): `canServeCreative(tipo)` está DEFINIDO como "tiene etiqueta aprobada", de modo que no pueden divergir. Fail-closed: un tipo sin entrada en el mapa no se sirve. Prohibidas las ramas por defecto (el defecto original era fail-open).
 
 ## Stack
 
@@ -120,7 +127,7 @@ Detalle completo y matriz de permisos: `docs/SEC-ROLES-01.md`.
 - `Header.astro` y `Footer.astro` son los componentes canónicos del sistema. Consumen tokens spec (#1B2A4A / #C8102E / #D4A843, `tokens.css`); los tokens legacy (#1b3557, #e83646) están en extinción — los componentes nuevos JAMÁS los consumen.
 - Estados hover SIEMPRE bajo `@media (hover: hover) and (pointer: fine)`; feedback touch vía `:active`. El bug sticky-hover está resuelto — no lo reintroduzcas.
 - Verificación visual estándar: Playwright a 375/412/768/1280 en home/artículo/categoría, mock PostgREST local con datos reales obtenidos vía MCP (solo SELECT), screenshots antes/después.
-- El punto de inserción de QuickHitsBar / LIVE strip está documentado como comentario en `Header.astro` — su wiring quedó desbloqueado por SEC-03.
+- QuickHitsBar fue RETIRADO de portada (HYGIENE-01, decisión CEO 22-jul): el componente, sus imports y `getQuickHitsActivos` ya no existen. En `Header.astro` solo queda documentado el punto de inserción del LIVE strip. No lo reintroduzcas sin ticket — que SEC-03 haya desbloqueado su wiring no lo revive.
 
 ## Mobile
 
@@ -134,6 +141,7 @@ Detalle completo y matriz de permisos: `docs/SEC-ROLES-01.md`.
 - **QA local debe ejercitar el camino de producción:** las features condicionadas a env vars se validan CON la variable poblada (mock fiel si hace falta), no con la rama deshabilitada.
 - **ISR 60s: el navegador no es la verdad post-deploy.** Para verificar estado tras un deploy o publicación, consulta la DB por SQL; no diagnostiques con lo que renderiza el navegador dentro de la ventana de revalidación.
 - **Vercel `get_runtime_logs` filtrado por path con cero resultados = la función no está deployada**, no un problema de permisos.
+- **`ERR_REQUIRE_ESM` / 500 al inicializar la función serverless** = una dep CJS hace `require()` de un paquete ESM-only. Se arregla bundleándola en el output SSR (`vite.ssr.noExternal`), no cambiando de dependencia. Incluye su subárbol anidado cuando el árbol tiene versiones distintas de las hoisted, o Node resuelve la equivocada en runtime (caso `sanitize-html`/`htmlparser2`, EDITOR-20-FIX-01).
 - **`storage.objects` NO acepta `DELETE` directo por SQL** — Supabase lo bloquea con el trigger `protect_delete()`. Los borrados de storage van vía Storage API (service-role en código) o el Dashboard. Implicación: cualquier flujo que borre fotos (p. ej. "Descartada" en el admin de historias) usa Storage API, no SQL.
 
 ## What NOT To Do
