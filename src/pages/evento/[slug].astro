@@ -14,7 +14,8 @@ const { slug } = Astro.params;
 const evento = await getEventoBySlug(slug!);
 
 if (!evento) {
-  return Astro.redirect('/404');
+  // Mismo criterio que /articulo (BUG-PUB-01): 404 real, no 302 → 200.
+  return new Response(null, { status: 404 });
 }
 
 const articulos = await getArticulosByEvento(evento.id);

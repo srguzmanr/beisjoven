@@ -138,11 +138,26 @@ export async function getAllArticulos() {
   );
 }
 
+/**
+ * Resolución pública de un artículo por slug.
+ *
+ * BUG-PUB-01: el filtro `publicado = true` es OBLIGATORIO aquí. Todas las
+ * lecturas del sitio usan `supabaseServer` (service role), que BYPASEA RLS —
+ * la policy `public_read_published` (`publicado = true`) no protege esta
+ * ruta. Sin el filtro, despublicar un artículo lo sacaba de los listados
+ * pero su URL directa seguía sirviendo 200 con el contenido completo.
+ *
+ * Devuelve null para "no existe" y para "no publicado" — indistinguibles a
+ * propósito: la ruta de detalle responde 404 en ambos casos y no filtra la
+ * existencia de borradores. Fail-closed: no hay parámetro para saltarse el
+ * filtro; el panel admin lee con su propia sesión (policy `admin_read_all`).
+ */
 export async function getArticuloBySlug(slug: string) {
   const { data } = await supabaseServer
     .from('articulos')
     .select(ARTICLE_SELECT)
     .eq('slug', slug)
+    .eq('publicado', true)
     .single();
   return data as Articulo | null;
 }
