@@ -20,7 +20,8 @@ interface Props {
       mpu-only. */
   variant?: 'prose' | 'card';
   /** Ad format: 'mpu' 300×250 (default) | 'leaderboard' responsive
-      970×90 desktop / 320×50 mobile (home-top, LEADER-01). */
+      970×250 desktop / 320×100 mobile (home-top, LEADER-01; dims upgraded
+      to IAB billboard / large mobile banner in ADS-C6-FRAME-01). */
   format?: 'mpu' | 'leaderboard';
 }
 
@@ -87,7 +88,8 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
 ---
 
 {format === 'leaderboard' ? (
-  /* LEADER-01 — responsive leaderboard: 970×90 ≥768px / 320×50 <768px.
+  /* LEADER-01 / ADS-C6-FRAME-01 — responsive leaderboard:
+     970×250 ≥768px / 320×100 <768px.
      Always active; height reserved in CSS (aspect-ratio) so CLS = 0. */
   <aside
     class="bj-adslot bj-adslot--leaderboard"
@@ -109,13 +111,13 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
           rel="sponsored noopener"
         >
           <picture class="bj-lb__picture">
-            <source media="(min-width: 768px)" srcset={chosen!.imagen_url!} width="970" height="90" />
+            <source media="(min-width: 768px)" srcset={chosen!.imagen_url!} width="970" height="250" />
             <img
               class="bj-lb__img"
               src={mobileSrc}
               alt={chosen!.alt_text}
               width="320"
-              height="50"
+              height="100"
               loading="eager"
               decoding="async"
             />
@@ -123,8 +125,8 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
         </a>
       ) : (
         <div class="bj-lb__frame bj-lb__frame--ph">
-          <span class="bj-lb__ph bj-lb__ph--mobile">Espacio publicitario · 320 × 50</span>
-          <span class="bj-lb__ph bj-lb__ph--desktop">Espacio publicitario · 970 × 90</span>
+          <span class="bj-lb__ph bj-lb__ph--mobile">Espacio publicitario · 320 × 100</span>
+          <span class="bj-lb__ph bj-lb__ph--desktop">Espacio publicitario · 970 × 250</span>
         </div>
       )}
     </div>
@@ -272,7 +274,7 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     color: rgba(27, 42, 74, 0.6);
   }
 
-  /* --- LEADER-01 — leaderboard format (970×90 / 320×50) ------------------- */
+  /* --- LEADER-01 / ADS-C6-FRAME-01 — leaderboard (970×250 / 320×100) ------ */
   /* The frame reserves its box via width + aspect-ratio per breakpoint, so
      height is CSS-determined before any image byte arrives → CLS = 0. */
 
@@ -298,7 +300,7 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     justify-content: center;
     width: 320px;
     max-width: 100%;
-    aspect-ratio: 320 / 50;
+    aspect-ratio: 320 / 100;
     border: 1px solid var(--rule, rgba(27, 42, 74, 0.10));
     background: var(--bg-2, #F6F5F1);
     overflow: hidden;
@@ -314,8 +316,8 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
   .bj-lb__img {
     width: 100%;
     height: 100%;
-    /* contain, not cover: a 970×90 asset serving as mobile fallback would
-       lose ~40% of its width to cropping; letterboxing keeps it legible. */
+    /* contain, not cover: a 970×250 asset serving as mobile fallback would
+       lose ~18% of its width to cropping; letterboxing keeps it legible. */
     object-fit: contain;
     display: block;
   }
@@ -342,18 +344,18 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
        scales the height proportionally — still zero shift. */
     .bj-lb__frame {
       width: 970px;
-      aspect-ratio: 970 / 90;
+      aspect-ratio: 970 / 250;
     }
 
     /* HYGIENE-01 — sin letterbox: cuando hay creativo, el frame deja de
-       pintar chrome (caja fija invisible, altura reservada 90px → CLS 0)
+       pintar chrome (caja fija invisible, altura reservada 250px → CLS 0)
        y el borde/fondo viven en la imagen, que se dibuja a su proporción
-       natural. Un creativo que no sea exactamente 970:90 queda centrado
+       natural. Un creativo que no sea exactamente 970:250 queda centrado
        y abrazado por su borde, sin bandas laterales. El placeholder
        (--ph) conserva la caja fija con chrome. */
     .bj-lb__frame:not(.bj-lb__frame--ph) {
       width: auto;
-      height: 90px;
+      height: 250px;
       aspect-ratio: auto;
       border: 0;
       background: transparent;
@@ -372,7 +374,7 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
       width: auto;
       height: auto;
       max-width: 100%;
-      max-height: 90px;
+      max-height: 250px;
       border: 1px solid var(--rule, rgba(27, 42, 74, 0.10));
       background: var(--bg-2, #F6F5F1);
     }
