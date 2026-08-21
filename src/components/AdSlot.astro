@@ -181,39 +181,25 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
     width: 100%;
   }
 
-  /* ADS-AIR-01 — la unidad in-column comparte borde izquierdo con la columna
-     de texto. Antes, `margin: 0 auto` + `align-items: center` (heredados de
-     .bj-adslot) centraban una unidad de 300px dentro de una columna más ancha:
-     medido en el CSS servido, eso metía 21.5px de aire a cada lado a 375 y
-     218px a 768 en article-body / article-footer, y hacía que el bloque
-     arrancara más a la derecha que el cuerpo del artículo. El ancho de la
-     unidad NO cambia (300×250): solo deja de estar centrada. Las variantes
-     --card y --leaderboard conservan el centrado: son items de banda
-     full-bleed, no elementos dentro de una columna de lectura. */
+  /* ADS-INREAD-01 — la unidad in-column va CENTRADA en la columna de lectura
+     en TODOS los breakpoints (decisión CEO 2026-08-07, ratificada 2026-08-20):
+     supersede el flush-left móvil de ADS-AIR-01 y su excepción <768 de
+     PROSE-MEASURE-01. `align-items: center` se hereda de .bj-adslot; lo que
+     esta variante conserva de PROSE-MEASURE-01 es la caja: max-width 42rem y
+     `margin: 0` (no auto), para que la unidad se centre respecto a la columna
+     de lectura y no respecto a la caja de la grilla, que es más ancha en
+     desktop. El hallazgo de ADS-AIR-01 que sí sigue vigente: rótulo y creativo
+     comparten borde izquierdo entre sí (ambos topan en 300px); lo que se mueve
+     es la posición del par dentro de la columna. */
   .bj-adslot--prose {
     max-width: var(--max-width-prose, 42rem);
     margin: 0;
-    align-items: flex-start;
-  }
-
-  /* PROSE-MEASURE-01 — de 768 para arriba la columna de lectura llega a su
-     tope de 42rem y la unidad de 300px se centra dentro de esa medida. Por
-     debajo NO: a 375 la columna mide 343px y centrar volvería a meter los
-     21.5px de sangrado a cada lado que quitó ADS-AIR-01, desalineando el
-     anuncio del borde del texto justo donde vive el 76% del tráfico.
-     El hallazgo de ADS-AIR-01 se conserva en los dos casos: rótulo y creativo
-     siguen compartiendo borde izquierdo entre sí (ambos topan en 300px), lo
-     que se mueve es la posición del par dentro de la columna. */
-  @media (min-width: 768px) {
-    .bj-adslot--prose {
-      align-items: center;
-    }
   }
 
   /* ADS-STD-01 — label sits directly above the unit, flush with the unit's
      left edge: same 300px cap as the frame, so label and creative share a
-     left edge whatever the column does with the pair (ADS-AIR-01: centered
-     in --card / --leaderboard, flush with the text column in --prose). */
+     left edge whatever the column does with the pair (ADS-INREAD-01: the
+     pair is centered in every variant, --prose included). */
   /* ADS-AIR-02 — line-height propio. El rótulo es un overline de manual (11px,
      700, mayúsculas, tracking 0.08em) y heredaba el 1.7 de `body`: 7.7px de
      interlineado de PÁRRAFO sobre una micro-etiqueta de una línea, que a 375
@@ -254,7 +240,11 @@ const mobileSrc = chosen?.imagen_url_mobile ?? chosen?.imagen_url ?? null;
   .bj-adslot__img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    /* ADS-INREAD-01 — contain, no cover: el anunciante debe ver su arte
+       completo. Un creativo que no sea exactamente 6:5 se letterboxea sobre
+       el fondo neutro del frame (mismo patrón que el leaderboard móvil) en
+       vez de recortarse. La caja sigue reservada por aspect-ratio → CLS 0. */
+    object-fit: contain;
     display: block;
   }
 
